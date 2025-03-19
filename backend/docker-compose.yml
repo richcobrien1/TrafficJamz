@@ -30,7 +30,7 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=topgun
       - POSTGRES_DB=audiogroupapp
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -68,10 +68,10 @@ services:
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_PASSWORD=1Topgun123$
       - DOCKER_INFLUXDB_INIT_ORG=audiogroupapp
       - DOCKER_INFLUXDB_INIT_BUCKET=location_data
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=your_influxdb_token
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=qZrzdohA7sQ8aG5B2a203DW2h7zxjiGstrRCpXtSEdH-XQkvSxj8T5GQ4PN8d6inEL5HhqcwHPgRdwNe6Qs6BA==
     volumes:
       - influxdb-data:/var/lib/influxdb2
     networks:
