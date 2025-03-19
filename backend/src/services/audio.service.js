@@ -1,0 +1,660 @@
+const AudioSession = require('../models/audio-session.model');
+const Group = require('../models/group.model');
+const mediasoupConfig = require('../config/mediasoup');
+const { v4: uuidv4 } = require('uuid');
+
+/**
+ * Audio service for handling real-time audio communication
+ */
+class AudioService {
+  constructor() {
+    this.workers = [];
+    this.rooms = new Map(); // Map of active audio sessions by group ID
+    this.initialize();
+  }
+
+  /**
+   * Initialize mediasoup workers
+   */
+  async initialize() {
+    try {
+      // Create mediasoup workers (CPU cores - 1, minimum 1)
+      const numWorkers = Math.max(1, require('os').cpus().length - 1);
+      await mediasoupConfig.createWorkers(numWorkers);
+      console.log(`AudioService initialized with ${numWorkers} mediasoup workers`);
+    } catch (error) {
+      console.error('Error initializing AudioService:', error);
+    }
+  }
+
+  /**
+   * Create a new audio session for a group
+   * @param {string} groupId - Group ID
+   * @param {Object} sessionData - Session creation data
+   * @param {string} creatorId - User ID of the creator
+   * @returns {Promise<Object>} - Newly created audio session
+   */
+  async createAudioSession(groupId, sessionData, creatorId) {
+    try {
+      // Check if group exists
+      const group = await Group.findById(groupId);
+      if (!group) {
+        throw new Error('Group not found');
+      }
+
+      // Check if user is a member of the group
+      if (!group.isMember(creatorId)) {
+        throw new Error('User is not a member of this group');
+      }
+
+      // Check if there's already an active session
+      const existingSession = await AudioSession.findActiveByGroupId(groupId);
+      if (existingSession) {
+        throw new Error('An active audio session already exists for this group');
+      }
+
+      // Create mediasoup router
+      const router = await mediasoupConfig.createRouter();
+
+      // Create new audio session
+      const audioSession = new AudioSession({
+        group_id: groupId,
+        creator_id: creatorId,
+        session_type: sessionData.session_type || 'voice_only',
+        recording_enabled: sessionData.recording_enabled || false,
+        router_id: router.id,
+        participants: [{
+          user_id: creatorId,
+          joined_at: new Date(),
+          device_type: sessionData.device_type || 'web'
+        }]
+      });
+
+      await audioSession.save();
+
+      // Store router in memory
+      this.rooms.set(audioSession.id.toString(), {
+        router,
+        transports: new Map(),
+        producers: new Map(),
+        consumers: new Map()
+      });
+
+      return {
+        session: audioSession,
+        rtpCapabilities: router.rtpCapabilities
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get active audio session for a group
+   * @param {string} groupId - Group ID
+   * @returns {Promise<Object>} - Active audio session
+   */
+  async getActiveAudioSession(groupId) {
+    try {
+      const session = await AudioSession.findActiveByGroupId(groupId);
+      if (!session) {
+        throw new Error('No active audio session found for this group');
+      }
+
+      // Get router
+      const room = this.rooms.get(session.id.toString());
+      if (!room) {
+        // Router not in memory, recreate it
+        const router = await mediasoupConfig.createRouter();
+        this.rooms.set(session.id.toString(), {
+          router,
+          transports: new Map(),
+          producers: new Map(),
+          consumers: new Map()
+        });
+
+        return {
+          session,
+          rtpCapabilities: router.rtpCapabilities
+        };
+      }
+
+      return {
+        session,
+        rtpCapabilities: room.router.rtpCapabilities
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Join an audio session
+   * @param {string} sessionId - Audio session ID
+   * @param {string} userId - User ID
+   * @param {string} deviceType - Device type
+   * @returns {Promise<Object>} - Updated audio session
+   */
+  async joinAudioSession(sessionId, userId, deviceType = 'web') {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      if (session.status !== 'active') {
+        throw new Error('Audio session is not active');
+      }
+
+      // Check if user is a member of the group
+      const group = await Group.findById(session.group_id);
+      if (!group || !group.isMember(userId)) {
+        throw new Error('User is not a member of this group');
+      }
+
+      // Add user to participants if not already there
+      session.addParticipant(userId, deviceType);
+      await session.save();
+
+      // Get router
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      return {
+        session,
+        rtpCapabilities: room.router.rtpCapabilities
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Create WebRTC transport for a participant
+   * @param {string} sessionId - Audio session ID
+   * @param {string} userId - User ID
+   * @param {string} direction - Transport direction (send/receive)
+   * @returns {Promise<Object>} - Transport parameters
+   */
+  async createWebRtcTransport(sessionId, userId, direction) {
+    try {
+      // Get room
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      // Create transport
+      const transport = await mediasoupConfig.createWebRtcTransport(room.router);
+
+      // Generate a client ID for this transport
+      const clientId = uuidv4();
+
+      // Store transport
+      room.transports.set(transport.id, {
+        transport,
+        userId,
+        clientId,
+        direction
+      });
+
+      // Update session in database
+      const session = await AudioSession.findById(sessionId);
+      if (session) {
+        session.transports.push({
+          id: transport.id,
+          user_id: userId,
+          client_id: clientId,
+          direction
+        });
+        await session.save();
+      }
+
+      return {
+        id: transport.id,
+        iceParameters: transport.iceParameters,
+        iceCandidates: transport.iceCandidates,
+        dtlsParameters: transport.dtlsParameters,
+        clientId
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Connect WebRTC transport
+   * @param {string} sessionId - Audio session ID
+   * @param {string} transportId - Transport ID
+   * @param {Object} dtlsParameters - DTLS parameters
+   * @returns {Promise<boolean>} - Success status
+   */
+  async connectWebRtcTransport(sessionId, transportId, dtlsParameters) {
+    try {
+      // Get room
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      // Get transport
+      const transportData = room.transports.get(transportId);
+      if (!transportData) {
+        throw new Error('Transport not found');
+      }
+
+      // Connect transport
+      await transportData.transport.connect({ dtlsParameters });
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Create producer for audio
+   * @param {string} sessionId - Audio session ID
+   * @param {string} transportId - Transport ID
+   * @param {Object} rtpParameters - RTP parameters
+   * @returns {Promise<Object>} - Producer ID
+   */
+  async createProducer(sessionId, transportId, rtpParameters) {
+    try {
+      // Get room
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      // Get transport
+      const transportData = room.transports.get(transportId);
+      if (!transportData) {
+        throw new Error('Transport not found');
+      }
+
+      // Create producer
+      const producer = await transportData.transport.produce({
+        kind: 'audio',
+        rtpParameters
+      });
+
+      // Store producer
+      room.producers.set(producer.id, {
+        producer,
+        userId: transportData.userId
+      });
+
+      // Update session in database
+      const session = await AudioSession.findById(sessionId);
+      if (session) {
+        session.producers.push({
+          id: producer.id,
+          user_id: transportData.userId,
+          kind: 'audio',
+          transport_id: transportId
+        });
+        await session.save();
+      }
+
+      return { id: producer.id };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Create consumer for audio
+   * @param {string} sessionId - Audio session ID
+   * @param {string} transportId - Transport ID
+   * @param {string} producerId - Producer ID
+   * @param {Object} rtpCapabilities - RTP capabilities
+   * @returns {Promise<Object>} - Consumer parameters
+   */
+  async createConsumer(sessionId, transportId, producerId, rtpCapabilities) {
+    try {
+      // Get room
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      // Get transport
+      const transportData = room.transports.get(transportId);
+      if (!transportData) {
+        throw new Error('Transport not found');
+      }
+
+      // Get producer
+      const producerData = room.producers.get(producerId);
+      if (!producerData) {
+        throw new Error('Producer not found');
+      }
+
+      // Check if consumer can consume the producer
+      if (!room.router.canConsume({
+        producerId,
+        rtpCapabilities
+      })) {
+        throw new Error('Cannot consume this producer');
+      }
+
+      // Create consumer
+      const consumer = await transportData.transport.consume({
+        producerId,
+        rtpCapabilities,
+        paused: true // Start paused, client will resume
+      });
+
+      // Store consumer
+      room.consumers.set(consumer.id, {
+        consumer,
+        userId: transportData.userId,
+        producerId
+      });
+
+      // Update session in database
+      const session = await AudioSession.findById(sessionId);
+      if (session) {
+        session.consumers.push({
+          id: consumer.id,
+          user_id: transportData.userId,
+          producer_id: producerId,
+          transport_id: transportId
+        });
+        await session.save();
+      }
+
+      return {
+        id: consumer.id,
+        producerId,
+        kind: consumer.kind,
+        rtpParameters: consumer.rtpParameters,
+        producerUserId: producerData.userId
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Resume consumer
+   * @param {string} sessionId - Audio session ID
+   * @param {string} consumerId - Consumer ID
+   * @returns {Promise<boolean>} - Success status
+   */
+  async resumeConsumer(sessionId, consumerId) {
+    try {
+      // Get room
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      // Get consumer
+      const consumerData = room.consumers.get(consumerId);
+      if (!consumerData) {
+        throw new Error('Consumer not found');
+      }
+
+      // Resume consumer
+      await consumerData.consumer.resume();
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Update participant status
+   * @param {string} sessionId - Audio session ID
+   * @param {string} userId - User ID
+   * @param {Object} status - Status updates
+   * @returns {Promise<Object>} - Updated participant
+   */
+  async updateParticipantStatus(sessionId, userId, status) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      // Update participant status
+      session.updateParticipantStatus(userId, status);
+      await session.save();
+
+      // Get participant
+      const participant = session.participants.find(p => p.user_id === userId && !p.left_at);
+      return participant;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Leave audio session
+   * @param {string} sessionId - Audio session ID
+   * @param {string} userId - User ID
+   * @returns {Promise<boolean>} - Success status
+   */
+  async leaveAudioSession(sessionId, userId) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      // Remove participant
+      session.removeParticipant(userId);
+      await session.save();
+
+      // Clean up WebRTC resources
+      const room = this.rooms.get(sessionId);
+      if (room) {
+        // Close all transports for this user
+        for (const [transportId, transportData] of room.transports.entries()) {
+          if (transportData.userId === userId) {
+            transportData.transport.close();
+            room.transports.delete(transportId);
+          }
+        }
+
+        // Close all producers for this user
+        for (const [producerId, producerData] of room.producers.entries()) {
+          if (producerData.userId === userId) {
+            producerData.producer.close();
+            room.producers.delete(producerId);
+          }
+        }
+
+        // Close all consumers for this user
+        for (const [consumerId, consumerData] of room.consumers.entries()) {
+          if (consumerData.userId === userId) {
+            consumerData.consumer.close();
+            room.consumers.delete(consumerId);
+          }
+        }
+      }
+
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * End audio session
+   * @param {string} sessionId - Audio session ID
+   * @param {string} userId - User ID making the request
+   * @returns {Promise<Object>} - Updated audio session
+   */
+  async endAudioSession(sessionId, userId) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      // Check if user is the creator or an admin
+      const group = await Group.findById(session.group_id);
+      if (!group || (!group.isAdmin(userId) && session.creator_id !== userId)) {
+        throw new Error('Permission denied');
+      }
+
+      // Update session status
+      session.status = 'ended';
+      session.ended_at = new Date();
+      await session.save();
+
+      // Clean up WebRTC resources
+      const room = this.rooms.get(sessionId);
+      if (room) {
+        // Close all transports
+        for (const [, transportData] of room.transports.entries()) {
+          transportData.transport.close();
+        }
+
+        // Remove room
+        this.rooms.delete(sessionId);
+      }
+
+      return session;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Add music to session playlist
+   * @param {string} sessionId - Audio session ID
+   * @param {Object} track - Track data
+   * @param {string} userId - User ID adding the track
+   * @returns {Promise<Object>} - Updated playlist
+   */
+  async addMusicToPlaylist(sessionId, track, userId) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      if (session.status !== 'active') {
+        throw new Error('Audio session is not active');
+      }
+
+      if (session.session_type !== 'voice_with_music') {
+        throw new Error('This session does not support music sharing');
+      }
+
+      // Add track to playlist
+      session.addToPlaylist(track, userId);
+      await session.save();
+
+      return session.music.playlist;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Control music playback
+   * @param {string} sessionId - Audio session ID
+   * @param {string} action - Playback action
+   * @param {Object} options - Additional options
+   * @param {string} userId - User ID controlling playback
+   * @returns {Promise<Object>} - Updated music status
+   */
+  async controlMusicPlayback(sessionId, action, options, userId) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      if (session.status !== 'active') {
+        throw new Error('Audio session is not active');
+      }
+
+      if (session.session_type !== 'voice_with_music') {
+        throw new Error('This session does not support music sharing');
+      }
+
+      // Initialize music object if it doesn't exist
+      if (!session.music) {
+        session.music = { playlist: [] };
+      }
+
+      switch (action) {
+        case 'play':
+          if (options.trackId) {
+            // Play specific track from playlist
+            const track = session.music.playlist.find(t => t.id === options.trackId);
+            if (!track) {
+              throw new Error('Track not found in playlist');
+            }
+            session.updateCurrentlyPlaying(track, userId);
+          } else if (session.music.currently_playing) {
+            // Resume current track
+            session.music.currently_playing.controlled_by = userId;
+            session.music.currently_playing.position = options.position || 0;
+            session.music.currently_playing.started_at = new Date();
+          } else if (session.music.playlist.length > 0) {
+            // Play first track in playlist
+            session.updateCurrentlyPlaying(session.music.playlist[0], userId);
+          } else {
+            throw new Error('No tracks in playlist');
+          }
+          break;
+
+        case 'pause':
+          if (!session.music.currently_playing) {
+            throw new Error('No track is currently playing');
+          }
+          session.music.currently_playing.controlled_by = userId;
+          session.music.currently_playing.position = options.position || 0;
+          break;
+
+        case 'next':
+          if (!session.music.currently_playing || !session.music.playlist.length) {
+            throw new Error('No tracks in playlist');
+          }
+          
+          // Find current track index
+          const currentIndex = session.music.playlist.findIndex(
+            t => t.id === session.music.currently_playing.id
+          );
+          
+          // Get next track
+          const nextIndex = (currentIndex + 1) % session.music.playlist.length;
+          session.updateCurrentlyPlaying(session.music.playlist[nextIndex], userId);
+          break;
+
+        case 'previous':
+          if (!session.music.currently_playing || !session.music.playlist.length) {
+            throw new Error('No tracks in playlist');
+          }
+          
+          // Find current track index
+          const currIndex = session.music.playlist.findIndex(
+            t => t.id === session.music.currently_playing.id
+          );
+          
+          // Get previous track
+          const prevIndex = (currIndex - 1 + session.music.playlist.length) % session.music.playlist.length;
+          session.updateCurrentlyPlaying(session.music.playlist[prevIndex], userId);
+          break;
+
+        default:
+          throw new Error(`Unknown action: ${action}`);
+      }
+
+      await session.save();
+      return session.music;
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+module.exports = new AudioService();
