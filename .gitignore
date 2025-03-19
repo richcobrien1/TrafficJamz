@@ -1,0 +1,88 @@
+# === Communications Project .gitignore ===
+
+# --- Operating System Files ---
+.DS_Store             # macOS folder attributes
+Thumbs.db             # Windows thumbnail cache
+Desktop.ini          # Windows folder customization
+
+# --- Editors/IDEs ---
+.vscode/             # VS Code configurations
+.idea/               # JetBrains IDE settings
+*.swp                # Vim swap files
+*.swo                # Vim swap files
+*.sublime-workspace  # Sublime Text session
+
+# --- Documents & Media ---
+*.docx               # Word documents (comment out if tracking drafts)
+*.pptx              # PowerPoint files
+*.xlsx              # Excel files
+*.pdf               # PDFs (consider keeping final versions)
+*.odt               # OpenDocument Text
+*.tmp              # Temporary document versions
+
+# Media Working Files
+*.psd              # Photoshop files
+*.aep              # After Effects projects
+*.prproj           # Premiere Pro projects
+*.indd             # InDesign files
+
+# --- Dependency Directories ---
+node_modules/       # Node.js packages
+vendor/            # Composer dependencies
+.env               # Environment variables (critical to exclude!)
+
+# --- Build Outputs ---
+/public            # Static site generators (Hugo, Jekyll)
+/dist              # Build output directories
+*.log             # Build process logs
+
+# --- Collaboration Tools ---
+.slack-term        # Slack CLI config
+zoom/             # Zoom recording cache
+*.zoom             # Zoom meeting files
+.teams-attachments # Microsoft Teams files
+
+# --- Email & Messaging ---
+*.eml             # Outlook emails
+*.msg             # Outlook messages
+*.pst             # Outlook data files
+
+# --- Specialized Comms Tools ---
+.screenflow       # Screenflow project files
+grammarly/       # Grammarly desktop app data
+.descript/       # Descript project files
+
+# --- Temporary Files ---
+~$*.*             # Office temporary files
+*.autosave        # Various app autosaves
+*.backup          # File backups
+
+# --- Local Development ---
+.env.local        # Local environment overrides
+*.local           # Local configuration files
+
+# === Customize Below for Your Project ===
+# Uncomment what applies to your workflow:
+
+# Adobe Cache Files
+# /Adobe Premiere Pro Auto-Save/
+# /Adobe Premiere Pro Preview Files/
+
+# Video Production
+# *.mov          # Raw video files (large!)
+# *.mp4          # Rendered videos
+
+# Audio Files
+# *.wav          # Uncompressed audio
+# *.mp3          # Compressed audio
+
+# Research Data
+# /raw-data/     # Unprocessed research data
+# /transcripts/  # Interview transcripts
+
+# Uncomment if using static site generator
+# _site/         # Jekyll output
+# .cache/        # Gatsby cache
+
+# === Version Control Exceptions ===
+!.gitkeep        # Keep empty directories
