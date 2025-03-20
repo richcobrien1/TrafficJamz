@@ -35,7 +35,7 @@ router.post('/register', [
     };
 
     const user = await userService.register(userData);
-    res.status(201).json({ success: true, user });
+    res.status(201).json({ success: true, message: user });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
