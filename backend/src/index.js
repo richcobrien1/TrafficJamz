@@ -63,7 +63,8 @@ app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'Welcome to the Audio Group Communication API',
     version: '1.0.0',
-    documentation: '/api-docs'
+    documentation: '/api-docs',
+    source: 'backend/src/index.js'
   });
 });
 
