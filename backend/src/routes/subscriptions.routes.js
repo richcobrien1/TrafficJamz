@@ -36,7 +36,7 @@ router.get('/me',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const subscription = await subscriptionService.getUserSubscription(req.user.id);
+      const subscription = await subscriptionService.getUserSubscription(req.user.user_id);
       res.json({ success: true, subscription });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -60,7 +60,7 @@ router.post('/subscribe',
   async (req, res) => {
     try {
       const subscription = await subscriptionService.subscribe(
-        req.user.id,
+        req.user.user_id,
         req.body.plan_id,
         req.body.payment_method_id,
         req.body.auto_renew
@@ -81,7 +81,7 @@ router.post('/cancel',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const result = await subscriptionService.cancelSubscription(req.user.id);
+      const result = await subscriptionService.cancelSubscription(req.user.user_id);
       res.json({ success: true, ...result });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -102,7 +102,7 @@ router.put('/payment-method',
   ],
   async (req, res) => {
     try {
-      await subscriptionService.updatePaymentMethod(req.user.id, req.body.payment_method_id);
+      await subscriptionService.updatePaymentMethod(req.user.user_id, req.body.payment_method_id);
       res.json({ success: true, message: 'Payment method updated successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -119,7 +119,7 @@ router.get('/payment-history',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const history = await subscriptionService.getPaymentHistory(req.user.id);
+      const history = await subscriptionService.getPaymentHistory(req.user.user_id);
       res.json({ success: true, history });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -156,7 +156,7 @@ router.get('/feature-access/:feature',
   ],
   async (req, res) => {
     try {
-      const hasAccess = await subscriptionService.hasFeatureAccess(req.user.id, req.params.feature);
+      const hasAccess = await subscriptionService.hasFeatureAccess(req.user.user_id, req.params.feature);
       res.json({ success: true, has_access: hasAccess });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

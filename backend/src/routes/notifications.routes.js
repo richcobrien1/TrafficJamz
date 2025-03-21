@@ -23,7 +23,7 @@ router.get('/',
   async (req, res) => {
     try {
       const notifications = await Notification.find({ 
-        user_id: req.user.id 
+        user_id: req.user.user_id 
       }).sort({ createdAt: -1 });
       
       res.json({ success: true, notifications });
@@ -42,7 +42,7 @@ router.get('/unread',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const notifications = await Notification.findUnreadByUserId(req.user.id);
+      const notifications = await Notification.findUnreadByUserId(req.user.user_id);
       res.json({ success: true, notifications });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -63,7 +63,7 @@ router.get('/type/:type',
   ],
   async (req, res) => {
     try {
-      const notifications = await Notification.findByUserIdAndType(req.user.id, req.params.type);
+      const notifications = await Notification.findByUserIdAndType(req.user.user_id, req.params.type);
       res.json({ success: true, notifications });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -90,7 +90,7 @@ router.put('/:id/read',
         return res.status(404).json({ success: false, message: 'Notification not found' });
       }
       
-      if (notification.user_id !== req.user.id) {
+      if (notification.user_id !== req.user.user_id) {
         return res.status(403).json({ success: false, message: 'Permission denied' });
       }
       
@@ -113,7 +113,7 @@ router.put('/read-all',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      await Notification.markAllAsRead(req.user.id);
+      await Notification.markAllAsRead(req.user.user_id);
       res.json({ success: true, message: 'All notifications marked as read' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -140,7 +140,7 @@ router.delete('/:id',
         return res.status(404).json({ success: false, message: 'Notification not found' });
       }
       
-      if (notification.user_id !== req.user.id) {
+      if (notification.user_id !== req.user.user_id) {
         return res.status(403).json({ success: false, message: 'Permission denied' });
       }
       

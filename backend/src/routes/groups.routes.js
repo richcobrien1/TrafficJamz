@@ -27,7 +27,7 @@ router.get('/',
         role: req.query.role
       };
       
-      const groups = await groupService.getGroupsByUserId(req.user.id, filters);
+      const groups = await groupService.getGroupsByUserId(req.user.user_id, filters);
       res.json({ success: true, groups });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -61,7 +61,7 @@ router.post('/',
         avatar_url: req.body.avatar_url
       };
 
-      const group = await groupService.createGroup(groupData, req.user.id);
+      const group = await groupService.createGroup(groupData, req.user.user_id);
       res.status(201).json({ success: true, group });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -85,7 +85,7 @@ router.get('/:id',
       const group = await groupService.getGroupById(req.params.id);
       
       // Check if user is a member of the group
-      if (!group.isMember(req.user.id)) {
+      if (!group.isMember(req.user.user_id)) {
         return res.status(403).json({ success: false, message: 'You are not a member of this group' });
       }
       
@@ -120,7 +120,7 @@ router.put('/:id',
         avatar_url: req.body.avatar_url
       };
 
-      const group = await groupService.updateGroup(req.params.id, updateData, req.user.id);
+      const group = await groupService.updateGroup(req.params.id, updateData, req.user.user_id);
       res.json({ success: true, group });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -143,7 +143,7 @@ router.put('/:id/settings',
   async (req, res) => {
     try {
       const settings = req.body.settings;
-      const updatedSettings = await groupService.updateGroupSettings(req.params.id, settings, req.user.id);
+      const updatedSettings = await groupService.updateGroupSettings(req.params.id, settings, req.user.user_id);
       res.json({ success: true, settings: updatedSettings });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -164,7 +164,7 @@ router.delete('/:id',
   ],
   async (req, res) => {
     try {
-      await groupService.deleteGroup(req.params.id, req.user.id);
+      await groupService.deleteGroup(req.params.id, req.user.user_id);
       res.json({ success: true, message: 'Group deleted successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -214,7 +214,7 @@ router.post('/:id/members',
   async (req, res) => {
     try {
       const { user_id, role } = req.body;
-      const group = await groupService.addGroupMember(req.params.id, user_id, role, req.user.id);
+      const group = await groupService.addGroupMember(req.params.id, user_id, role, req.user.user_id);
       res.status(201).json({ success: true, group });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -245,7 +245,7 @@ router.put('/:id/members/:userId',
         nickname: req.body.nickname
       };
 
-      const member = await groupService.updateGroupMember(req.params.id, req.params.userId, updateData, req.user.id);
+      const member = await groupService.updateGroupMember(req.params.id, req.params.userId, updateData, req.user.user_id);
       res.json({ success: true, member });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -267,7 +267,7 @@ router.delete('/:id/members/:userId',
   ],
   async (req, res) => {
     try {
-      await groupService.removeGroupMember(req.params.id, req.params.userId, req.user.id);
+      await groupService.removeGroupMember(req.params.id, req.params.userId, req.user.user_id);
       res.json({ success: true, message: 'Member removed successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -290,7 +290,7 @@ router.post('/:id/invitations',
   async (req, res) => {
     try {
       const { email } = req.body;
-      const invitation = await groupService.inviteToGroup(req.params.id, email, req.user.id);
+      const invitation = await groupService.inviteToGroup(req.params.id, email, req.user.user_id);
       res.status(201).json({ success: true, invitation });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -311,7 +311,7 @@ router.get('/:id/invitations',
   ],
   async (req, res) => {
     try {
-      const invitations = await groupService.getGroupInvitations(req.params.id, req.user.id);
+      const invitations = await groupService.getGroupInvitations(req.params.id, req.user.user_id);
       res.json({ success: true, invitations });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -333,7 +333,7 @@ router.delete('/:id/invitations/:invitationId',
   ],
   async (req, res) => {
     try {
-      await groupService.cancelInvitation(req.params.id, req.params.invitationId, req.user.id);
+      await groupService.cancelInvitation(req.params.id, req.params.invitationId, req.user.user_id);
       res.json({ success: true, message: 'Invitation cancelled successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -350,7 +350,7 @@ router.get('/invitations/me',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const invitations = await groupService.getUserInvitations(req.user.id);
+      const invitations = await groupService.getUserInvitations(req.user.user_id);
       res.json({ success: true, invitations });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -371,7 +371,7 @@ router.post('/invitations/:invitationId/accept',
   ],
   async (req, res) => {
     try {
-      const group = await groupService.acceptInvitation(req.params.invitationId, req.user.id);
+      const group = await groupService.acceptInvitation(req.params.invitationId, req.user.user_id);
       res.json({ success: true, group });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -392,7 +392,7 @@ router.post('/invitations/:invitationId/decline',
   ],
   async (req, res) => {
     try {
-      await groupService.declineInvitation(req.params.invitationId, req.user.id);
+      await groupService.declineInvitation(req.params.invitationId, req.user.user_id);
       res.json({ success: true, message: 'Invitation declined successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

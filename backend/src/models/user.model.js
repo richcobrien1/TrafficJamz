@@ -97,20 +97,40 @@ const User = sequelize.define('users', {
     beforeCreate: async (user) => {
       if (user.password_hash) {
         user.password_hash = await bcrypt.hash(user.password_hash, 10);
+        // Ensure it's stored as a string
+        if (Buffer.isBuffer(user.password_hash)) {
+          user.password_hash = user.password_hash.toString();
+        }
       }
     },
     beforeUpdate: async (user) => {
       if (user.changed('password_hash')) {
         user.password_hash = await bcrypt.hash(user.password_hash, 10);
+        // Ensure it's stored as a string
+        if (Buffer.isBuffer(user.password_hash)) {
+          user.password_hash = user.password_hash.toString();
+        }
       }
     }
   }
 });
 
-// Instance methods
+// Instance methods - FIXED VERSION
 User.prototype.validatePassword = async function(password) {
-  return await bcrypt.compare(password, this.password_hash);
+  try {
+    // Convert Buffer to string if needed
+    const hashString = Buffer.isBuffer(this.password_hash) 
+      ? this.password_hash.toString() 
+      : this.password_hash;
+    
+    return await bcrypt.compare(password, hashString);
+  } catch (error) {
+    console.error('Password validation error:', error);
+    // Return false instead of throwing to prevent exposing error details
+    return false;
+  }
 };
+
 
 // Static methods
 User.findByEmail = function(email) {

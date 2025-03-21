@@ -164,7 +164,7 @@ const GroupDetail = () => {
   
   const handleLeaveGroup = async () => {
     try {
-      await axios.delete(`/api/groups/${groupId}/members/${currentUser.id}`);
+      await axios.delete(`/api/groups/${groupId}/members/${currentuser.user_id}`);
       navigate('/');
     } catch (error) {
       console.error('Error leaving group:', error);
@@ -367,7 +367,7 @@ const GroupDetail = () => {
                       <React.Fragment key={member.user_id}>
                         <ListItem
                           secondaryAction={
-                            isOwner && member.user_id !== currentUser.id && (
+                            isOwner && member.user_id !== currentuser.user_id && (
                               <IconButton edge="end" aria-label="remove" onClick={() => {/* Handle remove */}}>
                                 <DeleteIcon />
                               </IconButton>
@@ -383,7 +383,7 @@ const GroupDetail = () => {
                             primary={
                               <>
                                 {member.username}
-                                {member.user_id === currentUser.id && ' (You)'}
+                                {member.user_id === currentuser.user_id && ' (You)'}
                                 {member.user_id === group.owner_id && (
                                   <Chip 
                                     label="Owner" 

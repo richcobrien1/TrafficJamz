@@ -72,7 +72,7 @@ class SubscriptionService {
   async subscribe(userId, planId, paymentMethodId, autoRenew = true) {
     try {
       // Check if user exists
-      const user = await User.findByPk(userId);
+      const user = await User.findOne({ where: { user_id: userId } })
       if (!user) {
         throw new Error('User not found');
       }

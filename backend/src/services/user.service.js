@@ -63,29 +63,35 @@ class UserService {
       if (!user) {
         throw new Error('Invalid email or password');
       }
-
+  
       // Validate password
       const isPasswordValid = await user.validatePassword(password);
       if (!isPasswordValid) {
         throw new Error('Invalid email or password');
       }
-
+  
       // Update last login timestamp
       user.last_login = new Date();
       await user.save();
-
-      // Generate tokens
-      const tokens = this.generateTokens(user);
-
-      // Remove sensitive data
-      const userJson = user.toJSON();
-      delete userJson.password_hash;
-
-      return {
-        user: userJson,
-        ...tokens
-      };
+  
+      // Generate tokens with error handling
+      try {
+        const tokens = this.generateTokens(user);
+        
+        // Remove sensitive data
+        const userJson = user.toJSON();
+        delete userJson.password_hash;
+  
+        return {
+          user: userJson,
+          ...tokens
+        };
+      } catch (tokenError) {
+        console.error('Token generation error:', tokenError);
+        throw new Error('Authentication failed');
+      }
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   }
@@ -96,24 +102,31 @@ class UserService {
    * @returns {Object} - Access and refresh tokens
    */
   generateTokens(user) {
+    // Add logging to debug
+    console.log('User object in generateTokens:', JSON.stringify(user));
+    console.log('user_id type:', typeof user.user_id);
+    
+    // Ensure user_id is a string
+    const userId = String(user.user_id);
+    
     const accessToken = jwt.sign(
-      { sub: user.id, username: user.username },
+      { sub: userId, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_ACCESS_EXPIRATION || '24h' }
     );
-
+  
     const refreshToken = jwt.sign(
-      { sub: user.id },
+      { sub: userId },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_REFRESH_EXPIRATION || '30d' }
     );
-
+  
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer'
     };
-  }
+  }  
 
   /**
    * Refresh access token using refresh token
@@ -125,8 +138,8 @@ class UserService {
       // Verify refresh token
       const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
       
-      // Get user
-      const user = await User.findByPk(decoded.sub);
+      // Get user - changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: decoded.sub } });
       if (!user) {
         throw new Error('Invalid refresh token');
       }
@@ -147,7 +160,8 @@ class UserService {
    */
   async getUserById(userId) {
     try {
-      const user = await User.findByPk(userId);
+      // Changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: userId } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -170,7 +184,8 @@ class UserService {
    */
   async updateUser(userId, updateData) {
     try {
-      const user = await User.findByPk(userId);
+      // Changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: userId } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -206,7 +221,8 @@ class UserService {
    */
   async updatePreferences(userId, preferences) {
     try {
-      const user = await User.findByPk(userId);
+      // Changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: userId } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -234,7 +250,8 @@ class UserService {
    */
   async changePassword(userId, currentPassword, newPassword) {
     try {
-      const user = await User.findByPk(userId);
+      // Changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: userId } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -315,7 +332,8 @@ class UserService {
    */
   async setupMFA(userId, method) {
     try {
-      const user = await User.findByPk(userId);
+      // Changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: userId } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -349,7 +367,8 @@ class UserService {
    */
   async verifyMFA(userId, code) {
     try {
-      const user = await User.findByPk(userId);
+      // Changed from findByPk to findOne with user_id
+      const user = await User.findOne({ where: { user_id: userId } });
       if (!user || !user.mfa_enabled) {
         throw new Error('MFA not enabled for this user');
       }

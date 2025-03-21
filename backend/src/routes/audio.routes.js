@@ -35,7 +35,7 @@ router.post('/sessions',
         device_type: req.body.device_type || 'web'
       };
 
-      const result = await audioService.createAudioSession(req.body.group_id, sessionData, req.user.id);
+      const result = await audioService.createAudioSession(req.body.group_id, sessionData, req.user.user_id);
       res.status(201).json({ success: true, ...result });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -80,7 +80,7 @@ router.post('/sessions/:sessionId/join',
     try {
       const result = await audioService.joinAudioSession(
         req.params.sessionId,
-        req.user.id,
+        req.user.user_id,
         req.body.device_type || 'web'
       );
       res.json({ success: true, ...result });
@@ -106,7 +106,7 @@ router.post('/sessions/:sessionId/transport',
     try {
       const transport = await audioService.createWebRtcTransport(
         req.params.sessionId,
-        req.user.id,
+        req.user.user_id,
         req.body.direction
       );
       res.json({ success: true, transport });
@@ -246,7 +246,7 @@ router.put('/sessions/:sessionId/status',
 
       const participant = await audioService.updateParticipantStatus(
         req.params.sessionId,
-        req.user.id,
+        req.user.user_id,
         status
       );
       res.json({ success: true, participant });
@@ -269,7 +269,7 @@ router.post('/sessions/:sessionId/leave',
   ],
   async (req, res) => {
     try {
-      await audioService.leaveAudioSession(req.params.sessionId, req.user.id);
+      await audioService.leaveAudioSession(req.params.sessionId, req.user.user_id);
       res.json({ success: true, message: 'Left audio session successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -290,7 +290,7 @@ router.post('/sessions/:sessionId/end',
   ],
   async (req, res) => {
     try {
-      const session = await audioService.endAudioSession(req.params.sessionId, req.user.id);
+      const session = await audioService.endAudioSession(req.params.sessionId, req.user.user_id);
       res.json({ success: true, session });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -325,7 +325,7 @@ router.post('/sessions/:sessionId/music/playlist',
       const playlist = await audioService.addMusicToPlaylist(
         req.params.sessionId,
         track,
-        req.user.id
+        req.user.user_id
       );
       res.status(201).json({ success: true, playlist });
     } catch (error) {
@@ -359,7 +359,7 @@ router.post('/sessions/:sessionId/music/control',
         req.params.sessionId,
         req.body.action,
         options,
-        req.user.id
+        req.user.user_id
       );
       res.json({ success: true, music });
     } catch (error) {

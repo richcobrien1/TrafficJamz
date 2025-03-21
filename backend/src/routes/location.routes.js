@@ -46,7 +46,7 @@ router.post('/update',
         connection_type: req.body.connection_type
       };
 
-      const location = await locationService.updateUserLocation(req.user.id, locationData);
+      const location = await locationService.updateUserLocation(req.user.user_id, locationData);
       res.status(201).json({ success: true, location });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -67,7 +67,7 @@ router.get('/group/:groupId',
   ],
   async (req, res) => {
     try {
-      const locations = await locationService.getGroupMembersLocations(req.params.groupId, req.user.id);
+      const locations = await locationService.getGroupMembersLocations(req.params.groupId, req.user.user_id);
       res.json({ success: true, locations });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -88,7 +88,7 @@ router.get('/user/:userId',
   ],
   async (req, res) => {
     try {
-      const location = await locationService.getUserLocation(req.params.userId, req.user.id);
+      const location = await locationService.getUserLocation(req.params.userId, req.user.user_id);
       res.json({ success: true, location });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -118,7 +118,7 @@ router.get('/history/:userId',
         startDate,
         endDate,
         groupId,
-        req.user.id
+        req.user.user_id
       );
       res.json({ success: true, history });
     } catch (error) {
@@ -142,7 +142,7 @@ router.put('/privacy',
   async (req, res) => {
     try {
       const settings = await locationService.setLocationPrivacy(
-        req.user.id,
+        req.user.user_id,
         req.body.privacy_level,
         req.body.shared_with_group_ids
       );
@@ -172,7 +172,7 @@ router.post('/proximity-alerts',
         req.body.group_id,
         req.body.target_user_id,
         req.body.distance_threshold,
-        req.user.id
+        req.user.user_id
       );
       res.status(201).json({ success: true, alert });
     } catch (error) {
@@ -194,7 +194,7 @@ router.get('/proximity-alerts/group/:groupId',
   ],
   async (req, res) => {
     try {
-      const alerts = await locationService.getProximityAlerts(req.params.groupId, req.user.id);
+      const alerts = await locationService.getProximityAlerts(req.params.groupId, req.user.user_id);
       res.json({ success: true, alerts });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -222,7 +222,7 @@ router.put('/proximity-alerts/:alertId',
         status: req.body.status
       };
 
-      const alert = await locationService.updateProximityAlert(req.params.alertId, updateData, req.user.id);
+      const alert = await locationService.updateProximityAlert(req.params.alertId, updateData, req.user.user_id);
       res.json({ success: true, alert });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -243,7 +243,7 @@ router.delete('/proximity-alerts/:alertId',
   ],
   async (req, res) => {
     try {
-      await locationService.deleteProximityAlert(req.params.alertId, req.user.id);
+      await locationService.deleteProximityAlert(req.params.alertId, req.user.user_id);
       res.json({ success: true, message: 'Proximity alert deleted successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

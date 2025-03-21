@@ -104,7 +104,7 @@ const LocationTracking = () => {
         description: 'A group for mountain skiing enthusiasts',
         members: [
           {
-            user_id: currentUser.id,
+            user_id: currentuser.user_id,
             username: currentUser.username,
             profile_image_url: currentUser.profile_image_url,
             status: 'active'
@@ -127,7 +127,7 @@ const LocationTracking = () => {
       // Simulate location data
       const mockLocations = [
         {
-          user_id: currentUser.id,
+          user_id: currentuser.user_id,
           username: currentUser.username,
           coordinates: {
             latitude: 40.7128,
@@ -178,7 +178,7 @@ const LocationTracking = () => {
       setLocations(mockLocations);
       
       // Find user's location in the mock data
-      const userLocationData = mockLocations.find(loc => loc.user_id === currentUser.id);
+      const userLocationData = mockLocations.find(loc => loc.user_id === currentuser.user_id);
       if (userLocationData) {
         setUserLocation(userLocationData.coordinates);
       }
@@ -289,7 +289,7 @@ const LocationTracking = () => {
         // Update locations array
         setLocations(prev => 
           prev.map(loc => 
-            loc.user_id === currentUser.id 
+            loc.user_id === currentuser.user_id 
               ? { ...loc, coordinates: newLocation, timestamp: new Date().toISOString() } 
               : loc
           )
@@ -485,7 +485,7 @@ const LocationTracking = () => {
                       >
                         {locations.map((location) => {
                           const member = members.find(m => m.user_id === location.user_id);
-                          const isCurrentUser = location.user_id === currentUser.id;
+                          const isCurrentUser = location.user_id === currentuser.user_id;
                           
                           // Calculate relative position (this is just for the prototype)
                           const baseLatitude = 40.7128;
@@ -586,7 +586,7 @@ const LocationTracking = () => {
                           primary={
                             <>
                               {member.username}
-                              {member.user_id === currentUser.id && ' (You)'}
+                              {member.user_id === currentuser.user_id && ' (You)'}
                             </>
                           }
                           secondary={
@@ -596,7 +596,7 @@ const LocationTracking = () => {
                                   <Typography variant="body2" component="span">
                                     {formatTimestamp(location.timestamp)}
                                   </Typography>
-                                  {member.user_id !== currentUser.id && (
+                                  {member.user_id !== currentuser.user_id && (
                                     <Typography variant="body2" component="span" sx={{ ml: 1 }}>
                                       • {formatDistance(distance)} away
                                     </Typography>
@@ -714,7 +714,7 @@ const LocationTracking = () => {
               <Box>
                 <Typography variant="h6">
                   {selectedMember.username}
-                  {selectedMember.user_id === currentUser.id && ' (You)'}
+                  {selectedMember.user_id === currentuser.user_id && ' (You)'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Member since {new Date().toLocaleDateString()}
@@ -722,7 +722,7 @@ const LocationTracking = () => {
               </Box>
             </Box>
             
-            {selectedMember.user_id !== currentUser.id && (
+            {selectedMember.user_id !== currentuser.user_id && (
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
                   Location Details

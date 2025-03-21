@@ -133,7 +133,7 @@ router.post('/verify-mfa',
   async (req, res) => {
     try {
       const { code } = req.body;
-      const isValid = await userService.verifyMFA(req.user.id, code);
+      const isValid = await userService.verifyMFA(req.user.user_id, code);
       
       if (isValid) {
         res.json({ success: true, message: 'MFA verification successful' });
@@ -160,7 +160,7 @@ router.post('/setup-mfa',
   async (req, res) => {
     try {
       const { method } = req.body;
-      const result = await userService.setupMFA(req.user.id, method);
+      const result = await userService.setupMFA(req.user.user_id, method);
       res.json({ success: true, ...result });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
