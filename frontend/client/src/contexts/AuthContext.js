@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // Adjust the path as needed to point to your api.js file
 
 const AuthContext = createContext();
 
@@ -11,12 +11,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Configure axios defaults
+  // Configure api defaults
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const response = await axios.get('/api/users/profile');
+        const response = await api.get('/api/users/profile');
         setCurrentUser(response.data.user);
         setLoading(false);
       } catch (error) {
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setError('');
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email, password });
       
       const { access_token, user } = response.data;
       
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setError('');
-      const response = await axios.post('/api/auth/register', userData);
+      const response = await api.post('/api/auth/register', userData);
       return response.data;
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to register');
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (userData) => {
     try {
       setError('');
-      const response = await axios.put('/api/users/profile', userData);
+      const response = await api.put('/api/users/profile', userData);
       setCurrentUser(response.data.user);
       return response.data.user;
     } catch (error) {

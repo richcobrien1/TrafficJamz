@@ -87,7 +87,7 @@ app.use((req, res) => {
 });
 
 // Set port
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Start server
 if (process.env.NODE_ENV !== 'test') {

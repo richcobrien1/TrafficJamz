@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 
 /**
  * User service for handling user-related operations
@@ -17,7 +18,7 @@ class UserService {
       // Check if user already exists
       const existingUser = await User.findOne({
         where: {
-          [User.sequelize.Op.or]: [
+          [Op.or]: [
             { email: userData.email },
             { username: userData.username }
           ]
@@ -30,7 +31,7 @@ class UserService {
 
       // Create new user
       const user = await User.create({
-        id: uuidv4(),
+        user_id: uuidv4(),
         username: userData.username,
         email: userData.email,
         password_hash: userData.password, // Will be hashed by model hook
