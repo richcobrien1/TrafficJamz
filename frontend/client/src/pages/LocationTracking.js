@@ -341,8 +341,8 @@ const LocationTracking = () => {
     fetchGroupDetails();
   };
   
-  const getMemberLocation = (userId) => {
-    return locations.find(loc => loc.user_id === userId);
+  const getMemberLocation = (user_id) => {
+    return locations.find(loc => loc.user_id === user_id);
   };
   
   const calculateDistance = (loc1, loc2) => {

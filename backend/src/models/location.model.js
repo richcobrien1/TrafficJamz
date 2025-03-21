@@ -72,13 +72,13 @@ const LocationSchema = new Schema({
 LocationSchema.index({ 'coordinates.latitude': 1, 'coordinates.longitude': 1 }, { type: '2dsphere' });
 
 // Static methods
-LocationSchema.statics.findLatestByUserId = function(userId) {
-  return this.findOne({ user_id: userId }).sort({ timestamp: -1 });
+LocationSchema.statics.findLatestByUserId = function(user_id) {
+  return this.findOne({ user_id: user_id }).sort({ timestamp: -1 });
 };
 
-LocationSchema.statics.findByUserIdAndTimeRange = function(userId, startTime, endTime) {
+LocationSchema.statics.findByUserIdAndTimeRange = function(user_id, startTime, endTime) {
   return this.find({
-    user_id: userId,
+    user_id: user_id,
     timestamp: { $gte: startTime, $lte: endTime }
   }).sort({ timestamp: 1 });
 };

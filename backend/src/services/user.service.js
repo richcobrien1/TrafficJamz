@@ -107,16 +107,16 @@ class UserService {
     console.log('user_id type:', typeof user.user_id);
     
     // Ensure user_id is a string
-    const userId = String(user.user_id);
+    const user_id = String(user.user_id);
     
     const accessToken = jwt.sign(
-      { sub: userId, username: user.username },
+      { sub: user_id, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_ACCESS_EXPIRATION || '24h' }
     );
   
     const refreshToken = jwt.sign(
-      { sub: userId },
+      { sub: user_id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_REFRESH_EXPIRATION || '30d' }
     );
@@ -155,13 +155,13 @@ class UserService {
 
   /**
    * Get user by ID
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @returns {Promise<Object>} - User data
    */
-  async getUserById(userId) {
+  async getUserById(user_id) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: userId } });
+      const user = await User.findOne({ where: { user_id: user_id } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -178,14 +178,14 @@ class UserService {
 
   /**
    * Update user profile
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} updateData - Data to update
    * @returns {Promise<Object>} - Updated user data
    */
-  async updateUser(userId, updateData) {
+  async updateUser(user_id, updateData) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: userId } });
+      const user = await User.findOne({ where: { user_id: user_id } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -215,14 +215,14 @@ class UserService {
 
   /**
    * Update user preferences
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} preferences - New preferences
    * @returns {Promise<Object>} - Updated preferences
    */
-  async updatePreferences(userId, preferences) {
+  async updatePreferences(user_id, preferences) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: userId } });
+      const user = await User.findOne({ where: { user_id: user_id } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -243,15 +243,15 @@ class UserService {
 
   /**
    * Change user password
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} currentPassword - Current password
    * @param {string} newPassword - New password
    * @returns {Promise<boolean>} - Success status
    */
-  async changePassword(userId, currentPassword, newPassword) {
+  async changePassword(user_id, currentPassword, newPassword) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: userId } });
+      const user = await User.findOne({ where: { user_id: user_id } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -326,14 +326,14 @@ class UserService {
 
   /**
    * Setup multi-factor authentication
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} method - MFA method
    * @returns {Promise<Object>} - MFA setup information
    */
-  async setupMFA(userId, method) {
+  async setupMFA(user_id, method) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: userId } });
+      const user = await User.findOne({ where: { user_id: user_id } });
       if (!user) {
         throw new Error('User not found');
       }
@@ -361,14 +361,14 @@ class UserService {
 
   /**
    * Verify MFA code
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} code - MFA code
    * @returns {Promise<boolean>} - Verification result
    */
-  async verifyMFA(userId, code) {
+  async verifyMFA(user_id, code) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: userId } });
+      const user = await User.findOne({ where: { user_id: user_id } });
       if (!user || !user.mfa_enabled) {
         throw new Error('MFA not enabled for this user');
       }

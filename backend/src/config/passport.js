@@ -4,45 +4,49 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
+const User = require('../models/user.model'); // Add this import
 
 // Load environment variables
 dotenv.config();
 
 // This will be replaced with actual user model when implemented
-const getUserById = async (id) => {
+const getUserById = async (user_id) => {
   // Placeholder for user retrieval from database
-  return { id, username: 'user', email: 'user@example.com' };
+  return { user_id, username: 'user', email: 'user@example.com' };
 };
 
 const getUserByEmail = async (email) => {
   // Placeholder for user retrieval from database
-  return { id: '1', username: 'user', email, password: 'hashedpassword' };
+  return { user_id: '1', username: 'user', email, password: 'hashedpassword' };
 };
 
 // Configure JWT Strategy
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production',
+  secretOrKey: process.env.JWT_SECRET || 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn',
 };
 
-passport.use(
-  new JwtStrategy(jwtOptions, async (payload, done) => {
-    try {
-      // Find the user specified in token
-      const user = await getUserById(payload.sub);
+// Example passport JWT strategy configuration
+passport.use(new JwtStrategy({
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: process.env.JWT_SECRET
+}, async (payload, done) => {
+  try {
+      // Change this:
+      // const user = await User.findByPk(payload.sub);
       
-      // If user doesn't exist, handle it
+      // To this:
+      const user = await User.findOne({ where: { user_id: payload.sub } });
+      
       if (!user) {
-        return done(null, false);
+          return done(null, false);
       }
-      
-      // Otherwise, return the user
       return done(null, user);
-    } catch (error) {
+  } catch (error) {
       return done(error, false);
-    }
-  })
-);
+  }
+}));
+
 
 // Configure Local Strategy (for username/password authentication)
 passport.use(
@@ -59,10 +63,10 @@ passport.use(
         if (!user) {
           return done(null, false, { message: 'Invalid email or password' });
         }
-        
+
         // Check if the password is correct
         // This will be replaced with actual bcrypt comparison when implemented
-        const isMatch = true; // await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         
         // If password doesn't match, handle it
         if (!isMatch) {

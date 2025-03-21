@@ -41,16 +41,16 @@ export const UserService = {
     return api.get('/users', { params });
   },
   
-  getUserById: (userId) => {
-    return api.get(`/users/${userId}`);
+  getUserById: (user_id) => {
+    return api.get(`/users/${user_id}`);
   },
   
-  updateUser: (userId, userData) => {
-    return api.put(`/users/${userId}`, userData);
+  updateUser: (user_id, userData) => {
+    return api.put(`/users/${user_id}`, userData);
   },
   
-  deleteUser: (userId) => {
-    return api.delete(`/users/${userId}`);
+  deleteUser: (user_id) => {
+    return api.delete(`/users/${user_id}`);
   }
 };
 
@@ -80,12 +80,12 @@ export const GroupService = {
     return api.get(`/groups/${groupId}/members`);
   },
   
-  addGroupMember: (groupId, userId) => {
-    return api.post(`/groups/${groupId}/members`, { userId });
+  addGroupMember: (groupId, user_id) => {
+    return api.post(`/groups/${groupId}/members`, { user_id });
   },
   
-  removeGroupMember: (groupId, userId) => {
-    return api.delete(`/groups/${groupId}/members/${userId}`);
+  removeGroupMember: (groupId, user_id) => {
+    return api.delete(`/groups/${groupId}/members/${user_id}`);
   },
   
   sendInvitation: (groupId, email) => {
@@ -163,8 +163,8 @@ export const LocationService = {
     return api.get(`/location/group/${groupId}`);
   },
   
-  getUserLocation: (userId) => {
-    return api.get(`/location/user/${userId}`);
+  getUserLocation: (user_id) => {
+    return api.get(`/location/user/${user_id}`);
   },
   
   updatePrivacySettings: (privacyData) => {

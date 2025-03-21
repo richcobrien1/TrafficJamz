@@ -12,15 +12,15 @@ const influxConfig = require('../config/influxdb');
 class LocationService {
   /**
    * Update user location
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} locationData - Location data
    * @returns {Promise<Object>} - Updated location
    */
-  async updateUserLocation(userId, locationData) {
+  async updateUserLocation(user_id, locationData) {
     try {
       // Create new location record
       const location = new Location({
-        user_id: userId,
+        user_id: user_id,
         timestamp: new Date(),
         coordinates: locationData.coordinates,
         device_id: locationData.device_id,
@@ -30,13 +30,13 @@ class LocationService {
 
       // Get user's groups to share location with
       const groups = await Group.find({
-        'members.user_id': userId,
+        'members.user_id': user_id,
         status: 'active'
       });
 
       // Filter groups based on location sharing settings
       const sharedGroups = groups.filter(group => {
-        const member = group.members.find(m => m.user_id === userId);
+        const member = group.members.find(m => m.user_id === user_id);
         return group.settings.location_sharing_required && member && member.status === 'active';
       });
 
@@ -47,10 +47,10 @@ class LocationService {
       await location.save();
 
       // Store location in InfluxDB for time-series analysis
-      this.storeLocationInInfluxDB(userId, location);
+      this.storeLocationInInfluxDB(user_id, location);
 
       // Check for proximity alerts
-      this.checkProximityAlerts(userId, location, sharedGroups);
+      this.checkProximityAlerts(user_id, location, sharedGroups);
 
       return location;
     } catch (error) {
@@ -60,14 +60,14 @@ class LocationService {
 
   /**
    * Store location in InfluxDB
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} location - Location data
    * @private
    */
-  storeLocationInInfluxDB(userId, location) {
+  storeLocationInInfluxDB(user_id, location) {
     try {
       const point = new Point('user_location')
-        .tag('user_id', userId)
+        .tag('user_id', user_id)
         .tag('device_id', location.device_id || 'unknown')
         .tag('connection_type', location.connection_type || 'unknown')
         .floatField('latitude', location.coordinates.latitude)
@@ -85,12 +85,12 @@ class LocationService {
 
   /**
    * Check for proximity alerts
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} location - Location data
    * @param {Array} groups - User's groups
    * @private
    */
-  async checkProximityAlerts(userId, location, groups) {
+  async checkProximityAlerts(user_id, location, groups) {
     try {
       // Get all active proximity alerts for the user's groups
       const groupIds = groups.map(group => group._id);
@@ -98,14 +98,14 @@ class LocationService {
         group_id: { $in: groupIds },
         status: 'active',
         $or: [
-          { user_id: userId },
-          { target_user_id: userId }
+          { user_id: user_id },
+          { target_user_id: user_id }
         ]
       });
 
       for (const alert of alerts) {
         // Determine which user is the current user and which is the target
-        const isCurrentUserInitiator = alert.user_id === userId;
+        const isCurrentUserInitiator = alert.user_id === user_id;
         const otherUserId = isCurrentUserInitiator ? alert.target_user_id : alert.user_id;
 
         // Get the other user's latest location
@@ -244,15 +244,15 @@ class LocationService {
 
   /**
    * Get user location
-   * @param {string} userId - User ID to get location for
+   * @param {string} user_id - User ID to get location for
    * @param {string} requesterId - User ID making the request
    * @returns {Promise<Object>} - User location
    */
-  async getUserLocation(userId, requesterId) {
+  async getUserLocation(user_id, requesterId) {
     try {
       // Check if requester has permission to view user's location
       const sharedGroups = await Group.find({
-        'members.user_id': { $all: [userId, requesterId] },
+        'members.user_id': { $all: [user_id, requesterId] },
         status: 'active'
       });
 
@@ -262,7 +262,7 @@ class LocationService {
 
       // Get latest location
       const location = await Location.findOne({
-        user_id: userId,
+        user_id: user_id,
         shared_with_group_ids: { $in: sharedGroups.map(g => g._id) }
       }).sort({ timestamp: -1 });
 
@@ -272,7 +272,7 @@ class LocationService {
 
       // Adjust precision based on privacy level
       let locationData = {
-        user_id: userId,
+        user_id: user_id,
         timestamp: location.timestamp,
         privacy_level: location.privacy_level
       };
@@ -298,20 +298,20 @@ class LocationService {
 
   /**
    * Get user location history
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
    * @param {string} groupId - Optional group ID filter
    * @param {string} requesterId - User ID making the request
    * @returns {Promise<Array>} - Location history
    */
-  async getUserLocationHistory(userId, startDate, endDate, groupId, requesterId) {
+  async getUserLocationHistory(user_id, startDate, endDate, groupId, requesterId) {
     try {
       // Check if requester has permission
-      if (userId !== requesterId) {
+      if (user_id !== requesterId) {
         // If not self, check if they share a group
         const sharedGroups = await Group.find({
-          'members.user_id': { $all: [userId, requesterId] },
+          'members.user_id': { $all: [user_id, requesterId] },
           status: 'active'
         });
 
@@ -327,7 +327,7 @@ class LocationService {
 
       // Build query
       const query = {
-        user_id: userId,
+        user_id: user_id,
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -345,12 +345,12 @@ class LocationService {
       // Process based on privacy level
       return locations.map(location => {
         let locationData = {
-          user_id: userId,
+          user_id: user_id,
           timestamp: location.timestamp,
           privacy_level: location.privacy_level
         };
 
-        if (location.privacy_level === 'precise' || userId === requesterId) {
+        if (location.privacy_level === 'precise' || user_id === requesterId) {
           locationData.coordinates = location.coordinates;
         } else if (location.privacy_level === 'approximate') {
           // Round coordinates to lower precision
@@ -372,12 +372,12 @@ class LocationService {
 
   /**
    * Set location privacy
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} privacyLevel - Privacy level
    * @param {Array} sharedWithGroupIds - Group IDs to share with
    * @returns {Promise<Object>} - Updated privacy settings
    */
-  async setLocationPrivacy(userId, privacyLevel, sharedWithGroupIds) {
+  async setLocationPrivacy(user_id, privacyLevel, sharedWithGroupIds) {
     try {
       // Validate privacy level
       if (!['precise', 'approximate', 'hidden'].includes(privacyLevel)) {
@@ -387,12 +387,12 @@ class LocationService {
       // Validate groups if provided
       if (sharedWithGroupIds && sharedWithGroupIds.length > 0) {
         const userGroups = await Group.find({
-          'members.user_id': userId,
+          'members.user_id': user_id,
           status: 'active'
         });
 
         const userGroupIds = userGroups.map(g => g._id.toString());
-        const invalidGroups = sharedWithGroupIds.filter(id => !userGroupIds.includes(id));
+        const invalidGroups = sharedWithGroupIds.filter(id => !userGroupIds.includes(user_id));
 
         if (invalidGroups.length > 0) {
           throw new Error('User is not a member of some specified groups');
@@ -416,10 +416,10 @@ class LocationService {
    * @param {string} groupId - Group ID
    * @param {string} targetUserId - Target user ID
    * @param {number} distanceThreshold - Distance threshold in meters
-   * @param {string} userId - User ID creating the alert
+   * @param {string} user_id - User ID creating the alert
    * @returns {Promise<Object>} - Created proximity alert
    */
-  async createProximityAlert(groupId, targetUserId, distanceThreshold, userId) {
+  async createProximityAlert(groupId, targetUserId, distanceThreshold, user_id) {
     try {
       // Check if group exists and both users are members
       const group = await Group.findById(groupId);
@@ -427,14 +427,14 @@ class LocationService {
         throw new Error('Group not found');
       }
 
-      if (!group.isMember(userId) || !group.isMember(targetUserId)) {
+      if (!group.isMember(user_id) || !group.isMember(targetUserId)) {
         throw new Error('Both users must be members of the group');
       }
 
       // Check if alert already exists
       const existingAlert = await ProximityAlert.findOne({
         group_id: groupId,
-        user_id: userId,
+        user_id: user_id,
         target_user_id: targetUserId,
         status: 'active'
       });
@@ -446,7 +446,7 @@ class LocationService {
       // Create new alert
       const alert = new ProximityAlert({
         group_id: groupId,
-        user_id: userId,
+        user_id: user_id,
         target_user_id: targetUserId,
         distance_threshold: distanceThreshold || 100
       });
@@ -461,10 +461,10 @@ class LocationService {
   /**
    * Get proximity alerts
    * @param {string} groupId - Group ID
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<Array>} - Array of proximity alerts
    */
-  async getProximityAlerts(groupId, userId) {
+  async getProximityAlerts(groupId, user_id) {
     try {
       // Check if group exists and user is a member
       const group = await Group.findById(groupId);
@@ -472,7 +472,7 @@ class LocationService {
         throw new Error('Group not found');
       }
 
-      if (!group.isMember(userId)) {
+      if (!group.isMember(user_id)) {
         throw new Error('User is not a member of this group');
       }
 
@@ -480,8 +480,8 @@ class LocationService {
       const alerts = await ProximityAlert.find({
         group_id: groupId,
         $or: [
-          { user_id: userId },
-          { target_user_id: userId }
+          { user_id: user_id },
+          { target_user_id: user_id }
         ]
       });
 
@@ -495,10 +495,10 @@ class LocationService {
    * Update proximity alert
    * @param {string} alertId - Alert ID
    * @param {Object} updateData - Data to update
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<Object>} - Updated proximity alert
    */
-  async updateProximityAlert(alertId, updateData, userId) {
+  async updateProximityAlert(alertId, updateData, user_id) {
     try {
       // Get alert
       const alert = await ProximityAlert.findById(alertId);
@@ -507,7 +507,7 @@ class LocationService {
       }
 
       // Check if user has permission
-      if (alert.user_id !== userId) {
+      if (alert.user_id !== user_id) {
         throw new Error('Permission denied');
       }
 
@@ -534,10 +534,10 @@ class LocationService {
   /**
    * Delete proximity alert
    * @param {string} alertId - Alert ID
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<boolean>} - Success status
    */
-  async deleteProximityAlert(alertId, userId) {
+  async deleteProximityAlert(alertId, user_id) {
     try {
       // Get alert
       const alert = await ProximityAlert.findById(alertId);
@@ -546,7 +546,7 @@ class LocationService {
       }
 
       // Check if user has permission
-      if (alert.user_id !== userId) {
+      if (alert.user_id !== user_id) {
         throw new Error('Permission denied');
       }
 
