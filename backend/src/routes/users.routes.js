@@ -22,7 +22,7 @@ router.get('/profile',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const user = await userService.getUserById(req.user.id);
+      const user = await userService.getUserById(req.user.user_id);
       res.json({ success: true, user });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -53,7 +53,7 @@ router.put('/profile',
         phone_number: req.body.phone_number
       };
 
-      const user = await userService.updateUser(req.user.id, updateData);
+      const user = await userService.updateUser(req.user.user_id, updateData);
       res.json({ success: true, user });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -71,7 +71,7 @@ router.put('/preferences',
   async (req, res) => {
     try {
       const preferences = req.body;
-      const updatedPreferences = await userService.updatePreferences(req.user.id, preferences);
+      const updatedPreferences = await userService.updatePreferences(req.user.user_id, preferences);
       res.json({ success: true, preferences: updatedPreferences });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -94,7 +94,7 @@ router.put('/password',
   async (req, res) => {
     try {
       const { current_password, new_password } = req.body;
-      await userService.changePassword(req.user.id, current_password, new_password);
+      await userService.changePassword(req.user.user_id, current_password, new_password);
       res.json({ success: true, message: 'Password changed successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

@@ -241,7 +241,7 @@ class GroupService {
       }
 
       // Verify user exists
-      const user = await User.findByPk(userId);
+      const user = await User.findOne({ where: { user_id: userId } })
       if (!user) {
         throw new Error('User not found');
       }
@@ -464,7 +464,7 @@ class GroupService {
   async getUserInvitations(userId) {
     try {
       // Find user
-      const user = await User.findByPk(userId);
+      const user = await User.findOne({ where: { user_id: userId } })
       if (!user) {
         throw new Error('User not found');
       }
@@ -509,7 +509,7 @@ class GroupService {
   async acceptInvitation(invitationId, userId) {
     try {
       // Find user
-      const user = await User.findByPk(userId);
+      const user = await User.findOne({ where: { user_id: userId } })
       if (!user) {
         throw new Error('User not found');
       }
@@ -564,7 +564,7 @@ class GroupService {
   async declineInvitation(invitationId, userId) {
     try {
       // Find user
-      const user = await User.findByPk(userId);
+      const user = await User.findOne({ where: { user_id: userId } })
       if (!user) {
         throw new Error('User not found');
       }

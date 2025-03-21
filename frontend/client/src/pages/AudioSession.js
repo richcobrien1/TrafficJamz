@@ -95,7 +95,7 @@ const AudioSession = () => {
         session_type: 'voice_with_music',
         participants: [
           {
-            user_id: currentUser.id,
+            user_id: currentuser.user_id,
             username: currentUser.username,
             profile_image_url: currentUser.profile_image_url,
             status: 'active',
@@ -211,7 +211,7 @@ const AudioSession = () => {
       
       // Update local participant state
       const updatedParticipants = participants.map(p => 
-        p.user_id === currentUser.id 
+        p.user_id === currentuser.user_id 
           ? { ...p, mic_muted: newMicState } 
           : p
       );
@@ -237,7 +237,7 @@ const AudioSession = () => {
       
       // Update local participant state
       const updatedParticipants = participants.map(p => 
-        p.user_id === currentUser.id 
+        p.user_id === currentuser.user_id 
           ? { ...p, speaker_muted: newSpeakerState } 
           : p
       );
@@ -355,7 +355,7 @@ const AudioSession = () => {
                           primary={
                             <>
                               {participant.username}
-                              {participant.user_id === currentUser.id && ' (You)'}
+                              {participant.user_id === currentuser.user_id && ' (You)'}
                             </>
                           }
                           secondary={
