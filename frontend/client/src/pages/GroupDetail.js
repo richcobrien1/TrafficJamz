@@ -39,7 +39,7 @@ import {
   Delete as DeleteIcon,
   ExitToApp as LeaveIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../contexts/AuthContext';
 
 const GroupDetail = () => {
@@ -61,7 +61,7 @@ const GroupDetail = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -71,7 +71,7 @@ const GroupDetail = () => {
   const fetchGroupDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/groups/${groupId}`);
+      const response = await api.get(`/api/groups/${groupId}`);
       setGroup(response.data.group);
       setEditName(response.data.group.name);
       setEditDescription(response.data.group.description || '');
@@ -106,7 +106,7 @@ const GroupDetail = () => {
       setInviteLoading(true);
       setInviteError('');
       
-      await axios.post(`/api/groups/${groupId}/invitations`, {
+      await api.post(`/api/groups/${groupId}/invitations`, {
         email: inviteEmail
       });
       
@@ -131,7 +131,7 @@ const GroupDetail = () => {
       setEditLoading(true);
       setEditError('');
       
-      const response = await axios.put(`/api/groups/${groupId}`, {
+      const response = await api.put(`/api/groups/${groupId}`, {
         name: editName,
         description: editDescription
       });
@@ -150,7 +150,7 @@ const GroupDetail = () => {
     try {
       setDeleteLoading(true);
       
-      await axios.delete(`/api/groups/${groupId}`);
+      await api.delete(`/api/groups/${groupId}`);
       
       navigate('/');
     } catch (error) {
@@ -164,7 +164,7 @@ const GroupDetail = () => {
   
   const handleLeaveGroup = async () => {
     try {
-      await axios.delete(`/api/groups/${groupId}/members/${currentuser.user_id}`);
+      await api.delete(`/api/groups/${groupId}/members/${user.user_id}`);
       navigate('/');
     } catch (error) {
       console.error('Error leaving group:', error);
@@ -172,7 +172,7 @@ const GroupDetail = () => {
     }
   };
   
-  const isOwner = group?.owner_id === currentUser?.id;
+  const isOwner = group?.owner_id === user?.id;
   const isMenuOpen = Boolean(anchorEl);
   
   return (
@@ -367,7 +367,7 @@ const GroupDetail = () => {
                       <React.Fragment key={member.user_id}>
                         <ListItem
                           secondaryAction={
-                            isOwner && member.user_id !== currentuser.user_id && (
+                            isOwner && member.user_id !== user.user_id && (
                               <IconButton edge="end" aria-label="remove" onClick={() => {/* Handle remove */}}>
                                 <DeleteIcon />
                               </IconButton>
@@ -383,7 +383,7 @@ const GroupDetail = () => {
                             primary={
                               <>
                                 {member.username}
-                                {member.user_id === currentuser.user_id && ' (You)'}
+                                {member.user_id === user.user_id && ' (You)'}
                                 {member.user_id === group.owner_id && (
                                   <Chip 
                                     label="Owner" 

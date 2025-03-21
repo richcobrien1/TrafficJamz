@@ -37,7 +37,7 @@ import {
   Group as GroupIcon,
   ExitToApp as LeaveIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../contexts/AuthContext';
 
 const AudioSession = () => {
@@ -58,7 +58,7 @@ const AudioSession = () => {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   // References for WebRTC
@@ -84,7 +84,7 @@ const AudioSession = () => {
       // For the prototype, we'll simulate a session
       
       // Simulated API call
-      // const response = await axios.get(`/api/audio/sessions/group/${sessionId}`);
+      // const response = await api.get(`/api/audio/sessions/group/${sessionId}`);
       // setSession(response.data.session);
       
       // Simulate session data
@@ -95,9 +95,9 @@ const AudioSession = () => {
         session_type: 'voice_with_music',
         participants: [
           {
-            user_id: currentuser.user_id,
-            username: currentUser.username,
-            profile_image_url: currentUser.profile_image_url,
+            user_id: user.user_id,
+            username: user.username,
+            profile_image_url: user.profile_image_url,
             status: 'active',
             mic_muted: false,
             speaker_muted: false,
@@ -205,13 +205,13 @@ const AudioSession = () => {
     
     // In a real implementation, we would also update the server
     try {
-      // await axios.put(`/api/audio/sessions/${sessionId}/status`, {
+      // await api.put(`/api/audio/sessions/${sessionId}/status`, {
       //   mic_muted: newMicState
       // });
       
       // Update local participant state
       const updatedParticipants = participants.map(p => 
-        p.user_id === currentuser.user_id 
+        p.user_id === user.user_id 
           ? { ...p, mic_muted: newMicState } 
           : p
       );
@@ -231,13 +231,13 @@ const AudioSession = () => {
     
     // Update the server
     try {
-      // await axios.put(`/api/audio/sessions/${sessionId}/status`, {
+      // await api.put(`/api/audio/sessions/${sessionId}/status`, {
       //   speaker_muted: newSpeakerState
       // });
       
       // Update local participant state
       const updatedParticipants = participants.map(p => 
-        p.user_id === currentuser.user_id 
+        p.user_id === user.user_id 
           ? { ...p, speaker_muted: newSpeakerState } 
           : p
       );
@@ -262,7 +262,7 @@ const AudioSession = () => {
       // 1. Close the RTCPeerConnection
       // 2. Notify the server that we're leaving
       
-      // await axios.post(`/api/audio/sessions/${sessionId}/leave`);
+      // await api.post(`/api/audio/sessions/${sessionId}/leave`);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -355,7 +355,7 @@ const AudioSession = () => {
                           primary={
                             <>
                               {participant.username}
-                              {participant.user_id === currentuser.user_id && ' (You)'}
+                              {participant.user_id === user.user_id && ' (You)'}
                             </>
                           }
                           secondary={

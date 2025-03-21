@@ -40,7 +40,7 @@ import {
   Refresh as RefreshIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../contexts/AuthContext';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -63,7 +63,7 @@ const LocationTracking = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -90,11 +90,11 @@ const LocationTracking = () => {
       // For the prototype, we'll simulate the data
       
       // Simulated API call for group details
-      // const groupResponse = await axios.get(`/api/groups/${groupId}`);
+      // const groupResponse = await api.get(`/api/groups/${groupId}`);
       // setGroup(groupResponse.data.group);
       
       // Simulated API call for member locations
-      // const locationsResponse = await axios.get(`/api/location/group/${groupId}`);
+      // const locationsResponse = await api.get(`/api/location/group/${groupId}`);
       // setLocations(locationsResponse.data.locations);
       
       // Simulate group data
@@ -104,9 +104,9 @@ const LocationTracking = () => {
         description: 'A group for mountain skiing enthusiasts',
         members: [
           {
-            user_id: currentuser.user_id,
-            username: currentUser.username,
-            profile_image_url: currentUser.profile_image_url,
+            user_id: user.user_id,
+            username: user.username,
+            profile_image_url: user.profile_image_url,
             status: 'active'
           },
           {
@@ -127,8 +127,8 @@ const LocationTracking = () => {
       // Simulate location data
       const mockLocations = [
         {
-          user_id: currentuser.user_id,
-          username: currentUser.username,
+          user_id: user.user_id,
+          username: user.username,
           coordinates: {
             latitude: 40.7128,
             longitude: -74.0060,
@@ -178,7 +178,7 @@ const LocationTracking = () => {
       setLocations(mockLocations);
       
       // Find user's location in the mock data
-      const userLocationData = mockLocations.find(loc => loc.user_id === currentuser.user_id);
+      const userLocationData = mockLocations.find(loc => loc.user_id === user.user_id);
       if (userLocationData) {
         setUserLocation(userLocationData.coordinates);
       }
@@ -252,7 +252,7 @@ const LocationTracking = () => {
         setUserLocation(newLocation.coordinates);
         
         // Update the server with the new location
-        axios.post('/api/location/update', newLocation);
+        api.post('/api/location/update', newLocation);
         
         // Update the map
         if (mapRef.current) {
@@ -289,7 +289,7 @@ const LocationTracking = () => {
         // Update locations array
         setLocations(prev => 
           prev.map(loc => 
-            loc.user_id === currentuser.user_id 
+            loc.user_id === user.user_id 
               ? { ...loc, coordinates: newLocation, timestamp: new Date().toISOString() } 
               : loc
           )
@@ -307,7 +307,7 @@ const LocationTracking = () => {
     
     // In a real implementation, we would update the server
     try {
-      // await axios.put('/api/location/privacy', {
+      // await api.put('/api/location/privacy', {
       //   privacy_level: newSharingState ? 'precise' : 'hidden',
       //   shared_with_group_ids: newSharingState ? [groupId] : []
       // });
@@ -485,7 +485,7 @@ const LocationTracking = () => {
                       >
                         {locations.map((location) => {
                           const member = members.find(m => m.user_id === location.user_id);
-                          const isCurrentUser = location.user_id === currentuser.user_id;
+                          const isCurrentUser = location.user_id === user.user_id;
                           
                           // Calculate relative position (this is just for the prototype)
                           const baseLatitude = 40.7128;
@@ -586,7 +586,7 @@ const LocationTracking = () => {
                           primary={
                             <>
                               {member.username}
-                              {member.user_id === currentuser.user_id && ' (You)'}
+                              {member.user_id === user.user_id && ' (You)'}
                             </>
                           }
                           secondary={
@@ -596,7 +596,7 @@ const LocationTracking = () => {
                                   <Typography variant="body2" component="span">
                                     {formatTimestamp(location.timestamp)}
                                   </Typography>
-                                  {member.user_id !== currentuser.user_id && (
+                                  {member.user_id !== user.user_id && (
                                     <Typography variant="body2" component="span" sx={{ ml: 1 }}>
                                       • {formatDistance(distance)} away
                                     </Typography>
@@ -714,7 +714,7 @@ const LocationTracking = () => {
               <Box>
                 <Typography variant="h6">
                   {selectedMember.username}
-                  {selectedMember.user_id === currentuser.user_id && ' (You)'}
+                  {selectedMember.user_id === user.user_id && ' (You)'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Member since {new Date().toLocaleDateString()}
@@ -722,7 +722,7 @@ const LocationTracking = () => {
               </Box>
             </Box>
             
-            {selectedMember.user_id !== currentuser.user_id && (
+            {selectedMember.user_id !== user.user_id && (
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
                   Location Details

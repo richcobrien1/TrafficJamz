@@ -40,7 +40,7 @@ import {
   Menu as MenuIcon,
   ExitToApp as LogoutIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
@@ -67,7 +67,7 @@ const Dashboard = () => {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/groups');
+      const response = await api.get('/api/groups');
       setGroups(response.data.groups);
       setError('');
     } catch (error) {
@@ -80,7 +80,7 @@ const Dashboard = () => {
   
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get('/api/notifications/unread');
+      const response = await api.get('/api/notifications/unread');
       setNotifications(response.data.notifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -110,7 +110,7 @@ const Dashboard = () => {
       setCreateGroupLoading(true);
       setCreateGroupError('');
       
-      const response = await axios.post('/api/groups', {
+      const response = await api.post('/api/groups', {
         name: newGroupName,
         description: newGroupDescription
       });
