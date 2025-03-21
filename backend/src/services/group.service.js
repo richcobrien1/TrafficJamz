@@ -61,13 +61,13 @@ class GroupService {
 
   /**
    * Get groups for a user
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} filters - Optional filters
    * @returns {Promise<Array>} - Array of groups
    */
-  async getGroupsByUserId(userId, filters = {}) {
+  async getGroupsByUserId(user_id, filters = {}) {
     try {
-      const query = { 'members.user_id': userId };
+      const query = { 'members.user_id': user_id };
       
       // Apply status filter
       if (filters.status) {
@@ -90,10 +90,10 @@ class GroupService {
    * Update group details
    * @param {string} groupId - Group ID
    * @param {Object} updateData - Data to update
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<Object>} - Updated group data
    */
-  async updateGroup(groupId, updateData, userId) {
+  async updateGroup(groupId, updateData, user_id) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -101,7 +101,7 @@ class GroupService {
       }
 
       // Check if user has permission to update
-      if (!group.isAdmin(userId)) {
+      if (!group.isAdmin(user_id)) {
         throw new Error('Permission denied');
       }
 
@@ -125,10 +125,10 @@ class GroupService {
    * Update group settings
    * @param {string} groupId - Group ID
    * @param {Object} settings - New settings
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<Object>} - Updated settings
    */
-  async updateGroupSettings(groupId, settings, userId) {
+  async updateGroupSettings(groupId, settings, user_id) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -136,7 +136,7 @@ class GroupService {
       }
 
       // Check if user has permission to update
-      if (!group.isAdmin(userId)) {
+      if (!group.isAdmin(user_id)) {
         throw new Error('Permission denied');
       }
 
@@ -156,10 +156,10 @@ class GroupService {
   /**
    * Delete a group
    * @param {string} groupId - Group ID
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<boolean>} - Success status
    */
-  async deleteGroup(groupId, userId) {
+  async deleteGroup(groupId, user_id) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -167,7 +167,7 @@ class GroupService {
       }
 
       // Check if user is the owner
-      if (!group.isOwner(userId)) {
+      if (!group.isOwner(user_id)) {
         throw new Error('Only the group owner can delete the group');
       }
 
@@ -212,12 +212,12 @@ class GroupService {
   /**
    * Add member to group
    * @param {string} groupId - Group ID
-   * @param {string} userId - User ID to add
+   * @param {string} user_id - User ID to add
    * @param {string} role - Member role
    * @param {string} requesterId - User ID making the request
    * @returns {Promise<Object>} - Updated group
    */
-  async addGroupMember(groupId, userId, role, requesterId) {
+  async addGroupMember(groupId, user_id, role, requesterId) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -231,7 +231,7 @@ class GroupService {
       }
 
       // Check if user already exists in the group
-      if (group.isMember(userId)) {
+      if (group.isMember(user_id)) {
         throw new Error('User is already a member of this group');
       }
 
@@ -241,13 +241,13 @@ class GroupService {
       }
 
       // Verify user exists
-      const user = await User.findOne({ where: { user_id: userId } })
+      const user = await User.findOne({ where: { user_id: user_id } })
       if (!user) {
         throw new Error('User not found');
       }
 
       // Add member
-      group.addMember(userId, role || 'member');
+      group.addMember(user_id, role || 'member');
       await group.save();
 
       return group;
@@ -259,12 +259,12 @@ class GroupService {
   /**
    * Update group member
    * @param {string} groupId - Group ID
-   * @param {string} userId - User ID to update
+   * @param {string} user_id - User ID to update
    * @param {Object} updateData - Data to update
    * @param {string} requesterId - User ID making the request
    * @returns {Promise<Object>} - Updated member
    */
-  async updateGroupMember(groupId, userId, updateData, requesterId) {
+  async updateGroupMember(groupId, user_id, updateData, requesterId) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -277,7 +277,7 @@ class GroupService {
       }
 
       // Find member
-      const memberIndex = group.members.findIndex(member => member.user_id === userId);
+      const memberIndex = group.members.findIndex(member => member.user_id === user_id);
       if (memberIndex === -1) {
         throw new Error('Member not found');
       }
@@ -306,11 +306,11 @@ class GroupService {
   /**
    * Remove member from group
    * @param {string} groupId - Group ID
-   * @param {string} userId - User ID to remove
+   * @param {string} user_id - User ID to remove
    * @param {string} requesterId - User ID making the request
    * @returns {Promise<boolean>} - Success status
    */
-  async removeGroupMember(groupId, userId, requesterId) {
+  async removeGroupMember(groupId, user_id, requesterId) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -319,14 +319,14 @@ class GroupService {
 
       // Check if requester has permission to remove members
       const isAdmin = group.isAdmin(requesterId);
-      const isSelfRemoval = userId === requesterId;
+      const isSelfRemoval = user_id === requesterId;
       
       if (!isAdmin && !isSelfRemoval) {
         throw new Error('Permission denied');
       }
 
       // Cannot remove owner
-      const member = group.members.find(member => member.user_id === userId);
+      const member = group.members.find(member => member.user_id === user_id);
       if (!member) {
         throw new Error('Member not found');
       }
@@ -336,7 +336,7 @@ class GroupService {
       }
 
       // Remove member
-      group.removeMember(userId);
+      group.removeMember(user_id);
       await group.save();
 
       return true;
@@ -458,13 +458,13 @@ class GroupService {
 
   /**
    * Get user invitations
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @returns {Promise<Array>} - Array of invitations
    */
-  async getUserInvitations(userId) {
+  async getUserInvitations(user_id) {
     try {
       // Find user
-      const user = await User.findOne({ where: { user_id: userId } })
+      const user = await User.findOne({ where: { user_id: user_id } })
       if (!user) {
         throw new Error('User not found');
       }
@@ -503,13 +503,13 @@ class GroupService {
   /**
    * Accept group invitation
    * @param {string} invitationId - Invitation ID
-   * @param {string} userId - User ID accepting the invitation
+   * @param {string} user_id - User ID accepting the invitation
    * @returns {Promise<Object>} - Group data
    */
-  async acceptInvitation(invitationId, userId) {
+  async acceptInvitation(invitationId, user_id) {
     try {
       // Find user
-      const user = await User.findOne({ where: { user_id: userId } })
+      const user = await User.findOne({ where: { user_id: user_id } })
       if (!user) {
         throw new Error('User not found');
       }
@@ -544,8 +544,8 @@ class GroupService {
       group.invitations[invitationIndex].status = 'accepted';
 
       // Add user to group
-      if (!group.isMember(userId)) {
-        group.addMember(userId, 'member');
+      if (!group.isMember(user_id)) {
+        group.addMember(user_id, 'member');
       }
 
       await group.save();
@@ -558,13 +558,13 @@ class GroupService {
   /**
    * Decline group invitation
    * @param {string} invitationId - Invitation ID
-   * @param {string} userId - User ID declining the invitation
+   * @param {string} user_id - User ID declining the invitation
    * @returns {Promise<boolean>} - Success status
    */
-  async declineInvitation(invitationId, userId) {
+  async declineInvitation(invitationId, user_id) {
     try {
       // Find user
-      const user = await User.findOne({ where: { user_id: userId } })
+      const user = await User.findOne({ where: { user_id: user_id } })
       if (!user) {
         throw new Error('User not found');
       }

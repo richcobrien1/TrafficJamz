@@ -49,23 +49,23 @@ NotificationSchema.index({ user_id: 1, type: 1 });
 NotificationSchema.index({ expires_at: 1 }, { expireAfterSeconds: 0 }); // TTL index for auto-deletion
 
 // Static methods
-NotificationSchema.statics.findUnreadByUserId = function(userId) {
+NotificationSchema.statics.findUnreadByUserId = function(user_id) {
   return this.find({ 
-    user_id: userId,
+    user_id: user_id,
     read: false
   }).sort({ createdAt: -1 });
 };
 
-NotificationSchema.statics.findByUserIdAndType = function(userId, type) {
+NotificationSchema.statics.findByUserIdAndType = function(user_id, type) {
   return this.find({ 
-    user_id: userId,
+    user_id: user_id,
     type
   }).sort({ createdAt: -1 });
 };
 
-NotificationSchema.statics.markAllAsRead = function(userId) {
+NotificationSchema.statics.markAllAsRead = function(user_id) {
   return this.updateMany(
-    { user_id: userId, read: false },
+    { user_id: user_id, read: false },
     { $set: { read: true } }
   );
 };

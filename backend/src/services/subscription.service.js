@@ -23,12 +23,12 @@ class SubscriptionService {
 
   /**
    * Get user's current subscription
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @returns {Promise<Object>} - Subscription data
    */
-  async getUserSubscription(userId) {
+  async getUserSubscription(user_id) {
     try {
-      const subscription = await Subscription.findActiveByUserId(userId);
+      const subscription = await Subscription.findActiveByUserId(user_id);
       
       if (!subscription) {
         return {
@@ -63,16 +63,16 @@ class SubscriptionService {
 
   /**
    * Subscribe user to a plan
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} planId - Subscription plan ID
    * @param {string} paymentMethodId - Payment method ID
    * @param {boolean} autoRenew - Auto-renew flag
    * @returns {Promise<Object>} - Subscription data
    */
-  async subscribe(userId, planId, paymentMethodId, autoRenew = true) {
+  async subscribe(user_id, planId, paymentMethodId, autoRenew = true) {
     try {
       // Check if user exists
-      const user = await User.findOne({ where: { user_id: userId } })
+      const user = await User.findOne({ where: { user_id: user_id } })
       if (!user) {
         throw new Error('User not found');
       }
@@ -84,7 +84,7 @@ class SubscriptionService {
       }
 
       // Check if user already has an active subscription
-      const existingSubscription = await Subscription.findActiveByUserId(userId);
+      const existingSubscription = await Subscription.findActiveByUserId(user_id);
       if (existingSubscription) {
         throw new Error('User already has an active subscription');
       }
@@ -120,7 +120,7 @@ class SubscriptionService {
       // Create subscription
       const subscription = await Subscription.create({
         id: uuidv4(),
-        user_id: userId,
+        user_id: user_id,
         plan_id: planId,
         status: plan.trial_period_days > 0 ? 'trial' : 'active',
         start_date: startDate,
@@ -155,13 +155,13 @@ class SubscriptionService {
 
   /**
    * Cancel user subscription
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @returns {Promise<Object>} - Updated subscription
    */
-  async cancelSubscription(userId) {
+  async cancelSubscription(user_id) {
     try {
       // Get active subscription
-      const subscription = await Subscription.findActiveByUserId(userId);
+      const subscription = await Subscription.findActiveByUserId(user_id);
       if (!subscription) {
         throw new Error('No active subscription found');
       }
@@ -190,14 +190,14 @@ class SubscriptionService {
 
   /**
    * Update payment method
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} paymentMethodId - New payment method ID
    * @returns {Promise<boolean>} - Success status
    */
-  async updatePaymentMethod(userId, paymentMethodId) {
+  async updatePaymentMethod(user_id, paymentMethodId) {
     try {
       // Get active subscription
-      const subscription = await Subscription.findActiveByUserId(userId);
+      const subscription = await Subscription.findActiveByUserId(user_id);
       if (!subscription) {
         throw new Error('No active subscription found');
       }
@@ -218,10 +218,10 @@ class SubscriptionService {
 
   /**
    * Get payment history
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @returns {Promise<Array>} - Array of payments
    */
-  async getPaymentHistory(userId) {
+  async getPaymentHistory(user_id) {
     try {
       // In a real implementation, we would:
       // 1. Fetch payment history from Stripe
@@ -272,14 +272,14 @@ class SubscriptionService {
 
   /**
    * Check if user has access to a feature
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} feature - Feature name
    * @returns {Promise<boolean>} - Access status
    */
-  async hasFeatureAccess(userId, feature) {
+  async hasFeatureAccess(user_id, feature) {
     try {
       // Get active subscription
-      const subscription = await Subscription.findActiveByUserId(userId);
+      const subscription = await Subscription.findActiveByUserId(user_id);
       if (!subscription) {
         return false;
       }

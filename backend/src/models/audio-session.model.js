@@ -126,27 +126,27 @@ AudioSessionSchema.statics.findActiveByGroupId = function(groupId) {
   });
 };
 
-AudioSessionSchema.statics.findByUserId = function(userId) {
+AudioSessionSchema.statics.findByUserId = function(user_id) {
   return this.find({ 
-    'participants.user_id': userId
+    'participants.user_id': user_id
   });
 };
 
 // Instance methods
-AudioSessionSchema.methods.isParticipant = function(userId) {
-  return this.participants.some(participant => participant.user_id === userId);
+AudioSessionSchema.methods.isParticipant = function(user_id) {
+  return this.participants.some(participant => participant.user_id === user_id);
 };
 
-AudioSessionSchema.methods.addParticipant = function(userId, deviceType = 'web') {
-  if (!this.isParticipant(userId)) {
+AudioSessionSchema.methods.addParticipant = function(user_id, deviceType = 'web') {
+  if (!this.isParticipant(user_id)) {
     this.participants.push({
-      user_id: userId,
+      user_id: user_id,
       joined_at: new Date(),
       device_type: deviceType
     });
   } else {
     // Update existing participant
-    const participant = this.participants.find(p => p.user_id === userId);
+    const participant = this.participants.find(p => p.user_id === user_id);
     if (participant.left_at) {
       participant.joined_at = new Date();
       participant.left_at = undefined;
@@ -155,16 +155,16 @@ AudioSessionSchema.methods.addParticipant = function(userId, deviceType = 'web')
   return this;
 };
 
-AudioSessionSchema.methods.removeParticipant = function(userId) {
-  const participant = this.participants.find(p => p.user_id === userId && !p.left_at);
+AudioSessionSchema.methods.removeParticipant = function(user_id) {
+  const participant = this.participants.find(p => p.user_id === user_id && !p.left_at);
   if (participant) {
     participant.left_at = new Date();
   }
   return this;
 };
 
-AudioSessionSchema.methods.updateParticipantStatus = function(userId, updates) {
-  const participant = this.participants.find(p => p.user_id === userId && !p.left_at);
+AudioSessionSchema.methods.updateParticipantStatus = function(user_id, updates) {
+  const participant = this.participants.find(p => p.user_id === user_id && !p.left_at);
   if (participant) {
     Object.assign(participant, updates);
   }
@@ -184,14 +184,14 @@ AudioSessionSchema.methods.addToPlaylist = function(track, addedBy) {
   return this;
 };
 
-AudioSessionSchema.methods.updateCurrentlyPlaying = function(track, userId) {
+AudioSessionSchema.methods.updateCurrentlyPlaying = function(track, user_id) {
   if (!this.music) {
     this.music = { playlist: [] };
   }
   
   this.music.currently_playing = {
     ...track,
-    controlled_by: userId,
+    controlled_by: user_id,
     started_at: new Date(),
     position: 0
   };

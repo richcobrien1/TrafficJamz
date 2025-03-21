@@ -48,18 +48,18 @@ ProximityAlertSchema.statics.findActiveByGroupId = function(groupId) {
   });
 };
 
-ProximityAlertSchema.statics.findByUserId = function(userId) {
+ProximityAlertSchema.statics.findByUserId = function(user_id) {
   return this.find({ 
     $or: [
-      { user_id: userId },
-      { target_user_id: userId }
+      { user_id: user_id },
+      { target_user_id: user_id }
     ]
   });
 };
 
-ProximityAlertSchema.statics.findActiveByUserIds = function(userId, targetUserId) {
+ProximityAlertSchema.statics.findActiveByUserIds = function(user_id, targetUserId) {
   return this.findOne({ 
-    user_id: userId,
+    user_id: user_id,
     target_user_id: targetUserId,
     status: 'active'
   });

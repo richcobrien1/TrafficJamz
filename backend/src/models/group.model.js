@@ -118,35 +118,35 @@ GroupSchema.index({ 'invitations.email': 1 });
 GroupSchema.index({ status: 1, privacy_level: 1 });
 
 // Static methods
-GroupSchema.statics.findByUserId = function(userId) {
-  return this.find({ 'members.user_id': userId });
+GroupSchema.statics.findByUserId = function(user_id) {
+  return this.find({ 'members.user_id': user_id });
 };
 
-GroupSchema.statics.findActiveByUserId = function(userId) {
+GroupSchema.statics.findActiveByUserId = function(user_id) {
   return this.find({ 
-    'members.user_id': userId,
+    'members.user_id': user_id,
     status: 'active'
   });
 };
 
 // Instance methods
-GroupSchema.methods.isMember = function(userId) {
-  return this.members.some(member => member.user_id === userId);
+GroupSchema.methods.isMember = function(user_id) {
+  return this.members.some(member => member.user_id === user_id);
 };
 
-GroupSchema.methods.isAdmin = function(userId) {
-  const member = this.members.find(member => member.user_id === userId);
+GroupSchema.methods.isAdmin = function(user_id) {
+  const member = this.members.find(member => member.user_id === user_id);
   return member && (member.role === 'admin' || member.role === 'owner');
 };
 
-GroupSchema.methods.isOwner = function(userId) {
-  return this.owner_id === userId;
+GroupSchema.methods.isOwner = function(user_id) {
+  return this.owner_id === user_id;
 };
 
-GroupSchema.methods.addMember = function(userId, role = 'member') {
-  if (!this.isMember(userId)) {
+GroupSchema.methods.addMember = function(user_id, role = 'member') {
+  if (!this.isMember(user_id)) {
     this.members.push({
-      user_id: userId,
+      user_id: user_id,
       role,
       joined_at: new Date(),
       status: 'active'
@@ -155,8 +155,8 @@ GroupSchema.methods.addMember = function(userId, role = 'member') {
   return this;
 };
 
-GroupSchema.methods.removeMember = function(userId) {
-  this.members = this.members.filter(member => member.user_id !== userId);
+GroupSchema.methods.removeMember = function(user_id) {
+  this.members = this.members.filter(member => member.user_id !== user_id);
   return this;
 };
 

@@ -81,10 +81,10 @@ const Subscription = sequelize.define('Subscription', {
 });
 
 // Static methods
-Subscription.findActiveByUserId = function(userId) {
+Subscription.findActiveByUserId = function(user_id) {
   return this.findOne({
     where: {
-      user_id: userId,
+      user_id: user_id,
       status: ['active', 'trial'],
       end_date: {
         [sequelize.Op.or]: [
@@ -98,10 +98,10 @@ Subscription.findActiveByUserId = function(userId) {
   });
 };
 
-Subscription.findByUserId = function(userId) {
+Subscription.findByUserId = function(user_id) {
   return this.findAll({
     where: {
-      user_id: userId
+      user_id: user_id
     },
     order: [['createdAt', 'DESC']]
   });

@@ -131,11 +131,11 @@ class AudioService {
   /**
    * Join an audio session
    * @param {string} sessionId - Audio session ID
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} deviceType - Device type
    * @returns {Promise<Object>} - Updated audio session
    */
-  async joinAudioSession(sessionId, userId, deviceType = 'web') {
+  async joinAudioSession(sessionId, user_id, deviceType = 'web') {
     try {
       const session = await AudioSession.findById(sessionId);
       if (!session) {
@@ -148,12 +148,12 @@ class AudioService {
 
       // Check if user is a member of the group
       const group = await Group.findById(session.group_id);
-      if (!group || !group.isMember(userId)) {
+      if (!group || !group.isMember(user_id)) {
         throw new Error('User is not a member of this group');
       }
 
       // Add user to participants if not already there
-      session.addParticipant(userId, deviceType);
+      session.addParticipant(user_id, deviceType);
       await session.save();
 
       // Get router
@@ -174,11 +174,11 @@ class AudioService {
   /**
    * Create WebRTC transport for a participant
    * @param {string} sessionId - Audio session ID
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {string} direction - Transport direction (send/receive)
    * @returns {Promise<Object>} - Transport parameters
    */
-  async createWebRtcTransport(sessionId, userId, direction) {
+  async createWebRtcTransport(sessionId, user_id, direction) {
     try {
       // Get room
       const room = this.rooms.get(sessionId);
@@ -195,7 +195,7 @@ class AudioService {
       // Store transport
       room.transports.set(transport.id, {
         transport,
-        userId,
+        user_id,
         clientId,
         direction
       });
@@ -205,7 +205,7 @@ class AudioService {
       if (session) {
         session.transports.push({
           id: transport.id,
-          user_id: userId,
+          user_id: user_id,
           client_id: clientId,
           direction
         });
@@ -283,7 +283,7 @@ class AudioService {
       // Store producer
       room.producers.set(producer.id, {
         producer,
-        userId: transportData.userId
+        user_id: transportData.user_id
       });
 
       // Update session in database
@@ -291,14 +291,14 @@ class AudioService {
       if (session) {
         session.producers.push({
           id: producer.id,
-          user_id: transportData.userId,
+          user_id: transportData.user_id,
           kind: 'audio',
           transport_id: transportId
         });
         await session.save();
       }
 
-      return { id: producer.id };
+      return { user_id: producer.id };
     } catch (error) {
       throw error;
     }
@@ -350,7 +350,7 @@ class AudioService {
       // Store consumer
       room.consumers.set(consumer.id, {
         consumer,
-        userId: transportData.userId,
+        user_id: transportData.user_id,
         producerId
       });
 
@@ -359,7 +359,7 @@ class AudioService {
       if (session) {
         session.consumers.push({
           id: consumer.id,
-          user_id: transportData.userId,
+          user_id: transportData.user_id,
           producer_id: producerId,
           transport_id: transportId
         });
@@ -371,7 +371,7 @@ class AudioService {
         producerId,
         kind: consumer.kind,
         rtpParameters: consumer.rtpParameters,
-        producerUserId: producerData.userId
+        producerUserId: producerData.user_id
       };
     } catch (error) {
       throw error;
@@ -409,11 +409,11 @@ class AudioService {
   /**
    * Update participant status
    * @param {string} sessionId - Audio session ID
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @param {Object} status - Status updates
    * @returns {Promise<Object>} - Updated participant
    */
-  async updateParticipantStatus(sessionId, userId, status) {
+  async updateParticipantStatus(sessionId, user_id, status) {
     try {
       const session = await AudioSession.findById(sessionId);
       if (!session) {
@@ -421,11 +421,11 @@ class AudioService {
       }
 
       // Update participant status
-      session.updateParticipantStatus(userId, status);
+      session.updateParticipantStatus(user_id, status);
       await session.save();
 
       // Get participant
-      const participant = session.participants.find(p => p.user_id === userId && !p.left_at);
+      const participant = session.participants.find(p => p.user_id === user_id && !p.left_at);
       return participant;
     } catch (error) {
       throw error;
@@ -435,10 +435,10 @@ class AudioService {
   /**
    * Leave audio session
    * @param {string} sessionId - Audio session ID
-   * @param {string} userId - User ID
+   * @param {string} user_id - User ID
    * @returns {Promise<boolean>} - Success status
    */
-  async leaveAudioSession(sessionId, userId) {
+  async leaveAudioSession(sessionId, user_id) {
     try {
       const session = await AudioSession.findById(sessionId);
       if (!session) {
@@ -446,7 +446,7 @@ class AudioService {
       }
 
       // Remove participant
-      session.removeParticipant(userId);
+      session.removeParticipant(user_id);
       await session.save();
 
       // Clean up WebRTC resources
@@ -454,7 +454,7 @@ class AudioService {
       if (room) {
         // Close all transports for this user
         for (const [transportId, transportData] of room.transports.entries()) {
-          if (transportData.userId === userId) {
+          if (transportData.user_id === user_id) {
             transportData.transport.close();
             room.transports.delete(transportId);
           }
@@ -462,7 +462,7 @@ class AudioService {
 
         // Close all producers for this user
         for (const [producerId, producerData] of room.producers.entries()) {
-          if (producerData.userId === userId) {
+          if (producerData.user_id === user_id) {
             producerData.producer.close();
             room.producers.delete(producerId);
           }
@@ -470,7 +470,7 @@ class AudioService {
 
         // Close all consumers for this user
         for (const [consumerId, consumerData] of room.consumers.entries()) {
-          if (consumerData.userId === userId) {
+          if (consumerData.user_id === user_id) {
             consumerData.consumer.close();
             room.consumers.delete(consumerId);
           }
@@ -486,10 +486,10 @@ class AudioService {
   /**
    * End audio session
    * @param {string} sessionId - Audio session ID
-   * @param {string} userId - User ID making the request
+   * @param {string} user_id - User ID making the request
    * @returns {Promise<Object>} - Updated audio session
    */
-  async endAudioSession(sessionId, userId) {
+  async endAudioSession(sessionId, user_id) {
     try {
       const session = await AudioSession.findById(sessionId);
       if (!session) {
@@ -498,7 +498,7 @@ class AudioService {
 
       // Check if user is the creator or an admin
       const group = await Group.findById(session.group_id);
-      if (!group || (!group.isAdmin(userId) && session.creator_id !== userId)) {
+      if (!group || (!group.isAdmin(user_id) && session.creator_id !== user_id)) {
         throw new Error('Permission denied');
       }
 
@@ -529,10 +529,10 @@ class AudioService {
    * Add music to session playlist
    * @param {string} sessionId - Audio session ID
    * @param {Object} track - Track data
-   * @param {string} userId - User ID adding the track
+   * @param {string} user_id - User ID adding the track
    * @returns {Promise<Object>} - Updated playlist
    */
-  async addMusicToPlaylist(sessionId, track, userId) {
+  async addMusicToPlaylist(sessionId, track, user_id) {
     try {
       const session = await AudioSession.findById(sessionId);
       if (!session) {
@@ -548,7 +548,7 @@ class AudioService {
       }
 
       // Add track to playlist
-      session.addToPlaylist(track, userId);
+      session.addToPlaylist(track, user_id);
       await session.save();
 
       return session.music.playlist;
@@ -562,10 +562,10 @@ class AudioService {
    * @param {string} sessionId - Audio session ID
    * @param {string} action - Playback action
    * @param {Object} options - Additional options
-   * @param {string} userId - User ID controlling playback
+   * @param {string} user_id - User ID controlling playback
    * @returns {Promise<Object>} - Updated music status
    */
-  async controlMusicPlayback(sessionId, action, options, userId) {
+  async controlMusicPlayback(sessionId, action, options, user_id) {
     try {
       const session = await AudioSession.findById(sessionId);
       if (!session) {
@@ -593,15 +593,15 @@ class AudioService {
             if (!track) {
               throw new Error('Track not found in playlist');
             }
-            session.updateCurrentlyPlaying(track, userId);
+            session.updateCurrentlyPlaying(track, user_id);
           } else if (session.music.currently_playing) {
             // Resume current track
-            session.music.currently_playing.controlled_by = userId;
+            session.music.currently_playing.controlled_by = user_id;
             session.music.currently_playing.position = options.position || 0;
             session.music.currently_playing.started_at = new Date();
           } else if (session.music.playlist.length > 0) {
             // Play first track in playlist
-            session.updateCurrentlyPlaying(session.music.playlist[0], userId);
+            session.updateCurrentlyPlaying(session.music.playlist[0], user_id);
           } else {
             throw new Error('No tracks in playlist');
           }
@@ -611,7 +611,7 @@ class AudioService {
           if (!session.music.currently_playing) {
             throw new Error('No track is currently playing');
           }
-          session.music.currently_playing.controlled_by = userId;
+          session.music.currently_playing.controlled_by = user_id;
           session.music.currently_playing.position = options.position || 0;
           break;
 
@@ -627,7 +627,7 @@ class AudioService {
           
           // Get next track
           const nextIndex = (currentIndex + 1) % session.music.playlist.length;
-          session.updateCurrentlyPlaying(session.music.playlist[nextIndex], userId);
+          session.updateCurrentlyPlaying(session.music.playlist[nextIndex], user_id);
           break;
 
         case 'previous':
@@ -642,7 +642,7 @@ class AudioService {
           
           // Get previous track
           const prevIndex = (currIndex - 1 + session.music.playlist.length) % session.music.playlist.length;
-          session.updateCurrentlyPlaying(session.music.playlist[prevIndex], userId);
+          session.updateCurrentlyPlaying(session.music.playlist[prevIndex], user_id);
           break;
 
         default:

@@ -76,19 +76,19 @@ router.get('/group/:groupId',
 );
 
 /**
- * @route GET /api/location/user/:userId
+ * @route GET /api/location/user/:user_id
  * @desc Get user location
  * @access Private
  */
-router.get('/user/:userId',
+router.get('/user/:user_id',
   passport.authenticate('jwt', { session: false }),
   [
-    param('userId').exists().withMessage('Valid user ID is required'),
+    param('user_id').exists().withMessage('Valid user ID is required'),
     validate
   ],
   async (req, res) => {
     try {
-      const location = await locationService.getUserLocation(req.params.userId, req.user.user_id);
+      const location = await locationService.getUserLocation(req.params.user_id, req.user.user_id);
       res.json({ success: true, location });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -97,14 +97,14 @@ router.get('/user/:userId',
 );
 
 /**
- * @route GET /api/location/history/:userId
+ * @route GET /api/location/history/:user_id
  * @desc Get user location history
  * @access Private
  */
-router.get('/history/:userId',
+router.get('/history/:user_id',
   passport.authenticate('jwt', { session: false }),
   [
-    param('userId').exists().withMessage('Valid user ID is required'),
+    param('user_id').exists().withMessage('Valid user ID is required'),
     validate
   ],
   async (req, res) => {
@@ -114,7 +114,7 @@ router.get('/history/:userId',
       const groupId = req.query.group_id;
 
       const history = await locationService.getUserLocationHistory(
-        req.params.userId,
+        req.params.user_id,
         startDate,
         endDate,
         groupId,
