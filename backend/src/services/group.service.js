@@ -17,8 +17,8 @@ class GroupService {
     try {
       // Create new group
       const group = new Group({
-        name: groupData.name,
-        description: groupData.description || '',
+        group_name: groupData.name,
+        group_description: groupData.description || '',
         owner_id: ownerId,
         avatar_url: groupData.avatar_url || '',
         privacy_level: groupData.privacy_level || 'private',
