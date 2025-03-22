@@ -17,6 +17,7 @@ class GroupService {
     try {
       // Create new group
       const group = new Group({
+        group_id: uuidv4(),
         group_name: groupData.name,
         group_description: groupData.description || '',
         owner_id: ownerId,
@@ -28,6 +29,7 @@ class GroupService {
           ...groupData.settings
         },
         group_members: [{
+          group_id: group.group_id,
           user_id: ownerId,
           role: 'owner',
           joined_at: new Date(),

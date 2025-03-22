@@ -6,7 +6,7 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Grid, 
+  Grid2, 
   Link, 
   Paper,
   Avatar,
@@ -46,7 +46,7 @@ const Login = () => {
   };
   
   return (
-    <Container component="main" maxWidth="xs">
+    <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
           <LockOutlinedIcon />
@@ -95,18 +95,21 @@ const Login = () => {
           >
             {loading ? <CircularProgress size={24} /> : 'Sign In'}
           </Button>
-          <Grid container>
-            <Grid item xs>
+          <Grid2 container spacing={3} sx={{
+              justifyContent: "center",
+              alignItems: "center",
+            }}>
+            <Grid2 item xs>
               <Link component={RouterLink} to="/forgot-password" variant="body2">
-                Forgot password?
+                Forgot my password?
               </Link>
-            </Grid>
-            <Grid item>
+            </Grid2>
+            <Grid2 item xs>
               <Link component={RouterLink} to="/register" variant="body2">
                 {"Don't have an account? Sign Up"}
               </Link>
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
         </Box>
       </Paper>
       <Box mt={4}>

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Box, 
-  Typography, 
-  Grid, 
+  Typography,
+  Grid2, 
   Paper, 
   Button, 
   Fab, 
@@ -68,6 +68,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const response = await api.get('/api/groups');
+      console.log('fetchGroups: ' + response);
       setGroups(response.data.groups);
       setError('');
     } catch (error) {
@@ -111,11 +112,12 @@ const Dashboard = () => {
       setCreateGroupError('');
       
       const response = await api.post('/api/groups', {
-        name: newGroupName,
-        description: newGroupDescription
+        group_name: newGroupName,
+        group_description: newGroupDescription
       });
       
       setGroups([...groups, response.data.group]);
+      console.log('handleCreateGroup: ' + response);
       setOpenCreateDialog(false);
       setNewGroupName('');
       setNewGroupDescription('');
@@ -279,9 +281,9 @@ const Dashboard = () => {
             </Button>
           </Paper>
         ) : (
-          <Grid container spacing={3}>
+          <Grid2 container spacing={3}>
             {groups.map((group) => (
-              <Grid item xs={12} sm={6} md={4} key={group.id}>
+              <Grid2 item xs={12} sm={6} md={4} key={group.id}>
                 <Paper 
                   sx={{ 
                     p: 3, 
@@ -343,9 +345,9 @@ const Dashboard = () => {
                     </Button>
                   </Box>
                 </Paper>
-              </Grid>
+              </Grid2>
             ))}
-          </Grid>
+          </Grid2>
         )}
       </Container>
       

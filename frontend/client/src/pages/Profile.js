@@ -4,7 +4,7 @@ import {
   Container, 
   Box, 
   Typography, 
-  Grid, 
+  Grid2, 
   Paper, 
   Button, 
   CircularProgress,
@@ -111,8 +111,8 @@ const Profile = () => {
       </AppBar>
       
       <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
+        <Grid2 container spacing={3}>
+          <Grid2 item xs={12} md={4}>
             <Paper sx={{ p: 3, mb: 3 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                 <Avatar 
@@ -186,9 +186,9 @@ const Profile = () => {
                 </ListItem>
               </List>
             </Paper>
-          </Grid>
+          </Grid2>
           
-          <Grid item xs={12} md={8}>
+          <Grid2 item xs={12} md={8}>
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Personal Information
@@ -207,8 +207,8 @@ const Profile = () => {
               )}
               
               <Box component="form" onSubmit={handleSubmit}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
+                <Grid2 container spacing={2}>
+                  <Grid2 item xs={12}>
                     <TextField
                       fullWidth
                       id="username"
@@ -217,8 +217,8 @@ const Profile = () => {
                       value={formData.username}
                       onChange={handleChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </Grid2>
+                  <Grid2 item xs={12}>
                     <TextField
                       fullWidth
                       id="email"
@@ -227,8 +227,8 @@ const Profile = () => {
                       value={formData.email}
                       onChange={handleChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </Grid2>
+                  <Grid2 item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       id="first_name"
@@ -237,8 +237,8 @@ const Profile = () => {
                       value={formData.first_name}
                       onChange={handleChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </Grid2>
+                  <Grid2 item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       id="last_name"
@@ -247,8 +247,8 @@ const Profile = () => {
                       value={formData.last_name}
                       onChange={handleChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </Grid2>
+                  <Grid2 item xs={12}>
                     <TextField
                       fullWidth
                       id="phone_number"
@@ -257,8 +257,8 @@ const Profile = () => {
                       value={formData.phone_number}
                       onChange={handleChange}
                     />
-                  </Grid>
-                </Grid>
+                  </Grid2>
+                </Grid2>
                 
                 <Button
                   type="submit"
@@ -337,8 +337,8 @@ const Profile = () => {
                 Save Notification Settings
               </Button>
             </Paper>
-          </Grid>
-        </Grid>
+          </Grid2>
+        </Grid2>
       </Container>
     </Box>
   );
