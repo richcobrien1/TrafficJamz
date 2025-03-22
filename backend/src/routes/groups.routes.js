@@ -53,8 +53,8 @@ router.post('/',
   async (req, res) => {
     try {
       const groupData = {
-        name: req.body.name,
-        description: req.body.description,
+        group_name: req.body.name,
+        group_description: req.body.description,
         privacy_level: req.body.privacy_level,
         max_members: req.body.max_members,
         settings: req.body.settings,
@@ -70,11 +70,11 @@ router.post('/',
 );
 
 /**
- * @route GET /api/groups/:id
+ * @route GET /api/groups/:group_id
  * @desc Get group by ID
  * @access Private
  */
-router.get('/:id',
+router.get('/:group_id',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -97,11 +97,11 @@ router.get('/:id',
 );
 
 /**
- * @route PUT /api/groups/:id
+ * @route PUT /api/groups/:group_id
  * @desc Update group details
  * @access Private
  */
-router.put('/:id',
+router.put('/:group_id',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -114,8 +114,8 @@ router.put('/:id',
   async (req, res) => {
     try {
       const updateData = {
-        name: req.body.name,
-        description: req.body.description,
+        group_name: req.body.name,
+        group_description: req.body.description,
         privacy_level: req.body.privacy_level,
         avatar_url: req.body.avatar_url
       };
@@ -129,11 +129,11 @@ router.put('/:id',
 );
 
 /**
- * @route PUT /api/groups/:id/settings
+ * @route PUT /api/groups/:group_id/settings
  * @desc Update group settings
  * @access Private
  */
-router.put('/:id/settings',
+router.put('/:group_id/settings',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -152,11 +152,11 @@ router.put('/:id/settings',
 );
 
 /**
- * @route DELETE /api/groups/:id
+ * @route DELETE /api/groups/:group_id
  * @desc Delete a group
  * @access Private
  */
-router.delete('/:id',
+router.delete('/:group_id',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -173,11 +173,11 @@ router.delete('/:id',
 );
 
 /**
- * @route GET /api/groups/:id/members
+ * @route GET /api/groups/:group_id/members
  * @desc Get group members
  * @access Private
  */
-router.get('/:id/members',
+router.get('/:group_id/members',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -199,11 +199,11 @@ router.get('/:id/members',
 );
 
 /**
- * @route POST /api/groups/:id/members
+ * @route POST /api/groups/:group_id/members
  * @desc Add member to group
  * @access Private
  */
-router.post('/:id/members',
+router.post('/:group_id/members',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -223,11 +223,11 @@ router.post('/:id/members',
 );
 
 /**
- * @route PUT /api/groups/:id/members/:userId
+ * @route PUT /api/groups/:group_id/members/:userId
  * @desc Update group member
  * @access Private
  */
-router.put('/:id/members/:userId',
+router.put('/:group_id/members/:userId',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -254,11 +254,11 @@ router.put('/:id/members/:userId',
 );
 
 /**
- * @route DELETE /api/groups/:id/members/:userId
+ * @route DELETE /api/groups/:group_id/members/:userId
  * @desc Remove member from group
  * @access Private
  */
-router.delete('/:id/members/:userId',
+router.delete('/:group_id/members/:userId',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -276,11 +276,11 @@ router.delete('/:id/members/:userId',
 );
 
 /**
- * @route POST /api/groups/:id/invitations
+ * @route POST /api/groups/:group_id/invitations
  * @desc Invite user to group
  * @access Private
  */
-router.post('/:id/invitations',
+router.post('/:group_id/invitations',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -299,11 +299,11 @@ router.post('/:id/invitations',
 );
 
 /**
- * @route GET /api/groups/:id/invitations
+ * @route GET /api/groups/:group_id/invitations
  * @desc Get group invitations
  * @access Private
  */
-router.get('/:id/invitations',
+router.get('/:group_id/invitations',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
@@ -320,11 +320,11 @@ router.get('/:id/invitations',
 );
 
 /**
- * @route DELETE /api/groups/:id/invitations/:invitationId
+ * @route DELETE /api/groups/:group_id/invitations/:invitationId
  * @desc Cancel group invitation
  * @access Private
  */
-router.delete('/:id/invitations/:invitationId',
+router.delete('/:group_id/invitations/:invitationId',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
