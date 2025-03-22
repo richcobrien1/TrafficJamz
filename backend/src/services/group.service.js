@@ -27,7 +27,7 @@ class GroupService {
           ...Group.schema.paths.settings.default(),
           ...groupData.settings
         },
-        members: [{
+        group_members: [{
           user_id: ownerId,
           role: 'owner',
           joined_at: new Date(),
@@ -67,7 +67,7 @@ class GroupService {
    */
   async getGroupsByUserId(user_id, filters = {}) {
     try {
-      const query = { 'members.user_id': user_id };
+      const query = { 'group_members.user_id': user_id };
       
       // Apply status filter
       if (filters.status) {
@@ -76,7 +76,7 @@ class GroupService {
       
       // Apply role filter
       if (filters.role) {
-        query['members.role'] = filters.role;
+        query['group_members.role'] = filters.role;
       }
       
       const groups = await Group.find(query);
