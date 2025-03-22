@@ -5,7 +5,7 @@ import {
   Badge,
   Box, 
   Typography, 
-  Grid, 
+  Grid2, 
   Paper, 
   Button, 
   CircularProgress,
@@ -420,8 +420,8 @@ const LocationTracking = () => {
         </Container>
       ) : (
         <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
+          <Grid2 container spacing={3}>
+            <Grid2 item xs={12} md={8}>
               <Paper 
                 sx={{ 
                   p: 2, 
@@ -525,9 +525,9 @@ const LocationTracking = () => {
                   )}
                 </Box>
               </Paper>
-            </Grid>
+            </Grid2>
             
-            <Grid item xs={12} md={4}>
+            <Grid2 item xs={12} md={4}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   Group Members
@@ -649,8 +649,8 @@ const LocationTracking = () => {
                   </Button>
                 </Paper>
               )}
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
         </Container>
       )}
       

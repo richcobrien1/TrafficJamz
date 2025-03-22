@@ -4,7 +4,7 @@ import {
   Container, 
   Box, 
   Typography, 
-  Grid, 
+  Grid2, 
   Paper, 
   Button, 
   CircularProgress,
@@ -336,8 +336,8 @@ const AudioSession = () => {
             </Box>
           )}
           
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
+          <Grid2 container spacing={3}>
+            <Grid2 item xs={12} md={8}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   Participants ({participants.length})
@@ -379,9 +379,9 @@ const AudioSession = () => {
                   ))}
                 </List>
               </Paper>
-            </Grid>
+            </Grid2>
             
-            <Grid item xs={12} md={4}>
+            <Grid2 item xs={12} md={4}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   Audio Controls
@@ -455,8 +455,8 @@ const AudioSession = () => {
                   Leave Session
                 </Button>
               </Paper>
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
         </Container>
       )}
       

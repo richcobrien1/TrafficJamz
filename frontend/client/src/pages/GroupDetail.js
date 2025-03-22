@@ -4,7 +4,7 @@ import {
   Container, 
   Box, 
   Typography, 
-  Grid, 
+  Grid2, 
   Paper, 
   Button, 
   CircularProgress,
@@ -293,8 +293,8 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                <Grid2 container spacing={3}>
+                  <Grid2 item xs={12} sm={6}>
                     <Paper 
                       sx={{ 
                         p: 3, 
@@ -318,8 +318,8 @@ const GroupDetail = () => {
                         Start or join a real-time audio conversation with group members
                       </Typography>
                     </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </Grid2>
+                  <Grid2 item xs={12} sm={6}>
                     <Paper 
                       sx={{ 
                         p: 3, 
@@ -343,8 +343,8 @@ const GroupDetail = () => {
                         View the location of group members on a map
                       </Typography>
                     </Paper>
-                  </Grid>
-                </Grid>
+                  </Grid2>
+                </Grid2>
               </Box>
             ) : (
               <Box>

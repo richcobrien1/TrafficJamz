@@ -4,7 +4,7 @@ import {
   Container, 
   Box, 
   Typography, 
-  Grid, 
+  Grid2, 
   Paper, 
   Button, 
   Card,
@@ -129,13 +129,13 @@ const SubscriptionPlans = () => {
           </Typography>
         </Box>
         
-        <Grid container spacing={3} justifyContent="center">
+        <Grid2 container spacing={3} justifyContent="center">
           {plans.map((plan) => {
             const isCurrentPlan = getCurrentPlan() === plan.id;
             const isSelected = selectedPlan === plan.id;
             
             return (
-              <Grid item xs={12} sm={6} md={4} key={plan.id}>
+              <Grid2 item xs={12} sm={6} md={4} key={plan.id}>
                 <Card 
                   raised={isSelected}
                   sx={{ 
@@ -235,10 +235,10 @@ const SubscriptionPlans = () => {
                     )}
                   </CardActions>
                 </Card>
-              </Grid>
+              </Grid2>
             );
           })}
-        </Grid>
+        </Grid2>
         
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Button 
