@@ -13,6 +13,7 @@ import AudioSession from './pages/AudioSession';
 import LocationTracking from './pages/LocationTracking';
 import Profile from './pages/Profile';
 import SubscriptionPlans from './pages/SubscriptionPlans';
+import ForgotPassword from './pages/ForgotPassword';
 import TestIntegration from './pages/TestIntegration';
 import NotFound from './pages/NotFound';
 
@@ -64,6 +65,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/subscription-plans" element={<SubscriptionPlans />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/test-integration" element={<TestIntegration />} />
             
             {/* Protected routes */}
