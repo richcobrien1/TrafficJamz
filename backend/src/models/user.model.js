@@ -134,11 +134,15 @@ User.prototype.validatePassword = async function(password) {
 
 // Static methods
 User.findByEmail = function(email) {
-  return this.findOne({ where: { email } });
+  return this.findOne({ 
+    where: { email } 
+  });
 };
 
 User.findByUsername = function(username) {
-  return this.findOne({ where: { username } });
+  return this.findOne({ 
+    where: { username } 
+  });
 };
 
 module.exports = User;

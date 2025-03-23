@@ -32,12 +32,14 @@ passport.use(new JwtStrategy({
   secretOrKey: process.env.JWT_SECRET
 }, async (payload, done) => {
   try {
-      // Change this:
+      // for MongoDB:
       // const user = await User.findByPk(payload.sub);
       
-      // To this:
-      const user = await User.findOne({ where: { user_id: payload.sub } });
-      
+      // for Sequalize:
+      const user = await User.findOne({ 
+        where: { user_id: payload.sub } 
+      });
+
       if (!user) {
           return done(null, false);
       }

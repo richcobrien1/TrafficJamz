@@ -1,6 +1,5 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { Op } = require('sequelize');
 
@@ -59,7 +58,9 @@ class UserService {
   async login(email, password) {
     try {
       // Find user by email
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ 
+        where: { email } 
+      });
       if (!user) {
         throw new Error('Invalid email or password');
       }
@@ -112,13 +113,15 @@ class UserService {
     const accessToken = jwt.sign(
       { sub: user_id, username: user.username },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_ACCESS_EXPIRATION || '24h' }
+      // { expiresIn: process.env.JWT_ACCESS_EXPIRATION || '24h' }
+      { expiresIn: '24h' }
     );
   
     const refreshToken = jwt.sign(
       { sub: user_id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRATION || '30d' }
+      // { expiresIn: process.env.JWT_REFRESH_EXPIRATION || '30d' }
+      { expiresIn: '30d' }
     );
   
     return {
@@ -139,7 +142,9 @@ class UserService {
       const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
       
       // Get user - changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: decoded.sub } });
+      const user = await User.findOne({ 
+        where: { user_id: decoded.sub } 
+      });
       if (!user) {
         throw new Error('Invalid refresh token');
       }
@@ -161,7 +166,9 @@ class UserService {
   async getUserById(user_id) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: user_id } });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      });
       if (!user) {
         throw new Error('User not found');
       }
@@ -185,7 +192,9 @@ class UserService {
   async updateUser(user_id, updateData) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: user_id } });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      });
       if (!user) {
         throw new Error('User not found');
       }
@@ -222,7 +231,9 @@ class UserService {
   async updatePreferences(user_id, preferences) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: user_id } });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      });
       if (!user) {
         throw new Error('User not found');
       }
@@ -251,7 +262,9 @@ class UserService {
   async changePassword(user_id, currentPassword, newPassword) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: user_id } });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      });
       if (!user) {
         throw new Error('User not found');
       }
@@ -279,7 +292,9 @@ class UserService {
    */
   async requestPasswordReset(email) {
     try {
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ 
+        where: { email } 
+      });
       if (!user) {
         // Don't reveal that the user doesn't exist
         return true;
@@ -305,7 +320,9 @@ class UserService {
    */
   async resetPassword(token, email, newPassword) {
     try {
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ 
+        where: { email } 
+      });
       if (!user) {
         throw new Error('Invalid reset request');
       }
@@ -333,7 +350,9 @@ class UserService {
   async setupMFA(user_id, method) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: user_id } });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      });
       if (!user) {
         throw new Error('User not found');
       }
@@ -368,7 +387,9 @@ class UserService {
   async verifyMFA(user_id, code) {
     try {
       // Changed from findByPk to findOne with user_id
-      const user = await User.findOne({ where: { user_id: user_id } });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      });
       if (!user || !user.mfa_enabled) {
         throw new Error('MFA not enabled for this user');
       }

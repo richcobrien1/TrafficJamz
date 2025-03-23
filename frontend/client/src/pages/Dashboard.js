@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  ListItemSecondary,
   Avatar,
   Divider,
   IconButton,
@@ -73,7 +72,7 @@ const Dashboard = () => {
       setError('');
     } catch (error) {
       console.error('Error fetching groups:', error);
-      setError('Failed to load groups. Please try again later.');
+      // setError('Failed to load groups. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -122,7 +121,6 @@ const Dashboard = () => {
       setNewGroupName('');
       setNewGroupDescription('');
     } catch (error) {
-      console.error('Error creating group:', error);
       setCreateGroupError(error.response?.data?.message || 'Failed to create group. Please try again.');
     } finally {
       setCreateGroupLoading(false);
