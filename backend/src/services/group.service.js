@@ -14,30 +14,36 @@ class GroupService {
    * @returns {Promise<Object>} - Newly created group
    */
   async createGroup(groupData, ownerId) {
+    
+    console.log('group.service.js - 18: =>>>   ' + groupData.group_name + ' - ' + groupData.group_description + ' : ' + ownerId)
+
     try {
       // Create new group
       const group = new Group({
-        group_id: uuidv4(),
-        group_name: groupData.name,
-        group_description: groupData.description || '',
+        // group_id: uuidv4(),
+        group_name: groupData.group_name,
+        group_description: groupData.group_description || '',
         owner_id: ownerId,
         avatar_url: groupData.avatar_url || '',
         privacy_level: groupData.privacy_level || 'private',
         max_members: groupData.max_members || 50,
-        settings: {
-          ...Group.schema.paths.settings.default(),
-          ...groupData.settings
-        },
-        group_members: [{
-          group_id: group.group_id,
-          user_id: ownerId,
-          role: 'owner',
-          joined_at: new Date(),
-          status: 'active'
-        }]
+        // settings: {
+        //   ...Group.schema.paths.settings.default(),
+        //   ...groupData.settings
+        // },
+        // group_members: [{
+        //   group_id: group.group_id,
+        //   user_id: ownerId,
+        //   role: 'owner',
+        //   joined_at: new Date(),
+        //   status: 'active'
+        // }]
       });
 
+      console.log('group.service.js - 43: ' + group.group_name);
+      
       await group.save();
+
       return group;
     } catch (error) {
       throw error;
@@ -108,7 +114,7 @@ class GroupService {
       }
 
       // Update allowed fields
-      const allowedFields = ['name', 'description', 'avatar_url', 'privacy_level'];
+      const allowedFields = ['group_name', 'group_description', 'avatar_url', 'privacy_level'];
       
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
@@ -243,7 +249,11 @@ class GroupService {
       }
 
       // Verify user exists
-      const user = await User.findOne({ where: { user_id: user_id } })
+      console.log('246-About to query user with:', { user_id });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      })
+      console.log('250-Query result:', user ? 'User found' : 'User not found');
       if (!user) {
         throw new Error('User not found');
       }
@@ -466,7 +476,12 @@ class GroupService {
   async getUserInvitations(user_id) {
     try {
       // Find user
-      const user = await User.findOne({ where: { user_id: user_id } })
+      console.log('437-group.service: About to query user with:', { user_id });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      })
+      console.log('477-group.service: Query result:', user ? 'User found' : 'User not found');
+
       if (!user) {
         throw new Error('User not found');
       }
@@ -511,7 +526,11 @@ class GroupService {
   async acceptInvitation(invitationId, user_id) {
     try {
       // Find user
-      const user = await User.findOne({ where: { user_id: user_id } })
+      console.log('523-group.service: About to query user with:', { user_id });
+      const user = await User.findOne({ 
+        where: { user_id: user_id } 
+      })
+      console.log('43-group.service: Query result:', user ? 'User found' : 'User not found');     
       if (!user) {
         throw new Error('User not found');
       }
@@ -566,7 +585,11 @@ class GroupService {
   async declineInvitation(invitationId, user_id) {
     try {
       // Find user
-      const user = await User.findOne({ where: { user_id: user_id } })
+      const user = await User.findOne({
+         where: { user_id: user_id } 
+      });
+      console.log('585-group.service: Query result:', user ? 'User found' : 'User not found');     
+
       if (!user) {
         throw new Error('User not found');
       }

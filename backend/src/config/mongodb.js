@@ -5,18 +5,21 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // MongoDB connection URI
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/audiogroupapp';
+const mongoURI = 'mongodb://localhost:27017/audiogroupapp';
 
 // Connect to MongoDB
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
 })
-  .then(() => {
-    console.log('MongoDB connection has been established successfully.');
-  })
-  .catch((error) => {
-    console.error('Unable to connect to MongoDB:', error);
-  });
+.then(() => {
+  console.log('MongoDB connection has been established successfully.');
+})
+.catch((error) => {
+  console.error('Unable to connect to MongoDB:', error);
+});
 
 module.exports = mongoose;

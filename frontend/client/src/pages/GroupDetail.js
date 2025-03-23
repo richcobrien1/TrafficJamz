@@ -132,8 +132,8 @@ const GroupDetail = () => {
       setEditError('');
       
       const response = await api.put(`/api/groups/${groupId}`, {
-        name: editName,
-        description: editDescription
+        group_name: editName,
+        group_description: editDescription
       });
       
       setGroup(response.data.group);

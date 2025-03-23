@@ -43,8 +43,8 @@ router.get('/',
 router.post('/',
   passport.authenticate('jwt', { session: false }),
   [
-    body('name').isLength({ min: 3, max: 50 }).withMessage('Group name must be between 3 and 50 characters'),
-    body('description').optional(),
+    body('group_name').isLength({ min: 3, max: 50 }).withMessage('Group name must be between 3 and 50 characters'),
+    body('group_description').optional(),
     body('privacy_level').optional().isIn(['public', 'private', 'secret']).withMessage('Invalid privacy level'),
     body('max_members').optional().isInt({ min: 2, max: 100 }).withMessage('Max members must be between 2 and 100'),
     body('settings').optional().isObject().withMessage('Settings must be an object'),
@@ -53,13 +53,15 @@ router.post('/',
   async (req, res) => {
     try {
       const groupData = {
-        group_name: req.body.name,
-        group_description: req.body.description,
+        group_name: req.body.group_name,
+        group_description: req.body.group_description,
         privacy_level: req.body.privacy_level,
         max_members: req.body.max_members,
         settings: req.body.settings,
         avatar_url: req.body.avatar_url
       };
+
+      console.log('group.routes.js - 64: =>>>  ' + req.body.group_name + ' - ' + req.body.group_description + ' : ' + req.user.user_id)
 
       const group = await groupService.createGroup(groupData, req.user.user_id);
       res.status(201).json({ success: true, group });
@@ -105,8 +107,8 @@ router.put('/:group_id',
   passport.authenticate('jwt', { session: false }),
   [
     param('id').isMongoId().withMessage('Invalid group ID'),
-    body('name').optional().isLength({ min: 3, max: 50 }).withMessage('Group name must be between 3 and 50 characters'),
-    body('description').optional(),
+    body('group_name').optional().isLength({ min: 3, max: 50 }).withMessage('Group name must be between 3 and 50 characters'),
+    body('group_description').optional(),
     body('privacy_level').optional().isIn(['public', 'private', 'secret']).withMessage('Invalid privacy level'),
     body('avatar_url').optional(),
     validate
@@ -114,11 +116,13 @@ router.put('/:group_id',
   async (req, res) => {
     try {
       const updateData = {
-        group_name: req.body.name,
-        group_description: req.body.description,
+        group_name: req.body.group_name,
+        group_description: req.body.group_description,
         privacy_level: req.body.privacy_level,
         avatar_url: req.body.avatar_url
       };
+
+      console.log('group.routes.js - 125: group_name" ' + req.body.group_name + ' => group_description: ' + req.body.group_description + '\n' + req.user.user_id)
 
       const group = await groupService.updateGroup(req.params.id, updateData, req.user.user_id);
       res.json({ success: true, group });
