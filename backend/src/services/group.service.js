@@ -105,16 +105,18 @@ class GroupService {
    */
   async updateGroup(groupId, updateData, user_id) {
     try {
+      console.log('group.service.js - updateGroup:', groupId, updateData);
+      
       const group = await Group.findById(groupId);
       if (!group) {
         throw new Error('Group not found');
       }
-
+  
       // Check if user has permission to update
       if (!group.isAdmin(user_id)) {
         throw new Error('Permission denied');
       }
-
+  
       // Update allowed fields
       const allowedFields = ['group_name', 'group_description', 'avatar_url', 'privacy_level'];
       
@@ -123,13 +125,15 @@ class GroupService {
           group[field] = updateData[field];
         }
       }
-
+  
       await group.save();
       return group;
     } catch (error) {
+      console.error('Error in updateGroup service:', error);
       throw error;
     }
   }
+  
 
   /**
    * Update group settings

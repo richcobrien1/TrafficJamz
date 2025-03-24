@@ -45,6 +45,10 @@ import { useAuth } from '../contexts/AuthContext';
 const GroupDetail = () => {
   const { groupId } = useParams();
   const [group, setGroup] = useState(null);
+  const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [privacyLevel, setPrivacyLevel] = useState('private');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
@@ -55,14 +59,26 @@ const GroupDetail = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editName, setEditName] = useState('');
+  const [editMode, setEditMode] = useState(false); // Add this line
   const [editDescription, setEditDescription] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Add useEffect to initialize form fields when group data is loaded
+  useEffect(() => {
+    if (group) {
+      setGroupName(group.name || '');
+      setGroupDescription(group.description || '');
+      setPrivacyLevel(group.privacy_level || 'private');
+      setAvatarUrl(group.avatar_url || '');
+    }
+  }, [group]);
   
   useEffect(() => {
     fetchGroupDetails();
@@ -122,27 +138,34 @@ const GroupDetail = () => {
   };
   
   const handleEditGroup = async () => {
-    if (!editName.trim()) {
-      setEditError('Group name is required');
-      return;
-    }
-    
     try {
-      setEditLoading(true);
-      setEditError('');
+      setSubmitting(true); // Now this will work
+      
+      console.log('Sending PUT request to:', `/api/groups/${groupId}`);
+      console.log('Request data:', {
+        group_name: editName,
+        group_description: editDescription,
+        // TODO other fields...
+      });
       
       const response = await api.put(`/api/groups/${groupId}`, {
         group_name: editName,
-        group_description: editDescription
+        group_description: editDescription,
+        privacy_level: privacyLevel,
+        avatar_url: avatarUrl
       });
       
+      console.log('Update response:', response.data);
+      
+      // Update local state with the response
       setGroup(response.data.group);
-      setOpenEditDialog(false);
+      setEditMode(false);
+      setError('');
     } catch (error) {
       console.error('Error updating group:', error);
-      setEditError(error.response?.data?.message || 'Failed to update group. Please try again.');
+      setError(error.response?.data?.message || 'Failed to update group. Please try again.');
     } finally {
-      setEditLoading(false);
+      setSubmitting(false); // And this will work too
     }
   };
   
@@ -481,9 +504,9 @@ const GroupDetail = () => {
           <Button 
             onClick={handleEditGroup} 
             variant="contained"
-            disabled={editLoading}
+            disabled={submitting}
           >
-            {editLoading ? <CircularProgress size={24} /> : 'Save Changes'}
+            {submitting ? <CircularProgress size={24} /> : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>
