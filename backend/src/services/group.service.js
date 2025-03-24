@@ -1,7 +1,6 @@
 const Group = require('../models/group.model');
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid');
 
 /**
  * Group service for handling group-related operations
@@ -14,38 +13,41 @@ class GroupService {
    * @returns {Promise<Object>} - Newly created group
    */
   async createGroup(groupData, ownerId) {
-    
-    console.log('group.service.js - 18: =>>>   ' + groupData.group_name + ' - ' + groupData.group_description + ' : ' + ownerId)
-
+    console.log('Creating group with data:', { 
+      name: groupData.group_name, 
+      description: groupData.group_description,
+      owner: ownerId 
+    });
+  
     try {
-      // Create new group
-      const group = new Group({
-        // group_id: uuidv4(),
+      // Create group using the create method
+      const group = await Group.create({
         group_name: groupData.group_name,
         group_description: groupData.group_description || '',
         owner_id: ownerId,
         avatar_url: groupData.avatar_url || '',
         privacy_level: groupData.privacy_level || 'private',
         max_members: groupData.max_members || 50,
-        // settings: {
-        //   ...Group.schema.paths.settings.default(),
-        //   ...groupData.settings
-        // },
-        // group_members: [{
-        //   group_id: group.group_id,
-        //   user_id: ownerId,
-        //   role: 'owner',
-        //   joined_at: new Date(),
-        //   status: 'active'
-        // }]
+        settings: {
+          join_approval_required: true,
+          members_can_invite: true,
+          location_sharing_required: true,
+          music_sharing_enabled: true,
+          proximity_alert_distance: 100,
+          default_mute_on_join: false
+        },
+        group_members: [{
+          user_id: ownerId,
+          role: 'owner',
+          joined_at: new Date(),
+          status: 'active'
+        }]
       });
-
-      console.log('group.service.js - 43: ' + group.group_name);
       
-      await group.save();
-
+      console.log('Group created successfully with ID:', group._id);
       return group;
     } catch (error) {
+      console.error('Error creating group:', error);
       throw error;
     }
   }

@@ -6,6 +6,7 @@ const passport = require('passport');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
+const mongoose = require('mongoose'); // Add mongoose import
 
 // Load environment variables
 dotenv.config();
@@ -44,56 +45,97 @@ const locationRoutes = require('./routes/location.routes');
 const subscriptionRoutes = require('./routes/subscriptions.routes');
 const notificationRoutes = require('./routes/notifications.routes');
 
-// Use routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/groups', groupRoutes);
-app.use('/api/audio', audioRoutes);
-app.use('/api/location', locationRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/notifications', notificationRoutes);
+// Define function to set up routes and start server
+function setupServer() {
+  // Use routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/groups', groupRoutes);
+  app.use('/api/audio', audioRoutes);
+  app.use('/api/location', locationRoutes);
+  app.use('/api/subscriptions', subscriptionRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
-});
-
-// Root endpoint
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: 'Welcome to the Audio Group Communication API',
-    version: '1.0.0',
-    documentation: '/api-docs',
-    source: 'backend/src/index.js'
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date(),
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    });
   });
-});
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  // Root endpoint
+  app.get('/', (req, res) => {
+    res.status(200).json({ 
+      message: 'Welcome to the Audio Group Communication API',
+      version: '1.0.0',
+      documentation: '/api-docs',
+      source: 'backend/src/index.js'
+    });
   });
-});
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
+  // Error handling middleware
+  app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   });
-});
 
-// Set port
-const PORT = process.env.PORT || 3001;
-
-// Start server
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+  // 404 handler
+  app.use((req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
   });
+
+  // Set port
+  const PORT = process.env.PORT || 3001;
+
+  // Start server
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
 }
+
+// Connect to MongoDB before starting the server
+console.log('Connecting to MongoDB...');
+mongoose.set('bufferTimeoutMS', 30000); // Increase buffer timeout
+
+// Get MongoDB URI from environment variables
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/audiogroupapp';
+
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
+})
+.then(() => {
+  console.log('MongoDB connected successfully');
+  // Set up connection event listeners
+  mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+  });
+  mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected');
+  });
+  
+  // Setup routes and start server after MongoDB connection is established
+  setupServer();
+})
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  console.log('Starting server without MongoDB connection...');
+  // Still start the server even if MongoDB fails to connect
+  setupServer();
+});
 
 module.exports = app;

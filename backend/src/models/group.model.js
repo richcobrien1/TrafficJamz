@@ -1,5 +1,8 @@
+// models/group.model.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+
+console.log('Defining Group schema...');
 
 const GroupSchema = new Schema({
   group_name: {
@@ -12,7 +15,7 @@ const GroupSchema = new Schema({
     trim: true
   },
   owner_id: {
-    type: String, // UUID from PostgreSQL User table
+    type: String,
     required: true
   },
   avatar_url: {
@@ -51,16 +54,16 @@ const GroupSchema = new Schema({
     },
     proximity_alert_distance: {
       type: Number,
-      default: 100 // meters
+      default: 100
     },
     default_mute_on_join: {
       type: Boolean,
       default: false
     }
   },
-  members: [{
+  group_members: [{
     user_id: {
-      type: String, // UUID from PostgreSQL User table
+      type: String,
       required: true
     },
     role: {
@@ -90,7 +93,7 @@ const GroupSchema = new Schema({
       required: true
     },
     invited_by: {
-      type: String, // UUID from PostgreSQL User table
+      type: String,
       required: true
     },
     invited_at: {
@@ -104,38 +107,21 @@ const GroupSchema = new Schema({
     },
     expires_at: {
       type: Date,
-      default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+      default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     }
   }]
 }, {
+  collection: 'groups', // Explicitly set collection name
   timestamps: true
 });
 
-// Indexes for faster queries
-GroupSchema.index({ owner_id: 1 });
-GroupSchema.index({ 'members.user_id': 1 });
-GroupSchema.index({ 'invitations.email': 1 });
-GroupSchema.index({ status: 1, privacy_level: 1 });
-
-// Static methods
-GroupSchema.statics.findByUserId = function(user_id) {
-  return this.find({ 'members.user_id': user_id });
-};
-
-GroupSchema.statics.findActiveByUserId = function(user_id) {
-  return this.find({ 
-    'members.user_id': user_id,
-    status: 'active'
-  });
-};
-
-// Instance methods
+// Add methods
 GroupSchema.methods.isMember = function(user_id) {
-  return this.members.some(member => member.user_id === user_id);
+  return this.group_members.some(member => member.user_id === user_id);
 };
 
 GroupSchema.methods.isAdmin = function(user_id) {
-  const member = this.members.find(member => member.user_id === user_id);
+  const member = this.group_members.find(member => member.user_id === user_id);
   return member && (member.role === 'admin' || member.role === 'owner');
 };
 
@@ -145,7 +131,7 @@ GroupSchema.methods.isOwner = function(user_id) {
 
 GroupSchema.methods.addMember = function(user_id, role = 'member') {
   if (!this.isMember(user_id)) {
-    this.members.push({
+    this.group_members.push({
       user_id: user_id,
       role,
       joined_at: new Date(),
@@ -156,10 +142,12 @@ GroupSchema.methods.addMember = function(user_id, role = 'member') {
 };
 
 GroupSchema.methods.removeMember = function(user_id) {
-  this.members = this.members.filter(member => member.user_id !== user_id);
+  this.group_members = this.group_members.filter(member => member.user_id !== user_id);
   return this;
 };
 
+console.log('Creating Group model...');
 const Group = mongoose.model('Group', GroupSchema);
+console.log('Group model created successfully');
 
 module.exports = Group;

@@ -13,11 +13,7 @@ const validate = (req, res, next) => {
   next();
 };
 
-/**
- * @route GET /api/groups
- * @desc Get all groups for current user
- * @access Private
- */
+// Update the GET route for fetching all groups
 router.get('/',
   passport.authenticate('jwt', { session: false }),
   async (req, res) => {
@@ -28,18 +24,34 @@ router.get('/',
       };
       
       const groups = await groupService.getGroupsByUserId(req.user.user_id, filters);
-      res.json({ success: true, groups });
+      
+      // Transform MongoDB groups to match frontend expectations
+      const formattedGroups = groups.map(group => ({
+        id: group._id.toString(), // Convert ObjectId to string
+        name: group.group_name,
+        description: group.group_description,
+        avatar_url: group.avatar_url,
+        privacy_level: group.privacy_level,
+        status: group.status,
+        members: (group.group_members || []).map(member => ({
+          id: member._id ? member._id.toString() : null,
+          user_id: member.user_id,
+          role: member.role,
+          status: member.status,
+          joined_at: member.joined_at
+        })),
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt
+      }));
+      
+      res.json({ success: true, groups: formattedGroups });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
   }
 );
 
-/**
- * @route POST /api/groups
- * @desc Create a new group
- * @access Private
- */
+// Update the POST route for creating a group
 router.post('/',
   passport.authenticate('jwt', { session: false }),
   [
@@ -64,68 +76,86 @@ router.post('/',
       console.log('group.routes.js - 64: =>>>  ' + req.body.group_name + ' - ' + req.body.group_description + ' : ' + req.user.user_id)
 
       const group = await groupService.createGroup(groupData, req.user.user_id);
-      res.status(201).json({ success: true, group });
+      
+      // Format the response to match frontend expectations
+      const formattedGroup = {
+        id: group._id.toString(),
+        name: group.group_name,
+        description: group.group_description,
+        avatar_url: group.avatar_url,
+        privacy_level: group.privacy_level,
+        status: group.status,
+        members: (group.group_members || []).map(member => ({
+          id: member._id ? member._id.toString() : null,
+          user_id: member.user_id,
+          role: member.role,
+          status: member.status,
+          joined_at: member.joined_at
+        })),
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt
+      };
+      
+      res.status(201).json({ 
+        success: true, 
+        group: formattedGroup 
+      });
+
     } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
+      console.error('Group creation error:', error);
+    
+      // Handle specific MongoDB errors
+      if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+        return res.status(500).json({
+          success: false,
+          message: 'Database operation timed out. Please try again.'
+        });
+      }
+      
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to create group. Please try again.'
+      });
     }
   }
 );
 
-/**
- * @route GET /api/groups/:group_id
- * @desc Get group by ID
- * @access Private
- */
+// Update the GET route for fetching a specific group
 router.get('/:group_id',
   passport.authenticate('jwt', { session: false }),
   [
-    param('id').isMongoId().withMessage('Invalid group ID'),
+    param('group_id').isMongoId().withMessage('Invalid group ID'),
     validate
   ],
   async (req, res) => {
     try {
-      const group = await groupService.getGroupById(req.params.id);
+      const group = await groupService.getGroupById(req.params.group_id);
       
       // Check if user is a member of the group
       if (!group.isMember(req.user.user_id)) {
         return res.status(403).json({ success: false, message: 'You are not a member of this group' });
       }
       
-      res.json({ success: true, group });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-);
-
-/**
- * @route PUT /api/groups/:group_id
- * @desc Update group details
- * @access Private
- */
-router.put('/:group_id',
-  passport.authenticate('jwt', { session: false }),
-  [
-    param('id').isMongoId().withMessage('Invalid group ID'),
-    body('group_name').optional().isLength({ min: 3, max: 50 }).withMessage('Group name must be between 3 and 50 characters'),
-    body('group_description').optional(),
-    body('privacy_level').optional().isIn(['public', 'private', 'secret']).withMessage('Invalid privacy level'),
-    body('avatar_url').optional(),
-    validate
-  ],
-  async (req, res) => {
-    try {
-      const updateData = {
-        group_name: req.body.group_name,
-        group_description: req.body.group_description,
-        privacy_level: req.body.privacy_level,
-        avatar_url: req.body.avatar_url
+      // Format the response to match frontend expectations
+      const formattedGroup = {
+        id: group._id.toString(),
+        name: group.group_name,
+        description: group.group_description,
+        avatar_url: group.avatar_url,
+        privacy_level: group.privacy_level,
+        status: group.status,
+        members: (group.group_members || []).map(member => ({
+          id: member._id ? member._id.toString() : null,
+          user_id: member.user_id,
+          role: member.role,
+          status: member.status,
+          joined_at: member.joined_at
+        })),
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt
       };
-
-      console.log('group.routes.js - 125: group_name" ' + req.body.group_name + ' => group_description: ' + req.body.group_description + '\n' + req.user.user_id)
-
-      const group = await groupService.updateGroup(req.params.id, updateData, req.user.user_id);
-      res.json({ success: true, group });
+      
+      res.json({ success: true, group: formattedGroup });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
