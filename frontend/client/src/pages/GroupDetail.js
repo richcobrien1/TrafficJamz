@@ -171,19 +171,46 @@ const GroupDetail = () => {
   
   const handleDeleteGroup = async () => {
     try {
+      if (!group || !group.members || !Array.isArray(group.members)) {
+        setError('Group information is not available.');
+        return;
+      }
+      
+      // Find the owner in the members array
+      const ownerMember = group.members.find(member => member.role === 'owner');
+      
+      if (!ownerMember || !ownerMember.user_id) {
+        setError('Owner information is not available.');
+        return;
+      }
+      
+      // Use the MongoDB _id format
+      const correctGroupId = group.id || groupId;
+      
+      console.log('Using group ID:', correctGroupId);
+      
       setDeleteLoading(true);
       
-      await api.delete(`/api/groups/${groupId}`);
+      // Try using the exact MongoDB _id format
+      await api.delete(`/api/groups/${correctGroupId}`, {
+        data: { 
+          owner_id: ownerMember.user_id,
+          // Include the ID in the body as well in case the route expects it there
+          group_id: correctGroupId
+        }
+      });
       
       navigate('/');
     } catch (error) {
       console.error('Error deleting group:', error);
-      // Show error message
+      console.error('Response data:', error.response?.data);
+      setError(error.response?.data?.message || 'Failed to delete group. Please try again.');
     } finally {
       setDeleteLoading(false);
       setOpenDeleteDialog(false);
     }
   };
+  
   
   const handleLeaveGroup = async () => {
     try {
@@ -386,43 +413,52 @@ const GroupDetail = () => {
                 
                 <Paper>
                   <List>
-                    {group.members?.map((member, index) => (
-                      <React.Fragment key={member.user_id}>
-                        <ListItem
-                          secondaryAction={
-                            isOwner && member.user_id !== user.user_id && (
-                              <IconButton edge="end" aria-label="remove" onClick={() => {/* Handle remove */}}>
-                                <DeleteIcon />
-                              </IconButton>
-                            )
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar src={member.profile_image_url}>
-                              {member.username?.[0]}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText 
-                            primary={
-                              <>
-                                {member.username}
-                                {member.user_id === user.user_id && ' (You)'}
-                                {member.user_id === group.owner_id && (
-                                  <Chip 
-                                    label="Owner" 
-                                    size="small" 
-                                    color="primary"
-                                    sx={{ ml: 1 }}
-                                  />
-                                )}
-                              </>
-                            }
-                            secondary={member.email}
-                          />
-                        </ListItem>
-                        {index < group.members.length - 1 && <Divider />}
-                      </React.Fragment>
-                    ))}
+                    {/* Add null check and ensure members array exists before mapping */}
+                    {group.members && group.members.length > 0 ? (
+                      group.members.map((member, index) => (
+                        member && member.user_id ? (
+                          <React.Fragment key={member.user_id}>
+                            <ListItem
+                              secondaryAction={
+                                isOwner && member.user_id !== user?.user_id && (
+                                  <IconButton edge="end" aria-label="remove" onClick={() => {/* Handle remove */}}>
+                                    <DeleteIcon />
+                                  </IconButton>
+                                )
+                              }
+                            >
+                              <ListItemAvatar>
+                                <Avatar src={member.profile_image_url}>
+                                  {member.username?.[0]}
+                                </Avatar>
+                              </ListItemAvatar>
+                              <ListItemText 
+                                primary={
+                                  <>
+                                    {member.username}
+                                    {member.user_id === user?.user_id && ' (You)'}
+                                    {member.user_id === group.owner_id && (
+                                      <Chip 
+                                        label="Owner" 
+                                        size="small" 
+                                        color="primary"
+                                        sx={{ ml: 1 }}
+                                      />
+                                    )}
+                                  </>
+                                }
+                                secondary={member.email}
+                              />
+                            </ListItem>
+                            {index < group.members.length - 1 && <Divider />}
+                          </React.Fragment>
+                        ) : null
+                      ))
+                    ) : (
+                      <ListItem>
+                        <ListItemText primary="No members found" />
+                      </ListItem>
+                    )}
                   </List>
                 </Paper>
               </Box>

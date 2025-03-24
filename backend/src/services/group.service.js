@@ -175,6 +175,9 @@ class GroupService {
    */
   async deleteGroup(groupId, user_id) {
     try {
+
+      console.log('======================= Using group ID:', groupId, 'And user_id: ', user_id);
+
       const group = await Group.findById(groupId);
       if (!group) {
         throw new Error('Group not found');
