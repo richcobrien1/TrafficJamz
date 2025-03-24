@@ -1,25 +1,50 @@
+// config/mongodb.js
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+require('dotenv').config();
 
-// Load environment variables
-dotenv.config();
+// Increase the buffering timeout globally
+mongoose.set('bufferTimeoutMS', 30000);
 
-// MongoDB connection URI
-const mongoURI = 'mongodb://localhost:27017/audiogroupapp';
+// Use the exact same connection string that works in MongoDB Compass
+const MONGODB_URI = 'mongodb://localhost:27017/audiogroupapp';
 
-// Connect to MongoDB
-mongoose.connect(mongoURI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 30000,
-})
-.then(() => {
-  console.log('MongoDB connection has been established successfully.');
-})
-.catch((error) => {
-  console.error('Unable to connect to MongoDB:', error);
-});
+const connectMongoDB = async () => {
+  try {
+    console.log('Connecting to MongoDB...');
+    
+    // Close any existing connections first
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+    
+    await mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    })
+    .then(() => {
+      console.log('MongoDB connected successfully');
+      console.log('Connection state:', mongoose.connection.readyState);
+      // Start your server here
+    })
+    .catch(err => {
+      console.error('MongoDB connection error:', err);
+      process.exit(1);
+    });
 
-module.exports = mongoose;
+    // Add connection event listeners
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    return false;
+  }
+};
+
+module.exports = { connectMongoDB, mongoose };
