@@ -49,6 +49,7 @@ const GroupDetail = () => {
   const [groupDescription, setGroupDescription] = useState('');
   const [privacyLevel, setPrivacyLevel] = useState('private');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [createdAt, setCreatedAt] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
@@ -90,6 +91,7 @@ const GroupDetail = () => {
       const response = await api.get(`/api/groups/${groupId}`);
       setGroup(response.data.group);
       setEditName(response.data.group.name);
+      setCreatedAt(response.data.group.createdAt);
       setEditDescription(response.data.group.description || '');
       setError('');
     } catch (error) {
@@ -325,7 +327,7 @@ const GroupDetail = () => {
                         {group.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {group.members?.length || 0} members • Created {new Date(group.created_at).toLocaleDateString()}
+                        {group.members?.length || 0} members • Created {new Date(group.createdAt).toLocaleDateString()}
                       </Typography>
                       <Chip 
                         label={group.privacy_level} 
