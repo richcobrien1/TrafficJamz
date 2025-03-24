@@ -227,12 +227,12 @@ router.put('/:group_id',
 router.delete('/:group_id',
   passport.authenticate('jwt', { session: false }),
   [
-    param('id').isMongoId().withMessage('Invalid group ID'),
+    param('group_id').isMongoId().withMessage('Invalid group ID'),  // Change from 'id' to 'group_id'
     validate
   ],
   async (req, res) => {
     try {
-      await groupService.deleteGroup(req.params.id, req.user.user_id);
+      await groupService.deleteGroup(req.params.group_id, req.user.user_id);  // Change from req.params.id to req.params.group_id
       res.json({ success: true, message: 'Group deleted successfully' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
