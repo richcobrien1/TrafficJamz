@@ -129,34 +129,20 @@ router.get('/:group_id',
   ],
   async (req, res) => {
     try {
+      // Get the group using our updated getGroupById method
       const group = await groupService.getGroupById(req.params.group_id);
       
-      // Check if user is a member of the group
-      if (!group.isMember(req.user.user_id)) {
+      // Instead of calling group.isMember, check if the user is a member manually
+      const isMember = group.members && Array.isArray(group.members) && 
+                      group.members.some(member => member.user_id === req.user.user_id);
+      
+      if (!isMember) {
         return res.status(403).json({ success: false, message: 'You are not a member of this group' });
       }
       
-      // Format the response to match frontend expectations
-      const formattedGroup = {
-        id: group._id.toString(),
-        name: group.group_name,
-        description: group.group_description,
-        avatar_url: group.avatar_url,
-        privacy_level: group.privacy_level,
-        status: group.status,
-        members: (group.group_members || []).map(member => ({
-          id: member._id ? member._id.toString() : null,
-          user_id: member.user_id,
-          role: member.role,
-          status: member.status,
-          joined_at: member.joined_at
-        })),
-        createdAt: group.createdAt,
-        updatedAt: group.updatedAt
-      };
-      
-      res.json({ success: true, group: formattedGroup });
+      res.json({ success: true, group });
     } catch (error) {
+      console.error('Error fetching group details:', error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
@@ -217,7 +203,6 @@ router.put('/:group_id',
     }
   }
 );
-
 
 /**
  * @route DELETE /api/groups/:group_id

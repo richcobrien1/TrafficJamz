@@ -53,21 +53,80 @@ class GroupService {
   }
 
   /**
-   * Get group by ID
+   * Get group by ID with populated member details
    * @param {string} groupId - Group ID
-   * @returns {Promise<Object>} - Group data
+   * @returns {Promise<Object>} - Group object with populated member details
    */
   async getGroupById(groupId) {
     try {
+      // Find the group by ID
       const group = await Group.findById(groupId);
       if (!group) {
         throw new Error('Group not found');
       }
-      return group;
+      
+      // Create a formatted group object with the structure expected by frontend
+      const formattedGroup = {
+        id: group._id,
+        name: group.group_name,
+        description: group.group_description,
+        avatar_url: group.avatar_url,
+        privacy_level: group.privacy_level,
+        status: group.status,
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt,
+        members: []
+      };
+      
+      // If there are members, fetch their user details
+      if (group.group_members && group.group_members.length > 0) {
+        // Get all user IDs from the members array
+        const userIds = group.group_members.map(member => member.user_id);
+        
+        // Import the User model - make sure the path is correct for your project structure
+        const User = require('../models/user.model'); // Adjust path as needed
+        
+        // Fetch all users in one query using Sequelize
+        const users = await User.findAll({
+          where: {
+            user_id: userIds
+          },
+          attributes: ['user_id', 'username', 'email', 'profile_image_url', 'first_name', 'last_name']
+        });
+        
+        // Create a map of user_id to user details for quick lookup
+        const userMap = {};
+        users.forEach(user => {
+          const userData = user.get({ plain: true });
+          userMap[userData.user_id] = userData;
+        });
+        
+        // Combine member data with user data
+        formattedGroup.members = group.group_members.map(member => {
+          const user = userMap[member.user_id] || {};
+          return {
+            id: member._id,
+            user_id: member.user_id,
+            role: member.role,
+            status: member.status,
+            joined_at: member.joined_at,
+            // Add user profile details
+            username: user.username || 'Unknown User',
+            email: user.email || '',
+            profile_image_url: user.profile_image_url || '',
+            first_name: user.first_name || '',
+            last_name: user.last_name || ''
+          };
+        });
+      }
+      
+      return formattedGroup;
     } catch (error) {
+      console.error('Error in getGroupById:', error);
       throw error;
     }
   }
+  
 
   /**
    * Get groups for a user
