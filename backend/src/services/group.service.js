@@ -404,10 +404,12 @@ class GroupService {
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
       };
 
+      console.log('====================== \nEmail invite: ', invitation);
+
       group.invitations.push(invitation);
       await group.save();
 
-      // In a real implementation, we would send an email to the invitee
+      console.log('In a real implementation, we would send an email to the invitees');
 
       return invitation;
     } catch (error) {
