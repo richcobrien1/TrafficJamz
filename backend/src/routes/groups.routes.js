@@ -351,14 +351,14 @@ router.delete('/:group_id/members/:userId',
 router.post('/:group_id/invitations',
   passport.authenticate('jwt', { session: false }),
   [
-    param('id').isMongoId().withMessage('Invalid group ID'),
+    param('group_id').isMongoId().withMessage('Invalid group ID'),  // Change from 'id' to 'group_id'
     body('email').isEmail().withMessage('Valid email is required'),
     validate
   ],
   async (req, res) => {
     try {
       const { email } = req.body;
-      const invitation = await groupService.inviteToGroup(req.params.id, email, req.user.user_id);
+      const invitation = await groupService.inviteToGroup(req.params.group_id, email, req.user.user_id);  // Change from req.params.id to req.params.group_id
       res.status(201).json({ success: true, invitation });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
