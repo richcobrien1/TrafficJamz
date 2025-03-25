@@ -426,55 +426,75 @@ class GroupService {
   }
 
   /**
-   * Invite user to group
-   * @param {string} groupId - Group ID
-   * @param {string} email - Email to invite
-   * @param {string} inviterId - User ID making the invitation
-   * @returns {Promise<Object>} - Invitation data
-   */
-  async inviteToGroup(groupId, email, inviterId) {
-    try {
-      const group = await Group.findById(groupId);
-      if (!group) {
-        throw new Error('Group not found');
-      }
-
-      // Check if inviter has permission
-      if (!group.isAdmin(inviterId) && 
-          !(group.settings.members_can_invite && group.isMember(inviterId))) {
-        throw new Error('Permission denied');
-      }
-
-      // Check if invitation already exists
-      const existingInvitation = group.invitations.find(
-        inv => inv.email === email && inv.status === 'pending'
-      );
-      
-      if (existingInvitation) {
-        throw new Error('Invitation already sent to this email');
-      }
-
-      // Create invitation
-      const invitation = {
-        email,
-        invited_by: inviterId,
-        invited_at: new Date(),
-        status: 'pending',
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-      };
-
-      console.log('====================== \nEmail invite: ', invitation);
-
-      group.invitations.push(invitation);
-      await group.save();
-
-      console.log('In a real implementation, we would send an email to the invitees');
-
-      return invitation;
-    } catch (error) {
-      throw error;
+ * Invite user to group
+ * @param {string} groupId - Group ID
+ * @param {string} email - Email to invite
+ * @param {string} inviterId - User ID making the invitation
+ * @returns {Promise<Object>} - Invitation data
+ */
+async inviteToGroup(groupId, email, inviterId) {
+  try {
+    const group = await Group.findById(groupId);
+    if (!group) {
+      throw new Error('Group not found');
     }
+
+    // Check if inviter has permission
+    if (!group.isAdmin(inviterId) && 
+        !(group.settings.members_can_invite && group.isMember(inviterId))) {
+      throw new Error('Permission denied');
+    }
+
+    // Check if invitation already exists
+    const existingInvitation = group.invitations.find(
+      inv => inv.email === email && inv.status === 'pending'
+    );
+    
+    if (existingInvitation) {
+      throw new Error('Invitation already sent to this email');
+    }
+
+    // Create invitation
+    const invitation = {
+      email,
+      invited_by: inviterId,
+      invited_at: new Date(),
+      status: 'pending',
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+    };
+
+    group.invitations.push(invitation);
+    await group.save();
+
+    // Get inviter details
+    const User = require('../models/user.model');
+    const inviter = await User.findOne({
+      where: { user_id: inviterId }
+    });
+
+    // Import email service
+    const emailService = require('../services/email.service');
+    
+    // Generate invitation link
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const invitationLink = `${baseUrl}/invitations/${invitation._id}`;
+    
+    // Send invitation email
+    const emailResult = await emailService.sendInvitationEmail(email, {
+      groupName: group.group_name,
+      inviterName: inviter ? `${inviter.first_name} ${inviter.last_name}`.trim()  || inviter.username : 'A user',
+      invitationLink
+    });
+    
+    console.log('Invitation email sent:', emailResult);
+
+    return invitation;
+  } catch (error) {
+    console.error('Error sending invitation:', error);
+    throw error;
   }
+}
+
 
   /**
    * Get group invitations

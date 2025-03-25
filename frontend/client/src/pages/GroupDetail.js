@@ -214,13 +214,12 @@ const GroupDetail = () => {
   };
   
   
-  const handleLeaveGroup = async () => {
+  const handleLeaveGroup = async (user_id) => {
     try {
-      await api.delete(`/api/groups/${groupId}/members/${user.user_id}`);
+      await api.delete(`/api/groups/${groupId}/members/${user_id}`);
       navigate('/');
     } catch (error) {
       console.error('Error leaving group:', error);
-      // Show error message
     }
   };
   
@@ -422,7 +421,7 @@ const GroupDetail = () => {
                             <ListItem
                               secondaryAction={
                                 isOwner && member.user_id !== user?.user_id && member.role !== 'owner' ? (
-                                  <IconButton edge="end" aria-label="remove" onClick={() => {/* Handle remove */}}>
+                                  <IconButton edge="end" aria-label="remove" onClick={() => { handleLeaveGroup(member.user_id); }}>
                                     <DeleteIcon />
                                   </IconButton>
                                 ) : 'Owner'
