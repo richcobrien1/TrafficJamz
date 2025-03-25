@@ -415,18 +415,17 @@ const GroupDetail = () => {
                 
                 <Paper>
                   <List>
-                    {/* Add null check and ensure members array exists before mapping */}
                     {group.members && group.members.length > 0 ? (
                       group.members.map((member, index) => (
                         member && member.user_id ? (
                           <React.Fragment key={member.user_id}>
                             <ListItem
                               secondaryAction={
-                                isOwner && member.user_id !== user?.user_id && (
+                                isOwner && member.user_id !== user?.user_id && member.role !== 'owner' ? (
                                   <IconButton edge="end" aria-label="remove" onClick={() => {/* Handle remove */}}>
                                     <DeleteIcon />
                                   </IconButton>
-                                )
+                                ) : 'Owner'
                               }
                             >
                               <ListItemAvatar>
