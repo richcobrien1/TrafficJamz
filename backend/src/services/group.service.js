@@ -390,23 +390,29 @@ class GroupService {
    * @param {string} requesterId - User ID making the request
    * @returns {Promise<boolean>} - Success status
    */
-  async removeGroupMember(groupId, user_id, requesterId) {
+  async removeGroupMember(id, user_id, requesterId) {
     try {
-      const group = await Group.findById(groupId);
+      console.log('Remove Group Member: Using Group ID:', id, 'And Member ID:', user_id);
+  
+      const group = await Group.findById(id);
       if (!group) {
         throw new Error('Group not found');
       }
-
-      // Check if requester has permission to remove members
+  
+      // Check if requester has permission
       const isAdmin = group.isAdmin(requesterId);
       const isSelfRemoval = user_id === requesterId;
       
       if (!isAdmin && !isSelfRemoval) {
         throw new Error('Permission denied');
       }
-
+  
       // Cannot remove owner
-      const member = group.members.find(member => member.user_id === user_id);
+      if (!group.group_members || !Array.isArray(group.group_members)) {
+        throw new Error('Group members list is invalid');
+      }
+      
+      const member = group.group_members.find(member => member.user_id === user_id);
       if (!member) {
         throw new Error('Member not found');
       }
@@ -414,86 +420,83 @@ class GroupService {
       if (member.role === 'owner') {
         throw new Error('Cannot remove the group owner');
       }
-
-      // Remove member
-      group.removeMember(user_id);
+  
+      // If removeMember isn't working, do it directly here
+      group.group_members = group.group_members.filter(member => member.user_id !== user_id);
       await group.save();
-
+  
       return true;
     } catch (error) {
       throw error;
     }
-  }
+  }  
 
   /**
- * Invite user to group
- * @param {string} groupId - Group ID
- * @param {string} email - Email to invite
- * @param {string} inviterId - User ID making the invitation
- * @returns {Promise<Object>} - Invitation data
- */
-async inviteToGroup(groupId, email, inviterId) {
-  try {
-    const group = await Group.findById(groupId);
-    if (!group) {
-      throw new Error('Group not found');
+   * Invite user to group
+   * @param {string} groupId - Group ID
+   * @param {string} email - Email to invite
+   * @param {string} inviterId - User ID making the invitation
+   * @returns {Promise<Object>} - Invitation data
+   */
+  async inviteToGroup(groupId, email, inviterId) {
+    try {
+      const group = await Group.findById(groupId);
+      if (!group) {
+        throw new Error('Group not found');
+      }
+
+      // Check if inviter has permission
+      if (!group.isAdmin(inviterId) && 
+          !(group.settings.members_can_invite && group.isMember(inviterId))) {
+        throw new Error('Permission denied');
+      }
+
+      // Check if invitation already exists
+      const existingInvitation = group.invitations.find(
+        inv => inv.email === email && inv.status === 'pending'
+      );
+      
+      if (existingInvitation) {
+        throw new Error('Invitation already sent to this email');
+      }
+
+      // Create invitation
+      const invitation = {
+        email,
+        invited_by: inviterId,
+        invited_at: new Date() ,
+        status: 'pending',
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+      };
+
+      // Add to group
+      group.invitations.push(invitation);
+
+      // Save the group to get the _id assigned to the new invitation
+      await group.save();
+
+      // Get the saved invitation (the one we just added)
+      const savedInvitation = group.invitations[group.invitations.length - 1];
+
+      // Generate invitation link with group ID and invitation index
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
+      
+      // Send invitation email
+      const emailResult = await emailService.sendInvitationEmail(email, {
+        groupName: group.group_name,
+        inviterName: inviter ? `${inviter.first_name} ${inviter.last_name}`.trim()  || inviter.username : 'A user',
+        invitationLink
+      });
+      
+      console.log('Invitation email sent:', emailResult);
+
+      return invitation;
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      throw error;
     }
-
-    // Check if inviter has permission
-    if (!group.isAdmin(inviterId) && 
-        !(group.settings.members_can_invite && group.isMember(inviterId))) {
-      throw new Error('Permission denied');
-    }
-
-    // Check if invitation already exists
-    const existingInvitation = group.invitations.find(
-      inv => inv.email === email && inv.status === 'pending'
-    );
-    
-    if (existingInvitation) {
-      throw new Error('Invitation already sent to this email');
-    }
-
-    // Create invitation
-    const invitation = {
-      email,
-      invited_by: inviterId,
-      invited_at: new Date(),
-      status: 'pending',
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-    };
-
-    group.invitations.push(invitation);
-    await group.save();
-
-    // Get inviter details
-    const User = require('../models/user.model');
-    const inviter = await User.findOne({
-      where: { user_id: inviterId }
-    });
-
-    // Import email service
-    const emailService = require('../services/email.service');
-    
-    // Generate invitation link
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const invitationLink = `${baseUrl}/invitations/${invitation._id}`;
-    
-    // Send invitation email
-    const emailResult = await emailService.sendInvitationEmail(email, {
-      groupName: group.group_name,
-      inviterName: inviter ? `${inviter.first_name} ${inviter.last_name}`.trim()  || inviter.username : 'A user',
-      invitationLink
-    });
-    
-    console.log('Invitation email sent:', emailResult);
-
-    return invitation;
-  } catch (error) {
-    console.error('Error sending invitation:', error);
-    throw error;
   }
-}
 
 
   /**

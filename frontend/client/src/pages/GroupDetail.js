@@ -129,11 +129,11 @@ const GroupDetail = () => {
       });
       
       setOpenInviteDialog(false);
-      setInviteEmail('');
+      
       // Show success message or update UI
     } catch (error) {
       console.error('Error inviting member:', error);
-      setInviteError(error.response?.data?.message || 'Failed to send invitation. Please try again.');
+      setInviteError(error.response?.data?.message || 'Failed to send invitation to: ' + inviteEmail + '. Please try again.');
     } finally {
       setInviteLoading(false);
     }

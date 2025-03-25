@@ -141,9 +141,12 @@ GroupSchema.methods.addMember = function(user_id, role = 'member') {
   return this;
 };
 
-GroupSchema.methods.removeMember = function(user_id) {
-  this.group_members = this.group_members.filter(member => member.user_id !== user_id);
-  return this;
+GroupSchema.methods.isAdmin = function(user_id) {
+  if (!this.group_members || !Array.isArray(this.group_members)) {
+    return false;
+  }
+  const member = this.group_members.find(m => m.user_id === user_id);
+  return member && (member.role === 'admin' || member.role === 'owner');
 };
 
 console.log('Creating Group model...');
