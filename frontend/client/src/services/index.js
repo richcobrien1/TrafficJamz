@@ -89,7 +89,7 @@ export const GroupService = {
   },
   
   sendInvitation: (groupId, email) => {
-    return api.post(`/groups/${groupId}/invitations`, { email });
+    return api.post(`/api/groups/${groupId}/invitations`, { email });
   },
   
   getInvitations: () => {

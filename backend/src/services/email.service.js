@@ -42,60 +42,83 @@ class EmailService {
   }
 
   async sendInvitationEmail(to, invitationData) {
-    await this.init();
+    try {
+      await this.init();
+      console.log('Sending invitation email to:', to);
+  
+      const { groupName, inviterName, invitationLink } = invitationData;
+      console.log('Invitation data:', { groupName, inviterName, invitationLink });
 
-    const { groupName, inviterName, invitationLink } = invitationData;
+      const mailOptions = {
+        from: `"Group App" <${this.testAccount ? this.testAccount.user : process.env.SMTP_USER}>`,
+        to,
+        subject: `You've been invited to join ${groupName}`,
+        text: `
+          Hello,
 
-    const mailOptions = {
-      from: `"Group App" <${this.testAccount ? this.testAccount.user : process.env.SMTP_USER}>`,
-      to,
-      subject: `You've been invited to join ${groupName}`,
-      text: `
-        Hello,
+          ${inviterName} has invited you to join the group "${groupName}" on our app.
 
-        ${inviterName} has invited you to join the group "${groupName}" on our app.
+          To accept this invitation, please click on the following link:
+          ${invitationLink}
 
-        To accept this invitation, please click on the following link:
-        ${invitationLink}
+          This invitation will expire in 7 days.
 
-        This invitation will expire in 7 days.
+          If you did not request this invitation, please ignore this email.
 
-        If you did not request this invitation, please ignore this email.
-
-        Best regards,
-        The Group App Team
-      `,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>You've been invited to join a group!</h2>
-          <p><strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on our app.</p>
-          <p>To accept this invitation, please click on the button below:</p>
-          <p style="text-align: center; margin: 30px 0;">
-            <a href="${invitationLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a>
-          </p>
-          <p>This invitation will expire in 7 days.</p>
-          <p>If you did not request this invitation, please ignore this email.</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #777; font-size: 12px;">Best regards,<br>The Group App Team</p>
-        </div>
-      `
-    };
-
-    const info = await this.transporter.sendMail(mailOptions);
-    
-    // For Ethereal emails, provide the preview URL
-    if (this.testAccount) {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-      return {
-        messageId: info.messageId,
-        previewUrl: nodemailer.getTestMessageUrl(info)
+          Best regards,
+          The Group App Team
+        `,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>You've been invited to join a group!</h2>
+            <p><strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on our app.</p>
+            <p>To accept this invitation, please click on the button below:</p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${invitationLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a>
+            </p>
+            <p>This invitation will expire in 7 days.</p>
+            <p>If you did not request this invitation, please ignore this email.</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #777; font-size: 12px;">Best regards,<br>The Group App Team</p>
+          </div>
+        `
       };
-    }
 
-    return {
-      messageId: info.messageId
-    };
+      const info = await this.transporter.sendMail(mailOptions);
+    
+      console.log('Email sent successfully with messageId:', info.messageId);
+    
+      // For Ethereal emails, provide the preview URL
+      if (this.testAccount) {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        console.log('Preview URL:', previewUrl);
+        return {
+          messageId: info.messageId,
+          previewUrl
+        };
+      }
+  
+      return {
+        messageId: info.messageId
+      };
+    } catch (error) {
+      console.error('Error sending invitation email:', error);
+      throw error;
+    }
   }
 }
+
+// At the bottom of your email.service.js file
+const emailService = new EmailService();
+
+// Initialize the service immediately when it's first required
+(async () => {
+  try {
+    await emailService.init();
+    console.log('Email service initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize email service:', error);
+  }
+})();
 
 module.exports = new EmailService();
