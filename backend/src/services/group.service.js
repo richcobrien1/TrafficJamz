@@ -1,6 +1,7 @@
 const Group = require('../models/group.model');
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
+const emailService = require('./email.service');
 
 /**
  * Group service for handling group-related operations
@@ -431,7 +432,7 @@ class GroupService {
     }
   }  
 
-  /**
+    /**
    * Invite user to group
    * @param {string} groupId - Group ID
    * @param {string} email - Email to invite
@@ -464,7 +465,7 @@ class GroupService {
       const invitation = {
         email,
         invited_by: inviterId,
-        invited_at: new Date() ,
+        invited_at: new Date(),
         status: 'pending',
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
       };
@@ -482,10 +483,28 @@ class GroupService {
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
       
+      // Get inviter details - Fix for MongoDB/Mongoose
+      const User = require('../models/user.model') ;
+      let inviterName = 'A user'; // Default fallback
+
+      try {
+        // For MongoDB/Mongoose
+        const inviter = await User.findOne({ user_id: inviterId });
+        
+        if (inviter) {
+          inviterName = inviter.first_name && inviter.last_name ? 
+            `${inviter.first_name} ${inviter.last_name}`.trim() : 
+            (inviter.username || 'A user');
+        }
+      } catch (error) {
+        console.error('Error finding inviter:', error);
+        // Continue with default inviterName
+      }
+
       // Send invitation email
       const emailResult = await emailService.sendInvitationEmail(email, {
         groupName: group.group_name,
-        inviterName: inviter ? `${inviter.first_name} ${inviter.last_name}`.trim()  || inviter.username : 'A user',
+        inviterName: inviterName,
         invitationLink
       });
       
@@ -497,7 +516,6 @@ class GroupService {
       throw error;
     }
   }
-
 
   /**
    * Get group invitations
