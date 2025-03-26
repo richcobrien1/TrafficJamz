@@ -68,15 +68,18 @@ const GroupSchema = new Schema({
     },
     first_name: {
       type: String,
+      required: true // Add this line
     },
     last_name: {
       type: String,
+      required: true // Add this line
     },
     email: {
       type: String,
     },
     phone_number: {
       type: String,
+      required: true // Add this line
     },
     role: {
       type: String,
