@@ -104,6 +104,9 @@ const GroupSchema = new Schema({
       type: String,
       required: true
     },
+    phone_number: {
+      type: String,
+    },
     invited_by: {
       type: String,
       required: true
