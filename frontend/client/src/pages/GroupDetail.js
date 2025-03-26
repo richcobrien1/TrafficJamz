@@ -435,7 +435,7 @@ const GroupDetail = () => {
                               <ListItemText 
                                 primary={
                                   <>
-                                    {member.username}
+                                    {`${member.first_name || ''} ${member.last_name || ''}`}
                                     {member.user_id === user?.user_id && ' (You)'}
                                     {member.user_id === group.owner_id && (
                                       <Chip 

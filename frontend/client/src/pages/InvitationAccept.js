@@ -193,6 +193,7 @@ const InvitationAccept = () => {
           />
           <TextField
             margin="normal"
+            required
             fullWidth
             id="lastName"
             label="Last Name"
@@ -219,7 +220,7 @@ const InvitationAccept = () => {
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
             onClick={handleAcceptInvitation}
-            disabled={!formData.firstName || !formData.mobilePhone}
+            disabled={!formData.firstName || !formData.lastName || !formData.mobilePhone} 
           >
             Accept Invitation
           </Button>
@@ -276,7 +277,7 @@ const InvitationAccept = () => {
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText 
-                  primary={`${member.first_name || ''} ${member.last_name || ''}`.trim() || member.username || 'Unknown User'} 
+                  primary={`${member.first_name || ''} ${member.last_name || ''}`.trim() || member.username || 'Invitee'} 
                   secondary={
                     <Typography variant="body2" color="text.secondary">
                       {member.role.charAt(0).toUpperCase() + member.role.slice(1)}

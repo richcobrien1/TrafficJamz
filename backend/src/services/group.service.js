@@ -68,6 +68,9 @@ class GroupService {
         throw new Error('Group not found');
       }
       
+      // Require the User model once outside the map function
+      const User = require('../models/user.model');
+      
       // Transform the group data for the response
       const transformedGroup = {
         id: group._id,
@@ -82,27 +85,40 @@ class GroupService {
         // Transform members with user details
         members: await Promise.all((group.group_members || []).map(async (member) => {
           // Fetch user details for this member
-          const User = require('../models/user.model');
           let userData = null;
           
           try {
-            userData = await User.findOne({ user_id: member.user_id });
+            // Check if the user_id is a valid UUID before querying PostgreSQL
+            const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(member.user_id);
+            
+            if (isValidUUID) {
+              // Only query PostgreSQL for valid UUIDs
+              userData = await User.findOne({ 
+                where: { user_id: member.user_id } 
+              });
+              
+              console.log(`Found user data for ${member.user_id}: ${userData ? userData.username : 'null'}`);
+            } else {
+              console.log(`Skipping PostgreSQL query for non-UUID member: ${member.user_id}`);
+            }
           } catch (err) {
             console.error(`Error fetching user data for member ${member.user_id}:`, err);
           }
           
+          // Use member data from MongoDB if available, otherwise use PostgreSQL data
           return {
             id: member._id,
             user_id: member.user_id,
             role: member.role,
             status: member.status,
             joined_at: member.joined_at,
-            // Add user details
-            username: userData?.username || 'Unknown User',
-            email: userData?.email || '',
+            // Prioritize MongoDB data for these fields
+            first_name: member.first_name || userData?.first_name || '',
+            last_name: member.last_name || userData?.last_name || '',
+            username: userData?.username || member.first_name || 'Unknown User',
+            email: member.email || userData?.email || '',
             profile_image_url: userData?.profile_image_url || '',
-            first_name: userData?.first_name || '',
-            last_name: userData?.last_name || ''
+            phone_number: member.phone_number || userData?.phone_number || ''
           };
         })),
         
@@ -121,7 +137,7 @@ class GroupService {
     } catch (error) {
       throw error;
     }
-  }  
+  }
 
   /**
    * Get groups for a user

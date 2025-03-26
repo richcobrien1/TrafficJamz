@@ -27,7 +27,7 @@ api.interceptors.response.use(
     // Handle 401 Unauthorized errors (token expired)
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
-      // window.location.href = '/login';
+      // window.location.href = '/login';api.js context
     }
     return Promise.reject(error);
   }
