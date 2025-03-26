@@ -17,10 +17,7 @@ const connectMongoDB = async () => {
       await mongoose.connection.close();
     }
     
-    await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    })
+    await mongoose.connect(MONGODB_URI)
     .then(() => {
       console.log('MongoDB connected successfully');
       console.log('Connection state:', mongoose.connection.readyState);

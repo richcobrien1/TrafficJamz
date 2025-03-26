@@ -112,8 +112,6 @@ mongoose.set('bufferTimeoutMS', 30000); // Increase buffer timeout
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/audiogroupapp';
 
 mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   connectTimeoutMS: 30000,

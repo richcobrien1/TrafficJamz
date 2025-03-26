@@ -16,7 +16,6 @@ import SubscriptionPlans from './pages/SubscriptionPlans';
 import ForgotPassword from './pages/ForgotPassword';
 import TestIntegration from './pages/TestIntegration';
 import NotFound from './pages/NotFound';
-// In your App.js or wherever you define routes
 import InvitationAccept from './pages/InvitationAccept';
 
 // Protected route component

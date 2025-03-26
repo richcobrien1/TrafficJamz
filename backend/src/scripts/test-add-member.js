@@ -6,7 +6,7 @@ async function addTestMember() {
   try {
     await mongoose.connect('mongodb://localhost:27017/audiogroupapp'); // Adjust connection string
     
-    const groupId = '67e0e5a0f5ea8a260b2b726b'; // Replace with your actual group ID
+    const groupId = '67e1a36659b3bdffe62cf54a'; // Replace with your actual group ID
     const testUserId = '1e644d41-007f-43a3-8cd3-02d944176920'; // Replace with a test user ID from your Sequelize users table
     
     const group = await Group.findById(groupId);
@@ -25,6 +25,11 @@ async function addTestMember() {
     // Add the test member
     group.group_members.push({
       user_id: testUserId,
+      nickname: 'Munchy',
+      first_name: 'Richard',
+      last_name: 'O\'Brien',
+      email: 'richcobrien@hotmail.com',
+      phone_number: '7206569650',
       role: 'member',
       status: 'active',
       joined_at: new Date()

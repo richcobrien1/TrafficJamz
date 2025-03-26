@@ -159,7 +159,7 @@ class GroupService {
    */
   async updateGroup(groupId, updateData, user_id) {
     try {
-      console.log('group.service.js - updateGroup:', groupId, updateData);
+      console.log('group.service.js - updateGroup:', user_id, groupId, updateData);
       
       const group = await Group.findById(groupId);
       if (!group) {
@@ -187,7 +187,6 @@ class GroupService {
       throw error;
     }
   }
-  
 
   /**
    * Update group settings
@@ -737,7 +736,7 @@ class GroupService {
         profile: {
           first_name: firstName,
           last_name: lastName,
-          mobile_phone: mobilePhone,
+          phone_number: mobilePhone,
           email: email
         }
       });
