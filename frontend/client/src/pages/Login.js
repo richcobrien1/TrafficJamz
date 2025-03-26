@@ -26,7 +26,6 @@ const Login = () => {
   const navigate = useNavigate();
   
   const handleLoginSuccess = () => {
-    // Check if there's a redirect URL saved
     const redirectUrl = localStorage.getItem('redirectAfterLogin');
     if (redirectUrl) {
       localStorage.removeItem('redirectAfterLogin'); // Clear it
