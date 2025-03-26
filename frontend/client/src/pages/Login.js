@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Container, 
   Box, 
@@ -24,6 +24,17 @@ const Login = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  
+  const handleLoginSuccess = () => {
+    // Check if there's a redirect URL saved
+    const redirectUrl = localStorage.getItem('redirectAfterLogin');
+    if (redirectUrl) {
+      localStorage.removeItem('redirectAfterLogin'); // Clear it
+      navigate(redirectUrl);
+    } else {
+      navigate('/dashboard'); // Or your default route
+    }
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();

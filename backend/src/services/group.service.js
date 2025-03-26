@@ -58,16 +58,18 @@ class GroupService {
    * @param {string} groupId - Group ID
    * @returns {Promise<Object>} - Group object with populated member details
    */
+  // In your group.service.js file
   async getGroupById(groupId) {
     try {
-      // Find the group by ID
+      // Find the group in the database
       const group = await Group.findById(groupId);
+      
       if (!group) {
         throw new Error('Group not found');
       }
       
-      // Create a formatted group object with the structure expected by frontend
-      const formattedGroup = {
+      // Transform the group data for the response
+      const transformedGroup = {
         id: group._id,
         name: group.group_name,
         description: group.group_description,
@@ -76,58 +78,50 @@ class GroupService {
         status: group.status,
         createdAt: group.createdAt,
         updatedAt: group.updatedAt,
-        members: []
-      };
-      
-      // If there are members, fetch their user details
-      if (group.group_members && group.group_members.length > 0) {
-        // Get all user IDs from the members array
-        const userIds = group.group_members.map(member => member.user_id);
         
-        // Import the User model - make sure the path is correct for your project structure
-        const User = require('../models/user.model'); // Adjust path as needed
-        
-        // Fetch all users in one query using Sequelize
-        const users = await User.findAll({
-          where: {
-            user_id: userIds
-          },
-          attributes: ['user_id', 'username', 'email', 'profile_image_url', 'first_name', 'last_name']
-        });
-        
-        // Create a map of user_id to user details for quick lookup
-        const userMap = {};
-        users.forEach(user => {
-          const userData = user.get({ plain: true });
-          userMap[userData.user_id] = userData;
-        });
-        
-        // Combine member data with user data
-        formattedGroup.members = group.group_members.map(member => {
-          const user = userMap[member.user_id] || {};
+        // Transform members with user details
+        members: await Promise.all((group.group_members || []).map(async (member) => {
+          // Fetch user details for this member
+          const User = require('../models/user.model');
+          let userData = null;
+          
+          try {
+            userData = await User.findOne({ user_id: member.user_id });
+          } catch (err) {
+            console.error(`Error fetching user data for member ${member.user_id}:`, err);
+          }
+          
           return {
             id: member._id,
             user_id: member.user_id,
             role: member.role,
             status: member.status,
             joined_at: member.joined_at,
-            // Add user profile details
-            username: user.username || 'Unknown User',
-            email: user.email || '',
-            profile_image_url: user.profile_image_url || '',
-            first_name: user.first_name || '',
-            last_name: user.last_name || ''
+            // Add user details
+            username: userData?.username || 'Unknown User',
+            email: userData?.email || '',
+            profile_image_url: userData?.profile_image_url || '',
+            first_name: userData?.first_name || '',
+            last_name: userData?.last_name || ''
           };
-        });
-      }
+        })),
+        
+        // Add invitations to the transformed group
+        invitations: (group.invitations || []).map(invitation => ({
+          id: invitation._id,
+          email: invitation.email,
+          invited_by: invitation.invited_by,
+          invited_at: invitation.invited_at,
+          status: invitation.status,
+          expires_at: invitation.expires_at
+        }))
+      };
       
-      return formattedGroup;
+      return transformedGroup;
     } catch (error) {
-      console.error('Error in getGroupById:', error);
       throw error;
     }
-  }
-  
+  }  
 
   /**
    * Get groups for a user
@@ -648,7 +642,7 @@ class GroupService {
 
       // Find group with this invitation
       const group = await Group.findOne({
-        'invitations._id': mongoose.Types.ObjectId(invitationId),
+        'invitations._id': new mongoose.Types.ObjectId(invitationId),
         'invitations.email': user.email,
         'invitations.status': 'pending'
       });
@@ -687,53 +681,195 @@ class GroupService {
     }
   }
 
+    /**
+   * Accept group invitation for new user
+   * @param {string} invitationId - Invitation ID
+   * @param {string} tempUserId - Temporary user ID
+   * @param {Object} userData - User data
+   * @returns {Promise<Object>} - Group data
+   */
+  async acceptInvitationForNewUser(invitationId, tempUserId, userData) {
+    try {
+      const { firstName, lastName, mobilePhone, email } = userData;
+      
+      // Convert string ID to MongoDB ObjectId
+      const objectId = new mongoose.Types.ObjectId(invitationId);
+      console.log('Looking for invitation with ID:', invitationId);
+      
+      // Find group with this invitation
+      let group = await Group.findOne({
+        'invitations._id': objectId,
+        'invitations.email': email,
+        'invitations.status': 'pending'
+      });
+      
+      if (!group) {
+        throw new Error('Invitation not found');
+      }
+      
+      console.log('Found group with ID:', group._id);
+      
+      // Find invitation by ID
+      const invitationIndex = group.invitations.findIndex(
+        inv => inv._id.toString() === invitationId && inv.email === email && inv.status === 'pending'
+      );
+
+      if (invitationIndex === -1) {
+        throw new Error('Invitation not found in group');
+      }
+
+      // Check if invitation is expired
+      const invitation = group.invitations[invitationIndex];
+      if (invitation.expires_at < new Date()) {
+        throw new Error('Invitation has expired');
+      }
+
+      // Update invitation status
+      group.invitations[invitationIndex].status = 'accepted';
+      
+      // Add user to group as invitee
+      group.group_members.push({
+        user_id: tempUserId,
+        role: 'invitee',
+        status: 'active',
+        joined_at: new Date(),
+        // Store user profile data in the group member record
+        profile: {
+          first_name: firstName,
+          last_name: lastName,
+          mobile_phone: mobilePhone,
+          email: email
+        }
+      });
+      
+      await group.save();
+      return group;
+    } catch (error) {
+      console.error('Error in acceptInvitationForNewUser:', error);
+      throw error;
+    }
+  }
+
   /**
    * Decline group invitation
    * @param {string} invitationId - Invitation ID
    * @param {string} user_id - User ID declining the invitation
    * @returns {Promise<boolean>} - Success status
    */
-  async declineInvitation(invitationId, user_id) {
+  async acceptInvitation(invitationId, user_id) {
     try {
-      // Find user
+      // Find user - FIX THE SEQUELIZE QUERY
+      console.log('About to query user with:', { user_id });
+      
+      // If using Sequelize for User model
       const user = await User.findOne({
-         where: { user_id: user_id } 
+        where: { user_id: user_id }  // Make sure 'where' is specified
       });
-      console.log('585-group.service: Query result:', user ? 'User found' : 'User not found');     
-
+      
+      // Alternative if using Mongoose for User model
+      // const user = await User.findOne({ user_id: user_id });
+      
+      console.log('Query result:', user ? 'User found' : 'User not found');     
       if (!user) {
         throw new Error('User not found');
       }
-
+  
+      // Convert string ID to MongoDB ObjectId
+      const objectId = new mongoose.Types.ObjectId(invitationId);
+      console.log('Looking for invitation with ID:', invitationId);
+      
       // Find group with this invitation
-      const group = await Group.findOne({
-        'invitations._id': mongoose.Types.ObjectId(invitationId),
-        'invitations.email': user.email,
-        'invitations.status': 'pending'
+      let group = await Group.findOne({
+        'invitations._id': objectId
       });
-
+      
       if (!group) {
-        throw new Error('Invitation not found');
+        throw new Error('Group with invitation not found');
       }
-
-      // Find invitation
+      
+      console.log('Found group with ID:', group._id);
+      console.log('Group has invitations:', group.invitations ? 'Yes' : 'No');
+      
+      if (group.invitations && group.invitations.length > 0) {
+        console.log('Number of invitations:', group.invitations.length);
+        
+        // Log all invitation IDs for debugging
+        group.invitations.forEach((inv, index) => {
+          console.log(`Invitation ${index}: ID=${inv._id}, email=${inv.email}, status=${inv.status}`);
+        });
+      }
+  
+      // Find invitation by ID
       const invitationIndex = group.invitations.findIndex(
-        inv => inv._id.toString() === invitationId && inv.email === user.email && inv.status === 'pending'
+        inv => inv._id.toString() === invitationId
       );
-
+  
       if (invitationIndex === -1) {
-        throw new Error('Invitation not found');
+        console.log('Invitation not found by ID match');
+        throw new Error('Invitation not found in group');
       }
+  
+      const invitation = group.invitations[invitationIndex];
+      console.log('Found invitation:', invitation);
 
+      // Check if invitation is for this user
+      if (invitation.email !== user.email) {
+        // If the invited email doesn't belong to any user yet, we should allow
+        // the current user to claim it (for testing purposes)
+        const invitedUserExists = await User.findOne({
+          where: { email: invitation.email }
+        });
+        
+        if (invitedUserExists) {
+          // If a user with this email exists, enforce the security check
+          console.log(`Invitation email (${invitation.email}) doesn't match user email (${user.email})`);
+          throw new Error('This invitation is not for your email address');
+        } else {
+          // For new users not in the system, allow the current user to accept
+          console.log(`Invitation email (${invitation.email}) is for a new user. Allowing current user (${user.email}) to accept for testing.`);
+          // Optionally, you could update the invitation email to match the current user
+          // invitation.email = user.email;
+        }
+      }
+      
+      // Check if invitation is for this user
+      if (invitation.email !== user.email) {
+        console.log(`Invitation email (${invitation.email}) doesn't match user email (${user.email})`);
+        throw new Error('This invitation is not for your email address');
+      }
+      
+      // Check if invitation is pending
+      if (invitation.status !== 'pending') {
+        console.log(`Invitation status is ${invitation.status}, not pending`);
+        throw new Error(`Invitation has already been ${invitation.status}`);
+      }
+  
+      // Check if invitation is expired
+      if (invitation.expires_at < new Date()) {
+        console.log('Invitation has expired');
+        throw new Error('Invitation has expired');
+      }
+  
       // Update invitation status
-      group.invitations[invitationIndex].status = 'declined';
+      group.invitations[invitationIndex].status = 'accepted';
+      console.log('Updated invitation status to accepted');
+  
+      // Add user to group
+      if (!group.isMember(user_id)) {
+        console.log('Adding user to group members');
+        group.addMember(user_id, 'member');
+      } else {
+        console.log('User is already a member of this group');
+      }
+  
       await group.save();
-
-      return true;
+      console.log('Group saved successfully');
+      return group;
     } catch (error) {
+      console.error('Error in acceptInvitation:', error);
       throw error;
     }
   }
-}
-
+}  
+  
 module.exports = new GroupService();

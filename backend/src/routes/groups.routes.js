@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const groupService = require('../services/group.service');
 const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
@@ -451,6 +452,44 @@ router.post('/invitations/:invitationId/decline',
     try {
       await groupService.declineInvitation(req.params.invitationId, req.user.user_id);
       res.json({ success: true, message: 'Invitation declined successfully' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
+ * @route POST /api/groups/invitations/:invitationId/accept-new
+ * @desc Accept group invitation for new users
+ * @access Public
+ */
+router.post('/invitations/:invitationId/accept-new',
+  [
+    param('invitationId').isMongoId().withMessage('Invalid invitation ID'),
+    body('firstName').notEmpty().withMessage('First name is required'),
+    body('mobilePhone').notEmpty().withMessage('Mobile phone is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const { firstName, lastName, mobilePhone, email } = req.body;
+      
+      // Create a temporary user ID for the invitee
+      const tempUserId = new mongoose.Types.ObjectId().toString();
+      
+      const group = await groupService.acceptInvitationForNewUser(
+        req.params.invitationId,
+        tempUserId,
+        {
+          firstName,
+          lastName,
+          mobilePhone,
+          email
+        }
+      );
+      
+      res.json({ success: true, group });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }

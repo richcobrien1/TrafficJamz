@@ -66,9 +66,21 @@ const GroupSchema = new Schema({
       type: String,
       required: true
     },
+    first_name: {
+      type: String,
+    },
+    last_name: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    phone_number: {
+      type: String,
+    },
     role: {
       type: String,
-      enum: ['owner', 'admin', 'member'],
+      enum: ['owner', 'admin', 'member', 'invitee'],
       default: 'member'
     },
     joined_at: {
@@ -116,6 +128,13 @@ const GroupSchema = new Schema({
 });
 
 // Add methods
+GroupSchema.methods.isMember = function(email) {
+  return this.group_members.some(member => member.email === email);
+};
+GroupSchema.methods.isMember = function(phone_number) {
+  return this.group_members.some(member => member.phone_number === phone_number);
+};
+
 GroupSchema.methods.isMember = function(user_id) {
   return this.group_members.some(member => member.user_id === user_id);
 };
