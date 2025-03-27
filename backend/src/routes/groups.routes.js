@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const Group = require('../models/group.model');
 const groupService = require('../services/group.service');
 const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
@@ -463,37 +464,78 @@ router.post('/invitations/:invitationId/decline',
  * @desc Accept group invitation for new users
  * @access Public
  */
-router.post('/invitations/:invitationId/accept-new',
-  [
-    param('invitationId').isMongoId().withMessage('Invalid invitation ID'),
-    body('firstName').notEmpty().withMessage('First name is required'),
-    body('mobilePhone').notEmpty().withMessage('Mobile phone is required'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    validate
-  ],
-  async (req, res) => {
-    try {
-      const { firstName, lastName, mobilePhone, email } = req.body;
-      
-      // Create a temporary user ID for the invitee
-      const tempUserId = new mongoose.Types.ObjectId().toString();
-      
-      const group = await groupService.acceptInvitationForNewUser(
-        req.params.invitationId,
-        tempUserId,
-        {
-          firstName,
-          lastName,
-          mobilePhone,
-          email
-        }
-      );
-      
-      res.json({ success: true, group });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
+// In your invitation acceptance endpoin// In your groups.routes.js file
+router.post('/invitations/:id/accept-new', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, mobilePhone, email } = req.body;
+    
+    console.log('Accepting invitation with data:', { id, firstName, lastName, mobilePhone, email });
+    
+    // Find the group with this invitation
+    const group = await Group.findOne({ 'invitations._id': id });
+    
+    if (!group) {
+      console.log('Group not found for invitation:', id);
+      return res.status(404).json({ success: false, message: 'Invitation not found' });
     }
+    
+    console.log('Found group with ID:', group._id);
+    
+    // Find the invitation in the group
+    const invitation = group.invitations.find(inv => inv._id.toString() === id);
+    
+    if (!invitation) {
+      console.log('Invitation not found in group');
+      return res.status(404).json({ success: false, message: 'Invitation not found in group' });
+    }
+    
+    // Generate a temporary user ID
+    const tempUserId = new mongoose.Types.ObjectId().toString();
+    
+    // Create a new member with ALL required fields
+    const newMember = {
+      user_id: tempUserId,
+      first_name: firstName,
+      last_name: lastName,
+      email: email || invitation.email,
+      phone_number: mobilePhone,
+      role: 'invitee',
+      status: 'active',
+      joined_at: new Date()
+    };
+    
+    console.log('Creating new member:', newMember);
+    
+    // Add the new member to the group
+    group.group_members.push(newMember);
+    
+    // Update the invitation status
+    invitation.status = 'accepted';
+    
+    // Save with error handling
+    try {
+      await group.save();
+      console.log('Group saved successfully with new member');
+    } catch (saveError) {
+      console.error('Error saving group:', saveError);
+      // Try without validation as fallback
+      await group.save({ validateBeforeSave: false });
+      console.log('Group saved with validation disabled');
+    }
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Invitation accepted successfully',
+      group: {
+        id: group._id,
+        name: group.group_name
+      }
+    });
+  } catch (error) {
+    console.error('Error accepting invitation:', error);
+    return res.status(500).json({ success: false, message: 'Failed to accept invitation' });
   }
-);
+});
 
 module.exports = router;

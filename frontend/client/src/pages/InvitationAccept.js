@@ -3,8 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { 
-  Box, Typography, Button, CircularProgress, TextField,
-  List, ListItem, ListItemText, ListItemAvatar, Avatar
+  Alert,
+  Avatar,  
+  Button, 
+  Box, 
+  CircularProgress,
+  List, 
+  ListItem, 
+  ListItemText, 
+  ListItemAvatar, 
+  Paper,
+  Typography, 
+  TextField,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 
@@ -171,60 +181,77 @@ const InvitationAccept = () => {
   if (status === 'show_form') {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4, maxWidth: 500, mx: 'auto' }}>
-        <Typography variant="h5" gutterBottom>
-          Accept Invitation
-        </Typography>
-        
-        <Typography variant="body1" sx={{ mb: 3 }}>
-          You've been invited to join <strong>{group?.name}</strong>. Please provide the following information to accept the invitation.
-        </Typography>
-        
-        <Box component="form" sx={{ width: '100%', mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="firstName"
-            label="First Name"
-            name="firstName"
-            autoComplete="given-name"
-            value={formData.firstName}
-            onChange={handleInputChange}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="lastName"
-            label="Last Name"
-            name="lastName"
-            autoComplete="family-name"
-            value={formData.lastName}
-            onChange={handleInputChange}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="mobilePhone"
-            label="Mobile Phone"
-            name="mobilePhone"
-            autoComplete="tel"
-            value={formData.mobilePhone}
-            onChange={handleInputChange}
-          />
-          
-          <Button
-            type="button"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            onClick={handleAcceptInvitation}
-            disabled={!formData.firstName || !formData.lastName || !formData.mobilePhone} 
-          >
+        <Paper sx={{ p: 3, width: '100%' }}>
+          <Typography variant="h5" gutterBottom align="center">
             Accept Invitation
-          </Button>
-        </Box>
+          </Typography>
+          
+          <Typography variant="body1" sx={{ mb: 3 }} align="center">
+            You've been invited to join <strong>{group?.name}</strong>
+          </Typography>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          <Box component="form" sx={{ width: '100%', mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="firstName"
+              label="First Name"
+              name="firstName"
+              autoComplete="given-name"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              variant="outlined"
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="lastName"
+              label="Last Name"
+              name="lastName"
+              autoComplete="family-name"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              variant="outlined"
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="mobilePhone"
+              label="Mobile Phone"
+              name="mobilePhone"
+              autoComplete="tel"
+              value={formData.mobilePhone}
+              onChange={handleInputChange}
+              variant="outlined"
+            />
+            
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="contained"
+                onClick={handleAcceptInvitation}
+                disabled={!formData.firstName || !formData.lastName || !formData.mobilePhone}
+              >
+                Accept Invitation
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
       </Box>
     );
   }
@@ -273,14 +300,14 @@ const InvitationAccept = () => {
               <ListItem key={member.id}>
                 <ListItemAvatar>
                   <Avatar src={member.profile_image_url || ''}>
-                    <PersonIcon />
+                    {member.username ? member.username[0] : (member.first_name ? member.first_name[0] : '?')}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText 
                   primary={`${member.first_name || ''} ${member.last_name || ''}`.trim() || member.username || 'Invitee'} 
                   secondary={
                     <Typography variant="body2" color="text.secondary">
-                      {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                      {member.role.toUpperCase() + member.role.slice(1)}
                     </Typography>
                   }
                 />
