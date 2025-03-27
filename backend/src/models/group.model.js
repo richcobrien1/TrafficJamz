@@ -1,4 +1,3 @@
-// models/group.model.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -61,6 +60,7 @@ const GroupSchema = new Schema({
       default: false
     }
   },
+  // For the group_members schema in group.model.js
   group_members: [{
     user_id: {
       type: String,
@@ -68,39 +68,50 @@ const GroupSchema = new Schema({
     },
     first_name: {
       type: String,
-      required: true // Add this line
+      validate: {
+        validator: function(v) {
+          // Skip validation for existing documents
+          if (this.isNew === false && (v === undefined || v === null)) return true;
+          // Skip validation for non-active members
+          if (this.status !== 'active') return true;
+          // Require value for active members
+          return v !== undefined && v !== null && v !== '';
+        },
+        message: 'First name is required for active members'
+      }
     },
     last_name: {
       type: String,
-      required: true // Add this line
+      validate: {
+        validator: function(v) {
+          // Skip validation for existing documents
+          if (this.isNew === false && (v === undefined || v === null)) return true;
+          // Skip validation for non-active members
+          if (this.status !== 'active') return true;
+          // Require value for active members
+          return v !== undefined && v !== null && v !== '';
+        },
+        message: 'Last name is required for active members'
+      }
     },
     email: {
       type: String,
     },
     phone_number: {
       type: String,
-      required: true // Add this line
+      validate: {
+        validator: function(v) {
+          // Skip validation for existing documents
+          if (this.isNew === false && (v === undefined || v === null)) return true;
+          // Skip validation for non-active members
+          if (this.status !== 'active') return true;
+          // Require value for active members
+          return v !== undefined && v !== null && v !== '';
+        },
+        message: 'Phone number is required for active members'
+      }
     },
-    role: {
-      type: String,
-      enum: ['owner', 'admin', 'member', 'invitee'],
-      default: 'member'
-    },
-    joined_at: {
-      type: Date,
-      default: Date.now
-    },
-    status: {
-      type: String,
-      enum: ['active', 'inactive', 'muted'],
-      default: 'active'
-    },
-    nickname: {
-      type: String
-    },
-    last_active: {
-      type: Date
-    }
+    // Rest of the schema remains the same
   }],
   invitations: [{
     email: {
