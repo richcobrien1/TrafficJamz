@@ -75,9 +75,11 @@ router.post('/',
         avatar_url: req.body.avatar_url
       };
 
-      console.log('group.routes.js - 64: =>>>  ' + req.body.group_name + ' - ' + req.body.group_description + ' : ' + req.user.user_id)
+      // console.log('group.routes.js - 64: =>>>  ' + req.body.group_name + ' - ' + req.body.group_description + ' : ' + req.user.user_id)
 
       const group = await groupService.createGroup(groupData, req.user.user_id);
+
+      console.log('Group Members: ' + group.group_members)
       
       // Format the response to match frontend expectations
       const formattedGroup = {
@@ -465,6 +467,7 @@ router.post('/invitations/:invitationId/decline',
  * @access Public
  */
 // In your invitation acceptance endpoin// In your groups.routes.js file
+// In your groups.routes.js file
 router.post('/invitations/:id/accept-new', async (req, res) => {
   try {
     const { id } = req.params;
@@ -490,19 +493,42 @@ router.post('/invitations/:id/accept-new', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Invitation not found in group' });
     }
     
-    // Generate a temporary user ID
-    const tempUserId = new mongoose.Types.ObjectId().toString();
+    // Check if user already exists in PostgreSQL by email
+    let userId;
+    try {
+      // Import the Sequelize models if not already available
+      const db = require('../models/user.model'); // Adjust path as needed
+      
+      // Query PostgreSQL to check if a user with this email already exists
+      const existingUser = await db.users.findOne({
+        where: { email: email }
+      });
+      
+      if (existingUser) {
+        // User exists in PostgreSQL, use their UUID
+        console.log(`Found existing user with email ${email}, using UUID: ${existingUser.id}`);
+        userId = existingUser.id; // This is the PostgreSQL UUID
+      } else {
+        // User doesn't exist in PostgreSQL, generate MongoDB ObjectId
+        console.log(`No existing user found with email ${email}, generating new MongoDB ObjectId`);
+        userId = new mongoose.Types.ObjectId().toString();
+      }
+    } catch (error) {
+      console.error(`Error checking for existing user: ${error.message}`);
+      // Fallback to MongoDB ObjectId if PostgreSQL query fails
+      userId = new mongoose.Types.ObjectId().toString();
+    }
     
     // Create a new member with ALL required fields
     const newMember = {
-      user_id: tempUserId,
+      user_id: userId, // Now using either PostgreSQL UUID or MongoDB ObjectId
       first_name: firstName,
       last_name: lastName,
       email: email || invitation.email,
       phone_number: mobilePhone,
-      role: 'invitee',
-      status: 'active',
-      joined_at: new Date()
+      role: 'invitee',           // Important for permissions
+      status: 'active',          // Important for member state
+      joined_at: new Date(),     // Important for tracking
     };
     
     console.log('Creating new member:', newMember);
@@ -530,7 +556,8 @@ router.post('/invitations/:id/accept-new', async (req, res) => {
       group: {
         id: group._id,
         name: group.group_name
-      }
+      },
+      isExistingUser: userId.includes('-') // Simple check if it's a UUID format
     });
   } catch (error) {
     console.error('Error accepting invitation:', error);

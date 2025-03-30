@@ -6,7 +6,7 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Grid2, 
+  Grid, 
   Link, 
   Paper,
   Avatar,
@@ -131,8 +131,8 @@ const Register = () => {
         
         <Box component="form" sx={{ mt: 3, width: '100%' }}>
           {activeStep === 0 ? (
-            <Grid2 container spacing={2}>
-              <Grid2 item xs={12}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -143,8 +143,8 @@ const Register = () => {
                   value={formData.username}
                   onChange={handleChange}
                 />
-              </Grid2>
-              <Grid2 item xs={12}>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -155,8 +155,8 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                 />
-              </Grid2>
-              <Grid2 item xs={12}>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -169,8 +169,8 @@ const Register = () => {
                   onChange={handleChange}
                   helperText="Password must be at least 8 characters long"
                 />
-              </Grid2>
-              <Grid2 item xs={12}>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -181,11 +181,11 @@ const Register = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           ) : (
-            <Grid2 container spacing={2}>
-              <Grid2 item xs={12} sm={6}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   id="first_name"
@@ -195,8 +195,8 @@ const Register = () => {
                   value={formData.first_name}
                   onChange={handleChange}
                 />
-              </Grid2>
-              <Grid2 item xs={12} sm={6}>
+              </Grid>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   id="last_name"
@@ -206,8 +206,8 @@ const Register = () => {
                   value={formData.last_name}
                   onChange={handleChange}
                 />
-              </Grid2>
-              <Grid2 item xs={12}>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   id="phone_number"
@@ -217,8 +217,8 @@ const Register = () => {
                   value={formData.phone_number}
                   onChange={handleChange}
                 />
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           )}
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
@@ -241,13 +241,13 @@ const Register = () => {
           </Box>
         </Box>
         
-        <Grid2 container justifyContent="flex-end" sx={{ mt: 3 }}>
-          <Grid2 item>
+        <Grid container justifyContent="flex-end" sx={{ mt: 3 }}>
+          <Grid item>
             <Link component={RouterLink} to="/login" variant="body2">
               Already have an account? Sign in
             </Link>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       </Paper>
       <Box mt={4}>
         <Typography variant="body2" color="text.secondary" align="center">

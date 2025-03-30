@@ -307,7 +307,7 @@ const InvitationAccept = () => {
                   primary={`${member.first_name || ''} ${member.last_name || ''}`.trim() || member.username || 'Invitee'} 
                   secondary={
                     <Typography variant="body2" color="text.secondary">
-                      {member.role.toUpperCase() + member.role.slice(1)}
+                      {member.role + member.role.slice(1)}
                     </Typography>
                   }
                 />

@@ -14,11 +14,11 @@ class GroupService {
    * @returns {Promise<Object>} - Newly created group
    */
   async createGroup(groupData, ownerId) {
-    console.log('Creating group with data:', { 
-      name: groupData.group_name, 
-      description: groupData.group_description,
-      owner: ownerId 
-    });
+    // console.log('Creating group with data:', { 
+    //   name: groupData.group_name, 
+    //   description: groupData.group_description,
+    //   owner: ownerId 
+    // });
   
     try {
       // Create group using the create method
@@ -45,7 +45,7 @@ class GroupService {
         }]
       });
       
-      console.log('Group created successfully with ID:', group._id);
+      // console.log('Group created successfully with ID:', group._id, group);
       return group;
     } catch (error) {
       console.error('Error creating group:', error);
@@ -441,7 +441,7 @@ class GroupService {
     }
   }  
 
-    /**
+  /**
    * Invite user to group
    * @param {string} groupId - Group ID
    * @param {string} email - Email to invite
@@ -492,21 +492,51 @@ class GroupService {
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
       
-      // Get inviter details - Fix for MongoDB/Mongoose
-      const User = require('../models/user.model') ;
+      // Get inviter details - Fix for hybrid PostgreSQL/MongoDB system
       let inviterName = 'A user'; // Default fallback
 
       try {
-        // For MongoDB/Mongoose
-        const inviter = await User.findOne({ user_id: inviterId });
+        // Check if inviterId is a valid UUID (registered user) 
+        console.log('Checking inviterId:', inviterId);
+        console.log('Is UUID format?', inviterId.includes('-'));
         
-        if (inviter) {
-          inviterName = inviter.first_name && inviter.last_name ? 
-            `${inviter.first_name} ${inviter.last_name}`.trim() : 
-            (inviter.username || 'A user');
+        if (inviterId.includes('-')) {
+          // Try to get user data using a more direct approach
+          // Import sequelize directly
+          const sequelize = require('../config/database');
+          console.log('Sequelize imported successfully');
+          
+          // Log the SQL query we're about to execute
+          console.log('Executing SQL query for user_id:', inviterId);
+          
+          // Use raw SQL query instead of model methods
+          // FIXED: Removed destructuring to properly handle the array of results
+          const users = await sequelize.query(
+            `SELECT username, first_name, last_name, email FROM users WHERE user_id = :userId`,
+            {
+              replacements: { userId: inviterId },
+              type: sequelize.QueryTypes.SELECT
+            }
+          );
+          
+          console.log('SQL query result:', users);
+          
+          if (users && users.length > 0) {
+            const user = users[0];
+            console.log('Found user data:', user);
+            
+            // Use PostgreSQL user data
+            inviterName = user.first_name && user.last_name ? 
+              `${user.first_name} ${user.last_name}`.trim() : 
+              (user.username || user.email.split('@')[0]);
+            
+            console.log(`Set inviterName to: ${inviterName}`);
+          } else {
+            console.log(`No user found with ID: ${inviterId}`);
+          }
         }
       } catch (error) {
-        console.error('Error finding inviter:', error);
+        console.error('Detailed error finding inviter:', error);
         // Continue with default inviterName
       }
 
