@@ -4,7 +4,7 @@ import {
   Container, 
   Box, 
   Typography, 
-  Grid2, 
+  Grid, 
   Paper, 
   Button, 
   CircularProgress,
@@ -18,7 +18,6 @@ import {
   Avatar,
   Divider,
   Switch,
-  FormControlLabel,
   TextField,
   Alert
 } from '@mui/material';
@@ -111,9 +110,10 @@ const Profile = () => {
       </AppBar>
       
       <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
-        <Grid2 container spacing={3}>
-          <Grid2 item xs={12} md={4}>
-            <Paper sx={{ p: 3, mb: 3 }}>
+        <Grid container spacing={3}>
+          {/* Left column - Profile sidebar */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 3, mb: { xs: 3, md: 0 }, height: '100%' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                 <Avatar 
                   src={currentUser?.profile_image_url}
@@ -129,7 +129,7 @@ const Profile = () => {
                 </Typography>
               </Box>
               
-              <List>
+              <List sx={{ width: '100%' }}>
                 <ListItem button onClick={() => navigate('/subscription-plans')}>
                   <ListItemAvatar>
                     <Avatar>
@@ -186,9 +186,10 @@ const Profile = () => {
                 </ListItem>
               </List>
             </Paper>
-          </Grid2>
+          </Grid>
           
-          <Grid2 item xs={12} md={8}>
+          {/* Right column - Forms */}
+          <Grid item xs={12} md={8}>
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Personal Information
@@ -207,8 +208,8 @@ const Profile = () => {
               )}
               
               <Box component="form" onSubmit={handleSubmit}>
-                <Grid2 container spacing={2}>
-                  <Grid2 item xs={12}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       id="username"
@@ -217,8 +218,8 @@ const Profile = () => {
                       value={formData.username}
                       onChange={handleChange}
                     />
-                  </Grid2>
-                  <Grid2 item xs={12}>
+                  </Grid>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       id="email"
@@ -227,8 +228,8 @@ const Profile = () => {
                       value={formData.email}
                       onChange={handleChange}
                     />
-                  </Grid2>
-                  <Grid2 item xs={12} sm={6}>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       id="first_name"
@@ -237,8 +238,8 @@ const Profile = () => {
                       value={formData.first_name}
                       onChange={handleChange}
                     />
-                  </Grid2>
-                  <Grid2 item xs={12} sm={6}>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       id="last_name"
@@ -247,8 +248,8 @@ const Profile = () => {
                       value={formData.last_name}
                       onChange={handleChange}
                     />
-                  </Grid2>
-                  <Grid2 item xs={12}>
+                  </Grid>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       id="phone_number"
@@ -257,8 +258,8 @@ const Profile = () => {
                       value={formData.phone_number}
                       onChange={handleChange}
                     />
-                  </Grid2>
-                </Grid2>
+                  </Grid>
+                </Grid>
                 
                 <Button
                   type="submit"
@@ -337,8 +338,8 @@ const Profile = () => {
                 Save Notification Settings
               </Button>
             </Paper>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       </Container>
     </Box>
   );

@@ -4,7 +4,7 @@ import {
   Typography, 
   Paper, 
   Container,
-  Grid2,
+  Grid,
   Button,
   CircularProgress,
   Alert,
@@ -299,8 +299,8 @@ const TestIntegration = () => {
         </Alert>
       )}
       
-      <Grid2 container spacing={3}>
-        <Grid2 item xs={12} md={4}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Test Status
@@ -326,9 +326,9 @@ const TestIntegration = () => {
               ))}
             </List>
           </Paper>
-        </Grid2>
+        </Grid>
         
-        <Grid2 item xs={12} md={8}>
+        <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Test Results
@@ -370,8 +370,8 @@ const TestIntegration = () => {
               </List>
             )}
           </Paper>
-        </Grid2>
-      </Grid2>
+        </Grid>
+      </Grid>
     </Container>
   );
 };

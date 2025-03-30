@@ -6,7 +6,7 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Grid2, 
+  Grid, 
   Link, 
   Paper,
   Avatar,
@@ -105,21 +105,21 @@ const Login = () => {
           >
             {loading ? <CircularProgress size={24} /> : 'Sign In'}
           </Button>
-          <Grid2 container spacing={3} sx={{
+          <Grid container spacing={3} sx={{
               justifyContent: "center",
               alignItems: "center",
             }}>
-            <Grid2 item xs>
+            <Grid item xs>
               <Link component={RouterLink} to="/forgot-password" variant="body2">
                 Forgot my password?
               </Link>
-            </Grid2>
-            <Grid2 item xs>
+            </Grid>
+            <Grid item xs>
               <Link component={RouterLink} to="/register" variant="body2">
                 {"Don't have an account? Sign Up"}
               </Link>
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
         </Box>
       </Paper>
       <Box mt={4}>

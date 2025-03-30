@@ -97,6 +97,12 @@ const GroupSchema = new Schema({
     email: {
       type: String,
     },
+    status: {
+      type: String,
+    },
+    role: {
+      type: String,
+    },
     phone_number: {
       type: String,
       validate: {

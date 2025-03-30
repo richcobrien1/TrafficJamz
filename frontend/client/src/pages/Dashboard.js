@@ -4,7 +4,7 @@ import {
   Container, 
   Box, 
   Typography,
-  Grid2, 
+  Grid, 
   Paper, 
   Button, 
   Fab, 
@@ -279,9 +279,9 @@ const Dashboard = () => {
             </Button>
           </Paper>
         ) : (
-          <Grid2 container spacing={3}>
+          <Grid container spacing={3}>
             {groups.map((group) => (
-              <Grid2 item xs={12} sm={6} md={4} key={group.id}>
+              <Grid item xs={12} sm={6} md={4} key={group.id}>
                 <Paper 
                   sx={{ 
                     p: 3, 
@@ -343,9 +343,9 @@ const Dashboard = () => {
                     </Button>
                   </Box>
                 </Paper>
-              </Grid2>
+              </Grid>
             ))}
-          </Grid2>
+          </Grid>
         )}
       </Container>
       
