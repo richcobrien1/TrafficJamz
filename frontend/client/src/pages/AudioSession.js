@@ -49,9 +49,15 @@ const AudioSession = () => {
   const [micMuted, setMicMuted] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const [volume, setVolume] = useState(80);
+  // Add to AudioSession.js
+  const [inputVolume, setInputVolume] = useState(1.0);
+  const [outputVolume, setOutputVolume] = useState(1.0);
   const [openMusicDialog, setOpenMusicDialog] = useState(false);
   const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
   const [leaveLoading, setLeaveLoading] = useState(false);
+  // Add to AudioSession.js
+  const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
+  const [pushToTalkEnabled, setPushToTalkEnabled] = useState(false);
   
   // WebRTC related states
   const [webrtcReady, setWebrtcReady] = useState(false);
@@ -64,6 +70,158 @@ const AudioSession = () => {
   // References for WebRTC
   const localStreamRef = useRef(null);
   const rtcConnectionRef = useRef(null);
+
+  // Add to AudioSession.js
+  const [audioDevices, setAudioDevices] = useState({ inputs: [], outputs: [] });
+  const [selectedInputDevice, setSelectedInputDevice] = useState('');
+  const [selectedOutputDevice, setSelectedOutputDevice] = useState('');
+
+  // Add to AudioSession.js
+  const [musicState, setMusicState] = useState({
+    currentTrack: null,
+    isPlaying: false,
+    position: 0,
+    duration: 0,
+    volume: 0.5
+  });
+
+  // Music player reference
+  const audioPlayerRef = useRef(null);
+
+  // Push-to-talk button handlers
+  const handlePushToTalkDown = () => {
+    if (pushToTalkEnabled) {
+      setIsPushToTalkActive(true);
+      // Temporarily unmute microphone
+      if (localStream) {
+        localStream.getAudioTracks().forEach(track => {
+          track.enabled = true;
+        });
+      }
+    }
+  };
+
+  const handlePushToTalkUp = () => {
+    if (pushToTalkEnabled) {
+      setIsPushToTalkActive(false);
+      // Mute microphone again
+      if (localStream && micMuted) {
+        localStream.getAudioTracks().forEach(track => {
+          track.enabled = false;
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Enumerate available devices
+    navigator.mediaDevices.enumerateDevices()
+      .then(devices => {
+        const inputs = devices.filter(device => device.kind === 'audioinput');
+        const outputs = devices.filter(device => device.kind === 'audiooutput');
+        setAudioDevices({ inputs, outputs });
+        
+        // Set defaults if available
+        if (inputs.length > 0 && !selectedInputDevice) {
+          setSelectedInputDevice(inputs[0].deviceId);
+        }
+        if (outputs.length > 0 && !selectedOutputDevice) {
+          setSelectedOutputDevice(outputs[0].deviceId);
+        }
+      });
+  }, []);
+
+  // Add keyboard shortcut for push-to-talk (spacebar)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space' && pushToTalkEnabled && !isPushToTalkActive) {
+        handlePushToTalkDown();
+      }
+    };
+    
+    const handleKeyUp = (e) => {
+      if (e.code === 'Space' && pushToTalkEnabled && isPushToTalkActive) {
+        handlePushToTalkUp();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [pushToTalkEnabled, isPushToTalkActive]);
+
+  // Create audio level visualization
+  useEffect(() => {
+    if (localStream) {
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(localStream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      const updateMeter = () => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+        setInputLevel(average / 255); // 0 to 1
+        
+        requestAnimationFrame(updateMeter);
+      };
+      
+      updateMeter();
+      
+      return () => {
+        source.disconnect();
+        audioContext.close();
+      };
+    }
+  }, [localStream]);
+
+  // Handle music events from server
+  useEffect(() => {
+    if (socket) {
+      socket.on('music_play', (data) => {
+        setMusicState(prev => ({
+          ...prev,
+          currentTrack: data.trackData,
+          isPlaying: true,
+          position: data.position,
+          serverTimestamp: data.timestamp
+        }));
+        
+        if (audioPlayerRef.current) {
+          // Calculate time difference between server and client
+          const timeDiff = Date.now() - data.timestamp;
+          const adjustedPosition = data.position + timeDiff;
+          
+          audioPlayerRef.current.currentTime = adjustedPosition / 1000;
+          audioPlayerRef.current.play();
+        }
+      });
+      
+      socket.on('music_pause', (data) => {
+        setMusicState(prev => ({
+          ...prev,
+          isPlaying: false,
+          position: data.position
+        }));
+        
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.pause();
+        }
+      });
+    }
+  }, [socket]);
   
   useEffect(() => {
     fetchSessionDetails();
@@ -386,6 +544,9 @@ const AudioSession = () => {
                 <Typography variant="h6" gutterBottom>
                   Audio Controls
                 </Typography>
+              
+                // Add to your JSX
+                <div className="audio-controls"></div>
                 
                 <Box sx={{ mb: 3 }}>
                   <FormControlLabel
@@ -454,6 +615,31 @@ const AudioSession = () => {
                 >
                   Leave Session
                 </Button>
+                <div className="push-to-talk-controls">
+                  <div className="control-toggle">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={pushToTalkEnabled} 
+                        onChange={(e) => setPushToTalkEnabled(e.target.checked)} 
+                      />
+                      Enable Push-to-Talk
+                    </label>
+                  </div>
+                  
+                  {pushToTalkEnabled && (
+                    <button 
+                      className={`push-to-talk-button ${isPushToTalkActive ? 'active' : ''}`}
+                      onMouseDown={handlePushToTalkDown}
+                      onMouseUp={handlePushToTalkUp}
+                      onMouseLeave={handlePushToTalkUp}
+                      onTouchStart={handlePushToTalkDown}
+                      onTouchEnd={handlePushToTalkUp}
+                    >
+                      {isPushToTalkActive ? 'Speaking' : 'Push to Talk'}
+                    </button>
+                  )}
+                </div>
               </Paper>
             </Grid>
           </Grid>
@@ -461,6 +647,65 @@ const AudioSession = () => {
       )}
       
       {/* Music Dialog */}
+      {/* Add to your JSX */}
+      <div className="music-player">
+        <audio 
+          ref={audioPlayerRef}
+          src={musicState.currentTrack?.url}
+          onTimeUpdate={() => {
+            if (audioPlayerRef.current) {
+              setMusicState(prev => ({
+                ...prev,
+                position: audioPlayerRef.current.currentTime * 1000
+              }));
+            }
+          }}
+          onEnded={() => {
+            // Play next track in playlist
+            playNextTrack();
+          }}
+        />
+        <div className="music-controls">
+          <button 
+            onClick={() => {
+              if (musicState.isPlaying) {
+                pauseMusic();
+              } else {
+                playMusic();
+              }
+            }}
+          >
+            {musicState.isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <input 
+            type="range"
+            min="0"
+            max={musicState.duration}
+            value={musicState.position}
+            onChange={(e) => {
+              const newPosition = parseInt(e.target.value);
+              seekMusic(newPosition);
+            }}
+          />
+          <div className="volume-control">
+            <label>Music Volume</label>
+            <input 
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={musicState.volume}
+              onChange={(e) => {
+                const newVolume = parseFloat(e.target.value);
+                setMusicState(prev => ({ ...prev, volume: newVolume }));
+                if (audioPlayerRef.current) {
+                  audioPlayerRef.current.volume = newVolume;
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
       <Dialog open={openMusicDialog} onClose={() => setOpenMusicDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Music Playlist</DialogTitle>
         <DialogContent>
@@ -492,7 +737,6 @@ const AudioSession = () => {
               </Paper>
             </Box>
           )}
-          
           <Typography variant="subtitle1" gutterBottom>
             Playlist
           </Typography>
