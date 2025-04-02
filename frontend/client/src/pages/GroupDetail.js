@@ -55,6 +55,7 @@ const GroupDetail = () => {
   const [tabValue, setTabValue] = useState(0);
   const [openInviteDialog, setOpenInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteTextMsg, setInviteTextMsg] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
@@ -116,7 +117,7 @@ const GroupDetail = () => {
   
   const handleInviteMember = async () => {
     if (!inviteEmail.trim()) {
-      setInviteError('Email is required');
+      setInviteError('Text not available at this time');
       return;
     }
     
@@ -125,7 +126,8 @@ const GroupDetail = () => {
       setInviteError('');
       
       await api.post(`/api/groups/${groupId}/invitations`, {
-        email: inviteEmail
+        email: inviteEmail,
+        text: inviteTextMsg
       });
       
       setOpenInviteDialog(false);
@@ -486,6 +488,18 @@ const GroupDetail = () => {
             variant="outlined"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
+            required
+          />
+          <TextField
+            autoFocus
+            margin="dense"
+            id="text message"
+            label="Mobile Phone"
+            type="phone"
+            fullWidth
+            variant="outlined"
+            value={inviteTextMsg}
+            onChange={(e) => setInviteTextMsg(e.target.value)}
             required
           />
         </DialogContent>

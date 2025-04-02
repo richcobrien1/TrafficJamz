@@ -183,6 +183,34 @@ class UserService {
     }
   }
 
+   /**
+   * Get user by Email
+   * @param {string} email - email
+   * @returns {Promise<Object>} - User data
+   */
+   async getUserByEmail(req) {
+
+    console.log('===========================>  Requested Email: ' + req.query.email)
+
+    try {
+      // Changed from findByPk to findOne with email
+      const user = await User.findOne({ 
+        where: { email: req.query.email } 
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Remove sensitive data
+      const userJson = user.toJSON();
+      delete userJson.password_hash;
+
+      return userJson;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   /**
    * Update user profile
    * @param {string} user_id - User ID

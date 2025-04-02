@@ -79,7 +79,7 @@ router.post('/',
 
       const group = await groupService.createGroup(groupData, req.user.user_id);
 
-      console.log('Group Members: ' + group.group_members)
+      // console.log('Group Members: ' + group.group_members)
       
       // Format the response to match frontend expectations
       const formattedGroup = {
