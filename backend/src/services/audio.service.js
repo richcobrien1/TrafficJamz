@@ -406,6 +406,47 @@ class AudioService {
     }
   }
 
+  // Add to audio.service.js
+  // Music synchronization function
+  async syncMusicPlayback(sessionId, trackData, position, isPlaying) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+      
+      // Update currently playing track
+      session.music.currently_playing = {
+        ...trackData,
+        position: position,
+        started_at: new Date(Date.now() - position),
+        is_playing: isPlaying
+      };
+      
+      await session.save();
+      
+      // Broadcast to all participants via WebSocket/Kafka
+      const musicEvent = {
+        type: isPlaying ? 'music_play' : 'music_pause',
+        sessionId,
+        trackData,
+        position,
+        timestamp: Date.now()
+      };
+      
+      // Use your existing Kafka producer or WebSocket to broadcast
+      kafkaProducer.send({
+        topic: 'audio-events',
+        messages: [{ value: JSON.stringify(musicEvent) }]
+      });
+      
+      return session;
+    } catch (error) {
+      console.error('Error syncing music playback:', error);
+      throw error;
+    }
+  };
+
   /**
    * Update participant status
    * @param {string} sessionId - Audio session ID

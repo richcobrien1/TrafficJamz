@@ -57,6 +57,29 @@ const AudioSessionSchema = new Schema({
       type: String,
       enum: ['ios', 'android', 'web'],
       default: 'web'
+    },
+    mic_muted: {
+      type: Boolean,
+      default: false
+    },
+    speaker_muted: {
+      type: Boolean,
+      default: false
+    },
+    push_to_talk_enabled: {
+      type: Boolean,
+      default: false
+    },
+    // New fields
+    voice_activity_detection: {
+      enabled: {
+        type: Boolean,
+        default: false
+      },
+      threshold: {
+        type: Number,
+        default: 0.15 // 0 to 1
+      }
     }
   }],
   music: {

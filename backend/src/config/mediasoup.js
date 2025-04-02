@@ -37,6 +37,7 @@ const routerOptions = {
 };
 
 // Mediasoup WebRtcTransport options
+// Update in mediasoup.js
 const webRtcTransportOptions = {
   listenIps: [
     {
@@ -50,7 +51,16 @@ const webRtcTransportOptions = {
   initialAvailableOutgoingBitrate: 1000000,
   minimumAvailableOutgoingBitrate: 600000,
   maxSctpMessageSize: 262144,
-  maxIncomingBitrate: 1500000
+  maxIncomingBitrate: 1500000,
+  // Add STUN/TURN servers
+  iceServers: [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+    {
+      urls: process.env.TURN_SERVER_URL,
+      username: process.env.TURN_SERVER_USERNAME,
+      credential: process.env.TURN_SERVER_CREDENTIAL
+    }
+  ]
 };
 
 // Create mediasoup Workers
