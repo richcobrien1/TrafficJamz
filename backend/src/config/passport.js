@@ -17,7 +17,7 @@ const getUserById = async (user_id) => {
 
 const getUserByEmail = async (email) => {
   // Placeholder for user retrieval from database
-  return { user_id: '1', username: 'user', email, password: 'hashedpassword' };
+  return { user_id, first_name, last_name, email, phone_number, status, is_active };
 };
 
 // Configure JWT Strategy

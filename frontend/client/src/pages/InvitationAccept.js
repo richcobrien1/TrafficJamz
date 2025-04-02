@@ -68,19 +68,14 @@ const InvitationAccept = () => {
         try {
           const checkUserResponse = await api.get(`/api/users/check-email?email=${fetchedInvitation.email}`);
           setIsRegisteredUser(checkUserResponse.data.exists);
+
+          console.log('Registered user is: ' + checkUserResponse.data.exists, checkUserResponse)
           
           if (checkUserResponse.data.exists) {
-            // If user exists, we need to check if they're logged in
-            const token = localStorage.getItem('token'); // Or however you store auth tokens
-            if (!token) {
-              // Save the invitation URL to return to after login
-              localStorage.setItem('redirectAfterLogin', `/invitations/${groupId}/${invitationIndex}`);
-              navigate('/login');
-              return;
-            }
+            // If user exists we need to get their First, Last, and UserId
+            // then we need to add to the group.
             
-            // User is registered and logged in, proceed with acceptance
-            setStatus('ready_to_accept');
+
           } else {
             // User is not registered, show the form
             setStatus('show_form');

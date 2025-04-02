@@ -45,6 +45,10 @@ export const UserService = {
     return api.get(`/users/${user_id}`);
   },
   
+  getUserByEmail: (email) => {
+    return api.get(`/users/${email}`);
+  },
+  
   updateUser: (user_id, userData) => {
     return api.put(`/users/${user_id}`, userData);
   },

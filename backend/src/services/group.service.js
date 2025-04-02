@@ -14,11 +14,11 @@ class GroupService {
    * @returns {Promise<Object>} - Newly created group
    */
   async createGroup(groupData, ownerId) {
-    // console.log('Creating group with data:', { 
-    //   name: groupData.group_name, 
-    //   description: groupData.group_description,
-    //   owner: ownerId 
-    // });
+    console.log('Creating group with data:', { 
+      name: groupData.group_name, 
+      description: groupData.group_description,
+      owner: ownerId 
+    });
   
     try {
       // Create group using the create method
@@ -45,7 +45,7 @@ class GroupService {
         }]
       });
       
-      // console.log('Group created successfully with ID:', group._id, group);
+      console.log('Group created successfully with ID:', group._id);
       return group;
     } catch (error) {
       console.error('Error creating group:', error);

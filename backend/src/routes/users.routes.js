@@ -31,6 +31,23 @@ router.get('/profile',
 );
 
 /**
+ * @route GET /api/users/check-email
+ * @desc Get current user profile
+ * @access Private
+ */
+router.get('/check-email', 
+  passport.authenticate('jwt', { session: false }),
+  async (req, res) => {
+    try {
+      const user = await userService.getUserByEmail(req.user.email);
+      res.json({ success: true, user });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
  * @route PUT /api/users/profile
  * @desc Update user profile
  * @access Private
