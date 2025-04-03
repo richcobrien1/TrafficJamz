@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// Add this import at the top of your file
 import io from 'socket.io-client';
 import { 
   Container, 
@@ -40,60 +39,37 @@ import {
   Group as GroupIcon,
   ExitToApp as LeaveIcon
 } from '@mui/icons-material';
-// import MicIcon from '@mui/icons-material/Mic';
-// import MicOffIcon from '@mui/icons-material/MicOff';
-// import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-// import VolumeDownIcon from '@mui/icons-material/VolumeDown';
-import api from '../services/api'; // Adjust the path as needed to point to your api.js file
+import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const AudioSession = () => {
   const { sessionId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Session state
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [participants, setParticipants] = useState([]);
-  const [micMuted, setMicMuted] = useState(false);
-  const [speakerMuted, setSpeakerMuted] = useState(false);
-  const [volume, setVolume] = useState(80);
-  // Add to AudioSession.js
-  const [inputVolume, setInputVolume] = useState(1.0);
-  const [outputVolume, setOutputVolume] = useState(1.0);
-  const [openMusicDialog, setOpenMusicDialog] = useState(false);
-  const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
-  const [leaveLoading, setLeaveLoading] = useState(false);
   
-  // Add this state variable in your component
-  const [socket, setSocket] = useState(null);
-  
-  // WebRTC related states
-  const [webrtcReady, setWebrtcReady] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [connected, setConnected] = useState(false);
-  
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  
-  // References for WebRTC
-  const localStreamRef = useRef(null);
+  // Audio state
   const [localStream, setLocalStream] = useState(null);
-  const rtcConnectionRef = useRef(null);
   const [isJoined, setIsJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [audioError, setAudioError] = useState(null);
   const [inputLevel, setInputLevel] = useState(0);
+  const [inputVolume, setInputVolume] = useState(1.0);
+  const [outputVolume, setOutputVolume] = useState(1.0);
+  
+  // Push-to-talk state
   const [pushToTalkEnabled, setPushToTalkEnabled] = useState(false);
   const [pushToTalkMode, setPushToTalkMode] = useState('hold');
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
-  const [voiceVolume, setVoiceVolume] = useState(0.8);
+  
+  // Music state
   const [musicVolume, setMusicVolume] = useState(0.5);
-
-  // Add to AudioSession.js
-  const [audioDevices, setAudioDevices] = useState({ inputs: [], outputs: [] });
-  const [selectedInputDevice, setSelectedInputDevice] = useState('');
-  const [selectedOutputDevice, setSelectedOutputDevice] = useState('');
-
-  // Add to AudioSession.js
+  const [openMusicDialog, setOpenMusicDialog] = useState(false);
   const [musicState, setMusicState] = useState({
     currentTrack: null,
     isPlaying: false,
@@ -101,36 +77,36 @@ const AudioSession = () => {
     duration: 0,
     volume: 0.5
   });
-
-  // Music player reference
+  
+  // Dialog state
+  const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  
+  // WebRTC state
+  const [socket, setSocket] = useState(null);
+  const [webrtcReady, setWebrtcReady] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
+  
+  // Device state
+  const [audioDevices, setAudioDevices] = useState({ inputs: [], outputs: [] });
+  const [selectedInputDevice, setSelectedInputDevice] = useState('');
+  const [selectedOutputDevice, setSelectedOutputDevice] = useState('');
+  
+  // Refs
+  const localStreamRef = useRef(null);
+  const rtcConnectionRef = useRef(null);
   const audioPlayerRef = useRef(null);
-
-  // Push-to-talk button handlers
-  // const handlePushToTalkDown = () => {
-  //   if (pushToTalkEnabled) {
-  //     setIsPushToTalkActive(true);
-  //     // Temporarily unmute microphone
-  //     if (localStream) {
-  //       localStream.getAudioTracks().forEach(track => {
-  //         track.enabled = true;
-  //       });
-  //     }
-  //   }
-  // };
-
-  // const handlePushToTalkUp = () => {
-  //   if (pushToTalkEnabled) {
-  //     setIsPushToTalkActive(false);
-  //     // Mute microphone again
-  //     if (localStream && micMuted) {
-  //       localStream.getAudioTracks().forEach(track => {
-  //         track.enabled = false;
-  //       });
-  //     }
-  //   }
-  // };
-
+  const signalingRef = useRef(null); // Add ref for signaling
+  
+  // Initialize component
   useEffect(() => {
+    // Automatically join audio session when component mounts
+    handleJoinAudio();
+    
+    // Fetch session details
+    fetchSessionDetails();
+    
     // Enumerate available devices
     navigator.mediaDevices.enumerateDevices()
       .then(devices => {
@@ -146,56 +122,98 @@ const AudioSession = () => {
           setSelectedOutputDevice(outputs[0].deviceId);
         }
       });
-  }, []);
-
-  // Add this useEffect to initialize the stream when the component mounts
-  useEffect(() => {
-    // Only initialize if we don't already have a stream
-    if (!localStream) {
-      initializeAudioStream();
-    }
     
-    // Cleanup function to stop tracks when component unmounts
+    // Cleanup function for when component unmounts
     return () => {
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
+      leaveSession();
     };
   }, []);
-
-  // Add this function to handle stream initialization
-  const initializeAudioStream = async () => {
-    try {
-      // Request audio permissions and get stream
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        },
-        video: false
+  
+  // Push-to-talk keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space' && pushToTalkEnabled && !isPushToTalkActive) {
+        handlePushToTalkDown();
+      }
+    };
+    
+    const handleKeyUp = (e) => {
+      if (e.code === 'Space' && pushToTalkEnabled && isPushToTalkActive) {
+        handlePushToTalkUp();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [pushToTalkEnabled, isPushToTalkActive]);
+  
+  // Audio level monitoring
+  useEffect(() => {
+    if (localStream) {
+      setupAudioLevelMonitoring(localStream);
+    }
+  }, [localStream]);
+  
+  // Socket connection for music events
+  useEffect(() => {
+    if (socket) {
+      socket.on('music_play', (data) => {
+        setMusicState(prev => ({
+          ...prev,
+          currentTrack: data.trackData,
+          isPlaying: true,
+          position: data.position,
+          serverTimestamp: data.timestamp
+        }));
+        
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.currentTime = data.position / 1000;
+          audioPlayerRef.current.play().catch(err => console.error('Error playing audio:', err));
+        }
       });
       
-      // Store the stream in state
-      setLocalStream(stream);
+      socket.on('music_pause', (data) => {
+        setMusicState(prev => ({
+          ...prev,
+          isPlaying: false,
+          position: data.position
+        }));
+        
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.pause();
+        }
+      });
       
-      // Initially mute the stream if settings require it
-      // const userPreferences = getUserAudioPreferences(); // Get from your user settings
-      // if (userPreferences?.auto_mute_on_join) {
-      //   stream.getAudioTracks().forEach(track => {
-      //     track.enabled = false;
-      //   });
-      // }
+      socket.on('music_seek', (data) => {
+        setMusicState(prev => ({
+          ...prev,
+          position: data.position
+        }));
+        
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.currentTime = data.position / 1000;
+        }
+      });
       
-      console.log('Audio stream initialized successfully');
-    } catch (error) {
-      console.error('Error initializing audio stream:', error);
-      // Show error to user
-      setAudioError('Could not access microphone. Please check permissions.');
+      return () => {
+        socket.off('music_play');
+        socket.off('music_pause');
+        socket.off('music_seek');
+      };
     }
-  };
-
+  }, [socket]);
+  
+  // Join audio session
   const handleJoinAudio = async () => {
+    console.log('Automatically joining audio session...');
     setIsJoined(true);
     
     try {
@@ -203,12 +221,15 @@ const AudioSession = () => {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          deviceId: selectedInputDevice ? { exact: selectedInputDevice } : undefined
         },
         video: false
       });
       
       setLocalStream(stream);
+      localStreamRef.current = stream;
+      console.log('Audio stream initialized successfully');
       
       // Set up audio level monitoring
       setupAudioLevelMonitoring(stream);
@@ -219,6 +240,7 @@ const AudioSession = () => {
     }
   };
   
+  // Leave audio session
   const handleLeaveAudio = () => {
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
@@ -227,8 +249,12 @@ const AudioSession = () => {
     setIsJoined(false);
     setIsMuted(false);
     setIsPushToTalkActive(false);
+    
+    // Navigate back to the previous page
+    navigate(-1);
   };
   
+  // Toggle microphone mute
   const toggleMute = () => {
     if (localStream) {
       const newMuteState = !isMuted;
@@ -239,6 +265,7 @@ const AudioSession = () => {
     }
   };
   
+  // Push-to-talk handlers
   const handlePushToTalkDown = () => {
     if (pushToTalkEnabled && pushToTalkMode === 'hold') {
       setIsPushToTalkActive(true);
@@ -274,6 +301,7 @@ const AudioSession = () => {
     }
   };
   
+  // Audio level monitoring
   const setupAudioLevelMonitoring = (stream) => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioContext.createAnalyser();
@@ -300,311 +328,300 @@ const AudioSession = () => {
     };
     
     updateMeter();
-  };  
-
-  // Add keyboard shortcut for push-to-talk (spacebar)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space' && pushToTalkEnabled && !isPushToTalkActive) {
-        handlePushToTalkDown();
-      }
-    };
-    
-    const handleKeyUp = (e) => {
-      if (e.code === 'Space' && pushToTalkEnabled && isPushToTalkActive) {
-        handlePushToTalkUp();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      source.disconnect();
+      audioContext.close();
     };
-  }, [pushToTalkEnabled, isPushToTalkActive]);
-
-  // Create audio level visualization
-  useEffect(() => {
-    if (localStream) {
-      const audioContext = new AudioContext();
-      const source = audioContext.createMediaStreamSource(localStream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      
-      const updateMeter = () => {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
-        }
-        const average = sum / bufferLength;
-        setInputLevel(average / 255); // 0 to 1
-        
-        requestAnimationFrame(updateMeter);
-      };
-      
-      updateMeter();
-      
-      return () => {
-        source.disconnect();
-        audioContext.close();
-      };
-    }
-  }, [localStream]);
-
-  // Handle music events from server
-  useEffect(() => {
-    if (socket) {
-      socket.on('music_play', (data) => {
-        setMusicState(prev => ({
-          ...prev,
-          currentTrack: data.trackData,
-          isPlaying: true,
-          position: data.position,
-          serverTimestamp: data.timestamp
-        }));
-        
-        if (audioPlayerRef.current) {
-          // Calculate time difference between server and client
-          const timeDiff = Date.now() - data.timestamp;
-          const adjustedPosition = data.position + timeDiff;
-          
-          audioPlayerRef.current.currentTime = adjustedPosition / 1000;
-          audioPlayerRef.current.play();
-        }
-      });
-      
-      socket.on('music_pause', (data) => {
-        setMusicState(prev => ({
-          ...prev,
-          isPlaying: false,
-          position: data.position
-        }));
-        
-        if (audioPlayerRef.current) {
-          audioPlayerRef.current.pause();
-        }
-      });
-    }
-  }, [socket]);
+  };
   
-  useEffect(() => {
-    fetchSessionDetails();
-    
-    // Cleanup function to leave the session when component unmounts
-    return () => {
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-      leaveSession();
-    };
-  }, [sessionId]);
-  
+  // Fetch session details from API
   const fetchSessionDetails = async () => {
     try {
       setLoading(true);
-      // In a real implementation, we would fetch the actual session
-      // For the prototype, we'll simulate a session
       
-      // Simulated API call
-      const response = await api.get(`/api/audio/sessions/group/${sessionId}`);
-      setSession(response.data.session);
+      // Check if we have the necessary data
+      if (!sessionId || !user) {
+        setError('Missing session ID or user information');
+        setLoading(false);
+        return;
+      }
       
-      // Simulate session data
-      const mockSession = {
-        id: sessionId,
-        group_id: sessionId,
-        status: 'active',
-        session_type: 'voice_with_music',
-        participants: [
-          {
-            user_id: user.user_id,
-            username: user.username,
-            profile_image_url: user.profile_image_url,
-            status: 'active',
-            mic_muted: false,
-            speaker_muted: false,
-            joined_at: new Date().toISOString()
-          },
-          {
-            user_id: 'user2',
-            username: 'JaneDoe',
-            profile_image_url: null,
-            status: 'active',
-            mic_muted: true,
-            speaker_muted: false,
-            joined_at: new Date().toISOString()
-          },
-          {
-            user_id: 'user3',
-            username: 'BobSmith',
-            profile_image_url: null,
-            status: 'active',
-            mic_muted: false,
-            speaker_muted: true,
-            joined_at: new Date().toISOString()
+      // First, check if the session exists
+      let sessionData;
+      try {
+        const response = await api.get(`/api/audio/sessions/${sessionId}`);
+        if (response.data && response.data.session) {
+          sessionData = response.data.session;
+        }
+      } catch (error) {
+        // Session might not exist yet, which is fine
+        console.log('Session not found, will create a new one');
+      }
+      
+      // If session doesn't exist, create it
+      if (!sessionData) {
+        try {
+          const createResponse = await api.post('/api/audio/sessions', {
+            group_id: sessionId, // Assuming sessionId is the group ID
+            created_by: user.id,
+            type: 'voice_only'
+          });
+          
+          if (createResponse.data && createResponse.data.session) {
+            sessionData = createResponse.data.session;
+          } else {
+            throw new Error('Failed to create session');
           }
-        ],
-        music: {
-          current_track: {
-            title: 'Sample Track',
-            artist: 'Sample Artist',
-            duration: 240,
-            position: 45
-          },
-          playlist: [
-            {
-              id: 'track1',
-              title: 'Sample Track',
-              artist: 'Sample Artist',
-              duration: 240
-            },
-            {
-              id: 'track2',
-              title: 'Another Track',
-              artist: 'Another Artist',
-              duration: 180
-            }
-          ],
-          status: 'playing'
-        },
-        created_at: new Date().toISOString()
-      };
+        } catch (createError) {
+          console.error('Error creating audio session:', createError);
+          setError('Failed to create audio session');
+          setLoading(false);
+          return;
+        }
+      }
       
-      setSession(mockSession);
-      setParticipants(mockSession.participants);
+      // Now join the session as a participant
+      try {
+        const joinResponse = await api.post(`/api/audio/sessions/${sessionData.id}/join`, {
+          user_id: user.id,
+          display_name: user.name || user.username || 'User',
+          device_type: 'web'
+        });
+        
+        if (joinResponse.data && joinResponse.data.success) {
+          console.log('Successfully joined audio session');
+        } else {
+          console.warn('Join response incomplete:', joinResponse);
+        }
+      } catch (joinError) {
+        // If joining fails, we might already be a participant
+        console.warn('Error joining session, might already be a participant:', joinError);
+      }
       
-      // Initialize WebRTC
-      initializeWebRTC();
+      // Set the session in state
+      setSession(sessionData);
       
-      setError('');
+      // Fetch participants
+      try {
+        const participantsResponse = await api.get(`/api/audio/sessions/${sessionData.id}/participants`);
+        if (participantsResponse.data && participantsResponse.data.participants) {
+          setParticipants(participantsResponse.data.participants);
+        }
+      } catch (participantsError) {
+        console.error('Error fetching participants:', participantsError);
+        // Continue anyway, we can update participants later
+      }
+      
+      // Initialize WebRTC connection
+      initializeWebRTC(sessionData.id);
+      
+      setLoading(false);
     } catch (error) {
-      console.error('Error fetching session details:', error);
-      setError('Failed to load audio session. Please try again later.');
-    } finally {
+      console.error('Error in fetchSessionDetails:', error);
+      setError('Failed to load or create audio session');
       setLoading(false);
     }
   };
   
-  const initializeWebRTC = async () => {
+  // Initialize WebRTC connection
+  const initializeWebRTC = (sessionId) => {
     try {
-      setConnecting(true);
+      // Set up signaling - this could be WebSocket or your existing WebRTC signaling
+      const signaling = setupSignaling(sessionId);
       
-      // Request user media
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStreamRef.current = stream;
+      // Initialize peer connection
+      setupPeerConnection(signaling);
       
-      // In a real implementation, we would:
-      // 1. Connect to the signaling server
-      // 2. Create RTCPeerConnection
-      // 3. Add local stream tracks to the connection
-      // 4. Set up event handlers for ICE candidates, etc.
-      // 5. Create offer/answer based on the role
-      
-      // For the prototype, we'll simulate the connection
-      setTimeout(() => {
-        setWebrtcReady(true);
-        setConnecting(false);
-        setConnected(true);
-      }, 1500);
-      
+      setWebrtcReady(true);
     } catch (error) {
       console.error('Error initializing WebRTC:', error);
-      setError('Failed to access microphone. Please check your permissions.');
+      setError('Failed to initialize audio connection');
+    }
+  };
+  
+  // Set up signaling for WebRTC
+  const setupSignaling = (sessionId) => {
+    // Use your existing WebRTC signaling mechanism
+    // This could be a WebSocket connection or another method
+    
+    // Example with WebSocket
+    const wsUrl = `${process.env.REACT_APP_WS_URL || 'wss://your-api-domain.com'}/audio/${sessionId}`;
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
       setConnecting(false);
+      setConnected(true);
+    };
+    
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      handleSignalingMessage(message, ws); // Pass ws as the signaling object
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setConnected(false);
+      setError('Connection error');
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+      setConnected(false);
+    };
+    
+    // Store the signaling object in the ref
+    signalingRef.current = ws;
+    
+    return ws;
+  };
+  
+  // Handle signaling messages
+  const handleSignalingMessage = (message, signaling) => {
+    switch (message.type) {
+      case 'offer':
+        handleOffer(message, signaling);
+        break;
+      case 'answer':
+        handleAnswer(message, signaling);
+        break;
+      case 'candidate':
+        handleCandidate(message, signaling);
+        break;
+      case 'participant_joined':
+        handleParticipantJoined(message.participant);
+        break;
+      case 'participant_left':
+        handleParticipantLeft(message.participant_id);
+        break;
+      default:
+        console.log('Unknown message type:', message.type);
     }
   };
   
-  const handleMicToggle = async () => {
-    const newMicState = !micMuted;
-    setMicMuted(newMicState);
+  // Set up peer connection
+  const setupPeerConnection = (signaling) => {
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+        // Add TURN servers for production
+      ]
+    };
     
-    // Update local stream tracks
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = !newMicState;
+    const peerConnection = new RTCPeerConnection(configuration);
+    rtcConnectionRef.current = peerConnection;
+    
+    // Add local stream to peer connection
+    if (localStream) {
+      localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
       });
     }
     
-    // In a real implementation, we would also update the server
-    try {
-      await api.put(`/api/audio/sessions/${sessionId}/status`, {
-        mic_muted: newMicState
-      });
+    // Handle ICE candidates
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        signaling.send(JSON.stringify({
+          type: 'candidate',
+          candidate: event.candidate
+        }));
+      }
+    };
+    
+    // Handle connection state changes
+    peerConnection.onconnectionstatechange = () => {
+      console.log('Connection state:', peerConnection.connectionState);
+    };
+    
+    // Handle tracks from remote peers
+    peerConnection.ontrack = (event) => {
+      // Create audio element for remote stream
+      const audioElement = new Audio();
+      audioElement.srcObject = event.streams[0];
+      audioElement.play().catch(error => console.error('Error playing audio:', error));
       
-      // Update local participant state
-      const updatedParticipants = participants.map(p => 
-        p.user_id === user.user_id 
-          ? { ...p, mic_muted: newMicState } 
-          : p
-      );
-      setParticipants(updatedParticipants);
-    } catch (error) {
-      console.error('Error updating mic status:', error);
-      // Revert the UI state if the API call fails
-      setMicMuted(!newMicState);
-    }
+      // Store the audio element
+      const remoteAudios = document.getElementById('remote-audios');
+      if (remoteAudios) {
+        remoteAudios.appendChild(audioElement);
+      }
+    };
+    
+    return peerConnection;
   };
   
-  const handleSpeakerToggle = async () => {
-    const newSpeakerState = !speakerMuted;
-    setSpeakerMuted(newSpeakerState);
-    
-    // In a real implementation, we would mute the remote audio streams
-    
-    // Update the server
+  // WebRTC signaling handlers
+  const handleOffer = async (message, signaling) => {
     try {
-      await api.put(`/api/audio/sessions/${sessionId}/status`, {
-        speaker_muted: newSpeakerState
-      });
+      const peerConnection = rtcConnectionRef.current;
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
       
-      // Update local participant state
-      const updatedParticipants = participants.map(p => 
-        p.user_id === user.user_id 
-          ? { ...p, speaker_muted: newSpeakerState } 
-          : p
-      );
-      setParticipants(updatedParticipants);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      
+      // Send answer
+      signaling.send(JSON.stringify({
+        type: 'answer',
+        answer: peerConnection.localDescription
+      }));
     } catch (error) {
-      console.error('Error updating speaker status:', error);
-      // Revert the UI state if the API call fails
-      setSpeakerMuted(!newSpeakerState);
+      console.error('Error handling offer:', error);
     }
   };
   
-  const handleVolumeChange = (event, newValue) => {
-    setVolume(newValue);
-    // In a real implementation, we would adjust the volume of the audio elements
+  const handleAnswer = async (message, signaling) => {
+    try {
+      const peerConnection = rtcConnectionRef.current;
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+    } catch (error) {
+      console.error('Error handling answer:', error);
+    }
   };
   
+  const handleCandidate = async (message, signaling) => {
+    try {
+      const peerConnection = rtcConnectionRef.current;
+      await peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+    } catch (error) {
+      console.error('Error handling ICE candidate:', error);
+    }
+  };
+  
+  const handleParticipantJoined = (participant) => {
+    setParticipants(prev => [...prev, participant]);
+  };
+  
+  const handleParticipantLeft = (participantId) => {
+    setParticipants(prev => prev.filter(p => p.id !== participantId));
+  };
+  
+  // Leave session
   const leaveSession = async () => {
     try {
-      setLeaveLoading(true);
+      if (session) {
+        await api.post(`/api/audio/sessions/${session.id}/leave`, {
+          user_id: user.id
+        });
+      }
       
-      // In a real implementation, we would:
-      // 1. Close the RTCPeerConnection
-      // 2. Notify the server that we're leaving
+      // Close WebRTC connection
+      if (rtcConnectionRef.current) {
+        rtcConnectionRef.current.close();
+      }
       
-      await api.post(`/api/audio/sessions/${sessionId}/leave`);
+      // Close signaling connection
+      if (signalingRef.current) {
+        signalingRef.current.close();
+      }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      navigate(`/groups/${sessionId}`);
     } catch (error) {
       console.error('Error leaving session:', error);
-      setError('Failed to leave session. Please try again.');
-      setLeaveLoading(false);
     }
   };
   
-  // Inside your AudioSession component's return statement
+  // Render component
   return (
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
@@ -618,16 +635,8 @@ const AudioSession = () => {
           </Alert>
         )}
         
-        {/* Join/Leave buttons */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handleJoinAudio}
-            disabled={isJoined}
-          >
-            Join Audio
-          </Button>
+        {/* Only show Leave button */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
           <Button 
             variant="outlined" 
             color="secondary" 
@@ -638,170 +647,171 @@ const AudioSession = () => {
           </Button>
         </Box>
         
-        {/* Conditional rendering based on localStream */}
-        {isJoined && (
-          localStream ? (
-            <Box>
-              {/* Basic audio controls */}
-              <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Audio Controls
-                </Typography>
+        {/* Show loading or audio controls based on localStream */}
+        {!localStream ? (
+          <Box sx={{ 
+            p: 3, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            flexDirection: 'column',
+            bgcolor: 'background.paper',
+            borderRadius: 1
+          }}>
+            <CircularProgress size={24} sx={{ mb: 2 }} />
+            <Typography variant="body2">
+              Initializing audio... Please grant microphone permissions if prompted.
+            </Typography>
+          </Box>
+        ) : (
+          <Box>
+            {/* Basic audio controls */}
+            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Audio Controls
+              </Typography>
+              
+              <Grid container spacing={2} alignItems="center">
+                <Grid item>
+                  <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+                    <IconButton 
+                      color={isMuted ? "default" : "primary"} 
+                      onClick={toggleMute}
+                      aria-label={isMuted ? "Unmute" : "Mute"}
+                    >
+                      {isMuted ? <MicOffIcon /> : <MicIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </Grid>
                 
+                <Grid item xs>
+                  <Box sx={{ width: '100%' }}>
+                    <Box sx={{ 
+                      height: 8, 
+                      bgcolor: 'grey.200', 
+                      borderRadius: 1, 
+                      overflow: 'hidden' 
+                    }}>
+                      <Box sx={{ 
+                        width: `${inputLevel * 100}%`, 
+                        height: '100%', 
+                        bgcolor: inputLevel > 0.5 ? 'success.main' : 'primary.main',
+                        transition: 'width 0.1s ease-in-out'
+                      }} />
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+            
+            {/* Enhanced Audio Controls */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Advanced Audio Settings
+              </Typography>
+              
+              {/* Push-to-Talk Controls */}
+              <Box sx={{ mb: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch 
+                      checked={pushToTalkEnabled} 
+                      onChange={(e) => setPushToTalkEnabled(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Enable Push-to-Talk"
+                />
+                
+                {pushToTalkEnabled && (
+                  <Box sx={{ ml: 3, mt: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch 
+                          checked={pushToTalkMode === 'toggle'} 
+                          onChange={(e) => setPushToTalkMode(e.target.checked ? 'toggle' : 'hold')}
+                          color="primary"
+                        />
+                      }
+                      label="Toggle Mode (instead of Hold)"
+                    />
+                    
+                    <Box sx={{ mt: 1 }}>
+                      <Button 
+                        variant="contained" 
+                        color={isPushToTalkActive ? "secondary" : "primary"}
+                        onMouseDown={pushToTalkMode === 'hold' ? handlePushToTalkDown : undefined}
+                        onMouseUp={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
+                        onMouseLeave={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
+                        onClick={pushToTalkMode === 'toggle' ? togglePushToTalk : undefined}
+                        sx={{ width: '100%', py: 1.5 }}
+                      >
+                        {isPushToTalkActive 
+                          ? (pushToTalkMode === 'toggle' ? 'Speaking (Click to Stop)' : 'Speaking...') 
+                          : (pushToTalkMode === 'toggle' ? 'Click to Speak' : 'Hold to Speak')}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+              
+              {/* Volume Controls */}
+              <Box sx={{ mb: 2 }}>
+                <Typography id="voice-volume-slider" gutterBottom>
+                  Voice Volume
+                </Typography>
                 <Grid container spacing={2} alignItems="center">
                   <Grid item>
-                    <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
-                      <IconButton 
-                        color={isMuted ? "default" : "primary"} 
-                        onClick={toggleMute}
-                        aria-label={isMuted ? "Unmute" : "Mute"}
-                      >
-                        {isMuted ? <MicOffIcon /> : <MicIcon />}
-                      </IconButton>
-                    </Tooltip>
+                    <VolumeDownIcon />
                   </Grid>
-                  
                   <Grid item xs>
-                    <Box sx={{ width: '100%' }}>
-                      <Box sx={{ 
-                        height: 8, 
-                        bgcolor: 'grey.200', 
-                        borderRadius: 1, 
-                        overflow: 'hidden' 
-                      }}>
-                        <Box sx={{ 
-                          width: `${inputLevel * 100}%`, 
-                          height: '100%', 
-                          bgcolor: inputLevel > 0.5 ? 'success.main' : 'primary.main',
-                          transition: 'width 0.1s ease-in-out'
-                        }} />
-                      </Box>
-                    </Box>
+                    <Slider
+                      value={outputVolume}
+                      onChange={(e, newValue) => setOutputVolume(newValue)}
+                      aria-labelledby="voice-volume-slider"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+                    />
+                  </Grid>
+                  <Grid item>
+                    <VolumeUpIcon />
                   </Grid>
                 </Grid>
-              </Paper>
+              </Box>
               
-              {/* Enhanced Audio Controls Component */}
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Advanced Audio Settings
+              <Box>
+                <Typography id="music-volume-slider" gutterBottom>
+                  Music Volume
                 </Typography>
-                
-                {/* Push-to-Talk Controls */}
-                <Box sx={{ mb: 2 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch 
-                        checked={pushToTalkEnabled} 
-                        onChange={(e) => setPushToTalkEnabled(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Enable Push-to-Talk"
-                  />
-                  
-                  {pushToTalkEnabled && (
-                    <Box sx={{ ml: 3, mt: 1 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch 
-                            checked={pushToTalkMode === 'toggle'} 
-                            onChange={(e) => setPushToTalkMode(e.target.checked ? 'toggle' : 'hold')}
-                            color="primary"
-                          />
-                        }
-                        label="Toggle Mode (instead of Hold)"
-                      />
-                      
-                      <Box sx={{ mt: 1 }}>
-                        <Button 
-                          variant="contained" 
-                          color={isPushToTalkActive ? "secondary" : "primary"}
-                          onMouseDown={pushToTalkMode === 'hold' ? handlePushToTalkDown : undefined}
-                          onMouseUp={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
-                          onMouseLeave={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
-                          onClick={pushToTalkMode === 'toggle' ? togglePushToTalk : undefined}
-                          sx={{ width: '100%', py: 1.5 }}
-                        >
-                          {isPushToTalkActive 
-                            ? (pushToTalkMode === 'toggle' ? 'Speaking (Click to Stop)' : 'Speaking...') 
-                            : (pushToTalkMode === 'toggle' ? 'Click to Speak' : 'Hold to Speak')}
-                        </Button>
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-                
-                {/* Volume Controls */}
-                <Box sx={{ mb: 2 }}>
-                  <Typography id="voice-volume-slider" gutterBottom>
-                    Voice Volume
-                  </Typography>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item>
-                      <VolumeDownIcon />
-                    </Grid>
-                    <Grid item xs>
-                      <Slider
-                        value={voiceVolume}
-                        onChange={(e, newValue) => setVoiceVolume(newValue)}
-                        aria-labelledby="voice-volume-slider"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        valueLabelDisplay="auto"
-                        valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
-                      />
-                    </Grid>
-                    <Grid item>
-                      <VolumeUpIcon />
-                    </Grid>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item>
+                    <VolumeDownIcon />
                   </Grid>
-                </Box>
-                
-                <Box>
-                  <Typography id="music-volume-slider" gutterBottom>
-                    Music Volume
-                  </Typography>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item>
-                      <VolumeDownIcon />
-                    </Grid>
-                    <Grid item xs>
-                      <Slider
-                        value={musicVolume}
-                        onChange={(e, newValue) => setMusicVolume(newValue)}
-                        aria-labelledby="music-volume-slider"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        valueLabelDisplay="auto"
-                        valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
-                      />
-                    </Grid>
-                    <Grid item>
-                      <VolumeUpIcon />
-                    </Grid>
+                  <Grid item xs>
+                    <Slider
+                      value={musicVolume}
+                      onChange={(e, newValue) => setMusicVolume(newValue)}
+                      aria-labelledby="music-volume-slider"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+                    />
                   </Grid>
-                </Box>
-              </Paper>
-            </Box>
-          ) : (
-            <Box sx={{ 
-              p: 3, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              flexDirection: 'column',
-              bgcolor: 'background.paper',
-              borderRadius: 1
-            }}>
-              <CircularProgress size={24} sx={{ mb: 2 }} />
-              <Typography variant="body2">
-                Initializing audio... Please grant microphone permissions if prompted.
-              </Typography>
-            </Box>
-          )
+                  <Grid item>
+                    <VolumeUpIcon />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Paper>
+            
+            {/* Hidden container for remote audio elements */}
+            <div id="remote-audios" style={{ display: 'none' }}></div>
+          </Box>
         )}
       </Paper>
     </Container>
