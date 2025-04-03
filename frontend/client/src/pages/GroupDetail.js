@@ -41,8 +41,6 @@ import {
 } from '@mui/icons-material';
 import api from '../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../contexts/AuthContext';
-// At the top of your GroupDetail.js file, add this import
-import AudioSession from '../pages/AudioSession'; // Adjust the path as needed
 
 const GroupDetail = () => {
   const { groupId } = useParams();
@@ -347,26 +345,7 @@ const GroupDetail = () => {
                     </Typography>
                   )}
                 </Paper>
-                <Container>
-                  {!showAudioSession ? (
-                    <Box>
-                      {/* Group details content */}
-                      <Button onClick={() => setShowAudioSession(true)}>
-                        Join Audio
-                      </Button>
-                    </Box>
-                  ) : (
-                    <Box>
-                      <Button onClick={() => setShowAudioSession(false)}>
-                        Back to Group
-                      </Button>
-                      <AudioSession 
-                        groupId={groupId} 
-                        onExit={() => setShowAudioSession(false)} 
-                      />
-                    </Box>
-                  )}
-                </Container>
+                
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
                     <Paper 
