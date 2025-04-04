@@ -5,7 +5,6 @@ import {
   Container, 
   Box, 
   Typography, 
-  Grid, 
   Paper, 
   Button, 
   CircularProgress,
@@ -16,6 +15,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Grid,
   Alert,
   Slider,
   Switch,
@@ -128,6 +128,9 @@ const AudioSession = () => {
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
+
+      console.log('Session unmount occurred, leaving session.');
+
       leaveSession();
     };
   }, []);
@@ -755,16 +758,14 @@ const AudioSession = () => {
                 )}
               </Box>
               
-              {/* Volume Controls */}
-              <Box sx={{ mb: 2 }}>
+             {/* Volume Controls */}
+              <Box sx={{ mb: 3, width: '100%' }}>
                 <Typography id="voice-volume-slider" gutterBottom>
                   Voice Volume
                 </Typography>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item>
-                    <VolumeDownIcon />
-                  </Grid>
-                  <Grid item xs>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <VolumeDownIcon />
+                  <Box sx={{ flexGrow: 1 }}>
                     <Slider
                       value={outputVolume}
                       onChange={(e, newValue) => setOutputVolume(newValue)}
@@ -774,23 +775,24 @@ const AudioSession = () => {
                       step={0.01}
                       valueLabelDisplay="auto"
                       valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+                      sx={{ 
+                        width: '100%',
+                        '& .MuiSlider-rail': { height: 4 },
+                        '& .MuiSlider-track': { height: 4 }
+                      }}
                     />
-                  </Grid>
-                  <Grid item>
-                    <VolumeUpIcon />
-                  </Grid>
-                </Grid>
+                  </Box>
+                  <VolumeUpIcon />
+                </Box>
               </Box>
-              
-              <Box>
+
+              <Box sx={{ width: '100%' }}>
                 <Typography id="music-volume-slider" gutterBottom>
                   Music Volume
                 </Typography>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item>
-                    <VolumeDownIcon />
-                  </Grid>
-                  <Grid item xs>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <VolumeDownIcon />
+                  <Box sx={{ flexGrow: 1 }}>
                     <Slider
                       value={musicVolume}
                       onChange={(e, newValue) => setMusicVolume(newValue)}
@@ -800,12 +802,15 @@ const AudioSession = () => {
                       step={0.01}
                       valueLabelDisplay="auto"
                       valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+                      sx={{ 
+                        width: '100%',
+                        '& .MuiSlider-rail': { height: 4 },
+                        '& .MuiSlider-track': { height: 4 }
+                      }}
                     />
-                  </Grid>
-                  <Grid item>
-                    <VolumeUpIcon />
-                  </Grid>
-                </Grid>
+                  </Box>
+                  <VolumeUpIcon />
+                </Box>
               </Box>
             </Paper>
             

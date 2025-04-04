@@ -338,7 +338,7 @@ const GroupDetail = () => {
                       />
                     </Box>
                   </Box>
-                  
+
                   {group.description && (
                     <Typography variant="body1" paragraph>
                       {group.description}
@@ -372,6 +372,7 @@ const GroupDetail = () => {
                       </Typography>
                     </Paper>
                   </Grid>
+
                   <Grid item xs={12} sm={6}>
                     <Paper 
                       sx={{ 
