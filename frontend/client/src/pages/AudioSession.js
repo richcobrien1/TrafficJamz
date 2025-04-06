@@ -668,10 +668,10 @@ const AudioSession = () => {
           </Box>
         ) : (
           <Box>
-            {/* Basic audio controls */}
+            {/* Mic controls */}
             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                Audio Controls
+                Mic Controls
               </Typography>
               
               <Grid container spacing={2} alignItems="center">
@@ -704,59 +704,60 @@ const AudioSession = () => {
                     </Box>
                   </Box>
                 </Grid>
+
+                {/* Push-to-Talk Controls */}
+                <Box sx={{ mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch 
+                        checked={pushToTalkEnabled} 
+                        onChange={(e) => setPushToTalkEnabled(e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Enable Push-to-Talk"
+                  />
+                  
+                  {pushToTalkEnabled && (
+                    <Box sx={{ ml: 3, mt: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={pushToTalkMode === 'toggle'} 
+                            onChange={(e) => setPushToTalkMode(e.target.checked ? 'toggle' : 'hold')}
+                            color="primary"
+                          />
+                        }
+                        label="Toggle Mode (instead of Hold)"
+                      />
+                      
+                      <Box sx={{ mt: 1 }}>
+                        <Button 
+                          variant="contained" 
+                          color={isPushToTalkActive ? "secondary" : "primary"}
+                          onMouseDown={pushToTalkMode === 'hold' ? handlePushToTalkDown : undefined}
+                          onMouseUp={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
+                          onMouseLeave={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
+                          onClick={pushToTalkMode === 'toggle' ? togglePushToTalk : undefined}
+                          sx={{ width: '100%', py: 1.5 }}
+                        >
+                          {isPushToTalkActive 
+                            ? (pushToTalkMode === 'toggle' ? 'Speaking (Click to Stop)' : 'Speaking...') 
+                            : (pushToTalkMode === 'toggle' ? 'Click to Speak' : 'Hold to Speak')}
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              
               </Grid>
             </Paper>
             
-            {/* Enhanced Audio Controls */}
+            {/* Speaker Controls */}
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                Advanced Audio Settings
+                Speaker Settings
               </Typography>
-              
-              {/* Push-to-Talk Controls */}
-              <Box sx={{ mb: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch 
-                      checked={pushToTalkEnabled} 
-                      onChange={(e) => setPushToTalkEnabled(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label="Enable Push-to-Talk"
-                />
-                
-                {pushToTalkEnabled && (
-                  <Box sx={{ ml: 3, mt: 1 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch 
-                          checked={pushToTalkMode === 'toggle'} 
-                          onChange={(e) => setPushToTalkMode(e.target.checked ? 'toggle' : 'hold')}
-                          color="primary"
-                        />
-                      }
-                      label="Toggle Mode (instead of Hold)"
-                    />
-                    
-                    <Box sx={{ mt: 1 }}>
-                      <Button 
-                        variant="contained" 
-                        color={isPushToTalkActive ? "secondary" : "primary"}
-                        onMouseDown={pushToTalkMode === 'hold' ? handlePushToTalkDown : undefined}
-                        onMouseUp={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
-                        onMouseLeave={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
-                        onClick={pushToTalkMode === 'toggle' ? togglePushToTalk : undefined}
-                        sx={{ width: '100%', py: 1.5 }}
-                      >
-                        {isPushToTalkActive 
-                          ? (pushToTalkMode === 'toggle' ? 'Speaking (Click to Stop)' : 'Speaking...') 
-                          : (pushToTalkMode === 'toggle' ? 'Click to Speak' : 'Hold to Speak')}
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
               
              {/* Volume Controls */}
               <Box sx={{ mb: 3, width: '100%' }}>

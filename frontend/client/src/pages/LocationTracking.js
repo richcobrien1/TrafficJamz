@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  AlertTitle,
   List,
   ListItem,
   ListItemText,
@@ -69,6 +70,11 @@ const LocationTracking = () => {
   const [highAccuracyMode, setHighAccuracyMode] = useState(true);
   const [updateInterval, setUpdateInterval] = useState(15);
   const [locationError, setLocationError] = useState(null);
+  // Add these state variables to your existing state variables section
+  const [retryDelay, setRetryDelay] = useState(15); // Default retry delay in seconds
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
   
   // Refs
   const mapContainerRef = useRef(null);
@@ -82,7 +88,7 @@ const LocationTracking = () => {
     initializeMap();
     
     if (sharingLocation) {
-      startLocationTracking();
+      fetchWithRateLimitProtection();
     }
     
     // Cleanup function
@@ -99,15 +105,15 @@ const LocationTracking = () => {
   }, [groupId]);
   
   // Periodically fetch locations of other members
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (sharingLocation) {
-        fetchMemberLocations();
-      }
-    }, updateInterval * 1000);
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     if (sharingLocation) {
+  //       fetchMemberLocations();
+  //     }
+  //   }, updateInterval * 1000);
     
-    return () => clearInterval(intervalId);
-  }, [sharingLocation, updateInterval]);
+  //   return () => clearInterval(intervalId);
+  // }, [sharingLocation, updateInterval]);
   
   // Fetch group details and member information
   const fetchGroupDetails = async () => {
@@ -153,7 +159,7 @@ const LocationTracking = () => {
       setMembers(groupData.members);
       
       // Fetch initial member locations
-      fetchMemberLocations();
+      // fetchMemberLocations();
       
       setError('');
     } catch (error) {
@@ -164,79 +170,143 @@ const LocationTracking = () => {
     }
   };
   
-  // Fetch locations of all group members
-  const fetchMemberLocations = async () => {
-    try {
-      // In a real implementation, fetch actual location data
-      let locationData;
+  // Periodically fetch locations of other members with rate limiting protection
+  useEffect(() => {
+    // Function to fetch member locations with rate limiting protection
+    const fetchWithRateLimitProtection = async () => {
+      // Skip if we're rate limited
+      if (isRateLimited) {
+        console.log(`Rate limited. Waiting ${retryDelay} seconds before next attempt.`);
+        return;
+      }
+      
+      // Enforce minimum time between requests (at least 5 seconds)
+      const now = Date.now();
+      const timeSinceLastFetch = now - lastFetchTime;
+      const minTimeBetweenFetches = 5000; // 5 seconds minimum
+      
+      if (timeSinceLastFetch < minTimeBetweenFetches) {
+        console.log(`Too soon since last fetch (${Math.round(timeSinceLastFetch/1000)}s). Minimum wait time is ${minTimeBetweenFetches/1000}s.`);
+        return;
+      }
+      
+      // Update last fetch time
+      setLastFetchTime(now);
+      
       try {
-        const response = await api.get(`/api/location/group/${groupId}`);
-        locationData = response.data.locations;
-      } catch (error) {
-        console.log('Using mock location data due to API error:', error);
-        // Fallback to mock data
-        locationData = [
-          {
-            user_id: user?.id || 'current-user', // Add null check with default value
-            username: user?.username || 'CurrentUser',
-            coordinates: userLocation || {
-              latitude: 40.7128,
-              longitude: -74.0060,
-              accuracy: 10,
-              altitude: 100,
-              heading: 90,
-              speed: 0
-            },
-            timestamp: new Date().toISOString(),
-            battery_level: 85,
-            connection_type: 'wifi'
-          },
-          {
-            user_id: 'user2',
-            username: 'JaneDoe',
-            coordinates: {
-              latitude: 40.7138,
-              longitude: -74.0070,
-              accuracy: 15,
-              altitude: 105,
-              heading: 180,
-              speed: 5
-            },
-            timestamp: new Date().toISOString(),
-            battery_level: 65,
-            connection_type: 'cellular'
-          },
-          {
-            user_id: 'user3',
-            username: 'BobSmith',
-            coordinates: {
-              latitude: 40.7118,
-              longitude: -74.0050,
-              accuracy: 20,
-              altitude: 95,
-              heading: 270,
-              speed: 2
-            },
-            timestamp: new Date().toISOString(),
-            battery_level: 45,
-            connection_type: 'cellular'
+        // In a real implementation, fetch actual location data
+        let locationData;
+        try {
+          const response = await api.get(`/api/location/group/${groupId}`);
+          locationData = response.data.locations;
+          
+          // Reset consecutive errors and retry delay on success
+          if (consecutiveErrors > 0) {
+            setConsecutiveErrors(0);
+            setRetryDelay(15); // Reset to default
           }
-        ];
+        } catch (error) {
+          console.log('Error fetching location data:', error);
+          
+          // Handle rate limiting (429 Too Many Requests)
+          if (error.response && error.response.status === 429) {
+            console.log('Rate limited by server. Implementing backoff strategy.');
+            setIsRateLimited(true);
+            
+            // Increase consecutive errors
+            const newErrorCount = consecutiveErrors + 1;
+            setConsecutiveErrors(newErrorCount);
+            
+            // Implement exponential backoff (15s, 30s, 60s, 120s, etc.)
+            const newDelay = Math.min(15 * Math.pow(2, newErrorCount - 1), 900); // Max 15 minutes
+            setRetryDelay(newDelay);
+            
+            // Set a timer to clear the rate limit after the delay
+            setTimeout(() => {
+              console.log(`Rate limit timeout expired. Resuming fetches.`);
+              setIsRateLimited(false);
+            }, newDelay * 1000);
+          }
+          
+          console.log('Using mock location data due to API error:', error);
+          // Fallback to mock data
+          locationData = [
+            {
+              user_id: user?.id || 'current-user',
+              username: user?.username || 'CurrentUser',
+              coordinates: userLocation || {
+                latitude: 40.7128,
+                longitude: -74.0060,
+                accuracy: 10,
+                altitude: 100,
+                heading: 90,
+                speed: 0
+              },
+              timestamp: new Date().toISOString(),
+              battery_level: 85,
+              connection_type: 'wifi'
+            },
+            {
+              user_id: 'user2',
+              username: 'JaneDoe',
+              coordinates: {
+                latitude: 40.7138,
+                longitude: -74.0070,
+                accuracy: 15,
+                altitude: 105,
+                heading: 180,
+                speed: 5
+              },
+              timestamp: new Date().toISOString(),
+              battery_level: 65,
+              connection_type: 'cellular'
+            },
+            {
+              user_id: 'user3',
+              username: 'BobSmith',
+              coordinates: {
+                latitude: 40.7118,
+                longitude: -74.0050,
+                accuracy: 20,
+                altitude: 95,
+                heading: 270,
+                speed: 2
+              },
+              timestamp: new Date().toISOString(),
+              battery_level: 45,
+              connection_type: 'cellular'
+            }
+          ];
+        }
+        
+        setLocations(locationData);
+        
+        // Update map markers
+        updateMapMarkers(locationData);
+        
+        // Check for proximity alerts
+        if (showProximityAlerts && userLocation) {
+          checkProximityAlerts(locationData);
+        }
+      } catch (error) {
+        console.error('Error in locationData:', error);
       }
-      
-      setLocations(locationData);
-      
-      // Update map markers
-      updateMapMarkers(locationData);
-      
-      // Check for proximity alerts
-      if (showProximityAlerts && userLocation) {
-        checkProximityAlerts(locationData);
-      }
-    } catch (error) {
-      console.error('Error fetching member locations:', error);
+    };
+
+    // Initial fetch when component mounts
+    if (sharingLocation) {
+      fetchWithRateLimitProtection();
     }
-  };
+    
+    // Set up interval with dynamic timing based on rate limiting
+    const intervalId = setInterval(() => {
+      if (sharingLocation) {
+        fetchWithRateLimitProtection();
+      }
+    }, isRateLimited ? retryDelay * 1000 : Math.max(updateInterval * 1000, 15000)); // Minimum 15 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [sharingLocation, updateInterval, isRateLimited, retryDelay, groupId, userLocation, showProximityAlerts, consecutiveErrors, lastFetchTime]);
   
   // Initialize the map
   const initializeMap = () => {
@@ -276,7 +346,7 @@ const LocationTracking = () => {
   };
   
   // Start tracking the user's location
-  const startLocationTracking = () => {
+  const fetchWithRateLimitProtection = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
       return;
@@ -355,14 +425,14 @@ const LocationTracking = () => {
     setSharingLocation(newState);
     
     if (newState) {
-      startLocationTracking();
+      fetchWithRateLimitProtection();
     } else {
       stopLocationTracking();
       
       // Notify server that user stopped sharing
       api.post(`/api/location/stop-sharing`, {
         group_id: groupId,
-        user_id: user.id
+        user_id: user?.id || 'current-user'
       }).catch(error => {
         console.error('Error notifying server about stopping location sharing:', error);
       });
@@ -374,7 +444,7 @@ const LocationTracking = () => {
     try {
       const locationData = {
         group_id: groupId,
-        user_id: user.id,
+        user_id: user?.id || 'current-user', // Add null check with default value
         coordinates: location,
         timestamp: new Date().toISOString(),
         battery_level: 85, // In a real app, get actual battery level
@@ -420,7 +490,7 @@ const LocationTracking = () => {
       markerEl.style.width = '30px';
       markerEl.style.height = '30px';
       markerEl.style.borderRadius = '50%';
-      markerEl.style.backgroundColor = location.user_id === user.id ? '#2196f3' : '#ff9800';
+      markerEl.style.backgroundColor = location.user_id === (user?.id || 'current-user') ? '#2196f3' : '#ff9800';
       markerEl.style.border = '2px solid white';
       markerEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       markerEl.style.cursor = 'pointer';
@@ -449,7 +519,7 @@ const LocationTracking = () => {
       markersRef.current[location.user_id] = marker;
       
       // Show popup for user's own location
-      if (location.user_id === user.id) {
+      if (location.user_id === (user?.id || 'current-user')) {
         marker.togglePopup();
       }
     });
@@ -756,6 +826,33 @@ const LocationTracking = () => {
               Notify when group members are nearby
             </Typography>
           </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <Typography gutterBottom>Update Interval (seconds)</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Slider
+                value={updateInterval}
+                min={15} // Increased minimum to 15 seconds
+                max={120} // Increased maximum to 2 minutes
+                step={15}
+                onChange={(e, newValue) => setUpdateInterval(newValue)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={value => `${value}s`}
+                sx={{ mr: 2, flexGrow: 1 }}
+              />
+              <Typography>{updateInterval}s</Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Higher values reduce API calls and help prevent rate limiting
+            </Typography>
+          </Box>
+
+          {isRateLimited && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <AlertTitle>Rate Limit Detected</AlertTitle>
+              Too many location requests. Retrying in {retryDelay} seconds.
+            </Alert>
+          )}
           
           {showProximityAlerts && (
             <Box sx={{ mb: 3, pl: 3, pr: 3 }}>
