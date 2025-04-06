@@ -198,46 +198,69 @@ class LocationService {
         throw new Error('User is not a member of this group');
       }
 
-      // Get all active members
-      const memberIds = group.members
-        .filter(member => member.status === 'active')
-        .map(member => member.user_id);
+      // Get all active members - Add null check for group.members
+      // and handle both UUID and non-UUID member IDs
+      let memberIds = [];
+      if (group.members && Array.isArray(group.members)) {
+        // Filter active members
+        const activeMembers = group.members.filter(member => member && member.status === 'active');
+        
+        // Extract user_ids from active members
+        memberIds = activeMembers.map(member => member.user_id);
+        
+        // Log for debugging
+        console.log(`Group ${groupId} has ${activeMembers.length} active members with IDs: ${JSON.stringify(memberIds)}`);
+      } else {
+        console.log(`Group ${groupId} has no members array or it's not properly formatted`);
+      }
 
       // Get latest location for each member
       const locations = [];
       for (const memberId of memberIds) {
-        const location = await Location.findOne({
-          user_id: memberId,
-          shared_with_group_ids: groupId
-        }).sort({ timestamp: -1 });
-
-        if (location) {
-          // Adjust precision based on privacy level
-          let locationData = {
+        try {
+          const location = await Location.findOne({
             user_id: memberId,
-            timestamp: location.timestamp,
-            privacy_level: location.privacy_level
-          };
+            shared_with_group_ids: groupId
+          }).sort({ timestamp: -1 });
 
-          if (location.privacy_level === 'precise') {
-            locationData.coordinates = location.coordinates;
-          } else if (location.privacy_level === 'approximate') {
-            // Round coordinates to lower precision
-            locationData.coordinates = {
-              latitude: Math.round(location.coordinates.latitude * 100) / 100,
-              longitude: Math.round(location.coordinates.longitude * 100) / 100
+          if (location) {
+            // Adjust precision based on privacy level
+            let locationData = {
+              user_id: memberId,
+              timestamp: location.timestamp,
+              privacy_level: location.privacy_level || 'precise',
+              battery_level: location.battery_level || 0,
+              connection_type: location.connection_type || 'unknown'
             };
-          } else {
-            // Hidden - only show that user is sharing location but not where
-            locationData.coordinates = null;
-          }
 
-          locations.push(locationData);
+            if (!location.privacy_level || location.privacy_level === 'precise') {
+              locationData.coordinates = location.coordinates;
+            } else if (location.privacy_level === 'approximate') {
+              // Round coordinates to lower precision
+              locationData.coordinates = {
+                latitude: Math.round(location.coordinates.latitude * 100) / 100,
+                longitude: Math.round(location.coordinates.longitude * 100) / 100
+              };
+            } else {
+              // Hidden - only show that user is sharing location but not where
+              locationData.coordinates = null;
+            }
+
+            locations.push(locationData);
+            console.log(`Found location for member ${memberId}`);
+          } else {
+            console.log(`No location found for member ${memberId}`);
+          }
+        } catch (memberError) {
+          console.error(`Error processing location for member ${memberId}:`, memberError);
+          // Continue with other members even if one fails
         }
       }
 
+      console.log(`Returning ${locations.length} locations for group ${groupId}`);
       return locations;
     } catch (error) {
+      console.error('Error in getGroupMembersLocations:', error);
       throw error;
     }
   }
@@ -274,10 +297,10 @@ class LocationService {
       let locationData = {
         user_id: user_id,
         timestamp: location.timestamp,
-        privacy_level: location.privacy_level
+        privacy_level: location.privacy_level || 'precise'
       };
 
-      if (location.privacy_level === 'precise') {
+      if (!location.privacy_level || location.privacy_level === 'precise') {
         locationData.coordinates = location.coordinates;
       } else if (location.privacy_level === 'approximate') {
         // Round coordinates to lower precision
@@ -291,268 +314,6 @@ class LocationService {
       }
 
       return locationData;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Get user location history
-   * @param {string} user_id - User ID
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} groupId - Optional group ID filter
-   * @param {string} requesterId - User ID making the request
-   * @returns {Promise<Array>} - Location history
-   */
-  async getUserLocationHistory(user_id, startDate, endDate, groupId, requesterId) {
-    try {
-      // Check if requester has permission
-      if (user_id !== requesterId) {
-        // If not self, check if they share a group
-        const sharedGroups = await Group.find({
-          'members.user_id': { $all: [user_id, requesterId] },
-          status: 'active'
-        });
-
-        if (sharedGroups.length === 0) {
-          throw new Error('Permission denied');
-        }
-
-        // If groupId is specified, check if it's in shared groups
-        if (groupId && !sharedGroups.some(g => g._id.toString() === groupId)) {
-          throw new Error('Permission denied');
-        }
-      }
-
-      // Build query
-      const query = {
-        user_id: user_id,
-        timestamp: {
-          $gte: startDate,
-          $lte: endDate
-        }
-      };
-
-      // Add group filter if specified
-      if (groupId) {
-        query.shared_with_group_ids = groupId;
-      }
-
-      // Get location history
-      const locations = await Location.find(query).sort({ timestamp: 1 });
-
-      // Process based on privacy level
-      return locations.map(location => {
-        let locationData = {
-          user_id: user_id,
-          timestamp: location.timestamp,
-          privacy_level: location.privacy_level
-        };
-
-        if (location.privacy_level === 'precise' || user_id === requesterId) {
-          locationData.coordinates = location.coordinates;
-        } else if (location.privacy_level === 'approximate') {
-          // Round coordinates to lower precision
-          locationData.coordinates = {
-            latitude: Math.round(location.coordinates.latitude * 100) / 100,
-            longitude: Math.round(location.coordinates.longitude * 100) / 100
-          };
-        } else {
-          // Hidden - only show that user is sharing location but not where
-          locationData.coordinates = null;
-        }
-
-        return locationData;
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Set location privacy
-   * @param {string} user_id - User ID
-   * @param {string} privacyLevel - Privacy level
-   * @param {Array} sharedWithGroupIds - Group IDs to share with
-   * @returns {Promise<Object>} - Updated privacy settings
-   */
-  async setLocationPrivacy(user_id, privacyLevel, sharedWithGroupIds) {
-    try {
-      // Validate privacy level
-      if (!['precise', 'approximate', 'hidden'].includes(privacyLevel)) {
-        throw new Error('Invalid privacy level');
-      }
-
-      // Validate groups if provided
-      if (sharedWithGroupIds && sharedWithGroupIds.length > 0) {
-        const userGroups = await Group.find({
-          'members.user_id': user_id,
-          status: 'active'
-        });
-
-        const userGroupIds = userGroups.map(g => g._id.toString());
-        const invalidGroups = sharedWithGroupIds.filter(id => !userGroupIds.includes(user_id));
-
-        if (invalidGroups.length > 0) {
-          throw new Error('User is not a member of some specified groups');
-        }
-      }
-
-      // Update future locations
-      const settings = {
-        privacy_level: privacyLevel,
-        shared_with_group_ids: sharedWithGroupIds
-      };
-
-      return settings;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Create proximity alert
-   * @param {string} groupId - Group ID
-   * @param {string} targetUserId - Target user ID
-   * @param {number} distanceThreshold - Distance threshold in meters
-   * @param {string} user_id - User ID creating the alert
-   * @returns {Promise<Object>} - Created proximity alert
-   */
-  async createProximityAlert(groupId, targetUserId, distanceThreshold, user_id) {
-    try {
-      // Check if group exists and both users are members
-      const group = await Group.findById(groupId);
-      if (!group) {
-        throw new Error('Group not found');
-      }
-
-      if (!group.isMember(user_id) || !group.isMember(targetUserId)) {
-        throw new Error('Both users must be members of the group');
-      }
-
-      // Check if alert already exists
-      const existingAlert = await ProximityAlert.findOne({
-        group_id: groupId,
-        user_id: user_id,
-        target_user_id: targetUserId,
-        status: 'active'
-      });
-
-      if (existingAlert) {
-        throw new Error('Proximity alert already exists');
-      }
-
-      // Create new alert
-      const alert = new ProximityAlert({
-        group_id: groupId,
-        user_id: user_id,
-        target_user_id: targetUserId,
-        distance_threshold: distanceThreshold || 100
-      });
-
-      await alert.save();
-      return alert;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Get proximity alerts
-   * @param {string} groupId - Group ID
-   * @param {string} user_id - User ID making the request
-   * @returns {Promise<Array>} - Array of proximity alerts
-   */
-  async getProximityAlerts(groupId, user_id) {
-    try {
-      // Check if group exists and user is a member
-      const group = await Group.findById(groupId);
-      if (!group) {
-        throw new Error('Group not found');
-      }
-
-      if (!group.isMember(user_id)) {
-        throw new Error('User is not a member of this group');
-      }
-
-      // Get alerts
-      const alerts = await ProximityAlert.find({
-        group_id: groupId,
-        $or: [
-          { user_id: user_id },
-          { target_user_id: user_id }
-        ]
-      });
-
-      return alerts;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Update proximity alert
-   * @param {string} alertId - Alert ID
-   * @param {Object} updateData - Data to update
-   * @param {string} user_id - User ID making the request
-   * @returns {Promise<Object>} - Updated proximity alert
-   */
-  async updateProximityAlert(alertId, updateData, user_id) {
-    try {
-      // Get alert
-      const alert = await ProximityAlert.findById(alertId);
-      if (!alert) {
-        throw new Error('Proximity alert not found');
-      }
-
-      // Check if user has permission
-      if (alert.user_id !== user_id) {
-        throw new Error('Permission denied');
-      }
-
-      // Update allowed fields
-      if (updateData.distance_threshold) {
-        alert.distance_threshold = updateData.distance_threshold;
-      }
-
-      if (updateData.status) {
-        if (updateData.status === 'dismissed') {
-          alert.dismissAlert();
-        } else if (updateData.status === 'active') {
-          alert.resetAlert();
-        }
-      }
-
-      await alert.save();
-      return alert;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Delete proximity alert
-   * @param {string} alertId - Alert ID
-   * @param {string} user_id - User ID making the request
-   * @returns {Promise<boolean>} - Success status
-   */
-  async deleteProximityAlert(alertId, user_id) {
-    try {
-      // Get alert
-      const alert = await ProximityAlert.findById(alertId);
-      if (!alert) {
-        throw new Error('Proximity alert not found');
-      }
-
-      // Check if user has permission
-      if (alert.user_id !== user_id) {
-        throw new Error('Permission denied');
-      }
-
-      // Delete alert
-      await ProximityAlert.deleteOne({ _id: alertId });
-      return true;
     } catch (error) {
       throw error;
     }
