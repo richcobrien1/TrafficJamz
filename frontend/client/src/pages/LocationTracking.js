@@ -25,7 +25,12 @@ import {
   FormControlLabel,
   Slider,
   Tooltip,
-  Chip
+  Chip,
+  Fade,
+  Drawer,
+  AppBar,
+  Toolbar,
+  Collapse
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
@@ -38,7 +43,12 @@ import {
   Settings as SettingsIcon,
   Navigation as NavigationIcon,
   Speed as SpeedIcon,
-  BatteryFull as BatteryIcon
+  BatteryFull as BatteryIcon,
+  Menu as MenuIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Close as CloseIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -70,11 +80,22 @@ const LocationTracking = () => {
   const [highAccuracyMode, setHighAccuracyMode] = useState(true);
   const [updateInterval, setUpdateInterval] = useState(15);
   const [locationError, setLocationError] = useState(null);
-  // Add these state variables to your existing state variables section
+  
+  // New state variables for UI controls
+  const [showControls, setShowControls] = useState(true);
+  const [showMembersList, setShowMembersList] = useState(false);
+  const [showLocationInfo, setShowLocationInfo] = useState(true);
+  const [controlsOpacity, setControlsOpacity] = useState(0.85);
+  
+  // Rate limiting state variables
   const [retryDelay, setRetryDelay] = useState(15); // Default retry delay in seconds
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  
+  // Geolocation state
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [geolocationRetries, setGeolocationRetries] = useState(0);
   
   // Refs
   const mapContainerRef = useRef(null);
@@ -85,14 +106,20 @@ const LocationTracking = () => {
   // Initialize component
   useEffect(() => {
     fetchGroupDetails();
-    initializeMap();
+    
+    // Only initialize map after component is mounted and ref is available
+    const timer = setTimeout(() => {
+      initializeMap();
+    }, 100);
     
     if (sharingLocation) {
-      fetchWithRateLimitProtection();
+      startLocationTracking();
     }
     
     // Cleanup function
     return () => {
+      clearTimeout(timer);
+      
       if (watchIdRef.current) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
@@ -103,72 +130,6 @@ const LocationTracking = () => {
       }
     };
   }, [groupId]);
-  
-  // Periodically fetch locations of other members
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     if (sharingLocation) {
-  //       fetchMemberLocations();
-  //     }
-  //   }, updateInterval * 1000);
-    
-  //   return () => clearInterval(intervalId);
-  // }, [sharingLocation, updateInterval]);
-  
-  // Fetch group details and member information
-  const fetchGroupDetails = async () => {
-    try {
-      setLoading(true);
-      
-      // In a real implementation, fetch actual group data
-      let groupData;
-      try {
-        const response = await api.get(`/api/groups/${groupId}`);
-        groupData = response.data.group;
-      } catch (error) {
-        console.log('Using mock group data due to API error:', error);
-        // Fallback to mock data
-        groupData = {
-          id: groupId,
-          name: 'Mountain Explorers',
-          description: 'A group for mountain skiing enthusiasts',
-          members: [
-            {
-              user_id: user?.id || 'current-user',
-              username: user?.username || 'CurrentUser',
-              profile_image_url: user?.profile_image_url,
-              status: 'active'
-            },
-            {
-              user_id: 'user2',
-              username: 'JaneDoe',
-              profile_image_url: null,
-              status: 'active'
-            },
-            {
-              user_id: 'user3',
-              username: 'BobSmith',
-              profile_image_url: null,
-              status: 'active'
-            }
-          ]
-        };
-      }
-      
-      setGroup(groupData);
-      setMembers(groupData.members);
-      
-      // Fetch initial member locations
-      // fetchMemberLocations();
-      
-      setError('');
-    } catch (error) {
-      console.error('Error fetching group details:', error);
-      setError('Failed to load group details. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
   
   // Periodically fetch locations of other members with rate limiting protection
   useEffect(() => {
@@ -235,8 +196,8 @@ const LocationTracking = () => {
               user_id: user?.id || 'current-user',
               username: user?.username || 'CurrentUser',
               coordinates: userLocation || {
-                latitude: 40.7128,
-                longitude: -74.0060,
+                latitude: 39.40307408791466,
+                longitude: -104.88774754460103,
                 accuracy: 10,
                 altitude: 100,
                 heading: 90,
@@ -289,7 +250,7 @@ const LocationTracking = () => {
           checkProximityAlerts(locationData);
         }
       } catch (error) {
-        console.error('Error in locationData:', error);
+        console.error('Error in fetchMemberLocations:', error);
       }
     };
 
@@ -303,10 +264,139 @@ const LocationTracking = () => {
       if (sharingLocation) {
         fetchWithRateLimitProtection();
       }
-    }, isRateLimited ? retryDelay * 1000 : Math.max(updateInterval * 1000, 15000)); // Minimum 15 seconds
+    }, isRateLimited ? retryDelay * 10000 : Math.max(updateInterval * 1000, 15000)); // Minimum 15 seconds
     
     return () => clearInterval(intervalId);
   }, [sharingLocation, updateInterval, isRateLimited, retryDelay, groupId, userLocation, showProximityAlerts, consecutiveErrors, lastFetchTime]);
+  
+  // Fetch group details and member information
+  const fetchGroupDetails = async () => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, fetch actual group data
+      let groupData;
+      try {
+        const response = await api.get(`/api/groups/${groupId}`);
+        groupData = response.data.group;
+      } catch (error) {
+        console.log('Using mock group data due to API error:', error);
+        // Fallback to mock data
+        groupData = {
+          id: groupId,
+          name: 'Mountain Explorers',
+          description: 'A group for mountain skiing enthusiasts',
+          members: [
+            {
+              user_id: user?.id || 'current-user',
+              username: user?.username || 'CurrentUser',
+              profile_image_url: user?.profile_image_url,
+              status: 'active'
+            },
+            {
+              user_id: 'user2',
+              username: 'JaneDoe',
+              profile_image_url: null,
+              status: 'active'
+            },
+            {
+              user_id: 'user3',
+              username: 'BobSmith',
+              profile_image_url: null,
+              status: 'active'
+            }
+          ]
+        };
+      }
+      
+      setGroup(groupData);
+      setMembers(groupData.members);
+      
+      // Fetch initial member locations
+      fetchMemberLocations();
+      
+      setError('');
+    } catch (error) {
+      console.error('Error fetching group details:', error);
+      setError('Failed to load group details. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fetch locations of all group members
+  const fetchMemberLocations = async () => {
+    try {
+      // In a real implementation, fetch actual location data
+      let locationData;
+      try {
+        const response = await api.get(`/api/location/group/${groupId}`);
+        locationData = response.data.locations;
+      } catch (error) {
+        console.log('Using mock location data due to API error:', error);
+        // Fallback to mock data
+        locationData = [
+          {
+            user_id: user?.id || 'current-user', // Add null check with default value
+            username: user?.username || 'CurrentUser',
+            coordinates: userLocation || {
+              latitude: 40.7128,
+              longitude: -74.0060,
+              accuracy: 10,
+              altitude: 100,
+              heading: 90,
+              speed: 0
+            },
+            timestamp: new Date().toISOString(),
+            battery_level: 85,
+            connection_type: 'wifi'
+          },
+          {
+            user_id: 'user2',
+            username: 'JaneDoe',
+            coordinates: {
+              latitude: 40.7138,
+              longitude: -74.0070,
+              accuracy: 15,
+              altitude: 105,
+              heading: 180,
+              speed: 5
+            },
+            timestamp: new Date().toISOString(),
+            battery_level: 65,
+            connection_type: 'cellular'
+          },
+          {
+            user_id: 'user3',
+            username: 'BobSmith',
+            coordinates: {
+              latitude: 40.7118,
+              longitude: -74.0050,
+              accuracy: 20,
+              altitude: 95,
+              heading: 270,
+              speed: 2
+            },
+            timestamp: new Date().toISOString(),
+            battery_level: 45,
+            connection_type: 'cellular'
+          }
+        ];
+      }
+      
+      setLocations(locationData);
+      
+      // Update map markers
+      updateMapMarkers(locationData);
+      
+      // Check for proximity alerts
+      if (showProximityAlerts && userLocation) {
+        checkProximityAlerts(locationData);
+      }
+    } catch (error) {
+      console.error('Error fetching member locations:', error);
+    }
+  };
   
   // Initialize the map
   const initializeMap = () => {
@@ -316,6 +406,14 @@ const LocationTracking = () => {
     }
     
     try {
+      // Check if the map container ref is available
+      if (!mapContainerRef.current) {
+        console.error('Map container ref is not available yet');
+        // Set a timeout to try again
+        setTimeout(initializeMap, 100);
+        return;
+      }
+      
       mapboxgl.accessToken = MAPBOX_TOKEN;
       
       const map = new mapboxgl.Map({
@@ -338,6 +436,15 @@ const LocationTracking = () => {
         if (locations.length > 0) {
           updateMapMarkers(locations);
         }
+        
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+        map.addControl(new mapboxgl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true
+          },
+          trackUserLocation: true
+        }), 'bottom-right');
       });
     } catch (error) {
       console.error('Error initializing map:', error);
@@ -346,69 +453,182 @@ const LocationTracking = () => {
   };
   
   // Start tracking the user's location
-  const fetchWithRateLimitProtection = () => {
+  const startLocationTracking = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
       return;
     }
     
+    // Prevent multiple simultaneous geolocation requests
+    if (isGettingLocation) {
+      return;
+    }
+    
+    setIsGettingLocation(true);
+    
     const options = {
       enableHighAccuracy: highAccuracyMode,
-      timeout: 10000,
-      maximumAge: 0
+      timeout: 20000, // Increased timeout to 20 seconds
+      maximumAge: 30000 // Allow cached positions up to 30 seconds old
     };
     
     try {
-      watchIdRef.current = navigator.geolocation.watchPosition(
+      // Use getCurrentPosition first to get an immediate position if available
+      navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude, accuracy, altitude, heading, speed } = position.coords;
+          handlePositionSuccess(position);
           
-          const newLocation = {
-            latitude,
-            longitude,
-            accuracy,
-            altitude: altitude || 0,
-            heading: heading || 0,
-            speed: speed || 0
-          };
-          
-          setUserLocation(newLocation);
-          setLocationError(null);
-          
-          // Update the server with the new location
-          updateLocationOnServer(newLocation);
-          
-          // Center map on user's location if this is the first location update
-          if (!userLocation && mapRef.current) {
-            centerMapOnLocation(newLocation);
-          }
+          // After getting initial position, start watching for updates
+          startWatchingPosition();
         },
         (error) => {
-          console.error('Error getting location:', error);
-          let errorMessage = 'Error getting your location.';
+          console.log('Error getting initial position, falling back to default location:', error);
           
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location permission denied. Please enable location services for this site.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Please try again later.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out. Please try again.';
-              break;
-            default:
-              errorMessage = `Location error: ${error.message}`;
-          }
+          // If we can't get the initial position, use a default and start watching anyway
+          const defaultLocation = {
+            latitude: 40.7128,
+            longitude: -74.0060,
+            accuracy: 1000,
+            altitude: 0,
+            heading: 0,
+            speed: 0
+          };
           
-          setLocationError(errorMessage);
+          setUserLocation(defaultLocation);
+          setLocationError('Using default location. ' + getGeolocationErrorMessage(error));
+          
+          // Start watching position even if initial position failed
+          startWatchingPosition();
         },
         options
       );
     } catch (error) {
       console.error('Error starting location tracking:', error);
       setLocationError('Failed to start location tracking. Please try again.');
+      setIsGettingLocation(false);
     }
+  };
+  
+  // Start watching position for continuous updates
+  const startWatchingPosition = () => {
+    const options = {
+      enableHighAccuracy: highAccuracyMode,
+      timeout: 20000, // Increased timeout to 20 seconds
+      maximumAge: 30000 // Allow cached positions up to 30 seconds old
+    };
+    
+    try {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        handlePositionSuccess,
+        handlePositionError,
+        options
+      );
+    } catch (error) {
+      console.error('Error setting up position watching:', error);
+      setLocationError('Failed to set up continuous location tracking.');
+      setIsGettingLocation(false);
+    }
+  };
+  
+  // Handle successful position acquisition
+  const handlePositionSuccess = (position) => {
+    const { latitude, longitude, accuracy, altitude, heading, speed } = position.coords;
+    
+    const newLocation = {
+      latitude,
+      longitude,
+      accuracy,
+      altitude: altitude || 0,
+      heading: heading || 0,
+      speed: speed || 0
+    };
+    
+    setUserLocation(newLocation);
+    setLocationError(null);
+    setIsGettingLocation(false);
+    setGeolocationRetries(0); // Reset retry counter on success
+    
+    // Update the server with the new location
+    updateLocationOnServer(newLocation);
+    
+    // Center map on user's location if this is the first location update
+    if (!userLocation && mapRef.current) {
+      centerMapOnLocation(newLocation);
+    }
+  };
+  
+  // Handle position acquisition errors
+  const handlePositionError = (error) => {
+    console.error('Error getting location:', error);
+    
+    // Increment retry counter
+    const newRetryCount = geolocationRetries + 1;
+    setGeolocationRetries(newRetryCount);
+    
+    // Get appropriate error message
+    const errorMessage = getGeolocationErrorMessage(error);
+    
+    // If we've tried too many times, stop retrying
+    if (newRetryCount >= 3) {
+      setLocationError(`${errorMessage} Using default or last known location.`);
+      setIsGettingLocation(false);
+      
+      // Use default location if we don't have one yet
+      if (!userLocation) {
+        const defaultLocation = {
+          latitude: 40.7128,
+          longitude: -74.0060,
+          accuracy: 1000,
+          altitude: 0,
+          heading: 0,
+          speed: 0
+        };
+        
+        setUserLocation(defaultLocation);
+        
+        // Center map on default location
+        if (mapRef.current) {
+          centerMapOnLocation(defaultLocation);
+        }
+      }
+    } else {
+      // Try again with less strict options
+      setLocationError(`${errorMessage} Retrying... (${newRetryCount}/3)`);
+      
+      // Retry with less strict options
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          handlePositionSuccess,
+          handlePositionError,
+          {
+            enableHighAccuracy: false, // Try without high accuracy
+            timeout: 30000, // Longer timeout
+            maximumAge: 60000 // Accept older cached positions
+          }
+        );
+      }, 1000); // Wait 1 second before retrying
+    }
+  };
+  
+  // Get user-friendly error message for geolocation errors
+  const getGeolocationErrorMessage = (error) => {
+    let errorMessage = 'Error getting your location.';
+    
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        errorMessage = 'Location permission denied. Please enable location services for this site.';
+        break;
+      case error.POSITION_UNAVAILABLE:
+        errorMessage = 'Location information is unavailable. Please try again later.';
+        break;
+      case error.TIMEOUT:
+        errorMessage = 'Location request timed out. Please try again.';
+        break;
+      default:
+        errorMessage = `Location error: ${error.message}`;
+    }
+    
+    return errorMessage;
   };
   
   // Stop tracking the user's location
@@ -417,6 +637,7 @@ const LocationTracking = () => {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
+    setIsGettingLocation(false);
   };
   
   // Toggle location sharing on/off
@@ -425,7 +646,7 @@ const LocationTracking = () => {
     setSharingLocation(newState);
     
     if (newState) {
-      fetchWithRateLimitProtection();
+      startLocationTracking();
     } else {
       stopLocationTracking();
       
@@ -530,7 +751,7 @@ const LocationTracking = () => {
     if (!userLocation) return;
     
     locationData.forEach(location => {
-      if (location.user_id === user.id || !location.coordinates) return;
+      if (location.user_id === (user?.id || 'current-user') || !location.coordinates) return;
       
       const distance = calculateDistance(
         userLocation.latitude,
@@ -583,208 +804,367 @@ const LocationTracking = () => {
     }
   };
   
-  // Render component
-  return (
-    <Container maxWidth="md">
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Location Tracking
+  // Toggle UI controls visibility
+  const toggleControls = () => {
+    setShowControls(!showControls);
+  };
+  
+  // Toggle members list visibility
+  const toggleMembersList = () => {
+    setShowMembersList(!showMembersList);
+  };
+  
+  // Toggle location info visibility
+  const toggleLocationInfo = () => {
+    setShowLocationInfo(!showLocationInfo);
+  };
+  
+  // Render loading state
+  if (loading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <CircularProgress size={60} />
+        <Typography variant="h6">
+          Loading location tracking...
         </Typography>
+      </Box>
+    );
+  }
+  
+  // Render component with fullscreen map and overlay UI
+  return (
+    <Box sx={{ 
+      height: '100vh', 
+      width: '100vw', 
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Fullscreen Map Container */}
+      <Box 
+        ref={mapContainerRef}
+        sx={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 0
+        }}
+      >
+        {!mapLoaded && (
+          <Box sx={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'action.hover',
+            zIndex: 1
+          }}>
+            <CircularProgress size={60} />
+          </Box>
+        )}
+      </Box>
+      
+      {/* Top App Bar */}
+      <AppBar 
+        position="absolute" 
+        color="transparent" 
+        elevation={0}
+        sx={{ 
+          background: 'rgba(255,255,255,0.8)',
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+          top: showControls ? 0 : -64,
+          zIndex: 10
+        }}
+      >
+        <Toolbar>
+          <IconButton 
+            edge="start" 
+            color="inherit" 
+            onClick={() => navigate(`/groups/${groupId}`)}
+            sx={{ mr: 2 }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            {group?.name || 'Location Tracking'}
+          </Typography>
+          
+          <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
+            <IconButton 
+              color={sharingLocation ? "primary" : "default"}
+              onClick={toggleLocationSharing}
+            >
+              {sharingLocation ? <LocationIcon /> : <LocationOffIcon />}
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Refresh Locations">
+            <IconButton 
+              color="inherit"
+              onClick={fetchMemberLocations}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Settings">
+            <IconButton 
+              color="inherit"
+              onClick={() => setOpenSettingsDialog(true)}
+            >
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      </AppBar>
+      
+      {/* Toggle Controls Button */}
+      <Tooltip title={showControls ? "Hide Controls" : "Show Controls"}>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 16,
+            zIndex: 10,
+            bgcolor: 'background.paper',
+            boxShadow: 2,
+            '&:hover': {
+              bgcolor: 'background.paper',
+            }
+          }}
+          onClick={toggleControls}
+        >
+          {showControls ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </IconButton>
+      </Tooltip>
+      
+      {/* Toggle Members List Button */}
+      <Tooltip title={showMembersList ? "Hide Members" : "Show Members"}>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 76,
+            zIndex: 10,
+            bgcolor: 'background.paper',
+            boxShadow: 2,
+            '&:hover': {
+              bgcolor: 'background.paper',
+            }
+          }}
+          onClick={toggleMembersList}
+        >
+          <PeopleIcon />
+        </IconButton>
+      </Tooltip>
+      
+      {/* Center on My Location Button */}
+      <Tooltip title="Center on My Location">
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 136,
+            zIndex: 10,
+            bgcolor: 'background.paper',
+            boxShadow: 2,
+            '&:hover': {
+              bgcolor: 'background.paper',
+            }
+          }}
+          onClick={() => userLocation && centerMapOnLocation(userLocation)}
+          disabled={!userLocation}
+        >
+          <MyLocationIcon />
+        </IconButton>
+      </Tooltip>
+      
+      {/* Alerts and Errors */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: showControls ? 72 : 16,
+          left: 16,
+          right: 196,
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1
+        }}
+      >
+        {isGettingLocation && (
+          <Alert severity="info" sx={{ opacity: controlsOpacity }}>
+            <AlertTitle>Getting Your Location</AlertTitle>
+            Please wait while we determine your position...
+          </Alert>
+        )}
+        
+        {isRateLimited && (
+          <Alert severity="warning" sx={{ opacity: controlsOpacity }}>
+            <AlertTitle>Rate Limit Detected</AlertTitle>
+            Too many location requests. Retrying in {retryDelay} seconds.
+          </Alert>
+        )}
         
         {locationError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ opacity: controlsOpacity }}>
             {locationError}
           </Alert>
         )}
         
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ opacity: controlsOpacity }}>
             {error}
           </Alert>
         )}
-        
-        {/* Controls for Location Tracking */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Button 
-            variant="outlined" 
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(`/groups/${groupId}`)}
-          >
-            Back to Group
-          </Button>
-          
-          <Box>
-            <Button 
-              variant="outlined" 
-              color={sharingLocation ? "secondary" : "primary"}
-              onClick={toggleLocationSharing}
-              startIcon={sharingLocation ? <LocationOffIcon /> : <LocationIcon />}
-              sx={{ mr: 1 }}
-            >
-              {sharingLocation ? 'Stop Sharing' : 'Start Sharing'}
-            </Button>
-            
-            <IconButton 
-              color="primary" 
-              onClick={() => setOpenSettingsDialog(true)}
-              aria-label="Location Settings"
-            >
-              <SettingsIcon />
+      </Box>
+      
+      {/* Current Location Info */}
+      <Collapse in={showLocationInfo && showControls && sharingLocation}>
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: 16,
+            right: 16,
+            zIndex: 10,
+            p: 2,
+            opacity: controlsOpacity,
+            backdropFilter: 'blur(10px)',
+            bgcolor: 'rgba(255,255,255,0.8)',
+            borderRadius: 2,
+            maxWidth: 600,
+            mx: 'auto'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="subtitle1">Current Location</Typography>
+            <IconButton size="small" onClick={toggleLocationInfo}>
+              <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <LocationIcon color="primary" />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="body2">
+                {userLocation ? 
+                  `Latitude: ${userLocation.latitude.toFixed(6)}, Longitude: ${userLocation.longitude.toFixed(6)}` : 
+                  'Acquiring location...'
+                }
+              </Typography>
+              {userLocation && (
+                <Typography variant="caption" color="text.secondary">
+                  Accuracy: ±{userLocation.accuracy.toFixed(1)} meters
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </Paper>
+      </Collapse>
+      
+      {/* Members List Drawer */}
+      <Drawer
+        anchor="right"
+        open={showMembersList}
+        onClose={toggleMembersList}
+        variant="persistent"
+        sx={{
+          width: 320,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: 320,
+            boxSizing: 'border-box',
+            opacity: controlsOpacity,
+            backdropFilter: 'blur(10px)',
+            bgcolor: 'rgba(255,255,255,0.8)',
+            border: 'none',
+            boxShadow: 3,
+            height: 'calc(100% - 64px)',
+            top: 64,
+            zIndex: 5
+          },
+        }}
+      >
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6">Group Members</Typography>
+          <IconButton onClick={toggleMembersList}>
+            <CloseIcon />
+          </IconButton>
         </Box>
         
-        {/* Location Status and Map */}
-        {sharingLocation ? (
-          <Box>
-            {/* Location Information */}
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Current Location
-              </Typography>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <LocationIcon color="primary" />
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2">
-                    {userLocation ? 
-                      `Latitude: ${userLocation.latitude.toFixed(6)}, Longitude: ${userLocation.longitude.toFixed(6)}` : 
-                      'Acquiring location...'
-                    }
-                  </Typography>
-                  {userLocation && (
-                    <Typography variant="caption" color="text.secondary">
-                      Accuracy: ±{userLocation.accuracy.toFixed(1)} meters
-                    </Typography>
-                  )}
-                </Box>
-                <IconButton 
-                  color="primary" 
-                  onClick={() => userLocation && centerMapOnLocation(userLocation)}
-                  disabled={!userLocation}
-                  aria-label="Center on my location"
+        <Divider />
+        
+        <List sx={{ overflow: 'auto' }}>
+          {members.map((member, index) => {
+            const memberLocation = locations.find(loc => loc.user_id === member.user_id);
+            const isOnline = !!memberLocation;
+            const distance = userLocation && memberLocation && memberLocation.coordinates ? 
+              calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                memberLocation.coordinates.latitude,
+                memberLocation.coordinates.longitude
+              ) : null;
+            
+            return (
+              <React.Fragment key={member.user_id}>
+                {index > 0 && <Divider component="li" />}
+                <ListItem 
+                  button 
+                  onClick={() => handleMemberClick(member)}
+                  secondaryAction={
+                    <Chip 
+                      label={distance ? formatDistance(distance) : 'Unknown'}
+                      color={distance && distance <= proximityDistance ? "success" : "default"}
+                      size="small"
+                    />
+                  }
                 >
-                  <MyLocationIcon />
-                </IconButton>
-              </Box>
-            </Paper>
-            
-            {/* Map Display */}
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Map View
-              </Typography>
-              
-              <Box 
-                ref={mapContainerRef}
-                sx={{ 
-                  height: 400, 
-                  borderRadius: 1,
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {!mapLoaded && (
-                  <Box sx={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'action.hover',
-                    zIndex: 1
-                  }}>
-                    <CircularProgress size={40} />
-                  </Box>
-                )}
-              </Box>
-            </Paper>
-            
-            {/* Group Members */}
-            <Paper variant="outlined" sx={{ p: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Group Members
-              </Typography>
-              
-              <List>
-                {members.map((member, index) => {
-                  const memberLocation = locations.find(loc => loc.user_id === member.user_id);
-                  const isOnline = !!memberLocation;
-                  const distance = userLocation && memberLocation && memberLocation.coordinates ? 
-                    calculateDistance(
-                      userLocation.latitude,
-                      userLocation.longitude,
-                      memberLocation.coordinates.latitude,
-                      memberLocation.coordinates.longitude
-                    ) : null;
-                  
-                  return (
-                    <React.Fragment key={member.user_id}>
-                      {index > 0 && <Divider component="li" />}
-                      <ListItem 
-                        button 
-                        onClick={() => handleMemberClick(member)}
-                        secondaryAction={
-                          <Chip 
-                            label={distance ? formatDistance(distance) : 'Unknown'}
-                            color={distance && distance <= proximityDistance ? "success" : "default"}
-                            size="small"
-                          />
-                        }
+                  <ListItemAvatar>
+                    <Badge
+                      overlap="circular"
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                      variant="dot"
+                      color={isOnline ? "success" : "error"}
+                    >
+                      <Avatar 
+                        src={member.profile_image_url} 
+                        alt={member.username}
                       >
-                        <ListItemAvatar>
-                          <Badge
-                            overlap="circular"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            variant="dot"
-                            color={isOnline ? "success" : "error"}
-                          >
-                            <Avatar 
-                              src={member.profile_image_url} 
-                              alt={member.username}
-                            >
-                              {member.username.charAt(0).toUpperCase()}
-                            </Avatar>
-                          </Badge>
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary={member.username}
-                          secondary={
-                            memberLocation ? 
-                              `Last updated: ${new Date(memberLocation.timestamp).toLocaleTimeString()}` : 
-                              'Location not shared'
-                          }
-                        />
-                      </ListItem>
-                    </React.Fragment>
-                  );
-                })}
-              </List>
-            </Paper>
-          </Box>
-        ) : (
-          <Box sx={{ 
-            p: 3, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            flexDirection: 'column',
-            bgcolor: 'background.paper',
-            borderRadius: 1
-          }}>
-            <LocationOffIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="body2">
-              Location tracking is currently disabled.
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Enable tracking to share your location with group members.
-            </Typography>
-          </Box>
-        )}
-      </Paper>
+                        {member.username.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </Badge>
+                  </ListItemAvatar>
+                  <ListItemText 
+                    primary={member.username}
+                    secondary={
+                      memberLocation ? 
+                        `Last updated: ${new Date(memberLocation.timestamp).toLocaleTimeString()}` : 
+                        'Location not shared'
+                    }
+                  />
+                </ListItem>
+              </React.Fragment>
+            );
+          })}
+        </List>
+      </Drawer>
       
       {/* Settings Dialog */}
       <Dialog 
@@ -807,26 +1187,10 @@ const LocationTracking = () => {
               label="High Accuracy Mode"
             />
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
-              Uses GPS for more precise location (higher battery usage)
+              Uses GPS for more precise location but consumes more battery
             </Typography>
           </Box>
           
-          <Box sx={{ mb: 3 }}>
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={showProximityAlerts} 
-                  onChange={(e) => setShowProximityAlerts(e.target.checked)}
-                  color="primary"
-                />
-              }
-              label="Proximity Alerts"
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
-              Notify when group members are nearby
-            </Typography>
-          </Box>
-
           <Box sx={{ mb: 3 }}>
             <Typography gutterBottom>Update Interval (seconds)</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -846,71 +1210,52 @@ const LocationTracking = () => {
               Higher values reduce API calls and help prevent rate limiting
             </Typography>
           </Box>
-
-          {isRateLimited && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              <AlertTitle>Rate Limit Detected</AlertTitle>
-              Too many location requests. Retrying in {retryDelay} seconds.
-            </Alert>
-          )}
-          
-          {showProximityAlerts && (
-            <Box sx={{ mb: 3, pl: 3, pr: 3 }}>
-              <Typography id="proximity-distance-slider" gutterBottom>
-                Alert Distance: {proximityDistance}m
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="caption">50m</Typography>
-                <Box sx={{ flexGrow: 1 }}>
-                  <Slider
-                    value={proximityDistance}
-                    onChange={(e, newValue) => setProximityDistance(newValue)}
-                    aria-labelledby="proximity-distance-slider"
-                    min={50}
-                    max={500}
-                    step={50}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={(value) => `${value}m`}
-                    sx={{ 
-                      width: '100%',
-                      '& .MuiSlider-rail': { height: 4 },
-                      '& .MuiSlider-track': { height: 4 }
-                    }}
-                  />
-                </Box>
-                <Typography variant="caption">500m</Typography>
-              </Box>
-            </Box>
-          )}
           
           <Box sx={{ mb: 3 }}>
-            <Typography id="update-interval-slider" gutterBottom>
-              Update Interval: {updateInterval} seconds
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="caption">5s</Typography>
-              <Box sx={{ flexGrow: 1 }}>
-                <Slider
-                  value={updateInterval}
-                  onChange={(e, newValue) => setUpdateInterval(newValue)}
-                  aria-labelledby="update-interval-slider"
-                  min={5}
-                  max={60}
-                  step={5}
-                  valueLabelDisplay="auto"
-                  valueLabelFormat={(value) => `${value}s`}
-                  sx={{ 
-                    width: '100%',
-                    '& .MuiSlider-rail': { height: 4 },
-                    '& .MuiSlider-track': { height: 4 }
-                  }}
-                />
-              </Box>
-              <Typography variant="caption">60s</Typography>
+            <Typography gutterBottom>Proximity Alert Distance</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Slider
+                value={proximityDistance}
+                min={50}
+                max={1000}
+                step={50}
+                onChange={(e, newValue) => setProximityDistance(newValue)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={value => `${value}m`}
+                sx={{ mr: 2, flexGrow: 1 }}
+              />
+              <Typography>{proximityDistance}m</Typography>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-              How often to update locations (shorter intervals use more battery)
-            </Typography>
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={showProximityAlerts} 
+                  onChange={(e) => setShowProximityAlerts(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Show Proximity Alerts"
+            />
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <Typography gutterBottom>UI Overlay Opacity</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Slider
+                value={controlsOpacity}
+                min={0.5}
+                max={1}
+                step={0.05}
+                onChange={(e, newValue) => setControlsOpacity(newValue)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={value => `${Math.round(value * 100)}%`}
+                sx={{ mr: 2, flexGrow: 1 }}
+              />
+              <Typography>{Math.round(controlsOpacity * 100)}%</Typography>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
@@ -929,93 +1274,109 @@ const LocationTracking = () => {
           <>
             <DialogTitle>{selectedMember.username}</DialogTitle>
             <DialogContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                <Avatar 
+                  src={selectedMember.profile_image_url}
+                  sx={{ 
+                    width: 80, 
+                    height: 80,
+                    mb: 1,
+                    bgcolor: selectedMember.user_id === (user?.id || 'current-user') ? 'primary.main' : 'secondary.main'
+                  }}
+                >
+                  {selectedMember.username.charAt(0).toUpperCase()}
+                </Avatar>
+                <Typography variant="h6">{selectedMember.username}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedMember.status === 'active' ? 'Active Member' : 'Inactive'}
+                </Typography>
+              </Box>
+              
+              {/* Location details */}
               {(() => {
                 const memberLocation = locations.find(loc => loc.user_id === selectedMember.user_id);
-                
-                if (!memberLocation || !memberLocation.coordinates) {
+                if (!memberLocation) {
                   return (
-                    <Box sx={{ textAlign: 'center', py: 2 }}>
-                      <LocationOffIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
-                      <Typography>
-                        Location not shared by this member.
-                      </Typography>
-                    </Box>
+                    <Alert severity="info">
+                      No location data available for this member.
+                    </Alert>
                   );
                 }
                 
-                const { coordinates, timestamp, battery_level, connection_type } = memberLocation;
-                const distance = userLocation ? 
-                  calculateDistance(
-                    userLocation.latitude,
-                    userLocation.longitude,
-                    coordinates.latitude,
-                    coordinates.longitude
-                  ) : null;
-                
                 return (
                   <Box>
-                    <List>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Location Details
+                    </Typography>
+                    <List dense>
                       <ListItem>
-                        <ListItemAvatar>
-                          <Avatar sx={{ bgcolor: 'primary.main' }}>
-                            <LocationIcon />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary="Location" 
-                          secondary={`Lat: ${coordinates.latitude.toFixed(6)}, Lng: ${coordinates.longitude.toFixed(6)}`} 
-                        />
-                      </ListItem>
-                      
-                      {distance && (
-                        <ListItem>
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: 'secondary.main' }}>
-                              <NavigationIcon />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText 
-                            primary="Distance from you" 
-                            secondary={formatDistance(distance)} 
-                          />
-                        </ListItem>
-                      )}
-                      
-                      {coordinates.speed > 0 && (
-                        <ListItem>
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: 'success.main' }}>
-                              <SpeedIcon />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText 
-                            primary="Speed" 
-                            secondary={`${Math.round(coordinates.speed * 3.6)} km/h`} 
-                          />
-                        </ListItem>
-                      )}
-                      
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar sx={{ bgcolor: 'warning.main' }}>
-                            <BatteryIcon />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary="Battery" 
-                          secondary={`${battery_level}%`} 
-                        />
-                      </ListItem>
-                      
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar>
-                            <RefreshIcon />
-                          </Avatar>
-                        </ListItemAvatar>
                         <ListItemText 
                           primary="Last Updated" 
-                          secondary={new Date(timestamp).toLocaleString()} 
+                          secondary={new Date(memberLocation.timestamp).toLocaleString()} 
+                        />
+                      </ListItem>
+                      
+                      {memberLocation.coordinates && (
+                        <>
+                          <ListItem>
+                            <ListItemText 
+                              primary="Coordinates" 
+                              secondary={`${memberLocation.coordinates.latitude.toFixed(6)}, ${memberLocation.coordinates.longitude.toFixed(6)}`} 
+                            />
+                          </ListItem>
+                          
+                          <ListItem>
+                            <ListItemText 
+                              primary="Accuracy" 
+                              secondary={`±${Math.round(memberLocation.coordinates.accuracy)} meters`} 
+                            />
+                          </ListItem>
+                          
+                          {memberLocation.coordinates.altitude && (
+                            <ListItem>
+                              <ListItemText 
+                                primary="Altitude" 
+                                secondary={`${Math.round(memberLocation.coordinates.altitude)} meters`} 
+                              />
+                            </ListItem>
+                          )}
+                          
+                          {memberLocation.coordinates.speed > 0 && (
+                            <ListItem>
+                              <ListItemText 
+                                primary="Speed" 
+                                secondary={`${Math.round(memberLocation.coordinates.speed * 3.6)} km/h`} 
+                              />
+                            </ListItem>
+                          )}
+                          
+                          {userLocation && (
+                            <ListItem>
+                              <ListItemText 
+                                primary="Distance from you" 
+                                secondary={formatDistance(calculateDistance(
+                                  userLocation.latitude,
+                                  userLocation.longitude,
+                                  memberLocation.coordinates.latitude,
+                                  memberLocation.coordinates.longitude
+                                ))} 
+                              />
+                            </ListItem>
+                          )}
+                        </>
+                      )}
+                      
+                      <ListItem>
+                        <ListItemText 
+                          primary="Battery Level" 
+                          secondary={`${memberLocation.battery_level}%`} 
+                        />
+                      </ListItem>
+                      
+                      <ListItem>
+                        <ListItemText 
+                          primary="Connection" 
+                          secondary={memberLocation.connection_type} 
                         />
                       </ListItem>
                     </List>
@@ -1025,28 +1386,24 @@ const LocationTracking = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenMemberDialog(false)}>Close</Button>
-              {(() => {
-                const memberLocation = locations.find(loc => loc.user_id === selectedMember.user_id);
-                if (memberLocation && memberLocation.coordinates) {
-                  return (
-                    <Button 
-                      color="primary"
-                      onClick={() => {
-                        centerMapOnLocation(memberLocation.coordinates);
-                        setOpenMemberDialog(false);
-                      }}
-                    >
-                      Show on Map
-                    </Button>
-                  );
-                }
-                return null;
-              })()}
+              <Button 
+                color="primary"
+                onClick={() => {
+                  const memberLocation = locations.find(loc => loc.user_id === selectedMember.user_id);
+                  if (memberLocation && memberLocation.coordinates) {
+                    centerMapOnLocation(memberLocation.coordinates);
+                    setOpenMemberDialog(false);
+                  }
+                }}
+                disabled={!locations.find(loc => loc.user_id === selectedMember.user_id)?.coordinates}
+              >
+                Center on Map
+              </Button>
             </DialogActions>
           </>
         )}
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

@@ -18,8 +18,6 @@ import {
   Grid,
   Alert,
   Slider,
-  Switch,
-  FormControlLabel,
   Tooltip,
   Avatar,
   List,
@@ -62,10 +60,11 @@ const AudioSession = () => {
   const [inputVolume, setInputVolume] = useState(1.0);
   const [outputVolume, setOutputVolume] = useState(1.0);
   
-  // Push-to-talk state
-  const [pushToTalkEnabled, setPushToTalkEnabled] = useState(false);
-  const [pushToTalkMode, setPushToTalkMode] = useState('hold');
+  // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
+  const [micButtonPressStartTime, setMicButtonPressStartTime] = useState(null);
+  const [isLongPress, setIsLongPress] = useState(false);
+  const longPressTimerRef = useRef(null);
   
   // Music state
   const [musicVolume, setMusicVolume] = useState(0.5);
@@ -134,29 +133,6 @@ const AudioSession = () => {
       leaveSession();
     };
   }, []);
-  
-  // Push-to-talk keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space' && pushToTalkEnabled && !isPushToTalkActive) {
-        handlePushToTalkDown();
-      }
-    };
-    
-    const handleKeyUp = (e) => {
-      if (e.code === 'Space' && pushToTalkEnabled && isPushToTalkActive) {
-        handlePushToTalkUp();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [pushToTalkEnabled, isPushToTalkActive]);
   
   // Audio level monitoring
   useEffect(() => {
@@ -268,37 +244,68 @@ const AudioSession = () => {
     }
   };
   
-  // Push-to-talk handlers
-  const handlePushToTalkDown = () => {
-    if (pushToTalkEnabled && pushToTalkMode === 'hold') {
-      setIsPushToTalkActive(true);
-      if (localStream) {
-        localStream.getAudioTracks().forEach(track => {
-          track.enabled = true;
-        });
+  // New unified mic control handlers
+  const handleMicButtonMouseDown = () => {
+    // Record the time when the button was pressed
+    const pressStartTime = Date.now();
+    setMicButtonPressStartTime(pressStartTime);
+    
+    // Set a timer to detect long press (>1 second)
+    longPressTimerRef.current = setTimeout(() => {
+      // Only activate push-to-talk if the mic is currently muted
+      if (isMuted) {
+        setIsLongPress(true);
+        handlePushToTalkStart();
       }
+    }, 1000); // 1 second threshold for long press
+  };
+
+  const handleMicButtonMouseUp = () => {
+    // Clear the long press timer
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+    
+    const pressDuration = Date.now() - (micButtonPressStartTime || Date.now());
+    
+    // If it was a long press and push-to-talk is active, deactivate it
+    if (isLongPress && isPushToTalkActive) {
+      handlePushToTalkEnd();
+      setIsLongPress(false);
+    } 
+    // If it was a short press (click), toggle mute/unmute
+    else if (pressDuration < 1000) {
+      toggleMute();
+    }
+    
+    setMicButtonPressStartTime(null);
+  };
+
+  // Handle mouse leave to prevent stuck states
+  const handleMicButtonMouseLeave = () => {
+    // If button is pressed and mouse leaves, treat as mouse up
+    if (micButtonPressStartTime !== null) {
+      handleMicButtonMouseUp();
     }
   };
-  
-  const handlePushToTalkUp = () => {
-    if (pushToTalkEnabled && pushToTalkMode === 'hold' && isPushToTalkActive) {
+
+  // Push-to-talk functionality
+  const handlePushToTalkStart = () => {
+    if (isMuted && localStream) {
+      setIsPushToTalkActive(true);
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = true;
+      });
+    }
+  };
+
+  const handlePushToTalkEnd = () => {
+    if (isPushToTalkActive && localStream) {
       setIsPushToTalkActive(false);
-      if (localStream && isMuted) {
+      // Only mute if the mic was muted before push-to-talk
+      if (isMuted) {
         localStream.getAudioTracks().forEach(track => {
           track.enabled = false;
-        });
-      }
-    }
-  };
-  
-  const togglePushToTalk = () => {
-    if (pushToTalkEnabled && pushToTalkMode === 'toggle') {
-      const newState = !isPushToTalkActive;
-      setIsPushToTalkActive(newState);
-      
-      if (localStream) {
-        localStream.getAudioTracks().forEach(track => {
-          track.enabled = newState;
         });
       }
     }
@@ -627,11 +634,22 @@ const AudioSession = () => {
   // Render component
   return (
     <Container maxWidth="md">
+      {/* Traffic Jam App Bar */}
+      <AppBar position="static" color="primary" sx={{ mb: 2 }}>
+        <Toolbar>
+          <IconButton edge="start" color="inherit" onClick={() => navigate(-1)}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Traffic Jam - Audio Session
+          </Typography>
+          <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
+            <LeaveIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+      
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Audio Session
-        </Typography>
-        
         {audioError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {audioError}
@@ -668,7 +686,7 @@ const AudioSession = () => {
           </Box>
         ) : (
           <Box>
-            {/* Mic controls */}
+            {/* Simplified Mic controls */}
             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 Mic Controls
@@ -676,13 +694,30 @@ const AudioSession = () => {
               
               <Grid container spacing={2} alignItems="center">
                 <Grid item>
-                  <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+                  <Tooltip title={
+                    isPushToTalkActive 
+                      ? "Push-to-Talk Active" 
+                      : isMuted 
+                        ? "Unmute Microphone (tap) or Push-to-Talk (hold)" 
+                        : "Mute Microphone"
+                  }>
                     <IconButton 
-                      color={isMuted ? "default" : "primary"} 
-                      onClick={toggleMute}
+                      color={isPushToTalkActive ? "secondary" : isMuted ? "default" : "primary"} 
+                      onMouseDown={handleMicButtonMouseDown}
+                      onMouseUp={handleMicButtonMouseUp}
+                      onMouseLeave={handleMicButtonMouseLeave}
+                      onTouchStart={handleMicButtonMouseDown}
+                      onTouchEnd={handleMicButtonMouseUp}
                       aria-label={isMuted ? "Unmute" : "Mute"}
+                      sx={{ 
+                        width: 56, 
+                        height: 56,
+                        transition: 'all 0.2s ease-in-out',
+                        transform: isPushToTalkActive ? 'scale(1.2)' : 'scale(1)',
+                        boxShadow: isPushToTalkActive ? '0 0 10px rgba(255,0,0,0.5)' : 'none'
+                      }}
                     >
-                      {isMuted ? <MicOffIcon /> : <MicIcon />}
+                      {isPushToTalkActive ? <MicIcon /> : isMuted ? <MicOffIcon /> : <MicIcon />}
                     </IconButton>
                   </Tooltip>
                 </Grid>
@@ -704,52 +739,16 @@ const AudioSession = () => {
                     </Box>
                   </Box>
                 </Grid>
-
-                {/* Push-to-Talk Controls */}
-                <Box sx={{ mb: 2 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch 
-                        checked={pushToTalkEnabled} 
-                        onChange={(e) => setPushToTalkEnabled(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Enable Push-to-Talk"
-                  />
-                  
-                  {pushToTalkEnabled && (
-                    <Box sx={{ ml: 3, mt: 1 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch 
-                            checked={pushToTalkMode === 'toggle'} 
-                            onChange={(e) => setPushToTalkMode(e.target.checked ? 'toggle' : 'hold')}
-                            color="primary"
-                          />
-                        }
-                        label="Toggle Mode (instead of Hold)"
-                      />
-                      
-                      <Box sx={{ mt: 1 }}>
-                        <Button 
-                          variant="contained" 
-                          color={isPushToTalkActive ? "secondary" : "primary"}
-                          onMouseDown={pushToTalkMode === 'hold' ? handlePushToTalkDown : undefined}
-                          onMouseUp={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
-                          onMouseLeave={pushToTalkMode === 'hold' ? handlePushToTalkUp : undefined}
-                          onClick={pushToTalkMode === 'toggle' ? togglePushToTalk : undefined}
-                          sx={{ width: '100%', py: 1.5 }}
-                        >
-                          {isPushToTalkActive 
-                            ? (pushToTalkMode === 'toggle' ? 'Speaking (Click to Stop)' : 'Speaking...') 
-                            : (pushToTalkMode === 'toggle' ? 'Click to Speak' : 'Hold to Speak')}
-                        </Button>
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-              
+                
+                <Grid item>
+                  <Typography variant="caption" color="textSecondary">
+                    {isPushToTalkActive 
+                      ? "Speaking (Push-to-Talk)" 
+                      : isMuted 
+                        ? "Muted (Tap to unmute, hold for Push-to-Talk)" 
+                        : "Unmuted (Tap to mute)"}
+                  </Typography>
+                </Grid>
               </Grid>
             </Paper>
             
@@ -820,6 +819,34 @@ const AudioSession = () => {
           </Box>
         )}
       </Paper>
+      
+      {/* Leave Dialog */}
+      <Dialog
+        open={openLeaveDialog}
+        onClose={() => setOpenLeaveDialog(false)}
+      >
+        <DialogTitle>Leave Traffic Jam Session?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to leave this audio session? You will need to rejoin to continue communicating.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenLeaveDialog(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => {
+              setOpenLeaveDialog(false);
+              handleLeaveAudio();
+            }} 
+            color="secondary"
+            disabled={leaveLoading}
+          >
+            {leaveLoading ? <CircularProgress size={24} /> : 'Leave'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
