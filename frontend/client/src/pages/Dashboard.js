@@ -147,7 +147,7 @@ const Dashboard = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Audio Group App
+            Groups
           </Typography>
           <IconButton color="inherit" onClick={fetchNotifications}>
             <Badge badgeContent={notifications.length} color="error">
@@ -215,7 +215,7 @@ const Dashboard = () => {
                   <GroupIcon />
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary="My Groups" />
+              <ListItemText primary="Groups" />
             </ListItem>
             <ListItem button onClick={() => navigate('/profile')}>
               <ListItemAvatar>
@@ -241,7 +241,7 @@ const Dashboard = () => {
       <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography variant="h4" component="h1">
-            My Groups
+            Your TrafficJam Groups
           </Typography>
           <Fab 
             color="primary" 
