@@ -1,13 +1,13 @@
 {
-    "name": "traffic-jam",
-    "version": "1.0.0",
-    "private": true,
-    "workspaces": [
-      "frontend/client",
-      "backend"
-    ],
-    "scripts": {
-      "build": "npm run build"
-    }
+  "name": "traffic-jam",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend/client",
+    "backend"
+  ],
+  "scripts": {
+    "build": "cd frontend/client && npm run build"
   }
+}
   
