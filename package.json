@@ -7,7 +7,7 @@
       "backend"
     ],
     "scripts": {
-      "build": "cd frontend && npm run build"
+      "build": "npm run build"
     }
   }
   
