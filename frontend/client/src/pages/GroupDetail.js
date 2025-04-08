@@ -391,7 +391,7 @@ const GroupDetail = () => {
                         <LocationIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom>
-                        Location Tracking
+                        Location Tracking Now
                       </Typography>
                       <Typography variant="body2" color="text.secondary" align="center">
                         View the location of group members on a map
