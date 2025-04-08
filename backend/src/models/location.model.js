@@ -100,7 +100,7 @@ LocationSchema.statics.findNearby = function(latitude, longitude, maxDistance, p
         'coordinates.longitude': { $gte: longitude - 0.1, $lte: longitude + 0.1 }
       }
     ]
-  }).limit(100);
+  }).limit(1000);
 };
 
 const Location = mongoose.model('Location', LocationSchema);
