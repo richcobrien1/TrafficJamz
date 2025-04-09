@@ -20,7 +20,7 @@ require('./config/passport');
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: process.env.REACT_APP_API_LOCAL_URL || REACT_APP_API_PRODUCTION_URL
+  origin: process.env.REACT_APP_API_LOCAL_URL || 'localhost'
 }) );
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
