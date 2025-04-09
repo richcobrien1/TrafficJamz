@@ -86,3 +86,4 @@ grammarly/       # Grammarly desktop app data
 
 # === Version Control Exceptions ===
 !.gitkeep        # Keep empty directories
+node_modules
