@@ -111,7 +111,7 @@ console.log('Connecting to MongoDB...');
 mongoose.set('bufferTimeoutMS', 30000); // Increase buffer timeout
 
 // Get MongoDB URI from environment variables
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/audiogroupapp';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://atlas-sample-dataset-load-67f67b8dd6e58c28cc8b9524:<1Topgun123$>@subscribers.xjpvrda.mongodb.net/?appName=subscribers';
 
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 30000,
