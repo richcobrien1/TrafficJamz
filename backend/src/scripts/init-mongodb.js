@@ -2,14 +2,14 @@
 const { MongoClient } = require('mongodb');
 
 async function initializeDatabase() {
-  const uri = 'mongodb://localhost:27017/audiogroupapp';
+  const uri = 'mongodb+srv://richcobrien:<dLAlfMvMhDIFgdLx>@subscribers.xjpvrda.mongodb.net/?retryWrites=true&w=majority&appName=subscribers';
   const client = new MongoClient(uri);
   
   try {
     await client.connect();
     console.log('Connected to MongoDB');
     
-    const db = client.db('audiogroupapp');
+    const db = client.db('subscribers');
     
     // Create groups collection
     console.log('Creating groups collection...');
