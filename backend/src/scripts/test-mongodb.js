@@ -2,7 +2,8 @@
 const mongoose = require('mongoose');
 
 // Replace with your actual MongoDB URI
-const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://atlas-sample-dataset-load-67f67b8dd6e58c28cc8b9524:<dLAlfMvMhDIFgdLx>@subscribers.xjpvrda.mongodb.net/?appName=subscribers';
+const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://richcobrien:<1Topgun123$
+>@subscribers.xjpvrda.mongodb.net/?retryWrites=true&w=majority&appName=subscribers';
 
 async function testMongoDBConnection() {
   try {
