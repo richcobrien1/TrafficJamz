@@ -6,7 +6,9 @@ const passport = require('passport');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const mongoose = require('mongoose'); // Add mongoose import
+const mongoose = require('mongoose');
+const http = require('http'); // Added for WebSocket support
+const socketIo = require('socket.io'); // You'll need to install this package
 
 // Load environment variables
 dotenv.config();
@@ -14,23 +16,51 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Create HTTP server for WebSocket support
+const server = http.createServer(app);
+
+// Set trust proxy (already correctly placed)
+app.set('trust proxy', 1);
+
 // Import passport configuration
 require('./config/passport');
 
-// Middleware
-app.use(helmet()); // Security headers
+// Enhanced security with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "wss:", "https:"],
+      mediaSrc: ["'self'", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // May need unsafe-inline for WebRTC
+    }
+  }
+}));
+
+// Improved CORS configuration for audio app
 app.use(cors({
-  origin: process.env.REACT_APP_API_LOCAL_URL || 'localhost'
-}) );
+  origin: [
+    process.env.FRONTEND_URL || 'https://yourdomain.com', 
+    'capacitor://localhost',  // For mobile apps
+    process.env.REACT_APP_API_LOCAL_URL || 'http://localhost:3000'   // For local development
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true  // Important for auth cookies
+}));
+
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
 
-// Rate limiting
+// Enhanced Rate limiting configuration
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 100 requests per windowMs
+  max: 100, // Limit each IP to 100 requests per window
+  standardHeaders: true, // Return rate limit info in headers
+  legacyHeaders: false, // Disable X-RateLimit-* headers
+  skipSuccessfulRequests: true, // Only count failed requests
   message: 'Too many requests from this IP, please try again after 15 minutes'
 });
 app.use('/api/', limiter);
@@ -46,6 +76,58 @@ const audioRoutes = require('./routes/audio.routes');
 const locationRoutes = require('./routes/location.routes');
 const subscriptionRoutes = require('./routes/subscriptions.routes');
 const notificationRoutes = require('./routes/notifications.routes');
+
+// Initialize Socket.IO with CORS configuration
+const io = socketIo(server, {
+  cors: {
+    origin: [
+      process.env.FRONTEND_URL || 'https://yourdomain.com',
+      process.env.REACT_APP_API_LOCAL_URL || 'http://localhost:3000'
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  // For audio streaming, increase ping timeout
+  pingTimeout: 60000,
+});
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+  
+  // Join a group room
+  socket.on('join-group', (groupId) => {
+    socket.join(`group-${groupId}`);
+    console.log(`Socket ${socket.id} joined group ${groupId}`);
+  });
+  
+  // Leave a group room
+  socket.on('leave-group', (groupId) => {
+    socket.leave(`group-${groupId}`);
+    console.log(`Socket ${socket.id} left group ${groupId}`);
+  });
+  
+  // Handle location updates
+  socket.on('location-update', (data) => {
+    // Broadcast to all members of the group
+    io.to(`group-${data.groupId}`).emit('member-location', {
+      userId: data.userId,
+      location: data.location,
+      timestamp: new Date()
+    });
+  });
+  
+  // Handle audio streaming events
+  socket.on('audio-stream', (data) => {
+    // Broadcast audio data to group members
+    socket.to(`group-${data.groupId}`).emit('audio-data', data);
+  });
+  
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Define function to set up routes and start server
 function setupServer() {
@@ -63,7 +145,8 @@ function setupServer() {
     res.status(200).json({ 
       status: 'ok', 
       timestamp: new Date(),
-      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      socketio: io ? 'initialized' : 'not initialized'
     });
   });
 
@@ -77,14 +160,26 @@ function setupServer() {
     });
   });
 
-  // Error handling middleware
+  // Enhanced error handling middleware
   app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({
+    
+    // Determine status code from error or default to 500
+    const statusCode = err.statusCode || 500;
+    
+    // Create error response
+    const errorResponse = {
       success: false,
-      message: 'Internal Server Error',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+      message: statusCode === 500 ? 'Internal Server Error' : err.message,
+    };
+    
+    // Only include error details in development
+    if (process.env.NODE_ENV === 'development') {
+      errorResponse.error = err.message;
+      errorResponse.stack = err.stack;
+    }
+    
+    res.status(statusCode).json(errorResponse);
   });
 
   // 404 handler
@@ -98,9 +193,9 @@ function setupServer() {
   // Set port
   const PORT = process.env.PORT || 3001;
 
-  // Start server
+  // Start server using the HTTP server instance instead of app directly
   if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
   }
