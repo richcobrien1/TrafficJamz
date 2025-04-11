@@ -2,7 +2,7 @@
 const { InfluxDB } = require('@influxdata/influxdb-client');
 
 // Replace with your actual InfluxDB credentials
-const url = process.env.INFLUXDB_URL || 'your-influxdb-url';
+const url = process.env.INFLUXDB_URL || 'https://us-east-1-1.aws.cloud2.influxdata.com';
 const token = process.env.INFLUXDB_TOKEN || 'Vy57uArV5tf17mCqoqPCbzL4xXnMM0uQIcqglnA4d8vWEJSoc66WJJu37ntxTK8PF4XA9SYQ9u1nhIaBkZMKug==';
 const org = process.env.INFLUXDB_ORG || 'v2u';
 const bucket = process.env.INFLUXDB_BUCKET || 'trafficjam';
