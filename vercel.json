@@ -3,6 +3,13 @@
   "builds": [
     {
       "src": "backend/src/**/*.js",
+      "use": "@vercel/node",
+      "config": {
+        "runtime": "nodejs18.x"
+      }
+    },
+    {
+      "src": "backend/src/**/*.js",
       "use": "@vercel/node"
     },
     {
@@ -26,10 +33,5 @@
       "src": ".*",
       "dest": "/frontend/client/public/index.html"
     }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  ]
 }
