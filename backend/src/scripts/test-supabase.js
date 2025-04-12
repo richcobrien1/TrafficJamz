@@ -26,3 +26,7 @@ async function testSupabaseConnection() {
     return false;
   }
 }
+
+module.exports = {
+  testSupabaseConnection
+};
