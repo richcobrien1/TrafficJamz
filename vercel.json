@@ -26,5 +26,10 @@
       "src": ".*",
       "dest": "/frontend/client/public/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
