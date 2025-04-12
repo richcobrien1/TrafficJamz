@@ -15,6 +15,9 @@ module.exports = async (req, res) => {
       success: true,
       results
     });
+
+    // res.status(200).json({ message: 'API is working!' });
+
   } catch (error) {
     res.status(500).json({
       success: false,
