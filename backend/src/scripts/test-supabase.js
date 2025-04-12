@@ -2,8 +2,8 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Replace with your actual environment variables
-const supabaseUrl = process.env.SUPABASE_URL || 'https://nrlaqkpojtvvheosnpaz.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ybGFxa3BvanR2dmhlb3NucGF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjc4NDEsImV4cCI6MjA1OTY0Mzg0MX0._up9k3roeCdWru1rn3xwk4W10vQfSflSw9tqbgaYtBk';
+const supabaseUrl = process.env.POSTGRES_USER_SUPABASE_URL;
+const supabaseKey = process.env.POSTGRES_USER_SUPABASE_SERVICE_ROLE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -26,4 +26,4 @@ async function testSupabaseConnection() {
   }
 }
 
-testSupabaseConnection();
+module.exports = testSupabaseConnection;
