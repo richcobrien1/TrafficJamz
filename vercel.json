@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/src/**/*.js",  // This looks correct based on your file structure
+      "src": "backend/src/**/*.js",
       "use": "@vercel/node"
     },
     {
@@ -16,7 +16,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/src/api/$1"  // This is the key change - point to /backend/src/api/$1
+      "dest": "/backend/src/api/$1"
     },
     {
       "src": "^/static/(.*)",
