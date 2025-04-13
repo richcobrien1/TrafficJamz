@@ -1,7 +1,6 @@
 // test-supabase.js
 const { createClient } = require('@supabase/supabase-js');
 
-// Replace with your actual environment variables
 const supabaseUrl = process.env.POSTGRES_USER_SUPABASE_URL;
 const supabaseKey = process.env.POSTGRES_USER_SUPABASE_SERVICE_ROLE_KEY;
 
