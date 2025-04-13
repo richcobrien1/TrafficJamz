@@ -1,31 +1,35 @@
-// test-supabase.js
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.POSTGRES_USER_SUPABASE_URL;
-const supabaseKey = process.env.POSTGRES_USER_SUPABASE_SERVICE_ROLE_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Make sure the function is defined with async
 async function testSupabaseConnection() {
   try {
-    // Try to query the users table
+    // Initialize Supabase client
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://nrlaqkpojtvvheosnpaz.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseKey)  {
+      console.error('Supabase key not found in environment variables');
+      return false;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Test query to users table
     const { data, error } = await supabase
       .from('users')
-      .select('count()', { count: 'exact' })
-      .limit(1);
+      .select('user_id, username, email')
+      .limit(3);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase connection error:', error);
+      return false;
+    }
     
-    console.log('Supabase connection successful!');
-    console.log('User count:', data[0].count);
+    console.log('Successfully connected to Supabase!', data);
     return true;
-  } catch (error) {
-    console.error('Supabase connection failed:', error.message);
+  } catch (err) {
+    console.error('Exception:', err);
     return false;
   }
 }
 
-module.exports = {
-  testSupabaseConnection
-};
+module.exports = { testSupabaseConnection };
