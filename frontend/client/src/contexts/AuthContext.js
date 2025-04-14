@@ -1,107 +1,147 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api'; // Adjust the path as needed to point to your api.js file
+// src/contexts/AuthContext.js
+import { createContext, useContext, useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey) ;
 
 const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Configure api defaults
+  // Check for existing session on load
   useEffect(() => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete api.defaults.headers.common['Authorization'];
-    }
-  }, [token]);
-
-  // Check if user is authenticated on initial load
-  useEffect(() => {
-    const verifyToken = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
+    const checkSession = async () => {
       try {
-        const response = await api.get('/api/users/profile');
-        setCurrentUser(response.data.user);
-        setLoading(false);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking session:', error);
+          setIsAuthenticated(false);
+        } else if (session) {
+          setCurrentUser(session.user);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
       } catch (error) {
-        console.error('Authentication error:', error);
-        logout();
+        console.error('Session check error:', error);
+        setIsAuthenticated(false);
+      } finally {
         setLoading(false);
       }
     };
 
-    verifyToken();
-  }, [token]);
+    checkSession();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session) {
+          setCurrentUser(session.user);
+          setIsAuthenticated(true);
+        } else {
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   // Login function
   const login = async (email, password) => {
+    setLoading(true);
     try {
-      setError('');
-      const response = await api.post('/api/auth/login', { email, password });
-      
-      const { access_token, user } = response.data;
-      
-      localStorage.setItem('token', access_token);
-      setToken(access_token);
-      setCurrentUser(user);
-      
-      return user;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      return data;
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to login');
+      console.error('Login error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Register function
-  const register = async (userData) => {
+  const register = async (email, password, userData) => {
+    setLoading(true);
     try {
-      setError('');
-      const response = await api.post('/api/auth/register', userData);
-      return response.data;
+      // Register the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      });
+
+      if (authError) throw authError;
+      
+      return authData;
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to register');
+      console.error('Registration error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Logout function
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setCurrentUser(null);
+  const logout = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Update user profile
-  const updateProfile = async (userData) => {
+  // Reset password function
+  const resetPassword = async (email) => {
     try {
-      setError('');
-      const response = await api.put('/api/users/profile', userData);
-      setCurrentUser(response.data.user);
-      return response.data.user;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      
+      if (error) throw error;
+      return true;
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update profile');
+      console.error('Password reset error:', error);
       throw error;
     }
   };
 
   const value = {
     currentUser,
-    isAuthenticated: !!currentUser,
+    isAuthenticated,
     loading,
-    error,
     login,
     register,
     logout,
-    updateProfile
+    resetPassword
   };
 
   return (
@@ -109,4 +149,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}

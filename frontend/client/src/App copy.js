@@ -1,9 +1,8 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Pages
 import Login from './pages/Login';
@@ -19,8 +18,20 @@ import TestIntegration from './pages/TestIntegration';
 import NotFound from './pages/NotFound';
 import InvitationAccept from './pages/InvitationAccept';
 
-// Components
-import ProtectedRoute from './components/ProtectedRoute';
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  return children;
+};
 
 // Create theme
 const theme = createTheme({
@@ -35,6 +46,13 @@ const theme = createTheme({
       default: '#f5f5f5',
     },
   },
+  typography: {
+    fontFamily: [
+      'Roboto',
+      'Arial',
+      'sans-serif',
+    ].join(','),
+  },
 });
 
 function App() {
@@ -47,11 +65,12 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/subscription-plans" element={<SubscriptionPlans />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/invitation/:inviteId" element={<InvitationAccept />} />
+            <Route path="/test-integration" element={<TestIntegration />} />
             
             {/* Protected routes */}
-            <Route path="/dashboard" element={
+            <Route path="/" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
@@ -66,7 +85,7 @@ function App() {
                 <AudioSession />
               </ProtectedRoute>
             } />
-            <Route path="/location-tracking" element={
+            <Route path="/location/:groupId" element={
               <ProtectedRoute>
                 <LocationTracking />
               </ProtectedRoute>
@@ -76,19 +95,9 @@ function App() {
                 <Profile />
               </ProtectedRoute>
             } />
-            <Route path="/subscription-plans" element={
-              <ProtectedRoute>
-                <SubscriptionPlans />
-              </ProtectedRoute>
+            <Route path="/invitations/:groupId/:invitationIndex" element={
+              <InvitationAccept />
             } />
-            <Route path="/test-integration" element={
-              <ProtectedRoute>
-                <TestIntegration />
-              </ProtectedRoute>
-            } />
-            
-            {/* Redirect root to dashboard if authenticated, otherwise to login */}
-            <Route path="/" element={<Navigate to="/dashboard" />} />
             
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
