@@ -42,7 +42,7 @@ router.post('/register', [
 });
 
 /**
- * @route POST /api/auth/login
+ * @route POST /auth/login
  * @desc Authenticate user & get token
  * @access Public
  */
