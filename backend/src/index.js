@@ -42,9 +42,11 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'https://yourdomain.com', 
     'capacitor://localhost',  // For mobile apps
+    'https://trafficjam.v2u.us',
+    'https://trafficjam-kqeieirzf-v2u.vercel.app',
     process.env.REACT_APP_API_URL|| 'http://localhost:3000'   // For local development
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true  // Important for auth cookies
 }));
