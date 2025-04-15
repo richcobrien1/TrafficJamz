@@ -42,7 +42,7 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'https://yourdomain.com', 
     'capacitor://localhost',  // For mobile apps
-    process.env.REACT_APP_API_LOCAL_URL || 'http://localhost:3000'   // For local development
+    process.env.REACT_APP_API_URL|| 'http://localhost:3000'   // For local development
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -82,7 +82,7 @@ const io = socketIo(server, {
   cors: {
     origin: [
       process.env.FRONTEND_URL || 'https://yourdomain.com',
-      process.env.REACT_APP_API_LOCAL_URL || 'http://localhost:3000'
+      process.env.REACT_APP_API_URL|| 'http://localhost:3000'
     ],
     methods: ["GET", "POST"],
     credentials: true
