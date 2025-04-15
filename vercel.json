@@ -9,10 +9,6 @@
       }
     },
     {
-      "src": "backend/src/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "frontend/client/package.json",
       "use": "@vercel/static-build",
       "config": { 
@@ -27,11 +23,14 @@
     },
     {
       "src": "^/static/(.*)",
-      "dest": "/frontend/client/static/$1"
+      "dest": "/frontend/client/build/static/$1"
     },
     {
-      "src": ".*",
-      "dest": "/frontend/client/public/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/client/build/index.html"
     }
   ]
 }
