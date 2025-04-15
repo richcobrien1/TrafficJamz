@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '../services/supabaseClient';
+import api from '../services/api';
 
 // Create the auth context
 const AuthContext = createContext();
@@ -12,77 +12,43 @@ export const useAuth = () => {
 // Provider component that wraps your app and makes auth object available to any child component that calls useAuth()
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check for existing session on component mount
-    const checkSession = async () => {
+    // Check for existing token on component mount
+    const checkAuth = async () => {
       try {
         setLoading(true);
         
-        // First check if we have a token in localStorage
+        // Check if we have a token in localStorage
         const token = localStorage.getItem('token');
         if (token) {
           console.log('Found existing token in localStorage');
-        }
-        
-        // Get current session from Supabase
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data && data.session) {
-          console.log('Found active Supabase session');
-          setSession(data.session);
-          setUser(data.session.user);
           
-          // Store the token for API calls - CRITICAL for authentication
-          localStorage.setItem('token', data.session.access_token);
-          console.log('Token stored in localStorage');
+          // Fetch user profile with the token
+          try {
+            const response = await api.get('/api/users/profile');
+            if (response.data) {
+              setUser(response.data);
+              console.log('User profile fetched successfully');
+            }
+          } catch (profileError) {
+            console.warn('Could not fetch user profile:', profileError);
+            // Token might be invalid, remove it
+            localStorage.removeItem('token');
+            setUser(null);
+          }
         }
       } catch (error) {
-        console.error('Session check error:', error);
+        console.error('Auth check error:', error);
         setError(error.message);
       } finally {
         setLoading(false);
       }
     };
     
-    checkSession();
-    
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log('Auth state changed:', event);
-        
-        if (newSession) {
-          setSession(newSession);
-          setUser(newSession.user);
-          
-          // Update token in localStorage when session changes - CRITICAL
-          localStorage.setItem('token', newSession.access_token);
-          console.log('Token updated in localStorage after auth state change');
-        } else {
-          setSession(null);
-          setUser(null);
-          localStorage.removeItem('token');
-          console.log('Token removed from localStorage after logout');
-        }
-        
-        setLoading(false);
-      }
-    );
-    
-    // Clean up subscription on unmount
-    return () => {
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
+    checkAuth();
   }, []);
   
   // Login with email and password
@@ -92,27 +58,21 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       
       console.log('Attempting login with:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const response = await api.post('/api/auth/login', { email, password });
       
-      if (error) {
-        throw error;
+      if (response.data) {
+        console.log('Login successful');
+        setUser(response.data.user);
+        
+        // Store token for API calls - CRITICAL
+        localStorage.setItem('token', response.data.access_token);
+        console.log('Token stored in localStorage after login');
       }
       
-      console.log('Login successful');
-      setSession(data.session);
-      setUser(data.user);
-      
-      // Store token for API calls - CRITICAL
-      localStorage.setItem('token', data.session.access_token);
-      console.log('Token stored in localStorage after login');
-      
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -125,36 +85,20 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            first_name: userData.first_name,
-            last_name: userData.last_name,
-            username: userData.username
-          }
-        }
-      });
+      const response = await api.post('/api/auth/register', userData);
       
-      if (error) {
-        throw error;
-      }
-      
-      // If auto-confirm is enabled, we'll have a session
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.user);
+      if (response.data) {
+        setUser(response.data.user);
         
         // Store token for API calls - CRITICAL
-        localStorage.setItem('token', data.session.access_token);
+        localStorage.setItem('token', response.data.access_token);
         console.log('Token stored in localStorage after registration');
       }
       
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Registration error:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -166,13 +110,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
+      // Call logout endpoint if needed
+      try {
+        await api.post('/api/auth/logout');
+      } catch (logoutError) {
+        console.warn('Logout API call failed:', logoutError);
+        // Continue with local logout even if API call fails
       }
       
-      setSession(null);
       setUser(null);
       
       // Remove token from localStorage - CRITICAL
@@ -192,18 +137,12 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
+      const response = await api.post('/api/auth/reset-password', { email });
       
-      if (error) {
-        throw error;
-      }
-      
-      return true;
+      return response.data;
     } catch (error) {
       console.error('Password reset error:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -211,23 +150,20 @@ export const AuthProvider = ({ children }) => {
   };
   
   // Update password
-  const updatePassword = async (newPassword) => {
+  const updatePassword = async (currentPassword, newPassword) => {
     try {
       setLoading(true);
       setError(null);
       
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
+      const response = await api.post('/api/auth/change-password', { 
+        currentPassword, 
+        newPassword 
       });
       
-      if (error) {
-        throw error;
-      }
-      
-      return true;
+      return response.data;
     } catch (error) {
       console.error('Update password error:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -240,20 +176,16 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase.auth.updateUser({
-        data: userData
-      });
+      const response = await api.put('/api/users/profile', userData);
       
-      if (error) {
-        throw error;
+      if (response.data) {
+        setUser(response.data);
       }
       
-      setUser(data.user);
-      
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Update profile error:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -261,31 +193,13 @@ export const AuthProvider = ({ children }) => {
   };
   
   // Get current auth token
-  const getToken = async () => {
-    // Try from localStorage first
-    const token = localStorage.getItem('token');
-    if (token) {
-      console.log('Retrieved token from localStorage');
-      return token;
-    }
-    
-    // If not in localStorage, try to get from session
-    const { data } = await supabase.auth.getSession();
-    if (data && data.session) {
-      const newToken = data.session.access_token;
-      localStorage.setItem('token', newToken);
-      console.log('Retrieved token from Supabase session and stored in localStorage');
-      return newToken;
-    }
-    
-    console.warn('No token found in localStorage or session');
-    return null;
+  const getToken = () => {
+    return localStorage.getItem('token');
   };
 
   // Value object that will be shared with components that use this context
   const value = {
     user,
-    session,
     loading,
     error,
     login,
