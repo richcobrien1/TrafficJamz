@@ -3,21 +3,18 @@
   "framework": "create-react-app",
   "buildCommand": "cd frontend/client && npm install && npm run build",
   "outputDirectory": "frontend/client/build",
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/src/api/$1.js" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/frontend/client/build/index.html" }
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/backend/src/api/:path*.js" }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://trafficjam-v2u.us" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://trafficjam.v2u.us" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
       ]
     }
   ]
 }
-
