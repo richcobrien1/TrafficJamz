@@ -40,14 +40,25 @@ app.use(helmet({
 // Improved CORS configuration for audio app
 app.use(cors({
   origin: [
-    'capacitor://localhost',  // For mobile apps
+    'capacitor://localhost',
     'https://trafficjam.v2u.us',
     'https://trafficjam-kqeieirzf-v2u.vercel.app',
-    process.env.REACT_APP_API_URL|| 'http://localhost:3000'   // For local development
+    process.env.REACT_APP_API_URL|| 'http://localhost:3000'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version', 'Authorization'],
-  credentials: true  // Important for auth cookies
+  allowedHeaders: [
+    'X-CSRF-Token', 
+    'X-Requested-With', 
+    'Accept', 
+    'Accept-Version', 
+    'Content-Length', 
+    'Content-MD5', 
+    'Content-Type', 
+    'Date', 
+    'X-Api-Version', 
+    'Authorization'
+  ],
+  credentials: true
 }));
 
 app.use(express.json()); // Parse JSON bodies
