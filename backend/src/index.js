@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const mongoose = require('mongoose');
-const http = require('http'); // Added for WebSocket support
+const http = require('http') ; // Added for WebSocket support
 const socketIo = require('socket.io'); // You'll need to install this package
 
 // Load environment variables
@@ -17,7 +17,7 @@ dotenv.config();
 const app = express();
 
 // Create HTTP server for WebSocket support
-const server = http.createServer(app);
+const server = http.createServer(app) ;
 
 // Set trust proxy (already correctly placed)
 app.set('trust proxy', 1);
@@ -25,26 +25,28 @@ app.set('trust proxy', 1);
 // Import passport configuration
 require('./config/passport');
 
-// Enhanced security with Helmet
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "wss:", "https:"],
-      mediaSrc: ["'self'", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // May need unsafe-inline for WebRTC
-    }
-  }
-}));
-
+// IMPORTANT: Apply CORS before Helmet
 // Improved CORS configuration for audio app
 app.use(cors({
-  origin: [
-    'capacitor://localhost',
-    'https://trafficjam.v2u.us',
-    'https://trafficjam-kqeieirzf-v2u.vercel.app',
-    process.env.REACT_APP_API_URL|| 'http://localhost:3000'
-  ],
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'capacitor://localhost',
+      'https://trafficjam.v2u.us',
+      'https://trafficjam-kqeieirzf-v2u.vercel.app',
+      'https://trafficjam-qlsbxvgey-v2u.vercel.app',
+      process.env.REACT_APP_API_URL || 'http://localhost:3000'
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests) 
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Temporarily allow all origins for debugging
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'X-CSRF-Token', 
@@ -58,8 +60,29 @@ app.use(cors({
     'X-Api-Version', 
     'Authorization'
   ],
-  credentials: true
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// THEN apply Helmet after CORS
+// Enhanced security with Helmet - modified to be more permissive with CORS
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "wss:", "https:", "*"],
+      mediaSrc: ["'self'", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      // Add this to be more permissive
+      imgSrc: ["'self'", "data:", "blob:"],
+    }
+  },
+  // Disable crossOriginResourcePolicy for CORS to work properly
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  // Disable crossOriginEmbedderPolicy for CORS to work properly
+  crossOriginEmbedderPolicy: false
+}) );
 
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -94,6 +117,8 @@ const io = socketIo(server, {
   cors: {
     origin: [
       process.env.FRONTEND_URL || 'https://yourdomain.com',
+      'https://trafficjam.v2u.us',
+      'https://trafficjam-kqeieirzf-v2u.vercel.app',
       process.env.REACT_APP_API_URL|| 'http://localhost:3000'
     ],
     methods: ["GET", "POST"],
@@ -101,7 +126,7 @@ const io = socketIo(server, {
   },
   // For audio streaming, increase ping timeout
   pingTimeout: 60000,
-});
+}) ;
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -143,6 +168,18 @@ io.on('connection', (socket) => {
 
 // Define function to set up routes and start server
 function setupServer() {
+  // Enable pre-flight for all routes
+  app.options('*', cors());
+  
+  // Add a CORS test endpoint
+  app.get('/api/cors-test', (req, res) => {
+    res.status(200).json({ 
+      message: 'CORS is working properly',
+      origin: req.headers.origin || 'No origin header',
+      timestamp: new Date()
+    });
+  });
+
   // Use routes
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
