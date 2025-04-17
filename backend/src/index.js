@@ -34,7 +34,7 @@ app.use(cors({
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
       'https://trafficjam-qlsbxvgey-v2u.vercel.app',
-      process.env.REACT_APP_API_URL || 'http://localhost:3000'
+      process.env.REACT_APP_API_URL || 'http://localhost:3001'
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests) 
@@ -119,7 +119,7 @@ const io = socketIo(server, {
       process.env.FRONTEND_URL || 'https://yourdomain.com',
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      process.env.REACT_APP_API_URL|| 'http://localhost:3000'
+      process.env.REACT_APP_API_URL|| 'http://localhost:3001'
     ],
     methods: ["GET", "POST"],
     credentials: true
