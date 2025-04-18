@@ -33,7 +33,6 @@ app.use(cors({
       'capacitor://localhost',
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      'https://trafficjam-qlsbxvgey-v2u.vercel.app',
       process.env.REACT_APP_API_URL || 'http://localhost:3001'
     ];
     
@@ -49,15 +48,15 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
-    'X-CSRF-Token', 
-    'X-Requested-With', 
-    'Accept', 
-    'Accept-Version', 
-    'Content-Length', 
-    'Content-MD5', 
-    'Content-Type', 
-    'Date', 
-    'X-Api-Version', 
+    'X-CSRF-Token',
+    'X-Requested-With',
+    'Accept',
+    'Accept-Version',
+    'Content-Length',
+    'Content-MD5',
+    'Content-Type',
+    'Date',
+    'X-Api-Version',
     'Authorization'
   ],
   credentials: true,
