@@ -92,7 +92,7 @@ Create or update the following environment files:
 ```
 REACT_APP_SUPABASE_URL=https://nrlaqkpojtvvheosnpaz.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ybGFxa3BvanR2dmhlb3NucGF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjc4NDEsImV4cCI6MjA1OTY0Mzg0MX0._up9k3roeCdWru1rn3xwk4W10vQfSflSw9tqbgaYtBk
-REACT_APP_API_URL=http://localhost:3001/api
+REACT_APP_API_URL=http://localhost:3000/api
 ```
 
 #### .env.production (for production)
