@@ -115,10 +115,11 @@ const notificationRoutes = require('./routes/notifications.routes');
 const io = socketIo(server, {
   cors: {
     origin: [
-      process.env.FRONTEND_URL || 'https://yourdomain.com',
+      process.env.REACT_APP_API_URL|| 'http://localhost:3000',
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      process.env.REACT_APP_API_URL|| 'http://localhost:3001'
+      'https://dev-trafficjam.v2u.us',
+      'https://staging-trafficjam.v2u.us'
     ],
     methods: ["GET", "POST"],
     credentials: true
