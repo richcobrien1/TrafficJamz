@@ -16,6 +16,14 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Enable CORS for all routes
+app.use(cors({
+  origin: 'https://trafficjam.v2u.us', // Replace with your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // If using cookies/auth headers
+}));
+
 // Create HTTP server for WebSocket support
 const server = http.createServer(app) ;
 
