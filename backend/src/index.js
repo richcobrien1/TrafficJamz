@@ -19,6 +19,17 @@ const app = express();
 // Create HTTP server for WebSocket support
 const server = http.createServer(app) ;
 
+// ===== ADD HEADER LOGGER HERE =====
+app.use((req, res, next) => {
+  console.log("\n=== INCOMING REQUEST HEADERS ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  console.log("Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Body:", req.body); // Optional: Log request body
+  next();
+});
+// ===== END HEADER LOGGER =====
+
 // Set trust proxy (already correctly placed)
 app.set('trust proxy', 1);
 
@@ -49,15 +60,15 @@ app.use(cors({
   // },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
-    'X-CSRF-Token',
-    'X-Requested-With',
-    'Accept',
-    'Accept-Version',
-    'Content-Length',
-    'Content-MD5',
+    // 'X-CSRF-Token',
+    // 'X-Requested-With',
+    // 'Accept',
+    // 'Accept-Version',
+    // 'Content-Length',
+    // 'Content-MD5',
     'Content-Type',
-    'Date',
-    'X-Api-Version',
+    // 'Date',
+    // 'X-Api-Version',
     'Authorization'
   ],
   credentials: true,
@@ -67,22 +78,22 @@ app.use(cors({
 
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "wss:", "https:", "*"],
-      mediaSrc: ["'self'", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      // Add this to be more permissive
-      imgSrc: ["'self'", "data:", "blob:"],
-    }
-  },
-  // Disable crossOriginResourcePolicy for CORS to work properly
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  // Disable crossOriginEmbedderPolicy for CORS to work properly
-  crossOriginEmbedderPolicy: false
-}) );
+// app.use(helmet({
+//   contentSecurityPolicy: {
+//     directives: {
+//       defaultSrc: ["'self'"],
+//       connectSrc: ["'self'", "wss:", "https:", "*"],
+//       mediaSrc: ["'self'", "blob:"],
+//       scriptSrc: ["'self'", "'unsafe-inline'"],
+//       // Add this to be more permissive
+//       imgSrc: ["'self'", "data:", "blob:"],
+//     }
+//   },
+//   // Disable crossOriginResourcePolicy for CORS to work properly
+//   crossOriginResourcePolicy: { policy: "cross-origin" },
+//   // Disable crossOriginEmbedderPolicy for CORS to work properly
+//   crossOriginEmbedderPolicy: false
+// }) );
 
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
