@@ -489,7 +489,7 @@ class GroupService {
       const savedInvitation = group.invitations[group.invitations.length - 1];
 
       // Generate invitation link with group ID and invitation index
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
       
       // Get inviter details - Fix for hybrid PostgreSQL/MongoDB system

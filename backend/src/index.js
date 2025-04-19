@@ -41,34 +41,34 @@ require('./config/passport');
 app.use(cors({
   origin: 'https://trafficjam.v2u.us' || 'https://localhost:3000', // Replace with your frontend URL
 
-  // origin: function(origin, callback) {
-  //   const allowedOrigins = [
-  //     'https://trafficjam.v2u.us',
-  //     process.env.REACT_APP_API_URL || 'http://localhost:3000',
-  //     'capacitor://localhost' // iOS
-  //   ];
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'https://trafficjam.v2u.us',
+      process.env.REACT_APP_API_URL || 'http://localhost:3001',
+      'capacitor://localhost' // iOS
+    ];
     
-  //   // Allow requests with no origin (like mobile apps or curl requests) 
-  //   if (!origin) return callback(null, true);
+    // Allow requests with no origin (like mobile apps or curl requests) 
+    if (!origin) return callback(null, true);
     
-  //   if (allowedOrigins.indexOf(origin) !== -1) {
-  //     callback(null, true);
-  //   } else {
-  //     console.log('CORS blocked origin:', origin);
-  //     callback(null, true); // Temporarily allow all origins for debugging
-  //   }
-  // },
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Temporarily allow all origins for debugging
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
-    // 'X-CSRF-Token',
-    // 'X-Requested-With',
-    // 'Accept',
-    // 'Accept-Version',
-    // 'Content-Length',
-    // 'Content-MD5',
+    'X-CSRF-Token',
+    'X-Requested-With',
+    'Accept',
+    'Accept-Version',
+    'Content-Length',
+    'Content-MD5',
     'Content-Type',
-    // 'Date',
-    // 'X-Api-Version',
+    'Date',
+    'X-Api-Version',
     'Authorization'
   ],
   credentials: true,
@@ -78,22 +78,22 @@ app.use(cors({
 
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
-// app.use(helmet({
-//   contentSecurityPolicy: {
-//     directives: {
-//       defaultSrc: ["'self'"],
-//       connectSrc: ["'self'", "wss:", "https:", "*"],
-//       mediaSrc: ["'self'", "blob:"],
-//       scriptSrc: ["'self'", "'unsafe-inline'"],
-//       // Add this to be more permissive
-//       imgSrc: ["'self'", "data:", "blob:"],
-//     }
-//   },
-//   // Disable crossOriginResourcePolicy for CORS to work properly
-//   crossOriginResourcePolicy: { policy: "cross-origin" },
-//   // Disable crossOriginEmbedderPolicy for CORS to work properly
-//   crossOriginEmbedderPolicy: false
-// }) );
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "wss:", "https:", "*"],
+      mediaSrc: ["'self'", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      // Add this to be more permissive
+      imgSrc: ["'self'", "data:", "blob:"],
+    }
+  },
+  // Disable crossOriginResourcePolicy for CORS to work properly
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  // Disable crossOriginEmbedderPolicy for CORS to work properly
+  crossOriginEmbedderPolicy: false
+}) );
 
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -127,7 +127,7 @@ const notificationRoutes = require('./routes/notifications.routes');
 const io = socketIo(server, {
   cors: {
     origin: [
-      process.env.REACT_APP_API_URL|| 'http://localhost:3000',
+      process.env.REACT_APP_API_URL|| 'http://localhost:3001',
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
       'https://dev-trafficjam.v2u.us',
