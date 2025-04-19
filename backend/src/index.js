@@ -130,6 +130,7 @@ const io = socketIo(server, {
       'http://localhost:3000',
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
+      'https://trafficjam-git-main-v2u.vercel.app',
       'capacitor://localhost',  // For iOS apps
       'ionic://localhost'
     ],
