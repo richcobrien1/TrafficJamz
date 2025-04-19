@@ -16,14 +16,6 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
-// Enable CORS for all routes
-app.use(cors({
-  origin: 'https://trafficjam.v2u.us', // Replace with your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true // If using cookies/auth headers
-}));
-
 // Create HTTP server for WebSocket support
 const server = http.createServer(app) ;
 
@@ -36,24 +28,25 @@ require('./config/passport');
 // IMPORTANT: Apply CORS before Helmet
 // Improved CORS configuration for audio app
 app.use(cors({
-  origin: function(origin, callback) {
-    const allowedOrigins = [
-      'capacitor://localhost',
-      'https://trafficjam.v2u.us',
-      'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      process.env.REACT_APP_API_URL || 'http://localhost:3001'
-    ];
+  origin: 'https://trafficjam.v2u.us' || 'https://localhost:3000', // Replace with your frontend URL
+
+  // origin: function(origin, callback) {
+  //   const allowedOrigins = [
+  //     'https://trafficjam.v2u.us',
+  //     process.env.REACT_APP_API_URL || 'http://localhost:3000',
+  //     'capacitor://localhost' // iOS
+  //   ];
     
-    // Allow requests with no origin (like mobile apps or curl requests) 
-    if (!origin) return callback(null, true);
+  //   // Allow requests with no origin (like mobile apps or curl requests) 
+  //   if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(null, true); // Temporarily allow all origins for debugging
-    }
-  },
+  //   if (allowedOrigins.indexOf(origin) !== -1) {
+  //     callback(null, true);
+  //   } else {
+  //     console.log('CORS blocked origin:', origin);
+  //     callback(null, true); // Temporarily allow all origins for debugging
+  //   }
+  // },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'X-CSRF-Token',
