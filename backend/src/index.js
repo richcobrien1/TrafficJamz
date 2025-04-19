@@ -39,12 +39,12 @@ require('./config/passport');
 // IMPORTANT: Apply CORS before Helmet
 // Improved CORS configuration for audio app
 app.use(cors({
-  origin: 'https://trafficjam.v2u.us' || 'https://localhost:3000', // Replace with your frontend URL
+  // origin: 'https://trafficjam.v2u.us' || 'https://localhost:3000', // Replace with your frontend URL
 
   origin: function(origin, callback) {
     const allowedOrigins = [
       'https://trafficjam.v2u.us',
-      process.env.REACT_APP_API_URL || 'http://localhost:3001',
+      'http://localhost:3001',
       'capacitor://localhost' // iOS
     ];
     
@@ -127,13 +127,14 @@ const notificationRoutes = require('./routes/notifications.routes');
 const io = socketIo(server, {
   cors: {
     origin: [
-      process.env.REACT_APP_API_URL|| 'http://localhost:3001',
+      'http://localhost:3000',
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
       'https://dev-trafficjam.v2u.us',
       'https://staging-trafficjam.v2u.us'
     ],
-    methods: ["GET", "POST"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   },
   // For audio streaming, increase ping timeout
