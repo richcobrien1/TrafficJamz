@@ -7,5 +7,15 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "server/api/$1" },
     { "src": "/(.*)", "dest": "client/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://trafficjam-v2u.us" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" }
+      ]
+    }
   ]
 }
