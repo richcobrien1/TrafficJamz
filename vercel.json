@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "frontend/client/build",
   "builds": [
     { "src": "client/package.json", "use": "@vercel/static-build" },
     { "src": "server/api/*.js", "use": "@vercel/node" }
@@ -13,7 +14,7 @@
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://trafficjam-v2u.us" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" }
       ]
     }
