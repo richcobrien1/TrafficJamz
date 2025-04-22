@@ -336,7 +336,7 @@ const Dashboard = () => {
                       startIcon={<LocationIcon />}
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/location/${group.id}`);
+                        navigate(`/location-tracking/${group.id}`);
                       }}
                     >
                       Location
