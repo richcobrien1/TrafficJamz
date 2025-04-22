@@ -385,7 +385,7 @@ const GroupDetail = () => {
                           boxShadow: 6
                         }
                       }}
-                      onClick={() => navigate(`/location/${groupId}`)}
+                      onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
                       <Avatar sx={{ bgcolor: 'secondary.main', width: 60, height: 60, mb: 2 }}>
                         <LocationIcon fontSize="large" />

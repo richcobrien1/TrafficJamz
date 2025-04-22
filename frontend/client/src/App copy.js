@@ -85,7 +85,7 @@ function App() {
                 <AudioSession />
               </ProtectedRoute>
             } />
-            <Route path="/location/:groupId" element={
+            <Route path="/location-tracking/:groupId" element={
               <ProtectedRoute>
                 <LocationTracking />
               </ProtectedRoute>
