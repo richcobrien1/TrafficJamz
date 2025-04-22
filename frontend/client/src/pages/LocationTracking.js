@@ -882,8 +882,8 @@ const LocationTracking = () => {
         color="transparent" 
         elevation={0}
         sx={{ 
-          background: 'rgba(255,255,255,0.8)',
-          backdropFilter: 'blur(10px)',
+          background: 'rgba(255,255,255 / 50%)',
+          backdropFilter: 'blur(1px)',
           transition: 'all 0.3s ease',
           top: showControls ? 0 : -64,
           zIndex: 10
