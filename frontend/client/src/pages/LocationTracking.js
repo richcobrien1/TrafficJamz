@@ -882,8 +882,9 @@ const LocationTracking = () => {
         color="transparent" 
         elevation={0}
         sx={{ 
-          background: 'rgba(255,255,255 / 50%)',
-          backdropFilter: 'blur(1px)',
+          opacity: controlsOpacity,
+          backdropFilter: 'blur(2px)',
+          bgcolor: 'rgba(255,255,255,0.8)',
           transition: 'all 0.3s ease',
           top: showControls ? 0 : -64,
           zIndex: 10
@@ -1045,7 +1046,7 @@ const LocationTracking = () => {
             zIndex: 10,
             p: 2,
             opacity: controlsOpacity,
-            backdropFilter: 'blur(10px)',
+            backdropFilter: 'blur(2px)',
             bgcolor: 'rgba(255,255,255,0.8)',
             borderRadius: 2,
             maxWidth: 600,
@@ -1091,7 +1092,7 @@ const LocationTracking = () => {
             width: 320,
             boxSizing: 'border-box',
             opacity: controlsOpacity,
-            backdropFilter: 'blur(10px)',
+            backdropFilter: 'blur(2px)',
             bgcolor: 'rgba(255,255,255,0.8)',
             border: 'none',
             boxShadow: 3,
