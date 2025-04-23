@@ -44,8 +44,8 @@ app.use(cors({
   origin: function(origin, callback) {
     const allowedOrigins = [
       'https://trafficjam.v2u.us',
-      'http://localhost:3001',
-      'capacitor://localhost' // iOS
+      'http://localhost:3000',
+      'capacitor://trafficjam.v2u.us' // iOS
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests) 
