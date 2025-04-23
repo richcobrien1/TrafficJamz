@@ -143,7 +143,12 @@ const LocationTracking = () => {
       
       // Enforce minimum time between requests (at least 5 seconds)
       const now = Date.now();
-      const timeSinceLastFetch = now - lastFetchTime;
+      if (!lastFetchTime) {
+        setLastFetchTime(now);
+      }
+
+      // Calculate time since last fetch
+      const timeSinceLastFetch = lastFetchTime;
       const minTimeBetweenFetches = 5000; // 5 seconds minimum
       
       if (timeSinceLastFetch < minTimeBetweenFetches) {
