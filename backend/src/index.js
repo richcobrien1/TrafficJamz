@@ -131,8 +131,9 @@ const io = socketIo(server, {
       'https://trafficjam.v2u.us',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
       'https://trafficjam-git-main-v2u.vercel.app',
-      'capacitor://localhost',  // For iOS apps
-      'ionic://localhost'
+      'capacitor://trafficjam.v2u.us',  // For iOS apps
+      'ionic://trafficjam.v2u.us', // For Android apps
+      'http://localhost:3001', // For local development
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
