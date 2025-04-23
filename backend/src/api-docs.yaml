@@ -10,7 +10,7 @@ info:
 servers:
   - url: http://localhost:3001/api
     description: Development server
-  - url: https://api.audiogroupapp.com/api
+  - url: https://trafficjam.v2u.us/api
     description: Production server
 
 components:
