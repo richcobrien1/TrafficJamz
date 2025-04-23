@@ -7,7 +7,7 @@ const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Base API URL for backend services
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.FRONTEND_API_URL;
 
 // User-related API calls (PostgreSQL via Supabase)
 export const userService = {
