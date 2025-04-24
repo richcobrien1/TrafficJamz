@@ -262,7 +262,7 @@ const Dashboard = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
             <CircularProgress />
           </Box>
-        ) : groups.length === 0 ? (
+        ) : groups?.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="h6" gutterBottom>
               You don't have any groups yet
