@@ -43,12 +43,12 @@ app.use(cors({
 
   origin: function(origin, callback) {
     const allowedOrigins = [
+      'http://localhost:3000', // For local development
       'https://trafficjam.v2u.us',
-      'http://localhost:3000',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
       'https://trafficjam-git-main-v2u.vercel.app',
       'capacitor://trafficjam.v2u.us',  // For iOS apps
-      'ionic://trafficjam.v2u.us' // For Android apps
+      'ionic://trafficjam.v2u.us', // For Android apps
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests) 
