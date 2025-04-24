@@ -1,8 +1,24 @@
 {
   "version": 2,
-  "framework": "create-react-app",
-  "outputDirectory": "frontend/client/build",
+  "builds": [
+    {
+      "src": "backend/src/index.js",
+      "use": "@vercel/node"
+    }
+  ],
   "routes": [
-    { "src": "backend/src/(.*)", "dest": "server/api/$1" }
+    {
+      "src": "/api/(.*)",
+      "dest": "backend/src/index.js"
+    },
+    {
+      "src": "/auth/(.*)",
+      "dest": "backend/src/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/client/build",
+      "continue": true
+    }
   ]
 }
