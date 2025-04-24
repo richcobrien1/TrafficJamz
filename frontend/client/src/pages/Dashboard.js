@@ -150,7 +150,7 @@ const Dashboard = () => {
             Groups
           </Typography>
           <IconButton color="inherit" onClick={fetchNotifications}>
-            <Badge badgeContent={notifications.length} color="error">
+            <Badge badgeContent={notifications?.length} color="error">
               <NotificationsIcon />
             </Badge>
           </IconButton>
