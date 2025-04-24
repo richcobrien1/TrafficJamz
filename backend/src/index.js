@@ -16,8 +16,20 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
 // Create HTTP server for WebSocket support
 const server = http.createServer(app) ;
+
+// Set trust proxy (already correctly placed)
+app.set('trust proxy', 1);
+
+// Import passport configuration
+require('./config/passport');
+
+app.use(morgan('dev')); // HTTP request logger
+app.use(compression()); // Compress responses
 
 // ===== ADD HEADER LOGGER HERE =====
 app.use((req, res, next) => {
@@ -30,24 +42,12 @@ app.use((req, res, next) => {
 });
 // ===== END HEADER LOGGER =====
 
-// Set trust proxy (already correctly placed)
-app.set('trust proxy', 1);
-
-// Import passport configuration
-require('./config/passport');
-
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-app.use(morgan('dev')); // HTTP request logger
-app.use(compression()); // Compress responses
-
 // IMPORTANT: Apply CORS before Helmet
 // CORS configuration
 // Allow requests from specific origins
 const allowedOrigins = [
   'http://localhost:3000',
   'https://trafficjam.v2u.us',
-  'https://trafficjam-kqeieirzf-v2u.vercel.app',
   'capacitor://trafficjam.v2u.us',
   'ionic://trafficjam.v2u.us'
 ];
@@ -122,8 +122,6 @@ const io = socketIo(server, {
     origin: [
       'http://localhost:3000', // For local development
       'https://trafficjam.v2u.us',
-      'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      'https://trafficjam-git-main-v2u.vercel.app',
       'capacitor://trafficjam.v2u.us',  // For iOS apps
       'ionic://trafficjam.v2u.us', // For Android apps
     ],
