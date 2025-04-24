@@ -1,37 +1,12 @@
 {
   "version": 2,
   "framework": "create-react-app",
-  "builds": [
-    {
-      "src": "backend/src/**/*.js",
-      "use": "@vercel/node",
-      "config": {
-        "runtime": "nodejs18.x"
-      }
-    },
-    {
-      "src": "frontend/client/package.json",
-      "use": "@vercel/static-build",
-      "config": { 
-        "distDir": "build"
-      }
-    }
-  ],
+  "outputDirectory": "frontend/client/build",
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/src/api/$1.js"
-    },
-    {
-      "src": "^/static/(.*)",
-      "dest": "/frontend/client/build/static/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/client/build/index.html"
+    { 
+      "src": "/api/.*", 
+      "dest": "/api/index.js",
+      "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]
     }
   ]
 }
