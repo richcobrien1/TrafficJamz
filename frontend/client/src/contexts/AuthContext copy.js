@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const response = await api.get('/api/users/profile');
+        const response = await api.get('/users/profile');
         setCurrentUser(response.data.user);
         setLoading(false);
       } catch (error) {
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setError('');
-      const response = await api.post('/api/auth/register', userData);
+      const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to register');
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (userData) => {
     try {
       setError('');
-      const response = await api.put('/api/users/profile', userData);
+      const response = await api.put('/users/profile', userData);
       setCurrentUser(response.data.user);
       return response.data.user;
     } catch (error) {
