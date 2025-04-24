@@ -1,18 +1,17 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/index.js", "use": "@vercel/node" }
-  ],
+  "framework": "create-react-app",
+  "outputDirectory": "frontend/client/build",
   "routes": [
-    {
-      "src": "/api/.*",
-      "dest": "api/index.js",
-      "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]
-    },
-    {
-      "src": "/.*",
-      "dest": "public/index.html",
-      "status": 200
+    { 
+      "src": "/api/.*", 
+      "dest": "/api/index.js",
+      "methods": ["GET", "POST", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
     }
   ]
 }
