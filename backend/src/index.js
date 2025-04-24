@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-// const helmet = require('helmet'); // disabled for CORS testing
+const helmet = require('helmet');
 const morgan = require('morgan');
 const passport = require('passport');
 const dotenv = require('dotenv');
@@ -76,22 +76,22 @@ app.options('*', cors());
 
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
-// app.use(helmet({
-//   contentSecurityPolicy: {
-//     directives: {
-//       defaultSrc: ["'self'"],
-//       connectSrc: ["'self'", "wss:", "https:", "*"],
-//       mediaSrc: ["'self'", "blob:"],
-//       scriptSrc: ["'self'", "'unsafe-inline'"],
-//       // Add this to be more permissive
-//       imgSrc: ["'self'", "data:", "blob:"],
-//     }
-//   },
-//   // Disable crossOriginResourcePolicy for CORS to work properly
-//   crossOriginResourcePolicy: { policy: "cross-origin" },
-//   // Disable crossOriginEmbedderPolicy for CORS to work properly
-//   crossOriginEmbedderPolicy: false
-// }) );
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "wss:", "https:", "*"],
+      mediaSrc: ["'self'", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      // Add this to be more permissive
+      imgSrc: ["'self'", "data:", "blob:"],
+    }
+  },
+  // Disable crossOriginResourcePolicy for CORS to work properly
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  // Disable crossOriginEmbedderPolicy for CORS to work properly
+  crossOriginEmbedderPolicy: false
+}) );
 
 // Enhanced Rate limiting configuration
 const limiter = rateLimit({
@@ -175,9 +175,6 @@ io.on('connection', (socket) => {
 
 // Define function to set up routes and start server
 function setupServer() {
-  // Enable pre-flight for all routes
-  app.options('*', cors());
-  
   // Add a CORS test endpoint
   app.get('/api/cors-test', (req, res) => {
     res.status(200).json({ 
