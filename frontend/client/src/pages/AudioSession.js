@@ -372,7 +372,7 @@ const AudioSession = () => {
       // If session doesn't exist, create it
       if (!sessionData) {
         try {
-          const createResponse = await api.post('/api/audio/sessions', {
+          const createResponse = await api.post('/audio/sessions', {
             group_id: sessionId, // Assuming sessionId is the group ID
             created_by: user.id,
             type: 'voice_only'
