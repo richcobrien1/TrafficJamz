@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-// const helmet = require('helmet');
+// const helmet = require('helmet'); // disabled for CORS testing
 const morgan = require('morgan');
 const passport = require('passport');
 const dotenv = require('dotenv');
@@ -44,7 +44,6 @@ app.use(compression()); // Compress responses
 // IMPORTANT: Apply CORS before Helmet
 // CORS configuration
 // Allow requests from specific origins
-
 const allowedOrigins = [
   'http://localhost:3000',
   'https://trafficjam.v2u.us',
@@ -119,19 +118,19 @@ const notificationRoutes = require('./routes/notifications.routes');
 
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
-  cors: {
-    origin: [
-      'http://localhost:3000', // For local development
-      'https://trafficjam.v2u.us',
-      'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      'https://trafficjam-git-main-v2u.vercel.app',
-      'capacitor://trafficjam.v2u.us',  // For iOS apps
-      'ionic://trafficjam.v2u.us', // For Android apps
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  },
+  // cors: {
+  //   origin: [
+  //     'http://localhost:3000', // For local development
+  //     'https://trafficjam.v2u.us',
+  //     'https://trafficjam-kqeieirzf-v2u.vercel.app',
+  //     'https://trafficjam-git-main-v2u.vercel.app',
+  //     'capacitor://trafficjam.v2u.us',  // For iOS apps
+  //     'ionic://trafficjam.v2u.us', // For Android apps
+  //   ],
+  //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  //   allowedHeaders: ['Content-Type', 'Authorization'],
+  //   credentials: true
+  // },
   // For audio streaming, increase ping timeout
   pingTimeout: 60000,
 }) ;
