@@ -3,6 +3,10 @@
   "framework": "create-react-app",
   "outputDirectory": "frontend/client/build",
   "routes": [
-    { "src": "/api/(.*)", "dest": "server/api/$1" }
+    { 
+      "src": "/api/.*", 
+      "dest": "/api/index.js",
+      "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]
+    }
   ]
 }
