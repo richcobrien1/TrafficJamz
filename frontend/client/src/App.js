@@ -42,7 +42,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <Router basename="/">
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
