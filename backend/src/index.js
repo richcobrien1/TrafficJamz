@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
+// const helmet = require('helmet');
 const morgan = require('morgan');
 const passport = require('passport');
 const dotenv = require('dotenv');
@@ -36,72 +36,63 @@ app.set('trust proxy', 1);
 // Import passport configuration
 require('./config/passport');
 
-// IMPORTANT: Apply CORS before Helmet
-// Improved CORS configuration for audio app
-app.use(cors({
-  // origin: 'https://trafficjam.v2u.us' || 'https://localhost:3000', // Replace with your frontend URL
-
-  origin: function(origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:3000', // For local development
-      'https://trafficjam.v2u.us',
-      'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      'https://trafficjam-git-main-v2u.vercel.app',
-      'capacitor://trafficjam.v2u.us',  // For iOS apps
-      'ionic://trafficjam.v2u.us', // For Android apps
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests) 
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(null, true); // Temporarily allow all origins for debugging
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'X-CSRF-Token',
-    'X-Requested-With',
-    'Accept',
-    'Accept-Version',
-    'Content-Length',
-    'Content-MD5',
-    'Content-Type',
-    'Date',
-    'X-Api-Version',
-    'Authorization'
-  ],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
-
-// THEN apply Helmet after CORS
-// Enhanced security with Helmet - modified to be more permissive with CORS
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "wss:", "https:", "*"],
-      mediaSrc: ["'self'", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      // Add this to be more permissive
-      imgSrc: ["'self'", "data:", "blob:"],
-    }
-  },
-  // Disable crossOriginResourcePolicy for CORS to work properly
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  // Disable crossOriginEmbedderPolicy for CORS to work properly
-  crossOriginEmbedderPolicy: false
-}) );
-
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
+
+// IMPORTANT: Apply CORS before Helmet
+// CORS configuration
+// Allow requests from specific origins
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://trafficjam.v2u.us',
+  'https://trafficjam-kqeieirzf-v2u.vercel.app',
+  'capacitor://trafficjam.v2u.us',
+  'ionic://trafficjam.v2u.us'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked CORS for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false, // Disable preflight caching
+  optionsSuccessStatus: 204 // Legacy browsers choke on 204
+}));
+
+// Explicitly handle OPTIONS requests for all routes
+app.options('*', cors());
+
+// THEN apply Helmet after CORS
+// Enhanced security with Helmet - modified to be more permissive with CORS
+// app.use(helmet({
+//   contentSecurityPolicy: {
+//     directives: {
+//       defaultSrc: ["'self'"],
+//       connectSrc: ["'self'", "wss:", "https:", "*"],
+//       mediaSrc: ["'self'", "blob:"],
+//       scriptSrc: ["'self'", "'unsafe-inline'"],
+//       // Add this to be more permissive
+//       imgSrc: ["'self'", "data:", "blob:"],
+//     }
+//   },
+//   // Disable crossOriginResourcePolicy for CORS to work properly
+//   crossOriginResourcePolicy: { policy: "cross-origin" },
+//   // Disable crossOriginEmbedderPolicy for CORS to work properly
+//   crossOriginEmbedderPolicy: false
+// }) );
 
 // Enhanced Rate limiting configuration
 const limiter = rateLimit({
