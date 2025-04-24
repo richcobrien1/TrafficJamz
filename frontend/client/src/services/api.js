@@ -2,11 +2,9 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.BACKEND_API_URL || 'https://trafficjam.v2u.us',
-  withCredentials: false,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? '/api'  // Relative path (no domain needed)
+    : 'http://localhost:3001'  // For local dev
 });
 
 // Request interceptor to add auth token to requests
