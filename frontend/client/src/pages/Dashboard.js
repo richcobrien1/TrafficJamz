@@ -280,7 +280,7 @@ const Dashboard = () => {
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {groups.map((group) => (
+            {groups?.map((group) => (
               <Grid item xs={12} sm={6} md={4} key={group.id}>
                 <Paper 
                   sx={{ 
