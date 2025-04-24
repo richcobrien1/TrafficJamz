@@ -8,7 +8,10 @@
     {
       "src": "frontend/client/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "build" }
+      "config": {
+        "distDir": "build",
+        "cleanUrls": true
+      }
     }
   ],
   "routes": [
@@ -18,8 +21,13 @@
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/client/build",
-      "continue": true
+      "dest": "frontend/client/build/index.html"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
