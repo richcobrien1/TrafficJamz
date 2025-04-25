@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "outputDirectory": "frontend/client/build",
   "builds": [
     {
       "src": "frontend/client/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "frontend/client"
       }
     },
     {
