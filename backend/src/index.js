@@ -44,7 +44,8 @@ app.use(cors({
   origin: function(origin, callback) {
     const allowedOrigins = [
       'https://trafficjam.v2u.us',
-      'http://localhost:3001',
+      'https://trafficjam-v2u.vercel.app',
+      'http://localhost:3000',
       'capacitor://localhost' // iOS
     ];
     
@@ -129,8 +130,7 @@ const io = socketIo(server, {
     origin: [
       'http://localhost:3000',
       'https://trafficjam.v2u.us',
-      'https://trafficjam-kqeieirzf-v2u.vercel.app',
-      'https://trafficjam-git-main-v2u.vercel.app',
+      'https://trafficjam-v2u.vercel.app',
       'capacitor://localhost',  // For iOS apps
       'ionic://localhost'
     ],
