@@ -16,6 +16,9 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
 // Create HTTP server for WebSocket support
 const server = http.createServer(app) ;
 
@@ -39,14 +42,14 @@ require('./config/passport');
 // IMPORTANT: Apply CORS before Helmet
 // Improved CORS configuration for audio app
 app.use(cors({
-  // origin: 'https://trafficjam.v2u.us' || 'https://localhost:3000', // Replace with your frontend URL
-
+  // Allow requests from specific origins
   origin: function(origin, callback) {
     const allowedOrigins = [
+      'http://localhost:3000',
       'https://trafficjam.v2u.us',
       'https://trafficjam-v2u.vercel.app',
-      'http://localhost:3000',
-      'capacitor://localhost' // iOS
+      'capacitor://localhost',  // For iOS apps
+      'ionic://localhost'
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests) 
@@ -96,8 +99,6 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }) );
 
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
 
