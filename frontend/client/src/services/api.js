@@ -6,7 +6,10 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   withCredentials: false,
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*', // Allow all origins for CORS
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',  // Allow specific methods for CORS
+      'Access-Control-Allow-Headers': 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization',  // Allow specific headers for CORS
     }
   },
 
