@@ -77,9 +77,21 @@ app.use(cors({
     'Authorization'
   ],
   credentials: true,
-  preflightContinue: false,
+  // preflightContinue: false,
   optionsSuccessStatus: 204
 }));
+
+// Enable pre-flight for all routes
+app.options('*', cors());
+  
+// Add a CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  res.status(200).json({ 
+    message: 'CORS is working properly',
+    origin: req.headers.origin || 'No origin header',
+    timestamp: new Date()
+  });
+});
 
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
@@ -185,18 +197,6 @@ io.on('connection', (socket) => {
 
 // Define function to set up routes and start server
 function setupServer() {
-  // Enable pre-flight for all routes
-  app.options('*', cors());
-  
-  // Add a CORS test endpoint
-  app.get('/api/cors-test', (req, res) => {
-    res.status(200).json({ 
-      message: 'CORS is working properly',
-      origin: req.headers.origin || 'No origin header',
-      timestamp: new Date()
-    });
-  });
-
   // Use routes
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
