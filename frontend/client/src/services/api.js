@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.FRONTEND_API_URL || 'https://trafficjam-v2u.vercel.app/api' || 'http://localhost:3001',
+  baseURL: process.env.FRONTEND_API_URL || 'https://trafficjam-v2u.vercel.app' || 'http://localhost:3001',
   withCredentials: false,
     headers: {
       'Content-Type': 'application/json'
