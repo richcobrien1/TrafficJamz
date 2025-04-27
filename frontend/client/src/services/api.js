@@ -2,12 +2,15 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.FRONTEND_API_URL || 'https://trafficjam-v2u.vercel.app' || 'http://localhost:3001',
+  // baseURL: process.env.REACT_APP_API_URL || 'https://trafficjam-v2u.vercel.app' || 'http://localhost:3001',
+  baseURL: process.env.REACT_APP_API_URL,
   withCredentials: false,
     headers: {
       'Content-Type': 'application/json'
     }
-  }
+  },
+
+  console.log('API base URL:  ', process.env.REACT_APP_API_URL) // Log the base URL for debugging
 );
 
 // Request interceptor to add auth token to requests
