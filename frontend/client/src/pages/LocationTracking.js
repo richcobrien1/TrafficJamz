@@ -155,7 +155,7 @@ const LocationTracking = () => {
       setLastFetchTime(now);
       
       try {
-        // In a real implementation, fetch actual location data
+        // Real implementation, fetch actual location data
         let locationData;
         try {
           const response = await api.get(`/api/location/group/${groupId}`);
@@ -211,8 +211,8 @@ const LocationTracking = () => {
               user_id: 'user2',
               username: 'JaneDoe',
               coordinates: {
-                latitude: 40.7138,
-                longitude: -74.0070,
+                latitude: 39.7138,
+                longitude: -104.8870,
                 accuracy: 15,
                 altitude: 105,
                 heading: 180,
@@ -226,8 +226,8 @@ const LocationTracking = () => {
               user_id: 'user3',
               username: 'BobSmith',
               coordinates: {
-                latitude: 40.7118,
-                longitude: -74.0050,
+                latitude: 39.7218,
+                longitude: -104.8750,
                 accuracy: 20,
                 altitude: 95,
                 heading: 270,
@@ -408,7 +408,7 @@ const LocationTracking = () => {
     try {
       // Check if the map container ref is available
       if (!mapContainerRef.current) {
-        console.error('Map container ref is not available yet');
+        // console.error('Map container ref is not available yet');
         // Set a timeout to try again
         setTimeout(initializeMap, 100);
         return;
@@ -418,8 +418,11 @@ const LocationTracking = () => {
       
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/outdoors-v11',
-        center: [-74.0060, 40.7128], // Default to NYC
+        // style: 'mapbox://styles/mapbox/outdoors-v11',
+        // style: 'mapbox://styles/mapbox/satellite-v9',
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        // center: [-74.0060, 40.7128], // Default to NYC
+        center: [-104.8871, 39.4030], // Default to Home location
         zoom: 13
       });
       
@@ -685,7 +688,7 @@ const LocationTracking = () => {
     if (mapRef.current) {
       mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
-        zoom: 15,
+        zoom: 17,
         essential: true
       });
     }
