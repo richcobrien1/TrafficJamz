@@ -49,6 +49,7 @@ app.use(cors({
       'https://trafficjam.v2u.us',
       'https://trafficjam-v2u.vercel.app',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
+      'https://subscriber-client.vercel.app',
       'capacitor://localhost',  // For iOS apps
       'ionic://localhost'
     ];
@@ -146,6 +147,7 @@ const io = socketIo(server, {
       'https://trafficjam.v2u.us',
       'https://trafficjam-v2u.vercel.app',
       'https://trafficjam-kqeieirzf-v2u.vercel.app',
+      'https://subscriber-client.vercel.app',
       'capacitor://localhost',  // For iOS apps
       'ionic://localhost'
     ],
