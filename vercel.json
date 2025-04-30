@@ -1,17 +1,29 @@
 {
   "version": 2,
-  "framework": "create-react-app",
-  "outputDirectory": "frontend/client/build",
   "builds": [
     {
-      "src": "backend/src/index.js",
+      "src": "frontend/client/**",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "build" }
+    },
+    {
+      "src": "api/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/",
+      "dest": "/frontend/client"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "backend/src/index.js"
+      "dest": "/frontend/client/index.html",
+      "status": 200
     }
   ]
 }
