@@ -487,9 +487,9 @@ function Login() {
       
       await login(email, password);
       navigate('/dashboard');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || 'Failed to log in. Please check your credentials.');
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.message || 'Failed to log in. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
     }
