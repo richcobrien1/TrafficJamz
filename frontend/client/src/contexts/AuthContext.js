@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
           
           // Fetch user profile with the token
           try {
-            const response = await api.get('/users/profile');
+            const response = await api.get('/api/users/profile');
             if (response.data) {
               setUser(response.data);
               console.log('User profile fetched successfully');
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       
       console.log('Attempting login with:', email);
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email, password });
       
       if (response.data) {
         console.log('Login successful');
