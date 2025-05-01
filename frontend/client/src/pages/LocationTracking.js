@@ -714,7 +714,7 @@ const LocationTracking = () => {
       markerEl.style.width = '30px';
       markerEl.style.height = '30px';
       markerEl.style.borderRadius = '50%';
-      markerEl.style.backgroundColor = location.user_id === (user?.id || 'current-user') ? '#2196f3' : '#ff9800';
+      markerEl.style.backgroundColor = location.user_id === (user?.id || 'current-user') ? '#8B18F7C2' : '#ff9800';
       markerEl.style.border = '2px solid white';
       markerEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       markerEl.style.cursor = 'pointer';
