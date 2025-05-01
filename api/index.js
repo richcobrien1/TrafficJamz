@@ -119,7 +119,7 @@ app.use(compression()); // Compress responses
 // Enhanced Rate limiting configuration
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
-  max: 60, // Limit each IP to 60 requests per window
+  max: 1000, // Limit each IP to 1000 requests per window
   standardHeaders: true, // Return rate limit info in headers
   legacyHeaders: false, // Disable X-RateLimit-* headers
   skipSuccessfulRequests: true, // Only count failed requests
