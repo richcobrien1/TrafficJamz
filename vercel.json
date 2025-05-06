@@ -19,13 +19,38 @@
       "use": "@vercel/static-build",
       "config": {
         "buildCommand": "cd frontend/client && npm run build",
-        "outputDirectory": "frontend/client/build"
+        "outputDirectory": "frontend/client/build" 
       }
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/app.js" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/app.js"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/frontend/client/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/frontend/client/manifest.json"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/frontend/client/robots.txt"
+    },
+    {
+      "src": "/logo(.*).png",
+      "dest": "/frontend/client/logo$1.png"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/frontend/client/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/client/index.html"
+    }
   ]
 }
