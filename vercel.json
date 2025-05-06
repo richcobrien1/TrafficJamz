@@ -4,22 +4,26 @@
     {
       "src": "backend/package.json",
       "use": "@vercel/node",
-      "config": { 
+      "config": {
         "includeFiles": [
-          "backend/src/**"
+          "backend/app.js",
+          "backend/src/**",
+          "backend/config/**",
+          "backend/routes/**",
+          "backend/models/**"
         ]
       }
     },
     {
       "src": "frontend/client/package.json",
       "use": "@vercel/static-build",
-      "config": { "outputDirectory": "/" } 
+      "config": { "outputDirectory": "frontend/client/build" } 
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/src/index.js"
+      "dest": "/backend/app.js" 
     },
     {
       "handle": "filesystem"
