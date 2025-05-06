@@ -13,7 +13,7 @@
     {
       "src": "frontend/client/package.json",
       "use": "@vercel/static-build",
-      "config": { "outputDirectory": "frontend/client" } 
+      "config": { "outputDirectory": "/" } 
     }
   ],
   "routes": [
