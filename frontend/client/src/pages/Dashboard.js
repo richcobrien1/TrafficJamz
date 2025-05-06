@@ -241,7 +241,7 @@ const Dashboard = () => {
       <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography variant="h4" component="h1">
-            Your TrafficJam Groups
+            Your Jamz Groups
           </Typography>
           <Fab 
             color="primary" 
