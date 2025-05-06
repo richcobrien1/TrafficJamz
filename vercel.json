@@ -6,11 +6,7 @@
       "use": "@vercel/node",
       "config": { 
         "includeFiles": [
-          "backend/app.js", 
-          "backend/src/**", 
-          "backend/config/**", 
-          "backend/routes/**", 
-          "backend/models/**" 
+          "backend/src/**"
         ]
       }
     },
@@ -23,7 +19,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/app.js"
+      "dest": "/backend/src/index.js"
     },
     {
       "handle": "filesystem"
