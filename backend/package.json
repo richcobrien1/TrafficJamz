@@ -1,7 +1,7 @@
 {
-  "name": "audio-group-app-backend",
+  "name": "jamz-app-backend",
   "version": "1.0.0",
-  "description": "Backend services for group audio communication and location tracking app",
+  "description": "Backend services for Jamz group audio communication and location tracking app",
   "main": "src/index.js",
   "directories": {
     "test": "tests"
