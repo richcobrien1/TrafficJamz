@@ -1,12 +1,36 @@
 {
   "version": 2,
   "builds": [
-    { "src": "backend/package.json", "use": "@vercel/node", "config": { "includeFiles": ["backend/src/**"] } },
-    { "src": "frontend/client/package.json", "use": "@vercel/static-build", "config": { "outputDirectory": "frontend/client" } }
+    {
+      "src": "backend/package.json",
+      "use": "@vercel/node",
+      "config": { 
+        "includeFiles": [
+          "backend/app.js", 
+          "backend/src/**", 
+          "backend/config/**", 
+          "backend/routes/**", 
+          "backend/models/**" 
+        ]
+      }
+    },
+    {
+      "src": "frontend/client/package.json",
+      "use": "@vercel/static-build",
+      "config": { "outputDirectory": "frontend/client" } 
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/src/index.js" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/app.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html" 
+    }
   ]
 }
