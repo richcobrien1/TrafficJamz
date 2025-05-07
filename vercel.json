@@ -19,7 +19,7 @@
       "use": "@vercel/static-build",
       "config": {
         "buildCommand": "cd frontend/client && npm run build",
-        "outputDirectory": "frontend/client/build" 
+        "outputDirectory": "frontend/client/build"
       }
     }
   ],
@@ -33,7 +33,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html" 
+      "dest": "/index.html"
     }
   ]
 }
