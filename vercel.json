@@ -29,28 +29,11 @@
       "dest": "/backend/app.js"
     },
     {
-      "src": "/favicon.ico",
-      "dest": "/frontend/client/favicon.ico"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/frontend/client/manifest.json"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "/frontend/client/robots.txt"
-    },
-    {
-      "src": "/logo(.*).png",
-      "dest": "/frontend/client/logo$1.png"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/frontend/client/static/$1"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/client/index.html"
+      "dest": "/index.html" 
     }
   ]
 }
