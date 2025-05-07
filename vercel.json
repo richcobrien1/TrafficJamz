@@ -18,7 +18,7 @@
       "src": "frontend/client/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "cd frontend/client && npm run build",
+        "buildCommand": "cd frontend/client && npm run build && echo '--- VERCEL BUILT INDEX.HTML START ---' && cat build/index.html && echo '--- VERCEL BUILT INDEX.HTML END ---'",
         "outputDirectory": "frontend/client/build"
       }
     }
