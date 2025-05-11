@@ -9,7 +9,7 @@ const compression = require('compression');
 const mongoose = require('mongoose');
 const http = require('http') ; // Added for WebSocket support
 const socketIo = require('socket.io'); // You'll need to install this package
-
+console.log('BACKEND APP: Top-level log in index.js - Vercel test');
 // Load environment variables
 dotenv.config();
 
@@ -256,13 +256,6 @@ function setupServer() {
 
   // Set port
   const PORT = process.env.PORT || 3001;
-
-  // Start server using the HTTP server instance instead of app directly
-  if (process.env.NODE_ENV !== 'test') {
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }
 }
 
 // Connect to MongoDB before starting the server
