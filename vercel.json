@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/package.json",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "backend/src/**",
+          "backend/config/**",
+          "backend/routes/**",
+          "backend/models/**"
+        ]
+      }
+    },
+    {
+      "src": "frontend/client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "buildCommand": "cd frontend/client && npm run build",
+        "outputDirectory": "frontend/client/build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "backend/src/index.js" 
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
