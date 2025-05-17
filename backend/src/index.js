@@ -48,6 +48,7 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   'http://localhost:3000',
   'https://trafficjam.v2u.us',
+  'https://jamz-static-test-build.vercel.app',
   'capacitor://trafficjam.v2u.us',
   'ionic://trafficjam.v2u.us'
 ];
@@ -122,6 +123,7 @@ const io = socketIo(server, {
     origin: [
       'http://localhost:3000', // For local development
       'https://trafficjam.v2u.us',
+      'https://jamz-static-test-build.vercel.app',
       'capacitor://trafficjam.v2u.us',  // For iOS apps
       'ionic://trafficjam.v2u.us', // For Android apps
     ],
