@@ -66,7 +66,7 @@ const Dashboard = () => {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/groups');
+      const response = await api.get('/api/groups');
       console.log('fetchGroups: ' + response);
       setGroups(response.data.groups);
       setError('');
