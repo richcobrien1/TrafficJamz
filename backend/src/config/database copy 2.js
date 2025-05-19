@@ -7,23 +7,8 @@ console.log('Database connection config:', {
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || '5432',
   database: process.env.POSTGRES_DB || 'audiogroupapp',
-  user: process.env.POSTGRES_USER || 'postgres',
-  environment: process.env.NODE_ENV
+  user: process.env.POSTGRES_USER || 'postgres'
 });
-
-// Determine if we're in production (Vercel) or development (localhost)
-const isProduction = process.env.NODE_ENV === 'production' || 
-                    (process.env.POSTGRES_HOST && process.env.POSTGRES_HOST !== 'localhost');
-
-// Configure SSL based on environment
-const dialectOptions = isProduction ? {
-  ssl: {
-    require: true,
-    rejectUnauthorized: false
-  }
-} : {};
-
-console.log('Using SSL for database connection:', isProduction);
 
 const sequelize = new Sequelize(
   process.env.POSTGRES_DB || 'audiogroupapp',
@@ -35,7 +20,13 @@ const sequelize = new Sequelize(
     dialect: 'postgres',
     dialectModule: require('pg'), // Explicitly pass pg module
     logging: console.log,
-    dialectOptions: dialectOptions,
+    // Add SSL configuration for Supabase
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
     pool: {
       max: 5,
       min: 0,
