@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://trafficjam-v2u.vercel.app/api'  // Relative path (no domain needed)
+    ? '/api'  // Relative path (no domain needed)
     : 'http://localhost:3001'  // For local dev
 });
 
