@@ -33,6 +33,10 @@ app.use(compression()); // Compress responses
 
 // ===== ADD HEADER LOGGER HERE =====
 app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://jamz-static-test-build.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); // Add other allowed methods
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Add other allowed headers
+  next();
   console.log("\n=== INCOMING REQUEST HEADERS ===");
   console.log("Method:", req.method);
   console.log("URL:", req.url);
