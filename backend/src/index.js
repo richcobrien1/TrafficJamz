@@ -45,12 +45,12 @@ app.use((req, res, next) => {
 // IMPORTANT: Apply CORS before Helmet
 // CORS configuration
 // Allow requests from specific origins
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://trafficjam.v2u.us',
-  'https://jamz-static-test-build.vercel.app',
-  'capacitor://trafficjam.v2u.us',
-  'ionic://trafficjam.v2u.us'
+const allowedOrigins = ['*'
+  // 'http://localhost:3000',
+  // 'https://trafficjam.v2u.us',
+  // 'https://jamz-static-test-build.vercel.app',
+  // 'capacitor://trafficjam.v2u.us',
+  // 'ionic://trafficjam.v2u.us'
 ];
 
 app.use(cors({
@@ -120,12 +120,12 @@ const notificationRoutes = require('./routes/notifications.routes');
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
   cors: {
-    origin: [
-      'http://localhost:3000', // For local development
-      'https://trafficjam.v2u.us',
-      'https://jamz-static-test-build.vercel.app',
-      'capacitor://trafficjam.v2u.us',  // For iOS apps
-      'ionic://trafficjam.v2u.us', // For Android apps
+    origin: ['*'
+      // 'http://localhost:3000', // For local development
+      // 'https://trafficjam.v2u.us',
+      // 'https://jamz-static-test-build.vercel.app',
+      // 'capacitor://trafficjam.v2u.us',  // For iOS apps
+      // 'ionic://trafficjam.v2u.us', // For Android apps
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
