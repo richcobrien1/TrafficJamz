@@ -672,7 +672,7 @@ const LocationTracking = () => {
         connection_type: navigator.connection ? navigator.connection.type : 'unknown'
       };
       
-      await api.post('/location/update', locationData).catch(error => {
+      await api.post('/api/location/update', locationData).catch(error => {
         console.log('Mock location update - would send:', locationData);
       });
     } catch (error) {
