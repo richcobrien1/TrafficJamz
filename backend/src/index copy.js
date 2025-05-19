@@ -28,9 +28,6 @@ app.set('trust proxy', 1);
 // Import passport configuration
 require('./config/passport');
 
-// Import database connection
-const sequelize = require('./config/database');
-
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
 
@@ -54,10 +51,10 @@ app.use((req, res, next) => {
 // Allow requests from specific origins
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://trafficjam.v2u.us',
-  'https://jamz-static-test-build.vercel.app',
-  'capacitor://trafficjam.v2u.us',
-  'ionic://trafficjam.v2u.us'
+  // 'https://trafficjam.v2u.us',
+  'https://jamz-static-test-build.vercel.app'
+  // 'capacitor://trafficjam.v2u.us',
+  // 'ionic://trafficjam.v2u.us'
 ];
 
 app.use(cors({
@@ -128,11 +125,11 @@ const notificationRoutes = require('./routes/notifications.routes');
 const io = socketIo(server, {
   cors: {
     origin: [
-      'http://localhost:3000', // For local development
-      'https://trafficjam.v2u.us',
-      'https://jamz-static-test-build.vercel.app',
-      'capacitor://trafficjam.v2u.us',  // For iOS apps
-      'ionic://trafficjam.v2u.us', // For Android apps
+      // 'http://localhost:3000' // For local development
+      // 'https://trafficjam.v2u.us',
+      // 'https://jamz-static-test-build.vercel.app',
+      // 'capacitor://trafficjam.v2u.us',  // For iOS apps
+      // 'ionic://trafficjam.v2u.us', // For Android apps
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -189,45 +186,6 @@ function setupServer() {
       origin: req.headers.origin || 'No origin header',
       timestamp: new Date()
     });
-  });
-
-  // Add database test endpoint
-  app.get('/api/db-test', async (req, res) => {
-    try {
-      console.log('Testing database connection...');
-      console.log('Environment:', {
-        NODE_ENV: process.env.NODE_ENV,
-        POSTGRES_HOST: process.env.POSTGRES_HOST,
-        POSTGRES_PORT: process.env.POSTGRES_PORT,
-        POSTGRES_DB: process.env.POSTGRES_DB,
-        POSTGRES_USER: process.env.POSTGRES_USER
-      });
-      
-      await sequelize.authenticate();
-      console.log('Database connection successful!');
-      
-      res.json({ 
-        success: true, 
-        message: 'Database connected successfully',
-        env: process.env.NODE_ENV,
-        host: process.env.POSTGRES_HOST,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Database connection error:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Database connection failed', 
-        error: error.message,
-        config: {
-          host: process.env.POSTGRES_HOST,
-          port: process.env.POSTGRES_PORT,
-          database: process.env.POSTGRES_DB,
-          user: process.env.POSTGRES_USER
-        },
-        timestamp: new Date().toISOString()
-      });
-    }
   });
 
   // Use routes
