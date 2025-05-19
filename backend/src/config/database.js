@@ -1,40 +1,39 @@
+// backend/src/config/database.js
 const { Sequelize } = require('sequelize');
-const dotenv = require('dotenv');
-require('pg');
+require('pg'); // Explicitly require pg
 
-// Load environment variables
-dotenv.config();
+// Add debug logging to see what values are being used
+console.log('Database connection config:', {
+  host: process.env.POSTGRES_HOST || 'localhost',
+  port: process.env.POSTGRES_PORT || '5432',
+  database: process.env.POSTGRES_DB || 'audiogroupapp',
+  user: process.env.POSTGRES_USER || 'postgres'
+});
 
-// Create Sequelize instance for PostgreSQL
 const sequelize = new Sequelize(
   process.env.POSTGRES_DB || 'audiogroupapp',
   process.env.POSTGRES_USER || 'postgres',
   process.env.POSTGRES_PASSWORD || 'topgun',
   {
     host: process.env.POSTGRES_HOST || 'localhost',
-    port: process.env.POSTGRES_PORT || 5432,
+    port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
     dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'dev' ? console.log : false,
+    dialectModule: require('pg'), // Explicitly pass pg module
+    logging: console.log,
+    // Add SSL configuration for Supabase
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
     pool: {
-      max: 10,
+      max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000
     }
   }
 );
-
-// Test the connection
-const testConnection = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('PostgreSQL connection has been established successfully.');
-  } catch (error) {
-    console.error('Unable to connect to PostgreSQL database:', error);
-  }
-};
-
-// Call the test function
-testConnection();
 
 module.exports = sequelize;
