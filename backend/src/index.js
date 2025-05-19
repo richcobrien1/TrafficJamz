@@ -50,9 +50,9 @@ app.use((req, res, next) => {
 // CORS configuration
 // Allow requests from specific origins
 const allowedOrigins = [
-  'http://localhost:3000'
+  'http://localhost:3000',
   // 'https://trafficjam.v2u.us',
-  // 'https://jamz-static-test-build.vercel.app',
+  'https://jamz-static-test-build.vercel.app'
   // 'capacitor://trafficjam.v2u.us',
   // 'ionic://trafficjam.v2u.us'
 ];
