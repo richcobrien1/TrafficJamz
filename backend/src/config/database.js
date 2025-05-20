@@ -23,7 +23,7 @@ const dialectOptions = isProduction ? {
   }
 } : {};
 
-console.log('Using SSL for database connection:', isProduction);
+console.log('=====     Using SSL for database connection:', isProduction);
 
 // Create the appropriate connection based on environment
 let sequelize;
@@ -33,7 +33,7 @@ if (isProduction) {
   const connectionUrl = process.env.POSTGRES_USER_POSTGRES_URL || 
                        'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
   
-  console.log('Using production database connection');
+  console.log('=====     Using production database connection     =====');
   
   sequelize = new Sequelize(connectionUrl, {
     dialect: 'postgres',
@@ -42,7 +42,7 @@ if (isProduction) {
   });
 } else {
   // Development: Use localhost connection
-  console.log('Using development database connection');
+  console.log('=====     Using development database connection     =====');
   
   sequelize = new Sequelize(
     'audiogroupapp',
