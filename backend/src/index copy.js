@@ -263,7 +263,7 @@ console.log('Connecting to MongoDB...');
 mongoose.set('bufferTimeoutMS', 30000); // Increase buffer timeout
 
 // Get MongoDB URI from environment variables
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://richcobrien:1Topgun123@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&appName=subscribers';
+const MONGODB_URI = process.env.MONGODB_URI
 
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 30000,
