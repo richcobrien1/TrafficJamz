@@ -53,9 +53,10 @@ app.use((req, res, next) => {
 // CORS configuration
 // Allow requests from specific origins
 const allowedOrigins = [
-  'http://localhost:3000',
-  'https://trafficjam.v2u.us',
-  'https://jamz-static-test-build.vercel.app',
+  'http://localhost:3000', // For local development
+  'https://jamz-v2u.vercel.app', // For production client
+  'https://jamz-static-test-build.vercel.app', // For static client test build
+  'https://trafficjam.v2u.us', // For production client
   'capacitor://trafficjam.v2u.us',
   'ionic://trafficjam.v2u.us'
 ];
@@ -129,8 +130,9 @@ const io = socketIo(server, {
   cors: {
     origin: [
       'http://localhost:3000', // For local development
-      'https://trafficjam.v2u.us',
-      'https://jamz-static-test-build.vercel.app',
+      'https://jamz-v2u.vercel.app', // For production client
+      'https://jamz-static-test-build.vercel.app', // For static client test build
+      'https://trafficjam.v2u.us', // For production client
       'capacitor://trafficjam.v2u.us',  // For iOS apps
       'ionic://trafficjam.v2u.us', // For Android apps
     ],
