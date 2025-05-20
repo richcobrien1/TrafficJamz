@@ -1,4 +1,15 @@
+// backend/debug-passport.js
+const fs = require('fs');
 
+// Read the current passport.js file
+const passportJs = fs.readFileSync('./src/config/passport.js', 'utf8');
+
+// Log the file content
+console.log('Current passport.js content:');
+console.log(passportJs);
+
+// Create a completely new passport.js file
+const newPassportJs = `
 const passport = require('passport');
 const { Strategy: JwtStrategy } = require('passport-jwt');
 const { ExtractJwt } = require('passport-jwt');
@@ -36,3 +47,12 @@ passport.use(
 );
 
 module.exports = passport;
+`;
+
+// Write the new passport.js file
+fs.writeFileSync('./src/config/passport.js', newPassportJs);
+
+console.log('✅ passport.js completely replaced with simplified version');
+console.log('Next steps:');
+console.log('1. Commit these changes');
+console.log('2. Deploy to Vercel with: vercel --prod');
