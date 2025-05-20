@@ -2,12 +2,12 @@
 const passport = require('passport');
 const { Strategy: JwtStrategy } = require('passport-jwt');
 const { ExtractJwt } = require('passport-jwt');
-const { User } = require('../models');
+
+// Use direct import without models
+console.log('Using simplified passport without models dependency');
 
 // Hardcoded JWT secret
 const JWT_SECRET = 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn';
-
-console.log('Using hardcoded JWT secret:', JWT_SECRET.substring(0, 5) + '...');
 
 // Configure JWT strategy
 const jwtOptions = {
@@ -15,20 +15,12 @@ const jwtOptions = {
   secretOrKey: JWT_SECRET
 };
 
-// Create JWT strategy
+// Create JWT strategy with simplified callback
 passport.use(
   new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
     try {
-      console.log('JWT payload:', jwtPayload);
-      
-      // Find user by ID from JWT payload
-      const user = await User.findOne({ where: { user_id: jwtPayload.sub } });
-      
-      if (user) {
-        return done(null, user);
-      } else {
-        return done(null, false);
-      }
+      // Simply pass the JWT payload as the user
+      return done(null, { user_id: jwtPayload.sub, email: jwtPayload.email });
     } catch (error) {
       return done(error, false);
     }
