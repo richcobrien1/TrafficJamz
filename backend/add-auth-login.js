@@ -7,14 +7,14 @@ try {
     let authRoutes = fs.readFileSync(authRoutesPath, 'utf8');
     
     // Add a debug login endpoint
-    if (!authRoutes.includes('/debug-login')) {
+    if (!authRoutes.includes('/login')) {
       // Find the end of the router definition
       const routerEndIndex = authRoutes.lastIndexOf('module.exports = router');
       
       // Insert debug login endpoint before module.exports
       const debugLoginRoute = `
 // Debug login endpoint that logs all steps
-router.post('/debug-login', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     console.log('Debug login attempt with:', {
       email: req.body.email,
@@ -118,4 +118,4 @@ router.post('/debug-login', async (req, res) => {
 
 console.log('\n🔧 Auth debugging added!');
 console.log('Deploy with: vercel --prod');
-console.log('Then test with: https://trafficjam-v2u.vercel.app/api/auth/debug-login') ;
+console.log('Then test with: https://trafficjam-v2u.vercel.app/api/auth/login') ;
