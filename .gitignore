@@ -59,6 +59,7 @@ grammarly/       # Grammarly desktop app data
 
 # --- Local Development ---
 .env.local        # Local environment overrides
+.env.production
 *.local           # Local configuration files
 
 # === Customize Below for Your Project ===
