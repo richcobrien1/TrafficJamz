@@ -6,7 +6,7 @@ require('dotenv').config();
 mongoose.set('bufferTimeoutMS', 30000);
 
 // Use the exact same connection string that works in MongoDB Compass
-const MONGODB_URI = process.env.MONGO_URI;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const connectMongoDB = async () => {
   try {
