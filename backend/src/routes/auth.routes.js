@@ -46,7 +46,7 @@ router.post('/register', [
  * @desc Authenticate user & get token
  * @access Public
  */
-router.post('/debug-login', [
+router.post('/login', [
   body('email').isEmail().withMessage('Must be a valid email address'),
   body('password').exists().withMessage('Password is required'),
   validate
@@ -184,7 +184,7 @@ router.post('/setup-mfa',
 
 
 // Debug login endpoint that logs all steps
-router.post('/debug-login', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     console.log('Debug login attempt with:', {
       email: req.body.email,
