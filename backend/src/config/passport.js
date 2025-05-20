@@ -12,8 +12,9 @@ const JWT_SECRET = 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WW
 // Configure JWT strategy
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: JWT_SECRET
+  secretOrKey: process.env.JWT_SECRET || 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn'
 };
+
 
 // Create JWT strategy with simplified callback
 passport.use(
