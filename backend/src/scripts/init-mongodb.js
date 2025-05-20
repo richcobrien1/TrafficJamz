@@ -2,7 +2,7 @@
 const { MongoClient } = require('mongodb');
 
 async function initializeDatabase() {
-  const uri = 'mongodb+srv://richcobrien:1Topgun123@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&appName=subscribers';
+  const uri = process.env.MONGODB_URI;
   const client = new MongoClient(uri);
   
   try {
