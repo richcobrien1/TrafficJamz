@@ -46,7 +46,7 @@ router.post('/register', [
  * @desc Authenticate user & get token
  * @access Public
  */
-router.post('/login', [
+router.post('/debug-login', [
   body('email').isEmail().withMessage('Must be a valid email address'),
   body('password').exists().withMessage('Password is required'),
   validate
