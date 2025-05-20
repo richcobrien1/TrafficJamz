@@ -23,9 +23,10 @@ const getUserByEmail = async (email) => {
 // Configure JWT Strategy
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn' // Hardcoded secret
+  secretOrKey: 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn'
 };
-console.log('Using hardcoded JWT secret');
+console.log('Using hardcoded JWT secret:', jwtOptions.secretOrKey.substring(0, 5) + '...');
+
 
 // Example passport JWT strategy configuration
 passport.use(new JwtStrategy({
