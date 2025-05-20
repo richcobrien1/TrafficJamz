@@ -52,7 +52,21 @@ router.post('/login', [
   validate
 ], async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password }
+
+// Add test login endpoint that doesn't require database
+router.post('/test-login', (req, res) => {
+  console.log('Test login endpoint hit');
+  res.json({
+    success: true,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsImlhdCI6MTYxNjE1MTYxNn0.Tr3JHq7DpKR9ULxB3Df8Z9oIIJcYlPvgUMkIKVjCrJQ',
+    user: {
+      user_id: 1,
+      email: req.body.email || 'test@example.com',
+      username: 'Test User'
+    }
+  });
+}) = req.body;
     const result = await userService.login(email, password);
     res.json({ success: true, ...result });
   } catch (error) {
