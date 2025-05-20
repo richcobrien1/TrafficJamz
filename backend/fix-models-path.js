@@ -1,54 +1,31 @@
-// backend/fix-models-path.js
+// backend/fix-auth-routes.js
 const fs = require('fs');
 
-// 1. Fix passport.js to use absolute path for models
-const passportJs = `
-const passport = require('passport');
-const { Strategy: JwtStrategy } = require('passport-jwt');
-const { ExtractJwt } = require('passport-jwt');
-
-// Use direct import without models
-console.log('Using simplified passport without models dependency');
-
-// Hardcoded JWT secret
-const JWT_SECRET = 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn';
-
-// Configure JWT strategy
-const jwtOptions = {
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: JWT_SECRET
-};
-
-// Create JWT strategy with simplified callback
-passport.use(
-  new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
-    try {
-      // Simply pass the JWT payload as the user
-      return done(null, { user_id: jwtPayload.sub, email: jwtPayload.email });
-    } catch (error) {
-      return done(error, false);
-    }
-  })
-);
-
-module.exports = passport;
-`;
-
-fs.writeFileSync('./src/config/passport.js', passportJs);
-console.log('✅ Updated passport.js to avoid models dependency');
-
-// 2. Create a simple auth route bypass
+// Fix the syntax error in auth.routes.js
 try {
   const authRoutesPath = './src/routes/auth.routes.js';
   if (fs.existsSync(authRoutesPath)) {
     let authRoutes = fs.readFileSync(authRoutesPath, 'utf8');
     
+    // Find and fix the syntax error
+    if (authRoutes.includes('const { email, password }')) {
+      authRoutes = authRoutes.replace(
+        'const { email, password }',
+        'const { email, password } = req.body'
+      );
+      
+      fs.writeFileSync(authRoutesPath, authRoutes);
+      console.log('✅ Fixed syntax error in auth.routes.js');
+    }
+    
     // Add a test login endpoint that doesn't require database
     if (!authRoutes.includes('/test-login')) {
-      authRoutes = authRoutes.replace(
-        /router\.post\(['"]\/login['"].*?\}/s,
-        `$&\n
-// Add test login endpoint that doesn't require database
+      // Find the end of the router definition
+      const routerEndIndex = authRoutes.lastIndexOf('module.exports = router');
+      
+      // Insert test login endpoint before module.exports
+      const testLoginRoute = `
+// Test login endpoint that doesn't require database
 router.post('/test-login', (req, res) => {
   console.log('Test login endpoint hit');
   res.json({
@@ -60,16 +37,21 @@ router.post('/test-login', (req, res) => {
       username: 'Test User'
     }
   });
-})`
-      );
+});
+
+`;
       
-      fs.writeFileSync(authRoutesPath, authRoutes);
-      console.log('✅ Added test login endpoint that doesn\'t require database');
+      const updatedAuthRoutes = authRoutes.slice(0, routerEndIndex) + 
+                               testLoginRoute + 
+                               authRoutes.slice(routerEndIndex);
+      
+      fs.writeFileSync(authRoutesPath, updatedAuthRoutes);
+      console.log('✅ Added test login endpoint');
     }
   }
 } catch (error) {
-  console.error('Error modifying auth routes:', error);
+  console.error('Error fixing auth routes:', error);
 }
 
-console.log('\n🔧 Path issues fixed!');
+console.log('\n🔧 Syntax error fixed!');
 console.log('Deploy with: vercel --prod');
