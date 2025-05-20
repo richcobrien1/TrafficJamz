@@ -52,7 +52,7 @@ router.post('/login', [
   validate
 ], async (req, res) => {
   try {
-    const { email, password }
+    const { email, password } = req.body
 
 // Add test login endpoint that doesn't require database
 router.post('/test-login', (req, res) => {
