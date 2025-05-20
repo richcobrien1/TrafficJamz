@@ -9,7 +9,7 @@ async function initializeDatabase() {
     await client.connect();
     console.log('Connected to MongoDB');
     
-    const db = client.db('subscribers');
+    const db = client.db('trafficjam');
     
     // Create groups collection
     console.log('Creating groups collection...');
