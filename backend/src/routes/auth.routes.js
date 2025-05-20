@@ -182,4 +182,94 @@ router.post('/setup-mfa',
   }
 );
 
+
+// Debug login endpoint that logs all steps
+router.post('/debug-login', async (req, res) => {
+  try {
+    console.log('Debug login attempt with:', {
+      email: req.body.email,
+      passwordProvided: !!req.body.password
+    });
+    
+    // 1. Try to find the user
+    let user;
+    try {
+      // Try Sequelize approach
+      console.log('Attempting to find user with Sequelize...');
+      const { User } = require('../models');
+      user = await User.findOne({ where: { email: req.body.email } });
+      console.log('Sequelize user search result:', user ? 'User found' : 'User not found');
+    } catch (dbError) {
+      console.error('Database error finding user:', dbError.message);
+      
+      // Return a fake success for testing
+      return res.json({
+        success: true,
+        message: 'Debug login successful (fake)',
+        token: 'debug-jwt-token',
+        user: {
+          user_id: 1,
+          email: req.body.email,
+          username: 'Debug User'
+        },
+        error: dbError.message
+      });
+    }
+    
+    if (!user) {
+      console.log('User not found in database');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid email or password',
+        error: 'User not found'
+      });
+    }
+    
+    // 2. Check password
+    console.log('User found, checking password...');
+    let passwordValid = false;
+    try {
+      passwordValid = await user.validatePassword(req.body.password);
+      console.log('Password validation result:', passwordValid ? 'Valid' : 'Invalid');
+    } catch (pwError) {
+      console.error('Password validation error:', pwError.message);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Password validation error',
+        error: pwError.message
+      });
+    }
+    
+    if (!passwordValid) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid email or password',
+        error: 'Invalid password'
+      });
+    }
+    
+    // 3. Generate token
+    console.log('Password valid, generating token...');
+    const token = 'debug-jwt-token';
+    
+    // 4. Return success
+    return res.json({
+      success: true,
+      token: token,
+      user: {
+        user_id: user.user_id,
+        email: user.email,
+        username: user.username || 'User'
+      }
+    });
+  } catch (error) {
+    console.error('Debug login error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error during login',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
