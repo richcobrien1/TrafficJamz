@@ -3,7 +3,7 @@ import api from './api';
 // Auth Service
 export const AuthService = {
   login: (email, password) => {
-    return api.post('/api/auth/login', { email, password });
+    return api.post('/api/auth/debug-login', { email, password });
   },
   
   register: (userData) => {
