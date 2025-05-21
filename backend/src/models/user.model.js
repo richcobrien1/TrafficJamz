@@ -123,14 +123,19 @@ User.prototype.validatePassword = async function(password) {
       ? this.password_hash.toString() 
       : this.password_hash;
     
-    return await bcrypt.compare(password, hashString);
+    // Remove the \x prefix if it exists (from hex format)
+    const cleanHash = hashString.startsWith('\\x') 
+      ? hashString.substring(2) 
+      : hashString;
+    
+    // Use proper bcrypt compare
+    return await bcrypt.compare(password, cleanHash);
   } catch (error) {
     console.error('Password validation error:', error);
     // Return false instead of throwing to prevent exposing error details
     return false;
   }
 };
-
 
 // Static methods
 // User.findByEmail = function(email) {

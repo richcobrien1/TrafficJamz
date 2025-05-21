@@ -57,16 +57,23 @@ class UserService {
    */
   async login(email, password) {
     try {
+      console.log('Login attempt for:', email);
+    
       // Find user by email
       const user = await User.findOne({ 
         where: { email } 
       });
+      console.log('User found:', user ? 'Yes' : 'No');
+      
       if (!user) {
         throw new Error('Invalid email or password');
       }
-  
+
       // Validate password
+      console.log('Validating password...');
       const isPasswordValid = await user.validatePassword(password);
+      console.log('Password validation result:', isPasswordValid ? 'Valid' : 'Invalid');
+      
       if (!isPasswordValid) {
         throw new Error('Invalid email or password');
       }
