@@ -52,10 +52,28 @@ router.post('/login', [
   validate
 ], async (req, res) => {
   try {
+    // Add debug logging here
+    console.log('Login attempt for:', req.body.email);
+    console.log('Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not set',
+      POSTGRES_HOST: process.env.POSTGRES_HOST
+    });
+    
     const { email, password } = req.body; // Extract from request body
+    
+    // Additional debug logging before calling userService
+    console.log('Calling userService.login with email:', email);
+    
     const result = await userService.login(email, password);
+    
+    // Log successful login
+    console.log('Login successful for:', email);
+    
     res.json({ success: true, ...result });
   } catch (error) {
+    // Log login failure with error details
+    console.error('Login error details:', error);
     res.status(401).json({ success: false, message: error.message });
   }
 });
