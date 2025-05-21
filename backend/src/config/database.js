@@ -30,8 +30,10 @@ let sequelize;
 
 if (isProduction) {
   // Production: Use Supabase connection
-  const connectionUrl = process.env.POSTGRES_USER_POSTGRES_URL || 
-                      'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
+  // const connectionUrl = process.env.POSTGRES_USER_POSTGRES_URL || 
+  //                     'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
+  // Direct connection instead of pooler
+  const connectionUrl = 'postgres://postgres:tMRyyxjADUl63z44@db.nrlaqkpojtvvheosnpaz.supabase.co:5432/postgres?sslmode=no-verify';
 
   console.log('=====     Using production database connection     =====');
 
