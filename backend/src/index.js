@@ -6,12 +6,14 @@ const passport = require('passport');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const mongoose = require('mongoose');
-const http = require('http') ; // Added for WebSocket support
+const http = require('http'); // Added for WebSocket support
 const socketIo = require('socket.io'); // You'll need to install this package
 
 // Load environment variables
 dotenv.config();
+
+// Import the enhanced MongoDB connection module
+const { connectMongoDB, isMongoDBConnected, mongoose } = require('./config/mongodb');
 
 // Initialize Express app
 const app = express();
@@ -20,7 +22,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Create HTTP server for WebSocket support
-const server = http.createServer(app) ;
+const server = http.createServer(app);
 
 // Set trust proxy (already correctly placed)
 app.set('trust proxy', 1);
@@ -36,10 +38,6 @@ app.use(compression()); // Compress responses
 
 // ===== ADD HEADER LOGGER HERE =====
 app.use((req, res, next) => {
-  // res.setHeader('Access-Control-Allow-Origin', 'https://jamz-static-test-build.vercel.app');
-  // res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); // Add other allowed methods
-  // res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Add other allowed headers
-  // next();
   console.log("\n=== INCOMING REQUEST HEADERS ===");
   console.log("Method:", req.method);
   console.log("URL:", req.url);
@@ -61,10 +59,9 @@ const allowedOrigins = [
   'ionic://trafficjam.v2u.us'
 ];
 
-
 // Apply CORS middleware before other middleware and routes
 app.use(cors({
-  origin: function (origin, callback ) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
@@ -86,28 +83,6 @@ app.use(cors({
 // Explicitly handle OPTIONS requests for all routes
 app.options('*', cors());
 
-// app.use(cors({
-//   origin: function (origin, callback) {
-//     // Allow requests with no origin (mobile apps, curl, etc.)
-//     if (!origin) return callback(null, true);
-    
-//     if (allowedOrigins.includes(origin)) {
-//       callback(null, true);
-//     } else {
-//       console.log('Blocked CORS for origin:', origin);
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   },
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-//   credentials: true,
-//   preflightContinue: false, // Disable preflight caching
-//   optionsSuccessStatus: 204 // Legacy browsers choke on 204
-// }));
-
-// // Explicitly handle OPTIONS requests for all routes
-// app.options('*', cors());
-
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
 app.use(helmet({
@@ -125,7 +100,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   // Disable crossOriginEmbedderPolicy for CORS to work properly
   crossOriginEmbedderPolicy: false
-}) );
+}));
 
 // Enhanced Rate limiting configuration
 const limiter = rateLimit({
@@ -167,7 +142,7 @@ const io = socketIo(server, {
   },
   // For audio streaming, increase ping timeout
   pingTimeout: 60000,
-}) ;
+});
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -257,6 +232,29 @@ function setupServer() {
     }
   });
 
+  // Add MongoDB test endpoint
+  app.get('/api/mongodb-test', async (req, res) => {
+    try {
+      const mongoStatus = isMongoDBConnected();
+      
+      res.json({
+        success: true,
+        connected: mongoStatus,
+        connectionState: mongoose.connection.readyState,
+        stateDescription: getMongoConnectionStateDescription(mongoose.connection.readyState),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('MongoDB test error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'MongoDB test failed',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Use routes
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
@@ -272,6 +270,8 @@ function setupServer() {
       status: 'ok', 
       timestamp: new Date(),
       mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      mongodb_state: getMongoConnectionStateDescription(mongoose.connection.readyState),
+      postgres: sequelize.authenticate().then(() => true).catch(() => false) ? 'connected' : 'disconnected',
       socketio: io ? 'initialized' : 'not initialized'
     });
   });
@@ -308,53 +308,52 @@ function setupServer() {
     res.status(statusCode).json(errorResponse);
   });
 
+  // Debug endpoints to verify routing
+  app.get('/debug-routes', (req, res) => {
+    const routes = [];
+    
+    // Extract routes from Express app
+    app._router.stack.forEach(middleware => {
+      if (middleware.route) {
+        // Routes registered directly on the app
+        routes.push({
+          path: middleware.route.path,
+          methods: Object.keys(middleware.route.methods)
+        });
+      } else if (middleware.name === 'router') {
+        // Router middleware
+        middleware.handle.stack.forEach(handler => {
+          if (handler.route) {
+            routes.push({
+              path: middleware.regexp.toString() + handler.route.path,
+              methods: Object.keys(handler.route.methods)
+            });
+          }
+        });
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Debug routes',
+      routes: routes,
+      env: process.env.NODE_ENV,
+      baseUrl: req.baseUrl,
+      originalUrl: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Simple test endpoint at root level
+  app.get('/hello', (req, res) => {
+    res.json({
+      message: 'Hello from API',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // 404 handler
-  
-// Debug endpoints to verify routing
-app.get('/debug-routes', (req, res) => {
-  const routes = [];
-  
-  // Extract routes from Express app
-  app._router.stack.forEach(middleware => {
-    if (middleware.route) {
-      // Routes registered directly on the app
-      routes.push({
-        path: middleware.route.path,
-        methods: Object.keys(middleware.route.methods)
-      });
-    } else if (middleware.name === 'router') {
-      // Router middleware
-      middleware.handle.stack.forEach(handler => {
-        if (handler.route) {
-          routes.push({
-            path: middleware.regexp.toString() + handler.route.path,
-            methods: Object.keys(handler.route.methods)
-          });
-        }
-      });
-    }
-  });
-  
-  res.json({
-    success: true,
-    message: 'Debug routes',
-    routes: routes,
-    env: process.env.NODE_ENV,
-    baseUrl: req.baseUrl,
-    originalUrl: req.originalUrl,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Simple test endpoint at root level
-app.get('/hello', (req, res) => {
-  res.json({
-    message: 'Hello from API',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.use((req, res) => {
+  app.use((req, res) => {
     res.status(404).json({
       success: false,
       message: 'Route not found'
@@ -368,41 +367,48 @@ app.use((req, res) => {
   if (process.env.NODE_ENV !== 'test') {
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`MongoDB connection state: ${getMongoConnectionStateDescription(mongoose.connection.readyState)}`);
     });
   }
 }
 
-// Connect to MongoDB before starting the server
-mongoose.set('bufferTimeoutMS', 30000); // Increase buffer timeout
+// Helper function to get human-readable MongoDB connection state
+function getMongoConnectionStateDescription(state) {
+  switch (state) {
+    case 0: return 'disconnected';
+    case 1: return 'connected';
+    case 2: return 'connecting';
+    case 3: return 'disconnecting';
+    default: return 'unknown';
+  }
+}
 
-// Get MongoDB URI from environment variables
-const MONGODB_URI = process.env.MONGODB_URI;
+// Start the application
+async function startApplication() {
+  try {
+    console.log('Starting application...');
+    
+    // First, try to connect to MongoDB
+    const mongoConnected = await connectMongoDB();
+    
+    if (mongoConnected) {
+      console.log('MongoDB connected successfully. Starting server with full functionality.');
+    } else {
+      console.warn('Failed to connect to MongoDB. Starting server with limited functionality.');
+    }
+    
+    // Setup routes and start server regardless of MongoDB connection status
+    // This ensures the application is resilient to database failures
+    setupServer();
+    
+  } catch (error) {
+    console.error('Application startup error:', error);
+    console.warn('Starting server with limited functionality due to startup error.');
+    setupServer();
+  }
+}
 
-console.log('Connecting to MongoDB: ', MONGODB_URI);
-
-mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 30000,
-})
-.then(() => {
-  console.log('MongoDB connected successfully');
-  // Set up connection event listeners
-  mongoose.connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err);
-  });
-  mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB disconnected');
-  });
-  
-  // Setup routes and start server after MongoDB connection is established
-  setupServer();
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-  console.log('Starting server without MongoDB connection...');
-  // Still start the server even if MongoDB fails to connect
-  setupServer();
-});
+// Start the application
+startApplication();
 
 module.exports = app;
