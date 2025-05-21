@@ -10,7 +10,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 const connectMongoDB = async () => {
   try {
-    console.log('Connecting to MongoDB...');
+    console.log('Connecting to MongoDB: ', MONGODB_URI);
     
     // Close any existing connections first
     if (mongoose.connection.readyState !== 0) {
