@@ -61,8 +61,10 @@ const allowedOrigins = [
   'ionic://trafficjam.v2u.us'
 ];
 
+
+// Apply CORS middleware before other middleware and routes
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: function (origin, callback ) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
@@ -75,13 +77,36 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Length', 'Authorization'],
   credentials: true,
-  preflightContinue: false, // Disable preflight caching
-  optionsSuccessStatus: 204 // Legacy browsers choke on 204
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Explicitly handle OPTIONS requests for all routes
 app.options('*', cors());
+
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     // Allow requests with no origin (mobile apps, curl, etc.)
+//     if (!origin) return callback(null, true);
+    
+//     if (allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       console.log('Blocked CORS for origin:', origin);
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   credentials: true,
+//   preflightContinue: false, // Disable preflight caching
+//   optionsSuccessStatus: 204 // Legacy browsers choke on 204
+// }));
+
+// // Explicitly handle OPTIONS requests for all routes
+// app.options('*', cors());
 
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
