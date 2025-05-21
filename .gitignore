@@ -29,7 +29,6 @@ Desktop.ini          # Windows folder customization
 # --- Dependency Directories ---
 node_modules/       # Node.js packages
 vendor/            # Composer dependencies
-.env               # Environment variables (critical to exclude!)
 
 # --- Build Outputs ---
 /public            # Static site generators (Hugo, Jekyll)
@@ -59,7 +58,6 @@ grammarly/       # Grammarly desktop app data
 
 # --- Local Development ---
 .env.local        # Local environment overrides
-.env.production
 *.local           # Local configuration files
 
 # === Customize Below for Your Project ===
