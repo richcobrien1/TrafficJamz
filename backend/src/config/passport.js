@@ -9,7 +9,7 @@ console.log('Using simplified passport without models dependency');
 // Configure JWT strategy
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.JWT_SECRET || 'Jsb8va+rlHbnyTSr3716BQ==ytOwTrPS8gkZPq89dz2KOYll5S1PGiRM57WWKPCn'
+  secretOrKey: process.env.JWT_SECRET || 'eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJUcmFmZmljSmFtIiwiVXNlcm5hbWUiOiJWMlUiLCJleHAiOjE3MTY1NjcyMzR9'
 };
 
 
