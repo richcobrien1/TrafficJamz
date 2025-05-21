@@ -57,6 +57,7 @@ grammarly/       # Grammarly desktop app data
 *.backup          # File backups
 
 # --- Local Development ---
+.env
 .env.local        # Local environment overrides
 *.local           # Local configuration files
 

@@ -2,6 +2,7 @@
 /node_modules
 
 # --- Local Development ---
+.env
 .env.local*        # Local environment overrides
 *.local*           # Local configuration files
 
