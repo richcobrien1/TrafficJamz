@@ -31,15 +31,22 @@ let sequelize;
 if (isProduction) {
   // Production: Use Supabase connection
   const connectionUrl = process.env.POSTGRES_USER_POSTGRES_URL || 
-                       'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
-  
+                      'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
+
   console.log('=====     Using production database connection     =====');
-  
+
   sequelize = new Sequelize(connectionUrl, {
     dialect: 'postgres',
     dialectModule: require('pg'),
-    logging: console.log
+    logging: console.log,
+    dialectOptions: {  // Add this line to include the SSL options
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
   });
+
 } else {
   // Development: Use localhost connection
   console.log('=====     Using development database connection     =====');
