@@ -1,1 +1,8 @@
+# dependencies
+/node_modules
+
+# --- Local Development ---
+.env.local*        # Local environment overrides
+*.local*           # Local configuration files
+
 .vercel
