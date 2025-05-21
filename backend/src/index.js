@@ -348,11 +348,12 @@ app.use((req, res) => {
 }
 
 // Connect to MongoDB before starting the server
-console.log('Connecting to MongoDB...');
 mongoose.set('bufferTimeoutMS', 30000); // Increase buffer timeout
 
 // Get MongoDB URI from environment variables
 const MONGODB_URI = process.env.MONGODB_URI;
+
+console.log('Connecting to MongoDB: ', MONGODB_URI);
 
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 30000,
