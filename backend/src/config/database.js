@@ -29,24 +29,32 @@ console.log('=====     Using SSL for database connection:', isProduction);
 let sequelize;
 
 if (isProduction) {
-  // Production: Use Supabase connection
-  // const connectionUrl = process.env.POSTGRES_USER_POSTGRES_URL || 
-  //                     'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
   // Direct connection instead of pooler
-  const connectionUrl = 'postgres://postgres:tMRyyxjADUl63z44@db.nrlaqkpojtvvheosnpaz.supabase.co:5432/postgres?sslmode=no-verify';
-  console.log('=====     Using production database connection     =====');
+  // const connectionUrl = 'postgres://postgres:tMRyyxjADUl63z44@db.nrlaqkpojtvvheosnpaz.supabase.co:5432/postgres?sslmode=no-verify';
+  // console.log('=====     Using production database connection     =====');
+
+  // Production: Use Supabase connection pooler with SSL parameters
+  const connectionUrl = 'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=no-verify';
+
+  console.log('=====     Using production database connection with pooler     =====');
 
   sequelize = new Sequelize(connectionUrl, {
     dialect: 'postgres',
     dialectModule: require('pg'),
-    logging: console.log,
-    dialectOptions: {  // Add this line to include the SSL options
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    }
+    logging: console.log
   });
+  
+  // sequelize = new Sequelize(connectionUrl, {
+  //   dialect: 'postgres',
+  //   dialectModule: require('pg'),
+  //   logging: console.log,
+  //   dialectOptions: {  // Add this line to include the SSL options
+  //     ssl: {
+  //       require: true,
+  //       rejectUnauthorized: false
+  //     }
+  //   }
+  // });
 
 } else {
   // Development: Use localhost connection
