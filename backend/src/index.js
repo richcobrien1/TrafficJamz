@@ -116,6 +116,13 @@ app.use('/api/', limiter);
 // Initialize Passport
 app.use(passport.initialize());
 
+// Debugging only, Add this near the top of your index.js file
+const path = require('path');
+console.log('Current directory:', __dirname);
+console.log('Resolved routes path:', path.resolve(__dirname, 'routes'));
+console.log('Routes directory exists:', require('fs').existsSync(path.resolve(__dirname, 'routes')));
+
+
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
