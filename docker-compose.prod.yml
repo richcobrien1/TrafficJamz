@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - IS_LOCAL=false
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - app-network
+
+  webrtc:
+    build:
+      context: .
+      dockerfile: docker/webrtc/Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - IS_LOCAL=false
+      - MEDIASOUP_WORKERS=3
+      - RTC_MIN_PORT=10000
+      - RTC_MAX_PORT=59999
+      - API_ENDPOINT=http://api:3000
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    ports:
+      - "10000-59999:10000-59999/udp"
+    networks:
+      - app-network
+    depends_on:
+      - api
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile.prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    depends_on:
+      - api
+      - webrtc
+
+networks:
+  app-network:
+    driver: bridge

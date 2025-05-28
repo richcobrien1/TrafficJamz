@@ -1,0 +1,37 @@
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Install dependencies for building
+RUN apk add --no-cache python3 make g++ linux-headers
+
+# Copy package files
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
+RUN npm ci --only=production
+
+# Copy source code
+COPY backend/src ./src
+COPY backend/config ./config
+COPY shared ./shared
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy built node modules and app files from builder stage
+COPY --from=builder /app/backend/node_modules ./node_modules
+COPY --from=builder /app/backend/src ./src
+COPY --from=builder /app/backend/config ./config
+COPY --from=builder /app/backend/shared ./shared
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV IS_LOCAL=false
+
+# Expose API port
+EXPOSE 3000
+
+# Start the API service
+CMD ["node", "src/api/server.js"]
