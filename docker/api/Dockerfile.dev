@@ -1,0 +1,27 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies for development
+RUN apk add --no-cache python3 make g++ linux-headers
+
+# Copy package files
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
+RUN npm install
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV IS_LOCAL=true
+
+# Return to app directory
+WORKDIR /app
+
+# Expose API port
+EXPOSE 3000
+
+# Use nodemon for hot reloading in development
+RUN npm install -g nodemon
+
+# Start the API service with hot reloading
+CMD ["nodemon", "--watch", "backend/src", "backend/src/api/server.js"]

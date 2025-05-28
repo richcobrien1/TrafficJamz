@@ -1,0 +1,31 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies for mediasoup and development
+RUN apk add --no-cache python3 make g++ linux-headers
+
+# Copy package files
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
+RUN npm install
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV IS_LOCAL=true
+ENV MEDIASOUP_WORKERS=2
+ENV RTC_MIN_PORT=10000
+ENV RTC_MAX_PORT=10099
+
+# Return to app directory
+WORKDIR /app
+
+# Expose WebRTC port and RTC ports range
+EXPOSE 3001
+EXPOSE 10000-10099/udp
+
+# Use nodemon for hot reloading in development
+RUN npm install -g nodemon
+
+# Start the WebRTC service with hot reloading
+CMD ["nodemon", "--watch", "backend/src", "backend/src/webrtc/server.js"]
