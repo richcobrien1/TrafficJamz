@@ -1,0 +1,44 @@
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Install dependencies for building mediasoup
+RUN apk add --no-cache python3 make g++ linux-headers
+
+# Copy package files
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
+RUN npm ci --only=production
+
+# Copy source code
+COPY backend/src ./src
+COPY backend/config ./config
+COPY shared ./shared
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install runtime dependencies for mediasoup
+RUN apk add --no-cache python3 make g++ linux-headers
+
+# Copy built node modules and app files from builder stage
+COPY --from=builder /app/backend/node_modules ./node_modules
+COPY --from=builder /app/backend/src ./src
+COPY --from=builder /app/backend/config ./config
+COPY --from=builder /app/backend/shared ./shared
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV IS_LOCAL=false
+ENV MEDIASOUP_WORKERS=3
+ENV RTC_MIN_PORT=10000
+ENV RTC_MAX_PORT=59999
+
+# Expose WebRTC port and RTC ports range
+EXPOSE 3001
+EXPOSE 10000-59999/udp
+
+# Start the WebRTC service
+CMD ["node", "src/webrtc/server.js"]

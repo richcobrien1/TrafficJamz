@@ -1,0 +1,22 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY frontend/package*.json ./frontend/
+WORKDIR /app/frontend
+RUN npm install
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV REACT_APP_API_URL=http://localhost:3000
+ENV REACT_APP_WEBRTC_URL=http://localhost:3001
+
+# Return to app directory
+WORKDIR /app
+
+# Expose frontend development server port
+EXPOSE 8080
+
+# Start the frontend development server with hot reloading
+CMD ["npm", "--prefix", "frontend", "start"]
