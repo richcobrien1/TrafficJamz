@@ -1,4 +1,4 @@
-# Subscriber
+# Subscriber - TrafficJamz
 
 Main service is providing a group of subscribed-connected active users with audio communications including music to be able in real-time hear and speak to each other anytime.
 
