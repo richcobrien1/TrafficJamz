@@ -1,4 +1,4 @@
-# Detailed Requirements for Group Audio Communication App
+# Detailed Requirements for Group Audio Communication App - TrafficJamz
 
 ## Overview
 This document outlines the detailed requirements for a subscription-based group audio communication and location tracking application. The application is designed for groups of users who need to stay connected via audio and track each other's locations in real-time, similar to Polaris 'Ride Command+'.
