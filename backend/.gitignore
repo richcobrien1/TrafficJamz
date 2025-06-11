@@ -5,5 +5,3 @@
 .env
 .env.local*        # Local environment overrides
 *.local*           # Local configuration files
-
-.vercel
