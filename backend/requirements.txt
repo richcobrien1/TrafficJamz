@@ -4,7 +4,7 @@ bcrypt
 pymongo
 sqlalchemy
 redis
-psycopg2
+psycopg2-binary
 gunicorn
 influxdb-client
 supabase
