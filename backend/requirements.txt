@@ -1,0 +1,17 @@
+flask
+requests
+bcrypt
+pymongo
+sqlalchemy
+redis
+psycopg2
+gunicorn
+influxdb-client
+supabase
+jwt
+geopy
+mediasoup
+socketio
+stripe
+uuid
+winston
