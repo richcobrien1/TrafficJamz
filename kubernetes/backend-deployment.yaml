@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trafficjamz-backend-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: trafficjamz-backend
+  template:
+    metadata:
+      labels:
+        app: trafficjamz-backend
+    spec:
+      containers:
+      - name: trafficjamz-backend
+        image: trafficjamz-backend:latest
+        ports:
+        - containerPort: 5000

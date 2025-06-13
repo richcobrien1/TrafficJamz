@@ -1,17 +1,17 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Use Node.js as the base image
+FROM node:16
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
+# Copy backend code into the container
 COPY . /app
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN npm install
 
 # Expose port 5000
 EXPOSE 5000
 
-# Run app.py when the container launches
-CMD ["python3", "backend/app.py"]
+# Start the backend server
+CMD ["node", "src/index.js"]
