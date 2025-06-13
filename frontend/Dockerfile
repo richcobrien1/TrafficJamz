@@ -4,17 +4,22 @@ FROM ubuntu:20.04
 # Set the working directory in the container
 WORKDIR /app
 
-# Install Node.js and npm
-RUN apt-get update && apt-get install -y nodejs npm
-
 # Copy the current directory contents into the container
 COPY . /app
 
-# Install dependencies
-RUN npm install
+# Set non-interactive mode to prevent manual timezone selection
+ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
+
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y nodejs npm tzdata && \
+    ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
+
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y nodejs npm
 
 # Build the frontend
-RUN npm run build
+RUN npm install && npm run build
 
 # Expose port 3000
 EXPOSE 3000
