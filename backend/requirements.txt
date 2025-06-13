@@ -13,4 +13,3 @@ geopy
 socketio
 stripe
 uuid
-winston
