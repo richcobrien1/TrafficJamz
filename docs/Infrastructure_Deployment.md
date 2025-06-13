@@ -13,7 +13,7 @@ cd Jamz
 Navigate to the frontend directory and create a Dockerfile:
 ```
 # Use an official Node.js runtime as a parent image
-FROM node:16
+FROM ubuntu:20.04
 
 # Set the working directory in the container
 WORKDIR /app
@@ -36,7 +36,7 @@ CMD ["npm", "start"]
 Navigate to the backend directory and create a Dockerfile:
 ```
 # Use an official Node.js runtime as a parent image
-FROM node:16
+FROM ubuntu:20.04
 
 # Set the working directory in the container
 WORKDIR /app
