@@ -1,5 +1,5 @@
-# Use Node.js as the base image
-FROM node:16
+# Use an official Node.js runtime as a parent image
+FROM ubuntu:20.04
 
 # Set the working directory
 WORKDIR /app
