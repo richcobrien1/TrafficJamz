@@ -127,3 +127,12 @@ curl -sSL http://$WSL_IP:6443 || {
 }
 
 echo "✅ Kubernetes setup complete with modified Calico!"
+
+echo "✅ Deploying TrafficJamz Application..."
+kubectl apply -f frontend-deployment.yaml
+kubectl apply -f backend-deployment.yaml
+kubectl apply -f frontend-service.yaml
+kubectl apply -f backend-service.yaml
+
+echo "🚀 TrafficJam setup complete!"
+

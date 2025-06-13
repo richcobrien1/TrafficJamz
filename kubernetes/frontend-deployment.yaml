@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trafficjamz-frontend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trafficjamz-frontend
+  template:
+    metadata:
+      labels:
+        app: trafficjamz-frontend
+    spec:
+      containers:
+      - name: trafficjamz-frontend
+        image: trafficjamz-frontend:latest
+        ports:
+        - containerPort: 3000
