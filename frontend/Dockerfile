@@ -1,10 +1,13 @@
-# Use an official Node.js runtime as a parent image
+# Use Ubuntu 20.04 as the base image
 FROM ubuntu:20.04
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y nodejs npm
+
+# Copy the current directory contents into the container
 COPY . /app
 
 # Install dependencies
