@@ -10,7 +10,7 @@ COPY . /app
 RUN apt-get update && apt-get install -y python3 python3-pip
 
 # Install dependencies
-RUN pip install invoke
+RUN python3 -m pip install invoke
 RUN npm install && npm rebuild mediasoup
 
 
