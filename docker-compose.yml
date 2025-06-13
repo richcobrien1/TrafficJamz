@@ -1,65 +1,10 @@
-version: '3.8'
-
+version: '3'
 services:
-  api:
-    build:
-      context: .
-      dockerfile: docker/api/Dockerfile.dev
-    volumes:
-      - ./backend:/app/backend
-      - ./shared:/app/shared
-    env_file: .env
-    environment:
-      - NODE_ENV=development
-      - IS_LOCAL=true
+  frontend:
+    image: trafficjamz-frontend
     ports:
       - "3000:3000"
-    networks:
-      - app-network
-
-  webrtc:
-    build:
-      context: .
-      dockerfile: docker/webrtc/Dockerfile.dev
-    volumes:
-      - ./backend:/app/backend
-      - ./shared:/app/shared
-    env_file: .env
-    environment:
-      - NODE_ENV=development
-      - IS_LOCAL=true
-      - MEDIASOUP_WORKERS=2
-      - RTC_MIN_PORT=10000
-      - RTC_MAX_PORT=10099
-      - API_ENDPOINT=http://api:3000
+  backend:
+    image: trafficjamz-backend
     ports:
-      - "3001:3001"
-      - "10000-10099:10000-10099/udp"
-    networks:
-      - app-network
-    depends_on:
-      - api
-
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile.dev
-    volumes:
-      - ./frontend:/app/frontend
-      - ./shared:/app/shared
-    env_file: .env
-    environment:
-      - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:3000
-      - REACT_APP_WEBRTC_URL=http://localhost:3001
-    ports:
-      - "8080:8080"
-    networks:
-      - app-network
-    depends_on:
-      - api
-      - webrtc
-
-networks:
-  app-network:
-    driver: bridge
+      - "5000:5000"
