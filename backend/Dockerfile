@@ -7,8 +7,12 @@ WORKDIR /app
 # Copy backend code into the container
 COPY . /app
 
+RUN apt-get update && apt-get install -y python3 python3-pip
+
 # Install dependencies
-RUN npm install
+RUN pip install invoke
+RUN npm install && npm rebuild mediasoup
+
 
 # Expose port 5000
 EXPOSE 5000

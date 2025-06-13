@@ -134,5 +134,8 @@ kubectl apply -f backend-deployment.yaml
 kubectl apply -f frontend-service.yaml
 kubectl apply -f backend-service.yaml
 
-echo "🚀 TrafficJam setup complete!"
+kubectl get pods
+kubectl get services
+
+echo "🚀 TrafficJam cluster hub and nodes setup complete!"
 
