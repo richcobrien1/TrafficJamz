@@ -47,7 +47,7 @@
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
     "kafkajs": "^2.2.4",
-    "mediasoup": "^3.13.14",
+    "mediasoup": "^3.16.0",
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.0",
     "morgan": "^1.10.0",
