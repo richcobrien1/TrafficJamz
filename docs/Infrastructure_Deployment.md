@@ -110,8 +110,83 @@ requests
 socketio
 mapbox-sdk
 ```
-## Step 5: Create Kubernetes Cluster Setup on Ubuntu with Calico script
-Create script file kubernetes-cluster-ubuntu-calico.sh file
+## Step 6: Create Kubernetes Deployment Files
+Create a frontend-deployment.yaml file for the frontend Kubernetes deployment:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trafficjamz-frontend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trafficjamz-frontend
+  template:
+    metadata:
+      labels:
+        app: trafficjamz-frontend
+    spec:
+      containers:
+      - name: trafficjamz-frontend
+        image: trafficjamz-frontend:latest
+        ports:
+        - containerPort: 3000
+```
+Create a backend-deployment.yaml file for the backend Kubernetes deployment:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trafficjamz-backend-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: trafficjamz-backend
+  template:
+    metadata:
+      labels:
+        app: trafficjamz-backend
+    spec:
+      containers:
+      - name: trafficjamz-backend
+        image: trafficjamz-backend:latest
+        ports:
+        - containerPort: 5000
+```
+Create a frontend-service.yaml file for the frontend Kubernetes service:
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: trafficjamz-frontend-service
+spec:
+  selector:
+    app: trafficjamz-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
+```
+Create a backend-service.yaml file for the backend Kubernetes service:
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: trafficjamz-backend-service
+spec:
+  selector:
+    app: trafficjamz-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
+```
+## Step 6: Create Kubernetes Cluster Setup on Ubuntu with Calico script
+Create script file kubernetes-cluster-ubuntu-calico.sh file 
 ```
 #!/bin/bash
 set -e  # Exit on errors
@@ -253,81 +328,6 @@ kubectl get pods
 kubectl get services
 
 echo "🚀 TrafficJam cluster hub and nodes setup complete!"
-```
-## Step 6: Create Kubernetes Deployment Files
-Create a frontend-deployment.yaml file for the frontend Kubernetes deployment:
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: trafficjamz-frontend-deployment
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: trafficjamz-frontend
-  template:
-    metadata:
-      labels:
-        app: trafficjamz-frontend
-    spec:
-      containers:
-      - name: trafficjamz-frontend
-        image: trafficjamz-frontend:latest
-        ports:
-        - containerPort: 3000
-```
-Create a backend-deployment.yaml file for the backend Kubernetes deployment:
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: trafficjamz-backend-deployment
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: trafficjamz-backend
-  template:
-    metadata:
-      labels:
-        app: trafficjamz-backend
-    spec:
-      containers:
-      - name: trafficjamz-backend
-        image: trafficjamz-backend:latest
-        ports:
-        - containerPort: 5000
-```
-Create a frontend-service.yaml file for the frontend Kubernetes service:
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: trafficjamz-frontend-service
-spec:
-  selector:
-    app: trafficjamz-frontend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 3000
-  type: LoadBalancer
-```
-Create a backend-service.yaml file for the backend Kubernetes service:
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: trafficjamz-backend-service
-spec:
-  selector:
-    app: trafficjamz-backend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 5000
-  type: LoadBalancer
 ```
 ## Step 7: Install and Run Kubernetes, Deploy and Run Docker images for backend and frontend
 Deploy Docker images and run the deployment and service files:
