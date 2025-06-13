@@ -1,0 +1,1 @@
+docker build -t trafficjamz-frontend ./frontend
