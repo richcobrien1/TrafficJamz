@@ -10,6 +10,6 @@ influxdb-client
 supabase
 jwt
 geopy
-socketio
+python-socketio
 stripe
 uuid
