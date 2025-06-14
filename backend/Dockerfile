@@ -1,20 +1,20 @@
 # Use an optimized Node.js base image for faster builds
-FROM node:20 as builder
+FROM node:20 AS builder
 
 # Set the working directory
 WORKDIR /app
 
 # Copy package files separately to leverage Docker caching
-COPY /Jamz/package-lock.json package-lock.json
-COPY /Jamz/package.json package.json
+COPY package-lock.json package-lock.json
+COPY package.json package.json
+
+# Copy the rest of the backend code
+COPY . . 
 
 # COPY ../../package-lock.json package-lock.json
 # COPY ../../package.json package.json
 # RUN npm install --workspace backend
 RUN npm install --global npm@latest && npm install --workspace backend
-
-# Copy the rest of the backend code
-COPY . . 
 
 # Build the application (only if required)
 RUN npm run build
