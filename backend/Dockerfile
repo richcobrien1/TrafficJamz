@@ -10,7 +10,8 @@ COPY /Jamz/package.json package.json
 
 # COPY ../../package-lock.json package-lock.json
 # COPY ../../package.json package.json
-RUN npm install --workspace backend
+# RUN npm install --workspace backend
+RUN npm install --global npm@latest && npm install --workspace backend
 
 # Copy the rest of the backend code
 COPY . . 
