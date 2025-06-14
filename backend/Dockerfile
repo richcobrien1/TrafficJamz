@@ -5,7 +5,8 @@ FROM node:20 as builder
 WORKDIR /app
 
 # Copy package files separately to leverage Docker caching
-COPY package.json package-lock.json ./
+COPY ../../package-lock.json package-lock.json
+COPY ../../package.json package.json
 RUN npm install --workspace backend
 
 # Copy the rest of the backend code
@@ -24,17 +25,17 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
 # Install required system dependencies in one step (reducing layers)
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    ca-certificates \\
-    curl \\
-    tzdata \\
-    python3 \\
-    python3-pip \\
-    nodejs \\
-    npm && \\
-    update-ca-certificates && \\
-    ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \\
-    dpkg-reconfigure -f noninteractive tzdata
+RUN apt-get update && apt-get install -y --no-install-recommends \
+ ca-certificates \
+ curl \
+ tzdata \
+ python3 \
+ python3-pip \
+ nodejs \
+ npm && \
+ update-ca-certificates && \
+ ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && \
+ dpkg-reconfigure -f noninteractive tzdata
 
 # Copy backend code from the builder stage
 COPY --from=builder /app /app
