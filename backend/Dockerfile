@@ -16,7 +16,7 @@ COPY . .
 # COPY ../../package-lock.json package-lock.json
 # COPY ../../package.json package.json
 # RUN npm install --workspace backend
-RUN npm install --global npm@latest && npm install --workspace backend
+RUN npm install --global npm@latest && npm install --workspaces
 
 # Build the application (only if required)
 RUN npm run build
