@@ -4,6 +4,8 @@ FROM node:20 AS builder
 # Set the working directory
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y python3-pip
+
 # Copy package files separately to leverage Docker caching
 COPY package-lock.json package-lock.json
 COPY package.json package.json
