@@ -16,7 +16,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash
 RUN apt-get install -y nodejs 
 
 # Ensure latest npm version is installed
-RUN npm install --global npm@latest && npm install
+RUN npm install -g npm@latest
 
 # Copy the frontend source code into the container
 COPY . /app
