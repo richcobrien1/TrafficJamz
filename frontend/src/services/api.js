@@ -4,7 +4,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
     ? '/api'  // Relative path (no domain needed)
-    : 'http://localhost:3001'  // For local dev
+    : 'http://localhost:5000'  // For local dev
 });
 
 // Request interceptor to add auth token to requests
