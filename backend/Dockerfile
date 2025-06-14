@@ -5,8 +5,11 @@ FROM node:20 as builder
 WORKDIR /app
 
 # Copy package files separately to leverage Docker caching
-COPY ../../package-lock.json package-lock.json
-COPY ../../package.json package.json
+COPY /Jamz/package-lock.json package-lock.json
+COPY /Jamz/package.json package.json
+
+# COPY ../../package-lock.json package-lock.json
+# COPY ../../package.json package.json
 RUN npm install --workspace backend
 
 # Copy the rest of the backend code
