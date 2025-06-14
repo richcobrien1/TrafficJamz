@@ -37,7 +37,7 @@ ENV RTC_MIN_PORT=10000
 ENV RTC_MAX_PORT=59999
 
 # Expose WebRTC port and RTC ports range
-EXPOSE 3001
+EXPOSE 5000
 EXPOSE 10000-59999/udp
 
 # Start the WebRTC service

@@ -186,7 +186,7 @@ services:
       - RTC_MIN_PORT=10000
       - RTC_MAX_PORT=10099
     ports:
-      - "3001:3001"
+      - "5000:5000"
       - "10000-10099:10000-10099/udp"
     networks:
       - app-network
@@ -201,8 +201,8 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:3000
-      - REACT_APP_WEBRTC_URL=http://localhost:3001
+      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_WEBRTC_URL=http://localhost:5000
     ports:
       - "8080:8080"
     networks:
@@ -316,7 +316,7 @@ ENV RTC_MIN_PORT=10000
 ENV RTC_MAX_PORT=10099
 
 # Expose ports
-EXPOSE 3001
+EXPOSE 5000
 EXPOSE 10000-10099/udp
 
 # Use nodemon for hot reloading in development
@@ -350,7 +350,7 @@ const config = {
   // Endpoint registry - all service endpoints in one place
   endpoints: {
     api: process.env.API_ENDPOINT || 'http://localhost:3000',
-    webrtc: process.env.WEBRTC_ENDPOINT || 'http://localhost:3001',
+    webrtc: process.env.WEBRTC_ENDPOINT || 'http://localhost:5000',
     auth: process.env.AUTH_ENDPOINT || 'http://localhost:3002',
   },
   

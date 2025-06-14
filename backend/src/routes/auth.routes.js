@@ -18,7 +18,7 @@ const validate = (req, res, next) => {
  * @desc Register a new user
  * @access Public
  */
-router.post('/register', [
+router.post('/api/auth/register', [
   body('username').isLength({ min: 3, max: 30 }).withMessage('Username must be between 3 and 30 characters'),
   body('email').isEmail().withMessage('Must be a valid email address'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
@@ -46,7 +46,7 @@ router.post('/register', [
  * @desc Authenticate user & get token
  * @access Public
  */
-router.post('/login', [
+router.post('/api/auth/login', [
   body('email').isEmail().withMessage('Must be a valid email address'),
   body('password').exists().withMessage('Password is required'),
   validate
@@ -83,7 +83,7 @@ router.post('/login', [
  * @desc Refresh access token
  * @access Public
  */
-router.post('/refresh-token', [
+router.post('/api/auth/refresh-token', [
   body('refresh_token').exists().withMessage('Refresh token is required'),
   validate
 ], async (req, res) => {
@@ -101,7 +101,7 @@ router.post('/refresh-token', [
  * @desc Request password reset
  * @access Public
  */
-router.post('/forgot-password', [
+router.post('/api/auth/forgot-password', [
   body('email').isEmail().withMessage('Must be a valid email address'),
   validate
 ], async (req, res) => {
@@ -122,7 +122,7 @@ router.post('/forgot-password', [
  * @desc Reset password with token
  * @access Public
  */
-router.post('/reset-password', [
+router.post('/api/auth/reset-password', [
   body('token').exists().withMessage('Reset token is required'),
   body('email').isEmail().withMessage('Must be a valid email address'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
@@ -142,7 +142,7 @@ router.post('/reset-password', [
  * @desc Verify MFA code
  * @access Private
  */
-router.post('/verify-mfa', 
+router.post('/api/auth/verify-mfa', 
   passport.authenticate('jwt', { session: false }),
   [
     body('code').exists().withMessage('MFA code is required'),
@@ -169,7 +169,7 @@ router.post('/verify-mfa',
  * @desc Setup MFA for user
  * @access Private
  */
-router.post('/setup-mfa',
+router.post('/api/auth/setup-mfa',
   passport.authenticate('jwt', { session: false }),
   [
     body('method').isIn(['app', 'sms', 'email']).withMessage('Invalid MFA method'),

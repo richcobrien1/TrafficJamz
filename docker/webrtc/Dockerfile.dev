@@ -21,7 +21,7 @@ ENV RTC_MAX_PORT=10099
 WORKDIR /app
 
 # Expose WebRTC port and RTC ports range
-EXPOSE 3001
+EXPOSE 5000
 EXPOSE 10000-10099/udp
 
 # Use nodemon for hot reloading in development
