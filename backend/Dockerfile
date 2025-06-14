@@ -48,7 +48,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /app /app
 
 # Install Python dependencies efficiently
-RUN python3 -m pip install --no-cache-dir invoke
+# RUN python3 -m pip install --no-cache-dir invoke
+RUN python3 -m pip install --break-system-packages --no-cache-dir invoke
+
 
 # Expose port 5000
 EXPOSE 5000
