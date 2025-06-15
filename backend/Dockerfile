@@ -56,4 +56,4 @@ RUN python3 -m pip install --break-system-packages --no-cache-dir invoke
 EXPOSE 5000
 
 # Start the backend server
-CMD ["node", "src/index.js"]
+CMD ["node", "backend/src/index.js"]
