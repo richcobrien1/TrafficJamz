@@ -1,3 +1,7 @@
+// src/hooks/groups/useResolvedGroupRole.js
+// This hook resolves the user's role in a group, preferring client-side checks first,
+// then falling back to a Supabase RPC call if necessary.
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../services/client"; // assumes shared Supabase client
