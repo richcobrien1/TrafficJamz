@@ -1,14 +1,35 @@
-# docker-compose.yml
-# This file is used to define the services, networks, and volumes for the TrafficJamz application.
-# It includes configurations for both production and development environments.
+version: '3.8'
 
-version: '3'
 services:
-  frontend:
-    image: trafficjamz-frontend
-    ports:
-      - "3000:3000"
   backend:
-    image: trafficjamz-backend
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - IS_LOCAL=false
     ports:
       - "5000:5000"
+    restart: always
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile.prod
+    environment:
+      - NODE_ENV=production
+      - IS_LOCAL=false
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
