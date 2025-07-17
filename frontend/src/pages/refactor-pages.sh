@@ -26,8 +26,5 @@ mv -v Profile.js profile/
 mv -v NotFound.js misc/
 mv -v SubscriptionPlans.js misc/
 
-# Archive legacy/dev-only files
-mv -v TestIntegration.js __legacy__/
-
 echo "✅ Refactor complete."
 echo "🧊 New layout ready under /pages/"

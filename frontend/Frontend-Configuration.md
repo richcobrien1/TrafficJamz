@@ -623,7 +623,6 @@ import LocationTracking from './pages/LocationTracking';
 import Profile from './pages/Profile';
 import SubscriptionPlans from './pages/SubscriptionPlans';
 import ForgotPassword from './pages/ForgotPassword';
-import TestIntegration from './pages/TestIntegration';
 import NotFound from './pages/NotFound';
 import InvitationAccept from './pages/InvitationAccept';
 
@@ -687,11 +686,6 @@ function App() {
             <Route path="/subscription-plans" element={
               <ProtectedRoute>
                 <SubscriptionPlans />
-              </ProtectedRoute>
-            } />
-            <Route path="/test-integration" element={
-              <ProtectedRoute>
-                <TestIntegration />
               </ProtectedRoute>
             } />
             

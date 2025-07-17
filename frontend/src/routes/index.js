@@ -11,7 +11,6 @@ const Profile = lazy(() => import("../pages/profile/Profile"));
 const SubscriptionPlans = lazy(() => import("../pages/misc/SubscriptionPlans"));
 const InvitationAccept = lazy(() => import("../pages/groups/InvitationAccept"));
 const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword"));
-const TestIntegration = lazy(() => import("../__legacy__/TestIntegration"));
 const NotFound = lazy(() => import("../pages/misc/NotFound"));
 
 export const ROUTES = [
@@ -83,12 +82,6 @@ export const ROUTES = [
     name: "Accept Invitation",
     element: <InvitationAccept />,
     public: true,
-  },
-  {
-    path: "/sandbox/test-integration",
-    name: "Test Integration",
-    element: <TestIntegration />,
-    roles: ["ops"],
   },
   {
     path: "*",
