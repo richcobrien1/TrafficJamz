@@ -57,9 +57,13 @@ echo "🔍 Detecting WSL2 network interface..."
 WSL_IP=$(ip -o -4 addr show eth0 | awk '{print $4}' | cut -d/ -f1)
 echo "💡 Detected Node IP: $WSL_IP"
 
-echo "🛠 Ensuring kubelet binds to correct IP..."
-sudo sed -i "/^KUBELET_EXTRA_ARGS=/c\KUBELET_EXTRA_ARGS=--node-ip=$WSL_IP" /var/lib/kubelet/kubeadm-flags.env
-sudo systemctl restart kubelet
+if [ -f /var/lib/kubelet/kubeadm-flags.env ]; then
+    echo "🛠 Ensuring kubelet binds to correct IP..."
+    sudo sed -i "/^KUBELET_EXTRA_ARGS=/c\KUBELET_EXTRA_ARGS=--node-ip=$WSL_IP" /var/lib/kubelet/kubeadm-flags.env
+    sudo systemctl restart kubelet
+else
+    echo "⚠️ kubeadm-flags.env not found yet — deferring node IP binding until after kubeadm init."
+fi
 
 ### 🔟 Initialize Kubernetes Cluster
 echo "🚀 Initializing Kubernetes Cluster..."

@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: trafficjamz-frontend-service
 spec:
+  type: LoadBalancer
   selector:
     app: trafficjamz-frontend
   ports:
     - protocol: TCP
       port: 80
       targetPort: 3000
-  type: LoadBalancer
