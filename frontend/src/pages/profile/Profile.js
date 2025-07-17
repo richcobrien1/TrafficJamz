@@ -29,7 +29,7 @@ import {
   Security as SecurityIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts//AuthContext';
 
 const Profile = () => {
   const { currentUser, updateProfile, logout } = useAuth();
