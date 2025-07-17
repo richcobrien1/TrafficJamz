@@ -1,37 +1,45 @@
-FROM node:18-alpine as builder
+# docker/api/Dockerfile.prod
+# Production Dockerfile for the TrafficJamz API service
 
-WORKDIR /app
+# 🧱 Stage 1: Builder
+FROM node:18-alpine AS builder
 
-# Install dependencies for building
-RUN apk add --no-cache python3 make g++ linux-headers
-
-# Copy package files
-COPY backend/package*.json ./backend/
 WORKDIR /app/backend
+
+# Install build dependencies
+RUN apk add --no-cache python3 py3-pip make g++ linux-headers curl
+
+# Copy and install dependencies
+COPY backend/package*.json ./
 RUN npm ci --only=production
 
 # Copy source code
 COPY backend/src ./src
 COPY backend/config ./config
-COPY shared ./shared
+COPY shared ../shared
 
-# Production stage
+
+# 🚀 Stage 2: Production Runtime
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy built node modules and app files from builder stage
+# Copy built artifacts and runtime modules
 COPY --from=builder /app/backend/node_modules ./node_modules
 COPY --from=builder /app/backend/src ./src
 COPY --from=builder /app/backend/config ./config
 COPY --from=builder /app/backend/shared ./shared
 
-# Set environment variables
+# Set production environment variables
 ENV NODE_ENV=production
 ENV IS_LOCAL=false
 
 # Expose API port
 EXPOSE 3000
 
-# Start the API service
+# Healthcheck using curl (cleaner for Alpine)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start the API
 CMD ["node", "src/api/server.js"]
