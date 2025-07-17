@@ -1,27 +1,32 @@
+# docker/api/Dockerfile.dev
+# Development Dockerfile for the TrafficJamz API service
+
 FROM node:18-alpine
 
-WORKDIR /app
-
-# Install dependencies for development
-RUN apk add --no-cache python3 make g++ linux-headers
-
-# Copy package files
-COPY backend/package*.json ./backend/
+# Set working directory
 WORKDIR /app/backend
+
+# Install dependencies for development (native modules, Python tooling)
+RUN apk add --no-cache python3 py3-pip make g++ linux-headers
+
+# Copy package files and install dependencies
+COPY backend/package*.json ./
 RUN npm install
+
+# Copy source code
+COPY backend/src ./src
+COPY backend/config ./config
+COPY shared ../shared
 
 # Set environment variables
 ENV NODE_ENV=development
 ENV IS_LOCAL=true
 
-# Return to app directory
-WORKDIR /app
-
 # Expose API port
 EXPOSE 3000
 
-# Use nodemon for hot reloading in development
-RUN npm install -g nodemon
+# Install nodemon for hot reloading
+RUN npm install --save-dev nodemon
 
-# Start the API service with hot reloading
-CMD ["nodemon", "--watch", "backend/src", "backend/src/api/server.js"]
+# Start the API service with hot reload
+CMD ["npx", "nodemon", "--watch", "src", "src/api/server.js"]
