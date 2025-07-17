@@ -13,7 +13,26 @@ spec:
         app: trafficjamz-backend
     spec:
       containers:
-      - name: trafficjamz-backend
-        image: trafficjamz-backend:latest
-        ports:
-        - containerPort: 5000
+        - name: trafficjamz-backend
+          image: trafficjamz-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "5000"

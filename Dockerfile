@@ -1,3 +1,6 @@
+# Dockerfile
+# This Dockerfile is used to build and run the TrafficJamz application.
+
 # Use an optimized Node.js base image for faster builds
 FROM node:20 AS builder
 

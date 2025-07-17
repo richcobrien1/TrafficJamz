@@ -1,3 +1,7 @@
+# docker-compose.yml
+# This file is used to define the services, networks, and volumes for the TrafficJamz application.
+# It includes configurations for both production and development environments.
+
 version: '3'
 services:
   frontend:

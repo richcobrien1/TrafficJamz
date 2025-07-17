@@ -1,3 +1,7 @@
+# docker-compose.override.yml
+# This file is used to override the default docker-compose configuration for development purposes.
+# It includes services for Node.js API, PostgreSQL, MongoDB, Redis, Influx
+
 version: '3.8'
 
 services:
