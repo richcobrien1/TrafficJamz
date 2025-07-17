@@ -21,7 +21,6 @@ const AudioSession = lazy(() => import('./pages/sessions/AudioSession'));
 const LocationTracking = lazy(() => import('./pages/location/LocationTracking'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
 const SubscriptionPlans = lazy(() => import('./pages/misc/SubscriptionPlans'));
-const TestIntegration = lazy(() => import('./__legacy__/TestIntegration'));
 const NotFound = lazy(() => import('./pages/misc/NotFound'));
 
 // Theme setup
@@ -84,11 +83,6 @@ function App() {
                   <Route path="/subscription-plans" element={
                     <ProtectedRoute>
                       <SubscriptionPlans />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/sandbox/test-integration" element={
-                    <ProtectedRoute>
-                      <TestIntegration />
                     </ProtectedRoute>
                   } />
 
