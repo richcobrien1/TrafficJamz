@@ -39,8 +39,8 @@ import {
   Delete as DeleteIcon,
   ExitToApp as LeaveIcon
 } from '@mui/icons-material';
-import api from '../services/api'; // Adjust the path as needed to point to your api.js file
-import { useAuth } from '../contexts/AuthContext';
+import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
+import { useAuth } from '../../contexts/AuthContext';
 
 const GroupDetail = () => {
   const { groupId } = useParams();

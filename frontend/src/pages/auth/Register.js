@@ -1,3 +1,5 @@
+// frontend/src/pages/auth/Register.js
+
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { 
@@ -17,7 +19,7 @@ import {
   StepLabel
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Register = () => {
   const [activeStep, setActiveStep] = useState(0);
