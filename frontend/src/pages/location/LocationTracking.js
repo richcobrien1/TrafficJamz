@@ -50,8 +50,8 @@ import {
   Close as CloseIcon,
   People as PeopleIcon
 } from '@mui/icons-material';
-import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 

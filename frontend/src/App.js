@@ -1,4 +1,5 @@
-// src/App.js
+// frontend/src/App.js
+
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
@@ -6,8 +7,6 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-
-const location = useLocation();
 
 // Lazy-loaded pages
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -33,69 +32,70 @@ const theme = createTheme({
 });
 
 function App() {
+
+const location = useLocation();
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router basename="/">
-          <Suspense fallback={<div>Loading...</div>}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25 }}
-              >
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/auth/login" element={<Login />} />
-                  <Route path="/auth/register" element={<Register />} />
-                  <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/groups/invitation/:inviteId" element={<InvitationAccept />} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <Routes>
+                {/* Public routes */}
+                <Route path="/auth/login" element={<Login />} />
+                <Route path="/auth/register" element={<Register />} />
+                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                <Route path="/groups/invitation/:inviteId" element={<InvitationAccept />} />
 
-                  {/* Protected routes with optional role guards */}
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute allowedRoles={["agent", "field", "ops"]}>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/groups/:groupId" element={
-                    <ProtectedRoute>
-                      <GroupDetail />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/audio/:sessionId" element={
-                    <ProtectedRoute>
-                      <AudioSession />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/location/map" element={
-                    <ProtectedRoute>
-                      <LocationTracking />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/profile" element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/subscription-plans" element={
-                    <ProtectedRoute>
-                      <SubscriptionPlans />
-                    </ProtectedRoute>
-                  } />
+                {/* Protected routes with optional role guards */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute allowedRoles={["agent", "field", "ops"]}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/groups/:groupId" element={
+                  <ProtectedRoute>
+                    <GroupDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/audio/:sessionId" element={
+                  <ProtectedRoute>
+                    <AudioSession />
+                  </ProtectedRoute>
+                } />
+                <Route path="/location/map" element={
+                  <ProtectedRoute>
+                    <LocationTracking />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/subscription-plans" element={
+                  <ProtectedRoute>
+                    <SubscriptionPlans />
+                  </ProtectedRoute>
+                } />
 
-                  {/* Redirect root */}
-                  <Route path="/" element={<Navigate to="/dashboard" />} />
+                {/* Redirect root */}
+                <Route path="/" element={<Navigate to="/dashboard" />} />
 
-                  {/* Catch-all */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </motion.div>
-            </AnimatePresence>
-          </Suspense>
-        </Router>
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </Suspense>
       </AuthProvider>
     </ThemeProvider>
   );
