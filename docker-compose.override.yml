@@ -1,6 +1,5 @@
 # docker-compose.override.yml
-# This file is used to override the default docker-compose configuration for development purposes.
-# It includes services for Node.js API, PostgreSQL, MongoDB, Redis, Influx, Frontend
+# Optimized for fast backend/frontend iteration with hot reload
 
 services:
   frontend:
@@ -11,7 +10,7 @@ services:
       - "8080:8080"
     volumes:
       - ./frontend:/app/frontend
-      - /app/node_modules
+      - ./frontend/node_modules:/app/frontend/node_modules
     environment:
       - NODE_ENV=development
       - REACT_APP_API_URL=http://localhost:5000
@@ -22,18 +21,19 @@ services:
     depends_on:
       - api
 
-  # Node.js API Service
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/api/Dockerfile.dev
     ports:
       - "5000:5000"
     volumes:
-      - .:/app
-      - /app/node_modules
+      - ./backend:/app/backend
+      - ./shared:/app/backend/shared
+      - ./backend/node_modules:/app/backend/node_modules
     environment:
       - NODE_ENV=development
+      - IS_LOCAL=true
     depends_on:
       - postgres
       - mongodb
@@ -44,7 +44,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # PostgreSQL Database
   postgres:
     image: postgres:15
     ports:
@@ -59,7 +58,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # MongoDB Database
   mongodb:
     image: mongo:6
     ports:
@@ -70,7 +68,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
     ports:
@@ -81,7 +78,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # InfluxDB Time Series Database
   influxdb:
     image: influxdb:2.7
     ports:
@@ -90,7 +86,6 @@ services:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
       - DOCKER_INFLUXDB_INIT_PASSWORD=1Topgun123
-
       - DOCKER_INFLUXDB_INIT_ORG=audiogroupapp
       - DOCKER_INFLUXDB_INIT_BUCKET=location_data
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=qZrzdohA7sQ8aG5B2a203DW2h7zxjiGstrRCpXtSEdH-XQkvSxj8T5GQ4PN8d6inEL5HhqcwHPgRdwNe6Qs6BA==
@@ -100,7 +95,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Kafka Message Broker
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
     ports:
@@ -128,7 +122,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Kafka UI for management
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     ports:
@@ -143,7 +136,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Adminer for database management
   adminer:
     image: adminer:latest
     ports:
