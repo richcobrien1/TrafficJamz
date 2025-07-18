@@ -3,30 +3,33 @@
 
 FROM node:18-alpine
 
-# Set working directory
-WORKDIR /app/backend
+# Set working directory to the monorepo root
+WORKDIR /app
 
-# Install dependencies for development (native modules, Python tooling)
+# Install system dependencies
 RUN apk add --no-cache python3 py3-pip make g++ linux-headers
 
-# Copy package files and install dependencies
-COPY backend/package*.json ./
-RUN npm install
+# Copy workspace-aware package manifests
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
 
-# Copy source code
-COPY backend/src ./src
-COPY backend/config ./config
-COPY shared ../shared
+# Install full workspace dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy backend and shared code
+COPY backend ./backend
+COPY shared ./shared
+
+# Set working directory to backend for API launch
+WORKDIR /app/backend
 
 # Set environment variables
 ENV NODE_ENV=development
 ENV IS_LOCAL=true
 
-# Expose API port
-EXPOSE 3000
+# Expose dev API port
+EXPOSE 5000
 
-# Install nodemon for hot reloading
-RUN npm install --save-dev nodemon
-
-# Start the API service with hot reload
-CMD ["npx", "nodemon", "--watch", "src", "src/api/server.js"]
+# Launch API with hot reload on file change
+CMD ["sh", "-c", "npx nodemon --watch src src/api/server.js"]
