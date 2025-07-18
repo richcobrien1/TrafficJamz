@@ -25,7 +25,7 @@ import {
   Close as CloseIcon,
   Star as StarIcon
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SubscriptionPlans = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
