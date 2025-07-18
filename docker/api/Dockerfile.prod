@@ -9,37 +9,36 @@ WORKDIR /app/backend
 # Install build dependencies
 RUN apk add --no-cache python3 py3-pip make g++ linux-headers curl
 
-# Copy and install dependencies
+# Copy package manifests and install only production dependencies
 COPY backend/package*.json ./
 RUN npm ci --only=production
 
-# Copy source code
+# Copy backend source and shared modules
 COPY backend/src ./src
 COPY backend/config ./config
 COPY shared ../shared
 
-
-# 🚀 Stage 2: Production Runtime
+# 🚀 Stage 2: Runtime
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /app/backend
 
-# Copy built artifacts and runtime modules
+# Copy compiled app and node_modules from builder stage
 COPY --from=builder /app/backend/node_modules ./node_modules
 COPY --from=builder /app/backend/src ./src
 COPY --from=builder /app/backend/config ./config
 COPY --from=builder /app/backend/shared ./shared
 
-# Set production environment variables
+# Production environment flags
 ENV NODE_ENV=production
 ENV IS_LOCAL=false
 
-# Expose API port
-EXPOSE 3000
+# Expose app port
+EXPOSE 5000
 
-# Healthcheck using curl (cleaner for Alpine)
+# Healthcheck: simple curl probe to validate liveness
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD curl -f http://localhost:5000/health || exit 1
 
 # Start the API
 CMD ["node", "src/api/server.js"]
