@@ -1,3 +1,5 @@
+// frontend/src/pages/dashboard/Dashboard.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -39,8 +41,8 @@ import {
   Menu as MenuIcon,
   ExitToApp as LogoutIcon
 } from '@mui/icons-material';
-import api from '../services/api'; // Adjust the path as needed to point to your api.js file
-import { useAuth } from '../contexts/AuthContext';
+import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
+import { useAuth } from '../../contexts/AuthContext';
 
 const Dashboard = () => {
   const [groups, setGroups] = useState([]);

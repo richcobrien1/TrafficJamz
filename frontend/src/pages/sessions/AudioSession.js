@@ -37,8 +37,8 @@ import {
   Group as GroupIcon,
   ExitToApp as LeaveIcon
 } from '@mui/icons-material';
-import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AudioSession = () => {
   const { sessionId } = useParams();

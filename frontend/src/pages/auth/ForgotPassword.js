@@ -13,7 +13,7 @@ import {
   Alert
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
