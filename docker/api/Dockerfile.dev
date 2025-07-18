@@ -1,35 +1,26 @@
-# docker/api/Dockerfile.dev
-# Development Dockerfile for the TrafficJamz API service
+# Development Dockerfile for the TrafficJamz frontend service
 
 FROM node:18-alpine
 
-# Set working directory to the monorepo root
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache python3 py3-pip make g++ linux-headers
+# 🔧 Install dev tools
+RUN apk add --no-cache python3 make g++ curl
 
-# Copy workspace-aware package manifests
+# 📦 Copy dependencies
 COPY package*.json ./
-COPY backend/package*.json ./backend/
-COPY frontend/package*.json ./frontend/
-
-# Install full workspace dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy backend and shared code
-COPY backend ./backend
-COPY shared ./shared
+# 📁 Copy app source and public assets
+COPY src ./src
+COPY public ./public
 
-# Set working directory to backend for API launch
-WORKDIR /app/backend
-
-# Set environment variables
+# 🌐 Dev environment variables
 ENV NODE_ENV=development
 ENV IS_LOCAL=true
+ENV VITE_API_BASE=http://backend:5000/api
 
-# Expose dev API port
-EXPOSE 5000
+EXPOSE 3000
 
-# Launch API with hot reload on file change
-CMD ["sh", "-c", "npx nodemon --watch src src/api/server.js"]
+# 🚀 Launch Vite dev server
+CMD ["npm", "run", "dev"]
