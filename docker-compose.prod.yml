@@ -2,8 +2,6 @@
 # Production Docker Compose configuration for TrafficJamz application
 # This file defines services for API, WebRTC, Frontend, and Nginx with
 
-version: "3.9"
-
 services:
   api:
     build:

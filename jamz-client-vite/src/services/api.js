@@ -1,10 +1,11 @@
+// jamz-client-vite/src/services/api.js
+// This file sets up the API client using axios with interceptors for authentication
+
 import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? '/api'  // Relative path (no domain needed)
-    : 'http://localhost:5000'  // For local dev
+  baseURL: import.meta.env.VITE_API_BASE
 });
 
 // Request interceptor to add auth token to requests

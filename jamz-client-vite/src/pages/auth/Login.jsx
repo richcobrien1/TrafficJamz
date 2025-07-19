@@ -1,4 +1,4 @@
-// frontend/src/pages/auth/Login.js
+// jamz-client-vite/src/pages/auth/Login.jsx
 
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';

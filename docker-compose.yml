@@ -1,4 +1,6 @@
-version: '3.8'
+# Production Docker Compose configuration for TrafficJamz application
+# This file defines services for API, WebRTC, Frontend, and Nginx with
+# necessary configurations for a production environment.
 
 services:
   backend:
@@ -10,7 +12,7 @@ services:
       - PORT=5000
       - IS_LOCAL=false
     ports:
-      - "5000:5000"
+      - "5050:5000"
     restart: unless-stopped
     networks:
       - app-network
