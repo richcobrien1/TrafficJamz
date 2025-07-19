@@ -1,3 +1,6 @@
+// jamz-server/src/index.js
+// Main entry point for the TrafficJamz backend server
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -47,41 +50,34 @@ app.use((req, res, next) => {
 });
 // ===== END HEADER LOGGER =====
 
-// IMPORTANT: Apply CORS before Helmet
-// CORS configuration
-// Allow requests from specific origins
+// ===== CORS Configuration =====
 const allowedOrigins = [
-  'http://localhost:3000', // For local development
-  'https://jamz-v2u.vercel.app', // For production client
-  'https://jamz-static-test-build.vercel.app', // For static client test build
-  'https://trafficjam.v2u.us', // For production client
-  'capacitor://trafficjam.v2u.us',
-  'ionic://trafficjam.v2u.us'
+  'http://localhost:5173',           // Vite dev server
+  'https://trafficjam.v2u.us',       // Production client
+  'capacitor://trafficjam.v2u.us',   // iOS apps
+  'ionic://trafficjam.v2u.us'        // Android apps
 ];
 
-// Apply CORS middleware before other middleware and routes
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('Blocked CORS for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Length', 'Authorization'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
+const corsOptionsDelegate = function (req, callback) {
+  const origin = req.header('Origin');
 
-// Explicitly handle OPTIONS requests for all routes
-app.options('*', cors());
+  if (!origin || allowedOrigins.includes(origin)) {
+    callback(null, {
+      origin: origin || true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['Content-Length', 'Authorization'],
+      optionsSuccessStatus: 204
+    });
+  } else {
+    console.log('🔒 Blocked CORS for origin:', origin);
+    callback(new Error('Not allowed by CORS'));
+  }
+};
+
+app.use(cors(corsOptionsDelegate));         // Applies to all requests
+app.options('*', cors(corsOptionsDelegate)); // Handles preflight consistently
 
 // THEN apply Helmet after CORS
 // Enhanced security with Helmet - modified to be more permissive with CORS
@@ -135,9 +131,7 @@ const notificationRoutes = require('./routes/notifications.routes');
 const io = socketIo(server, {
   cors: {
     origin: [
-      'http://localhost:3000', // For local development
-      'https://jamz-v2u.vercel.app', // For production client
-      'https://jamz-static-test-build.vercel.app', // For static client test build
+      'http://localhost:5173', // For local development
       'https://trafficjam.v2u.us', // For production client
       'capacitor://trafficjam.v2u.us',  // For iOS apps
       'ionic://trafficjam.v2u.us', // For Android apps
