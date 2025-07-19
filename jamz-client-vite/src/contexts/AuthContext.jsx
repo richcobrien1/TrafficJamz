@@ -1,3 +1,6 @@
+// AuthContext.jsx
+// This file manages authentication state and provides methods for login, registration, and user management. 
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 
