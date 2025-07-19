@@ -1,27 +1,27 @@
-# Production Dockerfile for the TrafficJamz API service
+# Dockerfile for Production Environment
+# This Dockerfile sets up a production-ready environment for the TrafficJamz backend.
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# 🔧 Install minimal build deps
-RUN apk add --no-cache python3 py3-pip make g++ linux-headers curl
+# 🛠 Install build tools and Python
+RUN apk add --no-cache \
+  python3 \
+  py3-pip \
+  make \
+  g++ \
+  linux-headers \
+  curl
 
 # 📦 Copy backend files
-COPY package*.json ./
-COPY src ./src
+COPY jamz-server/package*.json ./
+COPY jamz-server/src ./src
+COPY jamz-server/public ./public
+COPY shared ./shared
 
-# ✅ Skip lockfile requirement
+# 🔧 Install dependencies
 RUN npm install --omit=dev
 
-ENV NODE_ENV=production
-ENV IS_LOCAL=false
-
-EXPOSE 5050
-
-# 🔍 Healthcheck ping
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:5050/health || exit 1
-
-# 🚀 App entrypoint — this file exists!
-CMD ["node", "src/index.js"]
+# 🚀 Start the server
+CMD ["npm", "start"]
