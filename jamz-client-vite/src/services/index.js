@@ -1,3 +1,6 @@
+// jamz-client-vite/src/services/index.js
+// This file aggregates all service modules for easier imports
+
 import api from './api';
 
 // Auth Service

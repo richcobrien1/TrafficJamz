@@ -358,6 +358,15 @@ function setupServer() {
     });
   });
 
+  // Status endpoint to check if the server is running
+  app.get('/api/status', (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'TrafficJamz backend is live',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // 404 handler
   app.use((req, res) => {
     res.status(404).json({

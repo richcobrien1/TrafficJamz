@@ -1,33 +1,27 @@
 # Production Dockerfile for the TrafficJamz API service
 
-# 🧱 Stage 1: Builder
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-RUN apk add --no-cache python3 py3-pip make g++ linux-headers curl
-
-# 📦 Copy source files scoped to context
-COPY package*.json ./
-COPY src ./src
-
-# ✅ Install only production dependencies (no lockfile required)
-RUN npm install --omit=dev
-
-# 🚀 Stage 2: Runtime
 FROM node:18-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/src ./src
+# 🔧 Install minimal build deps
+RUN apk add --no-cache python3 py3-pip make g++ linux-headers curl
+
+# 📦 Copy backend files
+COPY package*.json ./
+COPY src ./src
+
+# ✅ Skip lockfile requirement
+RUN npm install --omit=dev
 
 ENV NODE_ENV=production
 ENV IS_LOCAL=false
 
-EXPOSE 5000
+EXPOSE 5050
 
+# 🔍 Healthcheck ping
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:5000/health || exit 1
+  CMD curl -f http://localhost:5050/health || exit 1
 
-CMD ["node", "src/api/server.js"]
+# 🚀 App entrypoint — this file exists!
+CMD ["node", "src/index.js"]
