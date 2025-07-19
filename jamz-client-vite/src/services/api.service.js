@@ -1,4 +1,5 @@
 // src/services/api.service.js
+
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
