@@ -1,3 +1,6 @@
+// auth.routes.js
+// This file contains the authentication routes for user registration, login, and MFA setup.
+
 const express = require('express');
 const router = express.Router();
 const userService = require('../services/user.service');
@@ -52,27 +55,27 @@ router.post('/login', [
   validate
 ], async (req, res) => {
   try {
-    // Add debug logging here
     console.log('Login attempt for:', req.body.email);
     console.log('Environment:', {
       NODE_ENV: process.env.NODE_ENV,
       JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not set',
       POSTGRES_HOST: process.env.POSTGRES_HOST
     });
-    
-    const { email, password } = req.body; // Extract from request body
-    
-    // Additional debug logging before calling userService
+
+    const { email, password } = req.body;
     console.log('Calling userService.login with email:', email);
-    
+
     const result = await userService.login(email, password);
-    
-    // Log successful login
     console.log('Login successful for:', email);
-    
-    res.json({ success: true, ...result });
+
+    res.status(200).json({
+      success: true,
+      access_token: result.access_token,       // ✅ renamed for frontend compatibility
+      refresh_token: result.refresh_token,
+      token_type: result.token_type,
+      user: result.user
+    });
   } catch (error) {
-    // Log login failure with error details
     console.error('Login error details:', error);
     res.status(401).json({ success: false, message: error.message });
   }
@@ -108,10 +111,8 @@ router.post('/forgot-password', [
   try {
     const { email } = req.body;
     await userService.requestPasswordReset(email);
-    // Always return success to prevent email enumeration
     res.json({ success: true, message: 'If an account with that email exists, a password reset link has been sent' });
   } catch (error) {
-    // Log error but don't expose it to client
     console.error('Password reset request error:', error);
     res.json({ success: true, message: 'If an account with that email exists, a password reset link has been sent' });
   }
