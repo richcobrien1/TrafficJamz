@@ -14,6 +14,7 @@ RUN npm install --legacy-peer-deps
 # 📁 Copy app source and public assets
 COPY src ./src
 COPY public ./public
+COPY ../shared ./shared
 
 # 🌐 Dev environment variables
 ENV NODE_ENV=development
