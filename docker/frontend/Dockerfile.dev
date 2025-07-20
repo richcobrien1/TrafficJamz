@@ -1,35 +1,37 @@
-# Dockerfile for the frontend development environment
+# Dockerfile for TrafficJamz frontend development environment
+# Sets up Node.js + React dev environment with Vite, hot reloading, and system tools for native packages
+
 FROM node:18-alpine
 
-# Set working directory for full context awareness
+# 🏗️ Working directory — scoped for frontend clarity
 WORKDIR /app/frontend
 
-# Install system build tools (needed by some MUI and emotion packages)
-RUN apk add --no-cache python3 make g++ 
+# 🧰 Install system-level build tools (needed by MUI, emotion, etc.)
+RUN apk add --no-cache python3 make g++ curl
 
-# Copy package manifest before code for layer caching
-COPY frontend/package*.json ./
-
-# Install dependencies inside container
+# 📦 Dependency install layer (cached if package.json unchanged)
+COPY jamz-client-vite/package*.json ./
 RUN npm install --legacy-peer-deps
 
-# Copy source code and shared modules
-COPY frontend/src ./src
-COPY frontend/public ./public
+# 🧠 App code + public assets
+COPY jamz-client-vite/src ./src
+COPY jamz-client-vite/public ./public
+
+# 🧩 Shared modules (ensure this path is within your build context)
 COPY shared ./shared
 
-# Set environment flags for dev tooling
+# 🌱 Dev-only environment flags
 ENV NODE_ENV=development
 ENV REACT_APP_API_URL=http://localhost:5000
 ENV REACT_APP_WEBRTC_URL=http://localhost:5000
 
-# Expose dev port
+# 🔊 Dev port
 EXPOSE 8080
 
-# Optional: TLS/Nginx support (if used by HTTPS dev mode)
+# 🌐 Optional: Nginx TLS + entrypoint wrapper
 COPY docker/frontend/nginx.dev.conf /etc/nginx/nginx.dev.conf
 COPY docker/frontend/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Start React dev server with hot reload
+# 🚀 Start frontend with hot reload
 CMD ["npm", "start"]

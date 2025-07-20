@@ -1,52 +1,51 @@
 # docker/frontend/Dockerfile.prod
 # Dockerfile for building and serving the React/Vite frontend application
 
-# Stage 1: Build the React/Vite frontend
+# ─── Stage 1: Build the React/Vite frontend ──────────────────────────────
 
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy and install frontend dependencies
-COPY frontend/package*.json ./frontend/
-WORKDIR /app/frontend
+# 📦 Copy and install frontend dependencies
+COPY jamz-client-vite/package*.json ./jamz-client-vite/
+WORKDIR /app/jamz-client-vite
 RUN npm ci
 
-# Copy source code
-COPY frontend/src ./src
-COPY frontend/public ./public
+# 📁 Copy source code and shared modules
+COPY jamz-client-vite/src ./src
+COPY jamz-client-vite/public ./public
 COPY shared ./shared
 
-# Set build-time environment variables
+# 🌐 Set build-time environment variables
 ENV NODE_ENV=production
 ENV REACT_APP_API_URL=/api
 ENV REACT_APP_WEBRTC_URL=/webrtc
 
-# Build the app
+# 🏗️ Build the Vite application
 RUN npm run build
 
----
+# ─── Stage 2: Serve with NGINX ───────────────────────────────────────────
 
-# Stage 2: Serve with NGINX
 FROM nginx:stable-alpine
 
-# Set working directory
+# 📁 Set working directory to NGINX’s default static folder
 WORKDIR /usr/share/nginx/html
 
-# Copy compiled frontend build from builder stage
-COPY --from=builder /app/frontend/build .
+# 🚚 Copy compiled frontend build from builder stage
+COPY --from=builder /app/jamz-client-vite/build .
 
-# Copy NGINX configurations
+# ⚙️ Inject custom NGINX configs
 COPY docker/frontend/nginx.conf /etc/nginx/nginx.conf
 COPY docker/frontend/nginx.dev.conf /etc/nginx/nginx.dev.conf
 
-# Copy TLS-aware entrypoint script
+# 🔐 TLS-aware entrypoint script
 COPY docker/frontend/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Default command routes through entrypoint
+# 🚀 Start NGINX via wrapper
 CMD ["/entrypoint.sh"]
 
-# Expose secure and fallback ports
+# 🔉 Expose ports
 EXPOSE 443
 EXPOSE 80

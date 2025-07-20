@@ -1,4 +1,5 @@
-// frontend/src/App.jsx
+// jamz-client-vite/src/App.jsx
+// This file is part of the TrafficJamz project, a real-time traffic management system.
 
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
