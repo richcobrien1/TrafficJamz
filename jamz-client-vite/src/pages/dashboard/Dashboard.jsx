@@ -1,4 +1,5 @@
-// frontend/src/pages/dashboard/Dashboard.js
+// jamz-client-vite/src/pages/dashboard/Dashboard.jsx
+// This file is part of the TrafficJamz project.
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';

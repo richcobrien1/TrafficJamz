@@ -1,11 +1,12 @@
-# Dockerfile for Production Environment
-# This Dockerfile sets up a production-ready environment for the TrafficJamz backend.
+# docker/api/Dockerfile.prod
+# Production-ready Dockerfile for the TrafficJamz backend
 
 FROM node:20-alpine
 
+# 📁 Working directory
 WORKDIR /app
 
-# 🛠 Install build tools and Python
+# 🧰 Install build tools (needed for native modules)
 RUN apk add --no-cache \
   python3 \
   py3-pip \
@@ -14,14 +15,19 @@ RUN apk add --no-cache \
   linux-headers \
   curl
 
-# 📦 Copy backend files
+# 📦 Copy only package manifest for install caching
 COPY jamz-server/package*.json ./
+
+# 🔧 Install production dependencies
+RUN npm install --omit=dev
+
+# 🚚 Copy source code (only after install for clean cache layers)
 COPY jamz-server/src ./src
 COPY jamz-server/public ./public
 COPY shared ./shared
 
-# 🔧 Install dependencies
-RUN npm install --omit=dev
+# 🌱 Runtime environment
+ENV NODE_ENV=production
 
-# 🚀 Start the server
+# 🔥 Start the backend server
 CMD ["npm", "start"]
