@@ -1,51 +1,104 @@
 // jamz-client-vite/src/services/api.js
-// This file sets up the API client using axios with interceptors for authentication
+// Axios client setup with token-based auth, interceptors, and refresh logic
 
 import axios from 'axios';
 
-// Create axios instance with base URL
+// Create axios instance with base API URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE
+  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5000/api',
 });
 
-// Request interceptor to add auth token to requests
+// 🔐 Request interceptor to attach token
 api.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
     const token = localStorage.getItem('token');
-    
-    // If token exists, add to Authorization header
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added token to request headers');
+      console.log('✅ Token attached to request headers');
     } else {
-      console.warn('No token found in localStorage for API request');
+      console.warn('⚠️ No token found for API request');
     }
-    
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor to handle errors
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // Log the error for debugging
-    console.error('API Error Response:', error.response || error);
-    
-    // Handle authentication errors
-    if (error.response && error.response.status === 401) {
-      console.error('Authentication token expired or invalid');
-      // Optionally redirect to login page or refresh token
-      // window.location.href = '/login';
+// 🔁 Optional: retry failed requests after token refresh
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
-    
+  });
+
+  failedQueue = [];
+};
+
+// 🧠 Response interceptor with refresh support
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 and attempt refresh if not already retrying
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        console.warn('⚠️ No refresh token found. Redirecting to login.');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post('/api/auth/refresh-token', {
+          refresh_token: refreshToken,
+        });
+
+        const { access_token } = res.data;
+        localStorage.setItem('token', access_token);
+        console.log('🔁 Token refreshed');
+
+        api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        processQueue(null, access_token);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        console.error('❌ Token refresh failed. Redirecting to login.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
