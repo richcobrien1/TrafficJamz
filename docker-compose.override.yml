@@ -9,8 +9,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./frontend:/app/frontend
-      - ./frontend/node_modules:/app/frontend/node_modules
+      - ./jamz-client-vite:/app/jamz-client-vite
+      - ./jamz-client-vite/node_modules:/app/jamz-client-vite/node_modules
+      - ./shared:/app/jamz-client-vite/shared
     environment:
       - NODE_ENV=development
       - REACT_APP_API_URL=http://localhost:5000
@@ -28,9 +29,9 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./backend:/app/backend
-      - ./shared:/app/backend/shared
-      - ./backend/node_modules:/app/backend/node_modules
+      - ./jamz-server:/app/jamz-server
+      - ./jamz-server/node_modules:/app/jamz-server/node_modules
+      - ./shared:/app/shared
     environment:
       - NODE_ENV=development
       - IS_LOCAL=true

@@ -1,27 +1,32 @@
-# Development Dockerfile for the TrafficJamz frontend service
+# docker/api/Dockerfile.dev
+# Dev Dockerfile for TrafficJamz backend with nodemon, debug tools, and live reload
 
-FROM node:18-alpine
+FROM node:20-alpine
 
+# 🏗️ Working directory
 WORKDIR /app
 
-# 🔧 Install dev tools
-RUN apk add --no-cache python3 make g++ curl
+# 🧰 Install dev tools
+RUN apk add --no-cache \
+  python3 \
+  py3-pip \
+  make \
+  g++ \
+  linux-headers \
+  curl
 
-# 📦 Copy dependencies
-COPY package*.json ./
+# 📦 Copy package manifest first for caching
+COPY jamz-server/package*.json ./
 RUN npm install --legacy-peer-deps
 
-# 📁 Copy app source and public assets
-COPY src ./src
-COPY public ./public
-COPY ../shared ./shared
+# 🧩 Copy source + assets (after deps to preserve cache)
+COPY jamz-server/src ./src
+COPY jamz-server/public ./public
+COPY shared ./shared
 
-# 🌐 Dev environment variables
+# 🌱 Environment flags
 ENV NODE_ENV=development
 ENV IS_LOCAL=true
-ENV VITE_API_BASE=http://backend:5000/api
 
-EXPOSE 3000
-
-# 🚀 Launch Vite dev server
-CMD ["npm", "run", "dev"]
+# 🔥 Start server with nodemon for auto-reload
+CMD ["npx", "nodemon", "--inspect", "src/index.js"]

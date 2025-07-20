@@ -8,5 +8,8 @@
   ],
   "scripts": {
     "build": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
