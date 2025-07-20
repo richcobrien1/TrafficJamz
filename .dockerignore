@@ -1,8 +1,28 @@
+# Dependency and build folders
 node_modules/
-.git/
-.env
+dist/
+.vite/
+coverage/
 logs/
 *.log
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Version control & CI artifacts
+.git/
+.gitignore
 Dockerfile
-.dockerignore
-```
+docker-compose.yml
+.docker/
+
+# Editor and OS trash
+*.swp
+*.swo
+*.DS_Store
+*.idea/
+.vscode/
+Thumbs.db
