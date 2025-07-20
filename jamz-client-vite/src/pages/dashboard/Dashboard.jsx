@@ -3,14 +3,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Box, 
+import {
+  Container,
+  Box,
   Typography,
-  Grid, 
-  Paper, 
-  Button, 
-  Fab, 
+  Grid,
+  Paper,
+  Button,
+  Fab,
   CircularProgress,
   List,
   ListItem,
@@ -32,17 +32,17 @@ import {
   TextField,
   Alert
 } from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Group as GroupIcon, 
-  Mic as MicIcon, 
+import {
+  Add as AddIcon,
+  Group as GroupIcon,
+  Mic as MicIcon,
   LocationOn as LocationIcon,
   Notifications as NotificationsIcon,
   AccountCircle as AccountCircleIcon,
   Menu as MenuIcon,
   ExitToApp as LogoutIcon
 } from '@mui/icons-material';
-import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
+import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Dashboard = () => {
@@ -57,30 +57,28 @@ const Dashboard = () => {
   const [createGroupLoading, setCreateGroupLoading] = useState(false);
   const [createGroupError, setCreateGroupError] = useState('');
   const [notifications, setNotifications] = useState([]);
-  
+
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     fetchGroups();
     fetchNotifications();
   }, []);
-  
+
   const fetchGroups = async () => {
     try {
       setLoading(true);
       const response = await api.get('/api/groups');
-      console.log('fetchGroups: ' + response);
       setGroups(response.data.groups);
       setError('');
     } catch (error) {
       console.error('Error fetching groups:', error);
-      // setError('Failed to load groups. Please try again later.');
     } finally {
       setLoading(false);
     }
   };
-  
+
   const fetchNotifications = async () => {
     try {
       const response = await api.get('/api/notifications/unread');
@@ -89,37 +87,30 @@ const Dashboard = () => {
       console.error('Error fetching notifications:', error);
     }
   };
-  
-  const handleProfileMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-  
+
+  const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-  
+
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) {
       setCreateGroupError('Group name is required');
       return;
     }
-    
+
     try {
       setCreateGroupLoading(true);
       setCreateGroupError('');
-      
+
       const response = await api.post('/api/groups', {
         group_name: newGroupName,
         group_description: newGroupDescription
       });
-      
-      setGroups([...groups, response.data.group]);
-      console.log('handleCreateGroup: ' + response);
+
+      setGroups((prev) => [...prev, response.data.group]);
       setOpenCreateDialog(false);
       setNewGroupName('');
       setNewGroupDescription('');
@@ -129,13 +120,10 @@ const Dashboard = () => {
       setCreateGroupLoading(false);
     }
   };
-  
-  const handleGroupClick = (groupId) => {
-    navigate(`/groups/${groupId}`);
-  };
-  
+
+  const handleGroupClick = (groupId) => navigate(`/groups/${groupId}`);
   const isMenuOpen = Boolean(anchorEl);
-  
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
@@ -143,7 +131,7 @@ const Dashboard = () => {
           <IconButton
             edge="start"
             color="inherit"
-            aria-label="menu"
+            aria-label="open drawer"
             sx={{ mr: 2 }}
             onClick={() => setOpenDrawer(true)}
           >
@@ -152,14 +140,14 @@ const Dashboard = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Groups
           </Typography>
-          <IconButton color="inherit" onClick={fetchNotifications}>
+          <IconButton color="inherit" onClick={fetchNotifications} aria-label="refresh notifications">
             <Badge badgeContent={notifications?.length} color="error">
               <NotificationsIcon />
             </Badge>
           </IconButton>
           <IconButton
             edge="end"
-            aria-label="account of current user"
+            aria-label="account menu"
             aria-controls="menu-appbar"
             aria-haspopup="true"
             onClick={handleProfileMenuOpen}
@@ -169,36 +157,21 @@ const Dashboard = () => {
           </IconButton>
         </Toolbar>
       </AppBar>
-      
+
       <Menu
         id="menu-appbar"
         anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        keepMounted
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
         open={isMenuOpen}
         onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Profile</MenuItem>
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
       </Menu>
-      
-      <Drawer
-        anchor="left"
-        open={openDrawer}
-        onClose={() => setOpenDrawer(false)}
-      >
-        <Box
-          sx={{ width: 250 }}
-          role="presentation"
-          onClick={() => setOpenDrawer(false)}
-        >
+
+      <Drawer anchor="left" open={openDrawer} onClose={() => setOpenDrawer(false)}>
+        <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpenDrawer(false)}>
           <List>
             <ListItem>
               <ListItemAvatar>
@@ -206,7 +179,7 @@ const Dashboard = () => {
                   {currentUser?.first_name?.[0] || currentUser?.username?.[0]}
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText 
+              <ListItemText
                 primary={`${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`}
                 secondary={currentUser?.email}
               />
@@ -214,53 +187,39 @@ const Dashboard = () => {
             <Divider />
             <ListItem button onClick={() => navigate('/')}>
               <ListItemAvatar>
-                <Avatar>
-                  <GroupIcon />
-                </Avatar>
+                <Avatar><GroupIcon /></Avatar>
               </ListItemAvatar>
               <ListItemText primary="Groups" />
             </ListItem>
             <ListItem button onClick={() => navigate('/profile')}>
               <ListItemAvatar>
-                <Avatar>
-                  <AccountCircleIcon />
-                </Avatar>
+                <Avatar><AccountCircleIcon /></Avatar>
               </ListItemAvatar>
               <ListItemText primary="Profile" />
             </ListItem>
             <Divider />
             <ListItem button onClick={handleLogout}>
               <ListItemAvatar>
-                <Avatar>
-                  <LogoutIcon />
-                </Avatar>
+                <Avatar><LogoutIcon /></Avatar>
               </ListItemAvatar>
               <ListItemText primary="Logout" />
             </ListItem>
           </List>
         </Box>
       </Drawer>
-      
+
       <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography variant="h4" component="h1">
             Your TrafficJam Groups
           </Typography>
-          <Fab 
-            color="primary" 
-            aria-label="add" 
-            onClick={() => setOpenCreateDialog(true)}
-          >
+          <Fab color="primary" aria-label="create new group" onClick={() => setOpenCreateDialog(true)}>
             <AddIcon />
           </Fab>
         </Box>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-        
+
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
             <CircularProgress />
@@ -273,8 +232,8 @@ const Dashboard = () => {
             <Typography variant="body1" color="text.secondary" paragraph>
               Create a new group to start communicating with your friends
             </Typography>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setOpenCreateDialog(true)}
             >
@@ -283,59 +242,44 @@ const Dashboard = () => {
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {groups?.map((group) => (
+            {groups.map((group) => (
               <Grid item xs={12} sm={6} md={4} key={group.id}>
-                <Paper 
-                  sx={{ 
-                    p: 3, 
-                    display: 'flex', 
+                <Paper
+                  sx={{
+                    p: 3,
+                    display: 'flex',
                     flexDirection: 'column',
                     height: '100%',
                     cursor: 'pointer',
-                    '&:hover': {
-                      boxShadow: 6
-                    }
+                    '&:hover': { boxShadow: 6 }
                   }}
                   onClick={() => handleGroupClick(group.id)}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar 
-                      src={group.avatar_url}
-                      sx={{ width: 56, height: 56, mr: 2 }}
-                    >
+                    <Avatar src={group.avatar_url} sx={{ width: 56, height: 56, mr: 2 }}>
                       {group.name[0]}
                     </Avatar>
                     <Box>
-                      <Typography variant="h6" component="h2">
-                        {group.name}
-                      </Typography>
+                      <Typography variant="h6">{group.name}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         {group.members?.length || 0} members
                       </Typography>
                     </Box>
                   </Box>
-                  
+
                   {group.description && (
                     <Typography variant="body2" sx={{ mb: 2, flexGrow: 1 }}>
                       {group.description}
                     </Typography>
                   )}
-                  
+
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
-                      startIcon={<MicIcon />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/audio-session/${group.id}`);
-                      }}
-                    >
+                    <Button>
                       Join Audio
                     </Button>
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
+                    <Button
+                      variant="outlined"
+                      size="small"
                       startIcon={<LocationIcon />}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -351,9 +295,9 @@ const Dashboard = () => {
           </Grid>
         )}
       </Container>
-      
-      <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)}>
-        <DialogTitle>Create New Group</DialogTitle>
+
+      <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} aria-labelledby="create-group-dialog">
+        <DialogTitle id="create-group-dialog">Create New Group</DialogTitle>
         <DialogContent>
           {createGroupError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -363,7 +307,7 @@ const Dashboard = () => {
           <TextField
             autoFocus
             margin="dense"
-            id="name"
+            id="group-name"
             label="Group Name"
             type="text"
             fullWidth
@@ -371,10 +315,11 @@ const Dashboard = () => {
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
             required
+            aria-required="true"
           />
           <TextField
             margin="dense"
-            id="description"
+            id="group-description"
             label="Description (optional)"
             type="text"
             fullWidth
@@ -387,10 +332,11 @@ const Dashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleCreateGroup} 
+          <Button
+            onClick={handleCreateGroup}
             variant="contained"
             disabled={createGroupLoading}
+            aria-label="submit new group"
           >
             {createGroupLoading ? <CircularProgress size={24} /> : 'Create'}
           </Button>
