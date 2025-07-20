@@ -55,7 +55,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import mapboxgl from 'mapbox-gl';
 
 // Replace with your actual Mapbox token in production
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY205Mzdqb21lMGo0YjJpbjZrY3Y4b3VvNCJ9.Cc3LBCRqlxOnjurlOXqCVA';
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21kYzVpd2IzMDd6ajJ0cHRvNGYydGRsdiJ9.89FeCISmey4c97RxO813gg';
 
 const LocationTracking = () => {
   const { groupId } = useParams();
