@@ -1,4 +1,5 @@
-// frontend/src/pages/auth/Register.js
+// jamz-client-vite/src/pages/auth/Register.jsx
+// This file contains the registration component for the Traffic Jamz application.
 
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
