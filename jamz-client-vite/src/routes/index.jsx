@@ -47,10 +47,10 @@ export const ROUTES = [
     icon: "👥",
   },
   {
-    path: "/location/map",
-    name: "Location Tracking",
+    path: "/location-tracking/:groupId",
+    name: "Location Tracking (Group)",
     element: <LocationTracking />,
-    icon: "📍",
+    icon: "🗺️",
   },
   {
     path: "/profile",

@@ -60,7 +60,7 @@ const location = useLocation();
 
                 {/* Protected routes with optional role guards */}
                 <Route path="/dashboard" element={
-                  <ProtectedRoute allowedRoles={["agent", "field", "ops"]}>
+                  <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 } />
@@ -74,7 +74,7 @@ const location = useLocation();
                     <AudioSession />
                   </ProtectedRoute>
                 } />
-                <Route path="/location/map" element={
+                <Route path="/location-tracking/:groupId" element={
                   <ProtectedRoute>
                     <LocationTracking />
                   </ProtectedRoute>
