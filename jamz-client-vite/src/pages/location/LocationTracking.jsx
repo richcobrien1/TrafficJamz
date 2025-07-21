@@ -58,13 +58,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import mapboxgl from 'mapbox-gl';
 import '../../styles/map/MapboxMap.css'; // Mapbox Map CSS styling
 
-// Replace with your actual Mapbox token in production
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21kYzVpd2IzMDd6ajJ0cHRvNGYydGRsdiJ9.89FeCISmey4c97RxO813gg';
-if (!MAPBOX_TOKEN) {
-  console.error('Missing Mapbox token');
-  return;
-}
-
 const LocationTracking = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -109,29 +102,42 @@ const LocationTracking = () => {
   const mapRef = useRef(null);
   const watchIdRef = useRef(null);
   const markersRef = useRef({});
+  const timerRef = useRef(null);
   
-  // Initialize component
+  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21kYzVpd2IzMDd6ajJ0cHRvNGYydGRsdiJ9.89FeCISmey4c97RxO813gg';
+  if (!MAPBOX_TOKEN) {
+    console.error('Missing Mapbox token');
+    return;
+  };
+    
+  // ✅ Map Initialization
+  useEffect(() => {
+    if (mapContainerRef.current) {
+      initializeMap();
+    }
+  }, [mapContainerRef.current]);
+
+  // ✅ Component Initialization
   useEffect(() => {
     fetchGroupDetails();
-    
-    // Only initialize map after component is mounted and ref is available
-    const timer = setTimeout(() => {
-      initializeMap();
-    }, 100);
-    
+
     if (sharingLocation) {
       startLocationTracking();
     }
-    
-    // Cleanup function
+
+    timerRef.current = setTimeout(() => {
+      // Your deferred logic here (e.g. retry, telemetry ping)
+    }, 3000);
+
     return () => {
-      clearTimeout(timer);
-      
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+
       if (watchIdRef.current) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
-      
-      // Clean up map markers
+
       if (mapRef.current) {
         mapRef.current.remove();
       }
@@ -1135,6 +1141,7 @@ const LocationTracking = () => {
                 {index > 0 && <Divider component="li" />}
                 <ListItem 
                   button 
+                  component="li"
                   onClick={() => handleMemberClick(member)}
                   secondaryAction={
                     <Chip 
