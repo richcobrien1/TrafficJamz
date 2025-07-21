@@ -59,7 +59,11 @@ import mapboxgl from 'mapbox-gl';
 import '../../styles/map/MapboxMap.css'; // Mapbox Map CSS styling
 
 // Replace with your actual Mapbox token in production
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '***MAPBOX_PUBLIC_TOKEN_REMOVED***';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '***MAPBOX_PUBLIC_TOKEN_REMOVED***';
+if (!MAPBOX_TOKEN) {
+  console.error('Missing Mapbox token');
+  return;
+}
 
 const LocationTracking = () => {
   const { groupId } = useParams();
