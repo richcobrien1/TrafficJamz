@@ -1,3 +1,6 @@
+// jamz-client-vite/src/pages/location/LocationTracking.jsx
+// LocationTracking.jsx - A component for tracking and displaying group member locations in real-time
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -53,6 +56,7 @@ import {
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import mapboxgl from 'mapbox-gl';
+import '../../styles/map/MapboxMap.css'; // Mapbox Map CSS styling
 
 // Replace with your actual Mapbox token in production
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '***MAPBOX_PUBLIC_TOKEN_REMOVED***';

@@ -9,6 +9,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
+import MapboxMap from './components/MapboxMap';
+
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 // Lazy-loaded pages
@@ -73,6 +75,11 @@ const location = useLocation();
                   <ProtectedRoute>
                     <AudioSession />
                   </ProtectedRoute>
+                } />
+                <Route path="/dev/map" element={
+                  // <ProtectedRoute>
+                    <MapboxMap />
+                  // </ProtectedRoute>
                 } />
                 <Route path="/location-tracking/:groupId" element={
                   <ProtectedRoute>
