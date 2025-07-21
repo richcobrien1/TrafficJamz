@@ -59,7 +59,11 @@ import mapboxgl from 'mapbox-gl';
 import '../../styles/map/MapboxMap.css'; // Mapbox Map CSS styling
 
 // Replace with your actual Mapbox token in production
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21kYzVpd2IzMDd6ajJ0cHRvNGYydGRsdiJ9.89FeCISmey4c97RxO813gg';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21kYzVpd2IzMDd6ajJ0cHRvNGYydGRsdiJ9.89FeCISmey4c97RxO813gg';
+if (!MAPBOX_TOKEN) {
+  console.error('Missing Mapbox token');
+  return;
+}
 
 const LocationTracking = () => {
   const { groupId } = useParams();
