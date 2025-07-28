@@ -1,18 +1,18 @@
 # docker-compose.prod.yml
-# Production Docker Compose configuration for TrafficJamz
-
-version: "3.8"
+# Production Docker Compose configuration for TrafficJamz application
+# This file defines services for API, WebRTC, Frontend, and supporting infrastructure
 
 services:
+  # ──────────────── API Service ────────────────────────
   api:
     build:
-      context: ../
+      context: .
       dockerfile: docker/api/Dockerfile.prod
     image: trafficjamz-api:latest
     ports:
       - "5000:5000"
     env_file:
-      - /mnt/c/Users/richc/Projects/TrafficJamz/.env.prod
+      - .env.prod
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -28,26 +28,28 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Frontend ───────────────────────────
   frontend:
     build:
-      context: ../
+      context: .
       dockerfile: docker/frontend/Dockerfile.prod
     image: trafficjamz-frontend:latest
     ports:
       - "8080:8080"
     env_file:
-      - /mnt/c/Users/richc/Projects/TrafficJamz/.env.prod
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - ../.env.prod
     depends_on:
       - api
     networks:
       - app-network
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
+  # ──────────────── PostgreSQL ─────────────────────────
   postgres:
     image: postgres:15
     ports:
@@ -62,6 +64,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── MongoDB ────────────────────────────
   mongodb:
     image: mongo:6
     ports:
@@ -72,6 +75,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Redis ──────────────────────────────
   redis:
     image: redis:7-alpine
     ports:
@@ -82,6 +86,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── InfluxDB ───────────────────────────
   influxdb:
     image: influxdb:2.7
     ports:
@@ -99,6 +104,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Zookeeper (Kafka) ──────────────────
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
     ports:
@@ -109,6 +115,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Kafka ──────────────────────────────
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     ports:
@@ -126,14 +133,15 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── NGINX (TLS proxy layer) ─────────────
   nginx:
     image: nginx:stable-alpine
+    volumes:
+      - ./docker/frontend/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ../docker/frontend/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ../certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - api
@@ -141,10 +149,12 @@ services:
       - app-network
     restart: always
 
+# ─────────────────────── Networks ───────────────────────
 networks:
   app-network:
     driver: bridge
 
+# ─────────────────────── Volumes ────────────────────────
 volumes:
   postgres-data:
   mongodb-data:
