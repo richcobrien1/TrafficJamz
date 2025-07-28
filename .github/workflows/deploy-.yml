@@ -1,0 +1,13 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: bash ./scripts/build_push.sh
+      - run: bash ./scripts/deploy.sh prod jamz-prod
