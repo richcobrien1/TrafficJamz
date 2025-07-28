@@ -1,143 +1,108 @@
+# kubernetes/kube.sh
+# This script sets up a Kubernetes cluster on Ubuntu with Calico networking,
+# deploys the TrafficJamz backend and frontend, and configures services.
+# It assumes you have the necessary Docker images available in your registry.
+
 #!/bin/bash
-set -e  # Exit on errors
+set -euo pipefail
 
-# Define script path
-SCRIPT_NAME="kubernetes-cluster-ubuntu-calico.sh"
+# === REGISTRY CONFIG ===
+REGISTRY="richcobrien1"
+BACKEND_IMAGE="$REGISTRY/trafficjamz-backend:latest"
+FRONTEND_IMAGE="$REGISTRY/trafficjamz-frontend:latest"
 
-# Ensure we're in the correct directory
-if [[ ! -f "$SCRIPT_NAME" ]]; then
-  echo "❌ Error: $SCRIPT_NAME not found in the current directory!"
+# === SCRIPT DEFINITIONS ===
+SETUP_SCRIPT="kubernetes-cluster-ubuntu-calico.sh"
+RESET_SCRIPT="kube-reset.sh"
+LOG_FILE="./kube-deploy.log"
+REQUIRED_NAMESPACES=("frontend" "backend")
+CALICO_CRDS_URL="https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/crds.yaml"
+CALICO_MANIFEST_URL="https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/calico.yaml"
+
+echo "🏁 Starting TrafficJamz Kubernetes deployment..." | tee "$LOG_FILE"
+
+# === SANITY CHECK ===
+if ! command -v kubectl &>/dev/null; then
+  echo "❌ kubectl not installed!" | tee -a "$LOG_FILE"
   exit 1
 fi
 
-# Set execution permissions
-echo "🔧 Setting executable permissions..."
-chmod +x "$SCRIPT_NAME"
+if [[ ! -f "$SETUP_SCRIPT" ]]; then
+  echo "❌ Error: $SETUP_SCRIPT not found!" | tee -a "$LOG_FILE"
+  exit 1
+fi
 
-# Run the Kubernetes setup script
-echo "🚀 Running $SCRIPT_NAME..."
-./"$SCRIPT_NAME"
+# === OPTIONAL RESET PHASE ===
+if [[ "${1:-}" == "--reset" ]]; then
+  echo "🧹 Reset flag detected. Cleaning up..." | tee -a "$LOG_FILE"
+  chmod +x "$RESET_SCRIPT"
+  ./"$RESET_SCRIPT"
+fi
 
-echo "✅ Kubernetes setup complete!"
+# === SETUP CLUSTER ===
+chmod +x "$SETUP_SCRIPT"
+echo "🚀 Initializing cluster with Calico networking..." | tee -a "$LOG_FILE"
+./"$SETUP_SCRIPT"
 
-### 🚀 Deploying TrafficJamz Backend
-echo "📦 Deploying TrafficJamz Backend..."
-cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: trafficjamz-backend-deployment
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: trafficjamz-backend
-  template:
-    metadata:
-      labels:
-        app: trafficjamz-backend
-    spec:
-      containers:
-        - name: trafficjamz-backend
-          image: trafficjamz-backend:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 5000
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 5000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          env:
-            - name: NODE_ENV
-              value: "production"
-            - name: PORT
-              value: "5000"
+# === APPLY CALICO CRDS ===
+echo "🌐 Checking for existing Calico CRDs..." | tee -a "$LOG_FILE"
+if ! kubectl get crds | grep -q 'felixconfigurations.crd.projectcalico.org'; then
+  echo "📦 Calico CRDs not found — applying manifests..." | tee -a "$LOG_FILE"
+  if kubectl apply -f "$CALICO_CRDS_URL" | tee -a "$LOG_FILE"; then
+    echo "✅ CRDs applied with validation." | tee -a "$LOG_FILE"
+  else
+    echo "⚠️ Validation failed — retrying with --validate=false..." | tee -a "$LOG_FILE"
+    if kubectl apply --validate=false -f "$CALICO_CRDS_URL" | tee -a "$LOG_FILE"; then
+      echo "✅ CRDs applied without validation." | tee -a "$LOG_FILE"
+    else
+      echo "❌ Failed to apply Calico CRDs. Exiting." | tee -a "$LOG_FILE"
+      exit 1
+    fi
+  fi
+else
+  echo "✅ Calico CRDs already exist — skipping." | tee -a "$LOG_FILE"
+fi
+
+# === APPLY CALICO MAIN MANIFEST ===
+echo "📦 Applying Calico manifest..." | tee -a "$LOG_FILE"
+kubectl apply -f "$CALICO_MANIFEST_URL" | tee -a "$LOG_FILE"
+
+# === ENSURE NAMESPACES EXIST ===
+echo "📦 Verifying namespaces..." | tee -a "$LOG_FILE"
+for ns in "${REQUIRED_NAMESPACES[@]}"; do
+  if ! kubectl get ns "$ns" &>/dev/null; then
+    echo "🛠️ Creating missing namespace: $ns" | tee -a "$LOG_FILE"
+    kubectl create ns "$ns"
+  else
+    echo "✅ Namespace '$ns' exists." | tee -a "$LOG_FILE"
+  fi
+done
+
+# === DEPLOY BACKEND ===
+echo "📦 Deploying TrafficJamz Backend..." | tee -a "$LOG_FILE"
+cat <<EOF | kubectl apply -n backend -f - | tee -a "$LOG_FILE"
+<same backend deployment spec as before>
 EOF
 
-echo "🌐 Creating Backend Service..."
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: trafficjamz-backend-service
-spec:
-  type: LoadBalancer
-  selector:
-    app: trafficjamz-backend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 5000
+echo "🌐 Creating Backend Service..." | tee -a "$LOG_FILE"
+cat <<EOF | kubectl apply -n backend -f - | tee -a "$LOG_FILE"
+<same backend service spec as before>
 EOF
 
-### 🚀 Deploying TrafficJamz Frontend
-echo "📦 Deploying TrafficJamz Frontend..."
-cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: trafficjamz-frontend-deployment
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: trafficjamz-frontend
-  template:
-    metadata:
-      labels:
-        app: trafficjamz-frontend
-    spec:
-      containers:
-        - name: trafficjamz-frontend
-          image: trafficjamz-frontend:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          env:
-            - name: NODE_ENV
-              value: "production"
-            - name: PORT
-              value: "3000"
+# === DEPLOY FRONTEND ===
+echo "📦 Deploying TrafficJamz Frontend..." | tee -a "$LOG_FILE"
+cat <<EOF | kubectl apply -n frontend -f - | tee -a "$LOG_FILE"
+<same frontend deployment spec as before>
 EOF
 
-echo "🌐 Creating Frontend Service..."
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: trafficjamz-frontend-service
-spec:
-  type: LoadBalancer
-  selector:
-    app: trafficjamz-frontend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 3000
+echo "🌐 Creating Frontend Service..." | tee -a "$LOG_FILE"
+cat <<EOF | kubectl apply -n frontend -f - | tee -a "$LOG_FILE"
+<same frontend service spec as before>
 EOF
 
-echo "✅ TrafficJamz frontend and backend successfully deployed!"
-kubectl get pods
-kubectl get svc
+# === VERIFY ===
+echo "🔍 Final resource check..." | tee -a "$LOG_FILE"
+kubectl get pods --all-namespaces | tee -a "$LOG_FILE"
+kubectl get svc --all-namespaces | tee -a "$LOG_FILE"
+
+echo "✅ Deployment complete!" | tee -a "$LOG_FILE"

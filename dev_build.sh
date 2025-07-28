@@ -1,3 +1,7 @@
+# dev_build.sh
+# This script is used to switch between HTTP and HTTPS development modes for the TrafficJamz application
+# It allows developers to quickly set up their environment for testing with or without TLS.
+
 #!/bin/bash
 set -e
 

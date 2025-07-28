@@ -1,3 +1,8 @@
+# deploy_prod.sh
+# This script builds and launches the TrafficJamz production stack using Docker Compose.
+# It requires TLS certificates to be present in the specified directory.
+# Make sure to run ./ssl-bootstrap.sh to generate the necessary certificates before running this script.
+
 #!/bin/bash
 set -e
 

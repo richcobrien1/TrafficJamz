@@ -1,3 +1,9 @@
+# kubernetes/kubernetes-cluster-ubuntu-calico.sh
+# This script sets up a Kubernetes cluster on Ubuntu with Calico networking.
+# It includes steps to disable swap, install necessary packages, configure container runtime,
+# initialize the cluster, and deploy Calico networking.
+# It also handles WSL2 specific configurations and ensures kubelet is properly set up.
+
 #!/bin/bash
 set -e  # Exit on errors
 
@@ -74,6 +80,41 @@ sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-addres
     sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=$WSL_IP --ignore-preflight-errors=FileAvailable
 }
 
+### 🔟 Wait for API Server Before Applying Calico CRDs
+echo "📦 Applying Calico CRDs with fallback..."
+CALICO_CRDS_URL="https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/crds.yaml"
+MAX_RETRIES=24
+RETRY_DELAY=5
+RETRY_COUNT=0
+
+until kubectl get --request-timeout=10s --raw="/healthz" &>/dev/null || [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
+    echo "⏳ Waiting for API server to become available... (${RETRY_COUNT}/${MAX_RETRIES})"
+    sleep $RETRY_DELAY
+    ((RETRY_COUNT++))
+done
+
+if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "❌ API server failed to respond after $((MAX_RETRIES * RETRY_DELAY))s. Exiting..."
+    exit 1
+fi
+
+if ! kubectl get crds | grep -q 'felixconfigurations.crd.projectcalico.org'; then
+    echo "🔍 Calico CRDs not found — applying..."
+    if kubectl apply -f "$CALICO_CRDS_URL"; then
+        echo "✅ CRDs applied with validation."
+    else
+        echo "⚠️ Validation failed — retrying with --validate=false..."
+        if kubectl apply --validate=false -f "$CALICO_CRDS_URL"; then
+            echo "✅ CRDs applied without validation."
+        else
+            echo "❌ Failed to apply Calico CRDs. Exiting..."
+            exit 1
+        fi
+    fi
+else
+    echo "✅ Calico CRDs already exist — skipping."
+fi
+
 ### 🔟 Configure Kubectl for User
 echo "🔧 Setting up kubectl access..."
 mkdir -p $HOME/.kube
@@ -102,7 +143,7 @@ kubectl apply -f calico.yaml --validate=false
 
 ### 🔟 Remove Control-Plane Taint
 echo "🛠 Removing control-plane scheduling restrictions..."
-kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+kubectl taint nodes --all node-role.kubernetes.io/control-plane- || true
 
 ### 🔟 Verify Cluster Health
 echo "🔍 Checking cluster status..."
@@ -112,7 +153,7 @@ kubectl get pods -n kube-system
 ### 🔟 Final Kubelet Health Check & Debugging
 echo "🛠 Checking kubelet status..."
 sudo systemctl restart kubelet
-sleep 10  # Allow stabilization
+sleep 10
 if ! sudo systemctl is-active --quiet kubelet; then
     echo "⚠️ Kubelet is not running, checking logs..."
     sudo journalctl -u kubelet --no-pager | tail -40
@@ -131,15 +172,4 @@ curl -sSL http://$WSL_IP:6443 || {
 }
 
 echo "✅ Kubernetes setup complete with modified Calico!"
-
-echo "✅ Deploying TrafficJamz Application..."
-kubectl apply -f frontend-deployment.yaml
-kubectl apply -f backend-deployment.yaml
-kubectl apply -f frontend-service.yaml
-kubectl apply -f backend-service.yaml
-
-kubectl get pods
-kubectl get services
-
 echo "🚀 TrafficJam cluster hub and nodes setup complete!"
-
