@@ -5,10 +5,13 @@
 #!/bin/bash
 set -e
 
-# 🔧 Config
+# 🧠 Tag from latest Git commit
+TAG=$(git rev-parse --short HEAD)
+
+# 🔧 Registry & Image config
 REGISTRY="richcobrien1"
-FRONTEND_IMAGE="$REGISTRY/trafficjamz-frontend:latest"
-BACKEND_IMAGE="$REGISTRY/trafficjamz-backend:latest"
+FRONTEND_IMAGE="$REGISTRY/trafficjamz-frontend:$TAG"
+BACKEND_IMAGE="$REGISTRY/trafficjamz-backend:$TAG"
 
 # 🎨 Color codes
 GREEN='\033[1;32m'
@@ -19,20 +22,26 @@ NC='\033[0m'
 echo -e "${BLUE}🔬 Validating local dev environment...${NC}"
 bash docker/test/preflight_check.sh
 
-echo -e "${BLUE}🛠 Building Docker images...${NC}"
-bash docker/build/build_all.sh
+echo -e "${BLUE}🛠 Building Docker images with tag: $TAG...${NC}"
+bash docker/build/build_all.sh $TAG
 
 echo -e "${BLUE}📤 Pushing Docker images to registry...${NC}"
 docker push $BACKEND_IMAGE
 docker push $FRONTEND_IMAGE
 
+# 💡 Inject cluster environment if present
+if [ -f .env.cluster ]; then
+  echo -e "${BLUE}🔧 Loading cluster environment config...${NC}"
+  export $(cat .env.cluster | grep -v '^#' | xargs)
+fi
+
 echo -e "${BLUE}🧨 Resetting cluster state...${NC}"
 bash kubernetes/reset.sh
 
 echo -e "${BLUE}📡 Running full cluster setup...${NC}"
-bash kubernetes/kube.sh
+bash kubernetes/kube.sh $TAG
 
-echo -e "${GREEN}✅ TrafficJamz rollout complete!${NC}"
+echo -e "${GREEN}✅ TrafficJamz rollout complete using tag: $TAG${NC}"
 echo -e "${BLUE}📦 Pod Status:${NC}"
 kubectl get pods
 
