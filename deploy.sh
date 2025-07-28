@@ -29,17 +29,11 @@ echo -e "${BLUE}📤 Pushing Docker images to registry...${NC}"
 docker push $BACKEND_IMAGE
 docker push $FRONTEND_IMAGE
 
-# 💡 Inject cluster environment if present
-if [ -f .env.cluster ]; then
-  echo -e "${BLUE}🔧 Loading cluster environment config...${NC}"
-  export $(cat .env.cluster | grep -v '^#' | xargs)
-fi
-
 echo -e "${BLUE}🧨 Resetting cluster state...${NC}"
 bash kubernetes/reset.sh
 
 echo -e "${BLUE}📡 Running full cluster setup...${NC}"
-bash kubernetes/kube.sh $TAG
+bash kubernetes/kube.sh
 
 echo -e "${GREEN}✅ TrafficJamz rollout complete using tag: $TAG${NC}"
 echo -e "${BLUE}📦 Pod Status:${NC}"
