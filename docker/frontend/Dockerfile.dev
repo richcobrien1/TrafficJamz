@@ -1,37 +1,33 @@
-# Dockerfile for TrafficJamz frontend development environment
-# Sets up Node.js + React dev environment with Vite, hot reloading, and system tools for native packages
+# docker/frontend/Dockerfile.dev
+# Dev container for TrafficJamz frontend with Vite + shared modules
 
 FROM node:18-alpine
 
-# 🏗️ Working directory — scoped for frontend clarity
-WORKDIR /app/frontend
+WORKDIR /app
 
-# 🧰 Install system-level build tools (needed by MUI, emotion, etc.)
+# 🛠 System tools for native packages
 RUN apk add --no-cache python3 make g++ curl
 
-# 📦 Dependency install layer (cached if package.json unchanged)
-COPY jamz-client-vite/package*.json ./
+# 📦 Install deps with cache optimization
+COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
-# 🧠 App code + public assets
-COPY jamz-client-vite/src ./src
-COPY jamz-client-vite/public ./public
+# 🎯 Source code
+COPY ./src ./src
+COPY ./public ./public
+COPY ../shared ./shared
 
-# 🧩 Shared modules (ensure this path is within your build context)
-COPY shared ./shared
-
-# 🌱 Dev-only environment flags
+# 🌱 Dev env
 ENV NODE_ENV=development
 ENV REACT_APP_API_URL=http://localhost:5000
 ENV REACT_APP_WEBRTC_URL=http://localhost:5000
 
-# 🔊 Dev port
+# 🔊 Port for Vite dev server
 EXPOSE 8080
 
-# 🌐 Optional: Nginx TLS + entrypoint wrapper
-COPY docker/frontend/nginx.dev.conf /etc/nginx/nginx.dev.conf
-COPY docker/frontend/entrypoint.sh /entrypoint.sh
+# 🌐 Optional NGINX override for TLS
+COPY nginx.dev.conf /etc/nginx/nginx.dev.conf
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# 🚀 Start frontend with hot reload
 CMD ["npm", "start"]
