@@ -1,8 +1,11 @@
 # docker-compose.prod.yml
 # Production Docker Compose configuration for TrafficJamz application
-# This file defines services for API, WebRTC, Frontend, and Nginx with
+# This file defines services for API, WebRTC, Frontend, and supporting infrastructure
+
+version: "3.9"
 
 services:
+  # ──────────────── API Service ────────────────────────
   api:
     build:
       context: .
@@ -10,9 +13,8 @@ services:
     image: trafficjamz-api:latest
     ports:
       - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - IS_LOCAL=false
+    env_file:
+      - .env.prod         # 📦 Use external file for secrets/env vars
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -28,6 +30,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Frontend ───────────────────────────
   frontend:
     build:
       context: .
@@ -35,23 +38,27 @@ services:
     image: trafficjamz-frontend:latest
     ports:
       - "8080:8080"
-    environment:
-      - NODE_ENV=production
-      - REACT_APP_API_URL=https://your-api-url.com
-      - REACT_APP_WEBRTC_URL=https://your-webrtc-url.com
+    env_file:
+      - .env.prod
     networks:
       - app-network
     restart: always
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
+  # ──────────────── PostgreSQL ─────────────────────────
   postgres:
     image: postgres:15
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=topgun
+      - POSTGRES_PASSWORD=topgun       # 🔒 Consider using secrets or .env
       - POSTGRES_DB=audiogroupapp
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -59,6 +66,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── MongoDB ────────────────────────────
   mongodb:
     image: mongo:6
     ports:
@@ -69,6 +77,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Redis ──────────────────────────────
   redis:
     image: redis:7-alpine
     ports:
@@ -79,6 +88,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── InfluxDB ───────────────────────────
   influxdb:
     image: influxdb:2.7
     ports:
@@ -86,16 +96,17 @@ services:
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=1Topgun123
+      - DOCKER_INFLUXDB_INIT_PASSWORD=1Topgun123     # 🔒 Move to .env or secrets
       - DOCKER_INFLUXDB_INIT_ORG=audiogroupapp
       - DOCKER_INFLUXDB_INIT_BUCKET=location_data
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=qZrzdohA7sQ8aG5B2a203DW2h7zxjiGstrRCpXtSEdH-XQkvSxj8T5GQ4PN8d6inEL5HhqcwHPgRdwNe6Qs6BA==
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
     volumes:
       - influxdb-data:/var/lib/influxdb2
     networks:
       - app-network
     restart: always
 
+  # ──────────────── Zookeeper (Kafka) ──────────────────
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
     ports:
@@ -106,6 +117,7 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── Kafka ──────────────────────────────
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     ports:
@@ -123,10 +135,28 @@ services:
       - app-network
     restart: always
 
+  # ──────────────── NGINX (optional TLS + proxy) ───────
+  nginx:
+    image: nginx:stable-alpine
+    volumes:
+      - ./docker/frontend/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro                       # 🔐 TLS certs mounted from host
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - app-network
+    restart: always
+
+# ─────────────────────── Networks ───────────────────────
 networks:
   app-network:
     driver: bridge
 
+# ─────────────────────── Volumes ────────────────────────
 volumes:
   postgres-data:
   mongodb-data:
