@@ -1,3 +1,6 @@
+# kurbernetes/backend-deployment.yaml
+# This file defines the deployment for the TrafficJamz backend service in Kubernetes.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
