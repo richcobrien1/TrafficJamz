@@ -31,13 +31,13 @@ services:
   # ──────────────── Frontend ───────────────────────────
   frontend:
     build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile.prod
+      context: docker/frontend             # ✅ Scoped to match actual file location
+      dockerfile: Dockerfile.prod
     image: trafficjamz-frontend:latest
     ports:
       - "8080:8080"
     env_file:
-      - ../.env.prod
+      - ../../.env.prod                    # ✅ Adjusted path if `.env.prod` lives one level above
     depends_on:
       - api
     networks:
