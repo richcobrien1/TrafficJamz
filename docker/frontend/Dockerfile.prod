@@ -7,42 +7,42 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# 📦 Install dependencies using package.json and lockfile
-COPY docker/frontend/package*.json ./
+# 📦 Install dependencies from package.json and lock file
+COPY package*.json ./
 RUN npm ci
 
-# 📁 Copy source code and static assets
-COPY docker/frontend/src ./src
-COPY docker/frontend/public ./public
+# 📁 Copy source code and static assets (located at project root)
+COPY src ./src
+COPY public ./public
 
-# 🌐 Define build-time environment variables for backend integration
+# 🌐 Set build-time environment variables
 ENV NODE_ENV=production
 ENV REACT_APP_API_URL=/api
 ENV REACT_APP_WEBRTC_URL=/webrtc
 
-# 🏗️ Run build process using Vite to produce production artifacts
+# 🏗️ Build the Vite application
 RUN npm run build
 
-# ─── Stage 2: Serve with NGINX ──────────────────────────────────────────
+# ─── Stage 2: Serve with NGINX ───────────────────────────────────────────
 
 FROM nginx:stable-alpine
 
 WORKDIR /usr/share/nginx/html
 
-# 🚚 Copy compiled frontend assets from build stage
+# 🚚 Copy compiled build from builder stage
 COPY --from=builder /app/dist .
 
-# ⚙️ Include both production and dev NGINX configuration files
-COPY docker/frontend/nginx.conf /etc/nginx/nginx.conf
-COPY docker/frontend/nginx.dev.conf /etc/nginx/nginx.dev.conf
+# ⚙️ Inject custom NGINX configs (located at project root)
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.dev.conf /etc/nginx/nginx.dev.conf
 
-# 🔐 Inject the TLS-aware entrypoint script from frontend directory
-COPY docker/frontend/entrypoint.sh /entrypoint.sh
+# 🔐 TLS-aware entrypoint script (shared across services)
+COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# 🚀 Launch container using custom entrypoint script
+# 🚀 Launch container using dynamic NGINX config selection
 CMD ["/entrypoint.sh"]
 
-# 🌍 Expose HTTP and HTTPS ports for container traffic
+# 🌍 Expose HTTP and HTTPS ports
 EXPOSE 80
 EXPOSE 443
