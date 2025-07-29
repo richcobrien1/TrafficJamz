@@ -7,11 +7,11 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# 📦 Install dependencies from package.json and lock file
-COPY package*.json ./
+# 📦 Install dependencies from root-level manifest
+COPY docker/frontend/package*.json ./
 RUN npm ci
 
-# 📁 Copy source code and static assets (located at project root)
+# 📁 Copy app source from root-level paths
 COPY src ./src
 COPY public ./public
 
@@ -23,26 +23,25 @@ ENV REACT_APP_WEBRTC_URL=/webrtc
 # 🏗️ Build the Vite application
 RUN npm run build
 
+
 # ─── Stage 2: Serve with NGINX ───────────────────────────────────────────
 
 FROM nginx:stable-alpine
 
 WORKDIR /usr/share/nginx/html
 
-# 🚚 Copy compiled build from builder stage
+# 🚚 Transfer compiled assets from builder stage
 COPY --from=builder /app/dist .
 
-# ⚙️ Inject custom NGINX configs (located at project root)
-COPY nginx.conf /etc/nginx/nginx.conf
+# ⚙️ Apply config from root-level files
 COPY nginx.dev.conf /etc/nginx/nginx.dev.conf
 
-# 🔐 TLS-aware entrypoint script (shared across services)
+# 🔐 Drop in entrypoint from shared scripts
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# 🚀 Launch container using dynamic NGINX config selection
+# 🚀 Launch container via TLS-aware entrypoint
 CMD ["/entrypoint.sh"]
 
-# 🌍 Expose HTTP and HTTPS ports
 EXPOSE 80
 EXPOSE 443
