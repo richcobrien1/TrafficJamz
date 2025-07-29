@@ -25,8 +25,8 @@ services:
 
   frontend:
     build:
-      context: .                                # Expanded context to project root
-      dockerfile: ./docker/frontend/Dockerfile.prod
+      context: ../                              # Build context starts from project root
+      dockerfile: docker/frontend/Dockerfile.prod  # Points to frontend’s production Dockerfile
     environment:
       - NODE_ENV=production
       - IS_LOCAL=false
