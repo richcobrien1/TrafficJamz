@@ -1,8 +1,6 @@
 # docker-compose.prod.yml
 # Production Docker Compose configuration for TrafficJamz
 
-version: "3.8"
-
 services:
   api:
     build:
