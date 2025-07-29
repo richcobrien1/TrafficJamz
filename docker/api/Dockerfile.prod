@@ -1,12 +1,13 @@
 # docker/api/Dockerfile.prod
 # Production-ready Dockerfile for the TrafficJamz backend
 
+# ─── Base Image ─────────────────────────────────────────────────────────
 FROM node:20-alpine
 
-# 📁 Working directory
+# 📁 Define working directory
 WORKDIR /app
 
-# 🧰 Install build tools (needed for native modules)
+# 🧰 Install native build tools required for node modules with C bindings
 RUN apk add --no-cache \
   python3 \
   py3-pip \
@@ -15,19 +16,19 @@ RUN apk add --no-cache \
   linux-headers \
   curl
 
-# 📦 Copy only package manifest for install caching
+# 📦 Copy only package manifest files to leverage Docker layer caching
 COPY jamz-server/package*.json ./
 
-# 🔧 Install production dependencies
+# 🔧 Install production-only dependencies to reduce image size
 RUN npm install --omit=dev
 
-# 🚚 Copy source code (only after install for clean cache layers)
+# 🚚 Copy application code and shared logic after dependencies
 COPY jamz-server/src ./src
 COPY jamz-server/public ./public
 COPY shared ./shared
 
-# 🌱 Runtime environment
+# 🌱 Set runtime environment variable
 ENV NODE_ENV=production
 
-# 🔥 Start the backend server
+# 🔥 Start the backend server via NPM (can swap for entrypoint if needed)
 CMD ["npm", "start"]
