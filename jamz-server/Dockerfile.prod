@@ -1,0 +1,25 @@
+# jamz-server/Dockerfile.prod
+# Usage: docker build -f jamz-server/Dockerfile.prod jamz-server
+# Context: jamz-server/
+# Purpose: Production-ready build for TrafficJamz backend with mediasoup support
+
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install Python and build tools required by mediasoup postinstall
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    make \
+    g++ \
+    bash \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+RUN npm install --omit=dev
+
+COPY . .
+
+EXPOSE 5000
+CMD ["node", "src/server.js"]
