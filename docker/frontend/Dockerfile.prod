@@ -1,5 +1,5 @@
-# docker/frontend/Dockerfile.prod
-# Dockerfile for building and serving the React/Vite frontend application
+# File: docker/frontend/Dockerfile.prod
+# Usage: Build from project root with context: . and dockerfile: docker/frontend/Dockerfile.prod
 
 # ─── Stage 1: Build ─────────────────────────────────────────────────────
 
@@ -7,13 +7,15 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# 📦 Install dependencies from root-level manifest
-COPY frontend/package*.json ./
+# 📦 Install dependencies from jamz-client-vite
+COPY jamz-client-vite/package*.json ./
 RUN npm ci
 
-# 📁 Copy app source from root-level paths
-COPY src ./src
-COPY public ./public
+# 📁 Copy app source from jamz-client-vite
+COPY jamz-client-vite/index.html ./
+COPY jamz-client-vite/vite.config.js ./
+COPY jamz-client-vite/src ./src
+COPY jamz-client-vite/public ./public
 
 # 🌐 Set build-time environment variables
 ENV NODE_ENV=production
@@ -33,11 +35,11 @@ WORKDIR /usr/share/nginx/html
 # 🚚 Transfer compiled assets from builder stage
 COPY --from=builder /app/dist .
 
-# ⚙️ Apply config from root-level files
-COPY nginx.dev.conf /etc/nginx/nginx.dev.conf
+# ⚙️ Apply config from docker/frontend
+COPY docker/frontend/nginx.dev.conf /etc/nginx/nginx.dev.conf
 
-# 🔐 Drop in entrypoint from shared scripts
-COPY scripts/entrypoint.sh /entrypoint.sh
+# 🔐 Drop in entrypoint from docker/frontend
+COPY docker/frontend/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # 🚀 Launch container via TLS-aware entrypoint

@@ -1,3 +1,6 @@
+# //docker-compose.yml
+
+
 # This is a Docker Compose file for a Node.js application with a backend and frontend service.
 # It defines the services, their build configurations, environment variables, ports, and health checks.
 

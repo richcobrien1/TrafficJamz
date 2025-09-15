@@ -1,16 +1,16 @@
-# docker-compose.prod.yml
-# Production Docker Compose configuration for TrafficJamz
+# File: docker-compose.prod.yml
+# Usage: Run from project root (TrafficJamz/)
+# All build contexts are scoped to match actual folder layout
+# Requires Docker CLI with buildx and compose plugin
 
 services:
   api:
     build:
-      context: ../
-      dockerfile: docker/api/Dockerfile.prod
+      context: ./jamz-server
+      dockerfile: Dockerfile.prod
     image: trafficjamz-api:latest
     ports:
       - "5000:5000"
-    env_file:
-      - /mnt/c/Users/richc/Projects/TrafficJamz/.env.prod
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -28,23 +28,23 @@ services:
 
   frontend:
     build:
-      context: ../
+      context: .
       dockerfile: docker/frontend/Dockerfile.prod
     image: trafficjamz-frontend:latest
     ports:
-      - "8080:8080"
+      - "8080:80"
     env_file:
-      - /mnt/c/Users/richc/Projects/TrafficJamz/.env.prod
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - ./docker/frontend/.env.prod
     depends_on:
       - api
     networks:
       - app-network
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   postgres:
     image: postgres:15
@@ -91,7 +91,6 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=audiogroupapp
       - DOCKER_INFLUXDB_INIT_BUCKET=location_data
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=qZrzdohA7sQ8aG5B2a203DW2h7zxjiGstrRCpXtSEdH-XQkvSxj8T5GQ4PN8d6inEL5HhqcwHPgRdwNe6Qs6BA==
-
     volumes:
       - influxdb-data:/var/lib/influxdb2
     networks:
@@ -127,12 +126,12 @@ services:
 
   nginx:
     image: nginx:stable-alpine
+    volumes:
+      - ./docker/frontend/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ../docker/frontend/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ../certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - api
