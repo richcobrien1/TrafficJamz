@@ -104,7 +104,7 @@ const LocationTracking = () => {
   const markersRef = useRef({});
   const timerRef = useRef(null);
   
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21kYzVpd2IzMDd6ajJ0cHRvNGYydGRsdiJ9.89FeCISmey4c97RxO813gg';
+  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21mbHUzYzEyMDB1aDJrcGk1b21tNGo4NSJ9.l3ktc0UzLQVrD7wIaL6oFA';
   if (!MAPBOX_TOKEN) {
     console.error('Missing Mapbox token');
     return;
