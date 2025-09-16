@@ -16,8 +16,55 @@
 import axios from 'axios';
 
 // 🔗 Create axios instance with base API URL
+const rawBase = import.meta.env.VITE_API_BASE || '';
+
+// Normalize baseURL: remove trailing slash
+const normalizedBase = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE, // must be defined in .env
+  baseURL: normalizedBase, // must be defined in .env
+});
+
+// Normalize request URL to avoid double '/api' when callers include it
+api.interceptors.request.use((config) => {
+  try {
+    if (!config || !config.url) return config;
+
+    const baseHasApi = (api.defaults.baseURL || '').replace(/\/$/, '').endsWith('/api');
+
+    // If baseURL ends with '/api' and caller also prefixed '/api', strip the extra '/api'
+    if (baseHasApi) {
+      // Remove leading double-slashes and normalize
+      config.url = config.url.replace(/^\/+/, '/');
+
+        // If caller included '/api' too, strip it. Also log stack to trace origin during debugging
+        if (config.url.startsWith('/api/')) {
+          // DEBUG: capture stack and log if double '/api' would have occurred
+          try {
+            const err = new Error('Trace api/api');
+            // Remove this console.debug after debugging
+            console.debug('🕵️ Detected caller prefix /api when baseURL ends with /api. Stack:');
+            console.debug(err.stack);
+          } catch (e) {
+            // ignore
+          }
+
+          config.url = config.url.replace(/^\/api/, '');
+          if (!config.url.startsWith('/')) config.url = '/' + config.url;
+        } else if (config.url === '/api') {
+          // convert '/api' -> '/'
+          config.url = '/';
+        }
+    } else {
+      // Ensure no accidental double slashes when baseURL doesn't end with '/'
+      config.url = config.url.replace(/\/+/g, '/');
+    }
+
+    return config;
+  } catch (err) {
+    // If normalization fails, proceed with original config
+    return config;
+  }
 });
 
 // 🔐 Request interceptor to attach token

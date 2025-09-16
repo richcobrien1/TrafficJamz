@@ -38,7 +38,7 @@ const InvitationAccept = () => {
         setStatus('loading');
         
         // First, fetch the group to get the invitation
-        const groupResponse = await api.get(`/api/groups/${groupId}`);
+  const groupResponse = await api.get(`/groups/${groupId}`);
         const fetchedGroup = groupResponse.data.group;
         setGroup(fetchedGroup);
         
@@ -66,7 +66,7 @@ const InvitationAccept = () => {
         
         // Check if the invitation email belongs to a registered user
         try {
-          const checkUserResponse = await api.get(`/api/users/check-email?email=${fetchedInvitation.email}`);
+          const checkUserResponse = await api.get(`/users/check-email?email=${fetchedInvitation.email}`);
           setIsRegisteredUser(checkUserResponse.data.exists);
 
           console.log('Registered user is: ' + checkUserResponse.data.exists, checkUserResponse)
@@ -111,10 +111,10 @@ const InvitationAccept = () => {
       
       if (isRegisteredUser) {
         // For registered users, simply accept the invitation
-        acceptResponse = await api.post(`/api/groups/invitations/${invitation.id}/accept`);
+  acceptResponse = await api.post(`/groups/invitations/${invitation.id}/accept`);
       } else {
         // For new users, accept with additional profile data
-        acceptResponse = await api.post(`/api/groups/invitations/${invitation.id}/accept-new`, {
+  acceptResponse = await api.post(`/groups/invitations/${invitation.id}/accept-new`, {
           firstName: formData.firstName,
           lastName: formData.lastName,
           mobilePhone: formData.mobilePhone,
@@ -125,7 +125,7 @@ const InvitationAccept = () => {
       console.log('Accept response:', acceptResponse.data);
       
       // Fetch the updated group data to get the latest member list
-      const updatedGroupResponse = await api.get(`/api/groups/${groupId}`);
+  const updatedGroupResponse = await api.get(`/groups/${groupId}`);
       const updatedGroup = updatedGroupResponse.data.group;
       
       // Update the state with the latest group data
