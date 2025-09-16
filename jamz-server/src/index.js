@@ -265,16 +265,25 @@ function setupServer() {
   app.use('/api/notifications', notificationRoutes);
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'ok', 
+  app.get('/health', async (req, res) => {
+    let postgresStatus = 'disconnected';
+    try {
+      await sequelize.authenticate();
+      postgresStatus = 'connected';
+    } catch (err) {
+      postgresStatus = 'disconnected';
+    }
+
+    res.status(200).json({
+      status: 'ok',
       timestamp: new Date(),
       mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       mongodb_state: getMongoConnectionStateDescription(mongoose.connection.readyState),
-      postgres: sequelize.authenticate().then(() => true).catch(() => false) ? 'connected' : 'disconnected',
+      postgres: postgresStatus,
       socketio: io ? 'initialized' : 'not initialized'
     });
   });
+
 
   // Root endpoint
   app.get('/', (req, res) => {
