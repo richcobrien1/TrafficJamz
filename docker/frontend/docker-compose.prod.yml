@@ -1,27 +1,21 @@
-# ============================================================================
 # File: docker/frontend/docker-compose.prod.yml
-# Purpose: Standalone compose file to build and run the TrafficJamz frontend
+# Purpose: Build and run the TrafficJamz frontend in isolation
 # Usage:
-#   From the project root:
-#     docker compose -f docker/frontend/docker-compose.prod.yml build
-#     docker compose -f docker/frontend/docker-compose.prod.yml up -d
-#
+#   docker compose -f docker/frontend/docker-compose.prod.yml up -d --build client
 # Notes:
-# - Uses Dockerfile.prod to build the production frontend image.
-# - Loads environment variables from .env.prod in this same folder.
-# - Maps frontend to host ports 3000 (HTTP) and 3443 (HTTPS).
-# - For full stack (API, DB, Kafka, etc.), use the root docker-compose.yml.
-# ============================================================================
+#   - Uses the same service name ("client") as the root compose file
+#   - Useful for rapid UI iteration without spinning up the full stack
 
 services:
-  frontend:
-    container_name: trafficjamz-frontend
+  client:
     build:
-      context: ../..                       # project root relative to docker/frontend/
+      context: ../..                # project root
       dockerfile: docker/frontend/Dockerfile.prod
-    env_file:
-      - ./.env.prod                        # env file is in the same folder as this compose file
+    image: trafficjamz-client:latest
+    container_name: trafficjamz-client
     ports:
-      - "3000:80"
+      - "8080:80"
       - "3443:443"
+    env_file:
+      - ./docker/frontend/.env.prod
     restart: unless-stopped

@@ -1,5 +1,21 @@
-// jamz-client-vite/src/App.jsx
-// This file is part of the TrafficJamz project, a real-time traffic management system.
+// File: jamz-client-vite/src/App.jsx
+// Project: TrafficJamz - real-time traffic management system
+//
+// Purpose:
+//   - Defines the main application component
+//   - Sets up global theme (MUI)
+//   - Provides authentication context
+//   - Configures client-side routing with React Router
+//   - Wraps routes with Suspense for lazy loading
+//   - Adds animated route transitions (Framer Motion)
+//   - Protects private routes with <ProtectedRoute>
+//
+// Notes:
+//   - Public routes: /auth/login, /auth/register, /auth/forgot-password, /groups/invitation/:inviteId
+//   - Protected routes: /dashboard, /groups/:groupId, /audio/:sessionId, /location-tracking/:groupId, /profile, /subscription-plans
+//   - Root ("/") currently redirects to /dashboard
+//   - Catch-all (*) renders <NotFound />
+//   - Mapbox dev route (/dev/map) is currently unprotected for testing
 
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -37,8 +53,7 @@ const theme = createTheme({
 });
 
 function App() {
-
-const location = useLocation();
+  const location = useLocation();
 
   return (
     <ThemeProvider theme={theme}>
@@ -60,7 +75,7 @@ const location = useLocation();
                 <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                 <Route path="/groups/invitation/:inviteId" element={<InvitationAccept />} />
 
-                {/* Protected routes with optional role guards */}
+                {/* Protected routes */}
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
