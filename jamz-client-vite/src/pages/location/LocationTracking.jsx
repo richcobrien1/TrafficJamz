@@ -171,7 +171,7 @@ const LocationTracking = () => {
         // In a real implementation, fetch actual location data
         let locationData;
         try {
-          const response = await api.get(`/api/location/group/${groupId}`);
+          const response = await api.get(`/location/group/${groupId}`);
           locationData = response.data.locations;
           
           // Reset consecutive errors and retry delay on success
@@ -289,8 +289,8 @@ const LocationTracking = () => {
       
       // In a real implementation, fetch actual group data
       let groupData;
-      try {
-        const response = await api.get(`/api/groups/${groupId}`);
+  try {
+  const response = await api.get(`/groups/${groupId}`);
         groupData = response.data.group;
       } catch (error) {
         console.log('Using mock group data due to API error:', error);
@@ -343,7 +343,7 @@ const LocationTracking = () => {
       // In a real implementation, fetch actual location data
       let locationData;
       try {
-        const response = await api.get(`/api/location/group/${groupId}`);
+        const response = await api.get(`/location/group/${groupId}`);
         locationData = response.data.locations;
       } catch (error) {
         console.log('Using mock location data due to API error:', error);
@@ -664,7 +664,7 @@ const LocationTracking = () => {
       stopLocationTracking();
       
       // Notify server that user stopped sharing
-      api.post(`/api/location/stop-sharing`, {
+      api.post(`/location/stop-sharing`, {
         group_id: groupId,
         user_id: user?.id || 'current-user'
       }).catch(error => {
@@ -685,7 +685,7 @@ const LocationTracking = () => {
         connection_type: navigator.connection ? navigator.connection.type : 'unknown'
       };
       
-      await api.post('/api/location/update', locationData).catch(error => {
+  await api.post('/location/update', locationData).catch(error => {
         console.log('Mock location update - would send:', locationData);
       });
     } catch (error) {
