@@ -7,8 +7,9 @@
     "jamz-server"
   ],
   "scripts": {
-    "build": "cd jamz-client-vite && npm run build",
-    "dev": "cd jamz-server && npm run dev"
+  "build": "cd jamz-client-vite && npm run build",
+  "dev": "cd jamz-server && npm run dev",
+  "smoke:routes": "node scripts/smoke_routes.js"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

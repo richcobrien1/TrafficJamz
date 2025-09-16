@@ -360,7 +360,7 @@ const AudioSession = () => {
       // First, check if the session exists
       let sessionData;
       try {
-        const response = await api.get(`/api/audio/sessions/${sessionId}`);
+  const response = await api.get(`/audio/sessions/${sessionId}`);
         if (response.data && response.data.session) {
           sessionData = response.data.session;
         }
@@ -393,7 +393,7 @@ const AudioSession = () => {
       
       // Now join the session as a participant
       try {
-        const joinResponse = await api.post(`/api/audio/sessions/${sessionData.id}/join`, {
+  const joinResponse = await api.post(`/audio/sessions/${sessionData.id}/join`, {
           user_id: user.id,
           display_name: user.name || user.username || 'User',
           device_type: 'web'
@@ -414,7 +414,7 @@ const AudioSession = () => {
       
       // Fetch participants
       try {
-        const participantsResponse = await api.get(`/api/audio/sessions/${sessionData.id}/participants`);
+  const participantsResponse = await api.get(`/audio/sessions/${sessionData.id}/participants`);
         if (participantsResponse.data && participantsResponse.data.participants) {
           setParticipants(participantsResponse.data.participants);
         }
@@ -611,7 +611,7 @@ const AudioSession = () => {
   const leaveSession = async () => {
     try {
       if (session) {
-        await api.post(`/api/audio/sessions/${session.id}/leave`, {
+        await api.post(`/audio/sessions/${session.id}/leave`, {
           user_id: user.id
         });
       }

@@ -69,7 +69,7 @@ const Dashboard = () => {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/groups');
+  const response = await api.get('/groups');
       setGroups(response.data.groups);
       setError('');
     } catch (error) {
@@ -81,7 +81,7 @@ const Dashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await api.get('/api/notifications/unread');
+  const response = await api.get('/notifications/unread');
       setNotifications(response.data.notifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -105,7 +105,7 @@ const Dashboard = () => {
       setCreateGroupLoading(true);
       setCreateGroupError('');
 
-      const response = await api.post('/api/groups', {
+  const response = await api.post('/groups', {
         group_name: newGroupName,
         group_description: newGroupDescription
       });

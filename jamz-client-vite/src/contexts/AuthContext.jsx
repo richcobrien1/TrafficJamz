@@ -30,8 +30,8 @@ export const AuthProvider = ({ children }) => {
           console.log('Found existing token in localStorage');
           
           // Fetch user profile with the token
-          try {
-            const response = await api.get('/api/users/profile');
+            try {
+              const response = await api.get('/users/profile');
             if (response.data) {
               setUser(response.data);
               console.log('User profile fetched successfully');
@@ -60,8 +60,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      console.log('Attempting login with:', email);
-      const response = await api.post('/api/auth/login', { email, password });
+  console.log('Attempting login with:', email);
+  const response = await api.post('/auth/login', { email, password });
       
       if (response.data) {
         console.log('Login successful');
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await api.post('/api/auth/register', userData);
+  const response = await api.post('/auth/register', userData);
       
       if (response.data) {
         setUser(response.data.user);
@@ -114,8 +114,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       
       // Call logout endpoint if needed
-      try {
-        await api.post('/api/auth/logout');
+  try {
+  await api.post('/auth/logout');
       } catch (logoutError) {
         console.warn('Logout API call failed:', logoutError);
         // Continue with local logout even if API call fails
@@ -140,7 +140,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await api.post('/api/auth/reset-password', { email });
+  const response = await api.post('/auth/reset-password', { email });
       
       return response.data;
     } catch (error) {
@@ -158,7 +158,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await api.post('/api/auth/change-password', { 
+      const response = await api.post('/auth/change-password', { 
         currentPassword, 
         newPassword 
       });
@@ -179,7 +179,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await api.put('/api/users/profile', userData);
+  const response = await api.put('/users/profile', userData);
       
       if (response.data) {
         setUser(response.data);
