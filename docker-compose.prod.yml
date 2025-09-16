@@ -13,9 +13,10 @@ services:
       - "5000:5000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      interval: 30s        # how often to run the check
+      timeout: 10s         # how long to wait before failing
+      retries: 5           # how many times to retry before marking unhealthy
+      start_period: 30s    # grace period before healthchecks begin
     depends_on:
       - postgres
       - mongodb
