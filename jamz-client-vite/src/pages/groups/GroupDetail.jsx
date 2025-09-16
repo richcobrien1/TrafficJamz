@@ -89,7 +89,7 @@ const GroupDetail = () => {
   const fetchGroupDetails = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/groups/${groupId}`);
+  const response = await api.get(`/groups/${groupId}`);
       setGroup(response.data.group);
       setEditName(response.data.group.name);
       setCreatedAt(response.data.group.createdAt);
@@ -125,7 +125,7 @@ const GroupDetail = () => {
       setInviteLoading(true);
       setInviteError('');
       
-      await api.post(`/api/groups/${groupId}/invitations`, {
+  await api.post(`/groups/${groupId}/invitations`, {
         email: inviteEmail,
         text: inviteTextMsg
       });
@@ -145,14 +145,14 @@ const GroupDetail = () => {
     try {
       setSubmitting(true); // Now this will work
       
-      console.log('Sending PUT request to:', `/api/groups/${groupId}`);
+  console.log('Sending PUT request to:', `/groups/${groupId}`);
       console.log('Request data:', {
         group_name: editName,
         group_description: editDescription,
         // TODO other fields...
       });
       
-      const response = await api.put(`/api/groups/${groupId}`, {
+  const response = await api.put(`/groups/${groupId}`, {
         group_name: editName,
         group_description: editDescription,
         privacy_level: privacyLevel,
@@ -196,7 +196,7 @@ const GroupDetail = () => {
       setDeleteLoading(true);
       
       // Try using the exact MongoDB _id format
-      await api.delete(`/api/groups/${correctGroupId}`, {
+  await api.delete(`/groups/${correctGroupId}`, {
         data: { 
           owner_id: ownerMember.user_id,
           // Include the ID in the body as well in case the route expects it there
@@ -218,7 +218,7 @@ const GroupDetail = () => {
   
   const handleLeaveGroup = async (user_id) => {
     try {
-      await api.delete(`/api/groups/${groupId}/members/${user_id}`);
+  await api.delete(`/groups/${groupId}/members/${user_id}`);
       navigate('/');
     } catch (error) {
       console.error('Error leaving group:', error);
