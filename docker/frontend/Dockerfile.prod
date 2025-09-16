@@ -32,6 +32,15 @@ FROM nginx:stable-alpine
 
 WORKDIR /usr/share/nginx/html
 
+# 🔐 Install openssl and generate self-signed certs so nginx always has something to load
+RUN apk add --no-cache openssl && \
+    mkdir -p /etc/nginx/certs && \
+    openssl req -x509 -nodes -days 365 \
+      -subj "/CN=localhost" \
+      -newkey rsa:2048 \
+      -keyout /etc/nginx/certs/privkey.pem \
+      -out /etc/nginx/certs/fullchain.pem
+
 # 🚚 Transfer compiled assets from builder stage
 COPY --from=builder /app/dist .
 
