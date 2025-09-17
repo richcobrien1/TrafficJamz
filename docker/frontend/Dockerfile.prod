@@ -45,6 +45,8 @@ COPY --from=builder /app/jamz-client-vite/dist .
 # `worker_processes` and `http` blocks) and must replace the main nginx.conf,
 # not a conf.d fragment.
 COPY docker/frontend/nginx.conf /etc/nginx/nginx.conf
+# Also copy the TLS-capable nginx config so the entrypoint can enable HTTPS
+COPY docker/frontend/nginx.dev.conf /etc/nginx/nginx.dev.conf
 
 # 🔐 Entrypoint
 COPY docker/frontend/entrypoint.sh /entrypoint.sh

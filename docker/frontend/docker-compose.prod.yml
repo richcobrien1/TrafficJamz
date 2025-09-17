@@ -17,5 +17,7 @@ services:
       - "8080:80"
       - "3443:443"
     env_file:
-      - ./docker/frontend/.env.prod
+      - ./.env.prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
