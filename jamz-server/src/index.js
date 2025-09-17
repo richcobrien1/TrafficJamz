@@ -256,6 +256,31 @@ function setupServer() {
   });
 
   // Use routes
+  // --- Compatibility middleware: rewrite requests that lost the /api prefix ---
+  // Some reverse proxies or misconfigured nginx instances may strip the leading
+  // /api prefix before forwarding. To keep runtime behavior resilient, rewrite
+  // incoming requests that appear to target known API roots (e.g. /auth, /users,
+  // /groups, etc.) by prefixing /api so the existing routers match.
+  app.use((req, res, next) => {
+    try {
+      const p = req.path || req.url || '';
+      if (!p.startsWith('/api/')) {
+        const roots = ['auth', 'users', 'groups', 'audio', 'location', 'subscriptions', 'notifications'];
+        for (const r of roots) {
+          if (p === `/${r}` || p.startsWith(`/${r}/`)) {
+            const old = req.url;
+            req.url = '/api' + req.url;
+            console.log(`Rewriting request URL -> ${old} -> ${req.url}`);
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      // non-fatal
+    }
+    next();
+  });
+
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/groups', groupRoutes);
