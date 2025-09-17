@@ -3,17 +3,19 @@
 # Context: jamz-server/
 # Purpose: Production-ready build for TrafficJamz backend with mediasoup support
 
-FROM node:20-slim
+FROM node:20-bullseye
 
 WORKDIR /app
 
 # Install Python and build tools required by mediasoup postinstall
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     python3 \
     python3-pip \
     make \
     g++ \
     bash \
+ && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
