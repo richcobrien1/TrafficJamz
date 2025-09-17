@@ -15,7 +15,7 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+// Replaced Lock icon with the TrafficJamz logo (served from public/)
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
@@ -75,7 +75,7 @@ const Login = () => {
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-          <LockOutlinedIcon />
+          <img src="/TrafficJamz.ico" alt="TrafficJamz" style={{ width: 48, height: 48 }} />
         </Avatar>
         <Typography component="h1" variant="h5">
           Sign in
