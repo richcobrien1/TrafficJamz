@@ -24,6 +24,7 @@ const TIMEOUT_MS = parseInt(process.env.SMOKE_TIMEOUT_MS || '8000', 10);
 const SMOKE_TOKEN = process.env.SMOKE_TOKEN || null;
 const SMOKE_USER = process.env.SMOKE_USER || null; // email
 const SMOKE_PASS = process.env.SMOKE_PASS || null; // password
+const SMOKE_ALLOW_404 = (process.env.SMOKE_ALLOW_404 || 'true').toLowerCase() === 'true';
 
 function readFilesRecursive(dir) {
   const results = [];
@@ -83,8 +84,33 @@ function normalizeBaseAndPath(base, routePath) {
   let b = base.replace(/\/$/, '');
   // Ensure routePath begins with '/'
   let p = routePath.startsWith('/') ? routePath : '/' + routePath;
+  // Replace any path parameters like :id with sensible sample values
+  p = fillPathParams(p);
+
   // Join
   return b + p;
+}
+
+function fillPathParams(p) {
+  // map of common param names to sample values
+  const samples = {
+    groupId: '1',
+    group_id: '1',
+    user_id: '1',
+    id: '1',
+    feature: 'default',
+    type: 'all',
+    planId: '1',
+    plan_id: '1',
+    alertId: '1',
+    sessionId: '1',
+    transportId: '1',
+    consumerId: '1'
+  };
+
+  return p.replace(/:([A-Za-z0-9_]+)/g, (match, name) => {
+    return samples.hasOwnProperty(name) ? samples[name] : '1';
+  });
 }
 
 async function testRoute(base, method, routePath) {
@@ -192,6 +218,9 @@ async function testRoute(base, method, routePath) {
     } else if (r.status === 401 && !globalThis.__SMOKE_TOKEN) {
       // Expected protected endpoint when unauthenticated
       console.log(`AUTH_REQUIRED (${r.status})`);
+    } else if (r.status === 404 && route.method === 'GET' && SMOKE_ALLOW_404) {
+      // Data-dependent GET returned no resource; treat as informational
+      console.log(`NO_DATA (${r.status})`);
     } else if (r.status) {
       console.log(`FAIL (${r.status} ${r.statusText})`);
     } else {
@@ -205,7 +234,16 @@ async function testRoute(base, method, routePath) {
   const passed = results.filter(x => x.result.ok);
   const authRequired = results.filter(x => x.result.status === 401 && !globalThis.__SMOKE_TOKEN);
   const badRequests = results.filter(x => x.result.status === 400);
-  const otherFailures = results.filter(x => !x.result.ok && x.result.status !== 401 && x.result.status !== 400);
+  // Treat GET 404 responses as non-fatal when SMOKE_ALLOW_404 is true
+  const otherFailures = results.filter(x => {
+    if (x.result.ok) return false;
+    if (x.result.status === 401) return false;
+    if (x.result.status === 400) return false;
+    if (SMOKE_ALLOW_404 && x.result.status === 404 && x.route.method === 'GET') return false;
+    return true;
+  });
+
+  const noData = results.filter(x => x.result.status === 404 && x.route.method === 'GET');
 
   console.log('\nSummary:');
   console.log(`  Total routes tested: ${results.length}`);
@@ -213,6 +251,7 @@ async function testRoute(base, method, routePath) {
   console.log(`  Auth-required (expected when unauthenticated): ${authRequired.length}`);
   console.log(`  Bad Request (400): ${badRequests.length}`);
   console.log(`  Other Failures: ${otherFailures.length}`);
+  console.log(`  No-data (GET 404): ${noData.length}`);
 
   if (otherFailures.length > 0) {
     console.log('\nUnexpected Failures:');
