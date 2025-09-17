@@ -2,7 +2,7 @@
 # This Dockerfile builds the backend service using Node.js and prepares it for production deployment.
 
 # ⛏️ Build Stage
-FROM node:20 AS builder
+FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN npm install --global npm@latest && npm install --workspace=backend
 RUN npm --workspace=backend rebuild mediasoup
 
 # ⛏️ Production Stage
-FROM node:20-slim
+FROM node:20-bullseye
 
 WORKDIR /app
 

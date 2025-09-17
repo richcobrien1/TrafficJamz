@@ -39,15 +39,8 @@ api.interceptors.request.use((config) => {
 
         // If caller included '/api' too, strip it. Also log stack to trace origin during debugging
         if (config.url.startsWith('/api/')) {
-          // DEBUG: capture stack and log if double '/api' would have occurred
-          try {
-            const err = new Error('Trace api/api');
-            // Remove this console.debug after debugging
-            console.debug('🕵️ Detected caller prefix /api when baseURL ends with /api. Stack:');
-            console.debug(err.stack);
-          } catch (e) {
-            // ignore
-          }
+          // DEBUG: throw so DevTools will pause on the exact call site (enable "Pause on exceptions")
+          // If caller included '/api' too, strip it.
 
           config.url = config.url.replace(/^\/api/, '');
           if (!config.url.startsWith('/')) config.url = '/' + config.url;
