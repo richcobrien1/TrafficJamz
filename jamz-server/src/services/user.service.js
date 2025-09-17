@@ -7,6 +7,36 @@ const { Op } = require('sequelize');
  * User service for handling user-related operations
  */
 class UserService {
+  // Helper: normalize user JSON before returning to callers
+  normalizeUserJson(userJson) {
+    if (!userJson) return userJson;
+    try {
+      // Ensure mfa_methods is an array
+      if (userJson.mfa_methods === null || userJson.mfa_methods === undefined) {
+        userJson.mfa_methods = [];
+      } else if (typeof userJson.mfa_methods === 'string') {
+        // Try to parse JSON stored as string, otherwise coerce to empty array
+        try {
+          const parsed = JSON.parse(userJson.mfa_methods);
+          userJson.mfa_methods = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          // fallback: attempt to split common formats or set empty
+          userJson.mfa_methods = [];
+        }
+      } else if (!Array.isArray(userJson.mfa_methods)) {
+        // If it's an object or other type, coerce to empty array
+        userJson.mfa_methods = [];
+      }
+
+      // Ensure preferences is an object
+      if (!userJson.preferences || typeof userJson.preferences !== 'object') {
+        userJson.preferences = {};
+      }
+    } catch (err) {
+      // Non-fatal: return as-is if normalization fails
+    }
+    return userJson;
+  }
   /**
    * Register a new user
    * @param {Object} userData - User registration data
@@ -40,10 +70,9 @@ class UserService {
       });
 
       // Remove sensitive data
-      const userJson = user.toJSON();
-      delete userJson.password_hash;
-
-      return userJson;
+  const userJson = user.toJSON();
+  delete userJson.password_hash;
+  return this.normalizeUserJson(userJson);
     } catch (error) {
       throw error;
     }
@@ -89,9 +118,9 @@ class UserService {
         // Remove sensitive data
         const userJson = user.toJSON();
         delete userJson.password_hash;
-  
+
         return {
-          user: userJson,
+          user: this.normalizeUserJson(userJson),
           ...tokens
         };
       } catch (tokenError) {
@@ -110,32 +139,53 @@ class UserService {
    * @returns {Object} - Access and refresh tokens
    */
   generateTokens(user) {
-    // Add logging to debug
-    console.log('User object in generateTokens:', JSON.stringify(user));
-    console.log('user_id type:', typeof user.user_id);
-    
-    // Ensure user_id is a string
-    const user_id = String(user.user_id);
-    
-    const accessToken = jwt.sign(
-      { sub: user_id, username: user.username },
-      process.env.JWT_SECRET,
-      // { expiresIn: process.env.JWT_ACCESS_EXPIRATION || '24h' }
-      { expiresIn: '24h' }
-    );
-  
-    const refreshToken = jwt.sign(
-      { sub: user_id },
-      process.env.JWT_SECRET,
-      // { expiresIn: process.env.JWT_REFRESH_EXPIRATION || '30d' }
-      { expiresIn: '30d' }
-    );
-  
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      token_type: 'Bearer'
-    };
+    // Defensive logging: avoid stringifying Sequelize instances (can cause circular errors)
+    try {
+      const userObj = (user && typeof user.toJSON === 'function') ? user.toJSON() : user;
+      console.log('generateTokens - user snapshot:', {
+        user_id: userObj && userObj.user_id,
+        username: userObj && userObj.username
+      });
+
+      // Ensure JWT_SECRET is configured
+      if (!process.env.JWT_SECRET) {
+        console.error('JWT_SECRET is not set - cannot sign tokens');
+        throw new Error('Server configuration error');
+      }
+
+      // Ensure user_id is a string
+      const user_id = String(userObj && userObj.user_id);
+
+      // Sign tokens and surface any errors clearly
+      let accessToken;
+      let refreshToken;
+      try {
+        accessToken = jwt.sign(
+          { sub: user_id, username: userObj && userObj.username },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        refreshToken = jwt.sign(
+          { sub: user_id },
+          process.env.JWT_SECRET,
+          { expiresIn: '30d' }
+        );
+      } catch (jwtErr) {
+        console.error('JWT signing error in generateTokens:', jwtErr);
+        throw new Error('Authentication token generation failed');
+      }
+
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        token_type: 'Bearer'
+      };
+    } catch (err) {
+      // Bubble up with a clear message for the caller to handle/log
+      console.error('generateTokens - fatal error:', err);
+      throw err;
+    }
   }  
 
   /**
@@ -180,11 +230,11 @@ class UserService {
         throw new Error('User not found');
       }
 
-      // Remove sensitive data
-      const userJson = user.toJSON();
-      delete userJson.password_hash;
+  // Remove sensitive data
+  const userJson = user.toJSON();
+  delete userJson.password_hash;
 
-      return userJson;
+  return this.normalizeUserJson(userJson);
     } catch (error) {
       throw error;
     }
@@ -208,11 +258,11 @@ class UserService {
         throw new Error('User not found');
       }
 
-      // Remove sensitive data
-      const userJson = user.toJSON();
-      delete userJson.password_hash;
+  // Remove sensitive data
+  const userJson = user.toJSON();
+  delete userJson.password_hash;
 
-      return userJson;
+  return this.normalizeUserJson(userJson);
     } catch (error) {
       throw error;
     }

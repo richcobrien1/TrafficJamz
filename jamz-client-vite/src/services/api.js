@@ -63,17 +63,19 @@ api.interceptors.request.use((config) => {
 // 🔐 Request interceptor to attach token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Support both 'token' and 'access_token' keys
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('✅ Token attached to request headers');
-    } else {
-      console.warn('⚠️ No token found for API request');
+      if (import.meta.env.MODE === 'development') {
+        // Only log in development to avoid noisy console output in production
+        console.debug('Token attached to request headers');
+      }
     }
     return config;
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error);
+    if (import.meta.env.MODE === 'development') console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );

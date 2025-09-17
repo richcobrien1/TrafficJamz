@@ -53,6 +53,8 @@ app.use((req, res, next) => {
 // ===== CORS Configuration =====
 const allowedOrigins = [
   'http://localhost:5173',           // Vite dev server
+  'http://localhost:8080',           // Frontend nginx (HTTP)
+  'https://localhost:3443',          // Frontend nginx (HTTPS)
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us'        // Android apps
