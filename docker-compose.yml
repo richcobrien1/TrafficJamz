@@ -28,7 +28,7 @@ services:
 
   frontend:
     build:
-      context: ../                              # Build context starts from project root
+      context: .                              # Build context is repo root (was .. which caused wrong path)
       dockerfile: docker/frontend/Dockerfile.prod  # Points to frontend’s production Dockerfile
     environment:
       - NODE_ENV=production
