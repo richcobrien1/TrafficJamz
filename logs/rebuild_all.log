@@ -1,0 +1,129 @@
+[rebuild_all] Starting at Tue Sep 16 18:08:06 MDT 2025
+[rebuild_all] Using compose file: /mnt/c/Users/richc/Projects/TrafficJamz/docker-compose.prod.yml
+[rebuild_all] Bringing down existing compose stack (if any)
+[rebuild_all] Removing existing trafficjamz images (if present)
+Error response from daemon: No such image: trafficjamz-client:latest
+Error response from daemon: No such image: trafficjamz-server:latest
+[rebuild_all] Building server (try host-network first)
+[rebuild_all] Building service: server with args: --progress=plain --network=host
+unknown flag: --network
+[rebuild_all] Build FAILED for server with args: --progress=plain --network=host
+[rebuild_all] Host-network build failed or not supported; trying without --network
+[rebuild_all] Building service: server with args: --progress=plain
+--progress is a global compose flag, better use `docker compose --progress xx build ...
+ trafficjamz-server:latest  Built
+[rebuild_all] Build succeeded for server
+[rebuild_all] Server built without host network
+[rebuild_all] Building client
+[rebuild_all] Building service: client with args: --progress=plain
+--progress is a global compose flag, better use `docker compose --progress xx build ...
+ trafficjamz-client:latest  Built
+[rebuild_all] Build succeeded for client
+[rebuild_all] Client build succeeded
+[rebuild_all] Starting compose stack
+ Network trafficjamz_app-network  Creating
+ Network trafficjamz_app-network  Created
+ Container trafficjamz-zookeeper  Creating
+ Container trafficjamz-postgres  Creating
+ Container trafficjamz-mongodb  Creating
+ Container trafficjamz-redis  Creating
+ Container trafficjamz-influxdb  Creating
+ Container trafficjamz-redis  Created
+ Container trafficjamz-postgres  Created
+ Container trafficjamz-influxdb  Created
+ Container trafficjamz-mongodb  Created
+ Container trafficjamz-zookeeper  Created
+ Container trafficjamz-kafka  Creating
+ Container trafficjamz-kafka  Created
+ Container trafficjamz-server  Creating
+ Container trafficjamz-server  Created
+ Container trafficjamz-client  Creating
+ Container trafficjamz-client  Created
+ Container trafficjamz-nginx  Creating
+ Container trafficjamz-nginx  Created
+ Container trafficjamz-postgres  Starting
+ Container trafficjamz-mongodb  Starting
+ Container trafficjamz-zookeeper  Starting
+ Container trafficjamz-influxdb  Starting
+ Container trafficjamz-redis  Starting
+ Container trafficjamz-influxdb  Started
+ Container trafficjamz-zookeeper  Started
+ Container trafficjamz-kafka  Starting
+ Container trafficjamz-mongodb  Started
+ Container trafficjamz-postgres  Started
+ Container trafficjamz-redis  Started
+ Container trafficjamz-kafka  Started
+ Container trafficjamz-server  Starting
+ Container trafficjamz-server  Started
+ Container trafficjamz-client  Starting
+ Container trafficjamz-client  Started
+ Container trafficjamz-nginx  Starting
+ Container trafficjamz-nginx  Started
+[rebuild_all] Waiting 5s for services to initialize...
+[rebuild_all] Compose ps:
+NAME                    IMAGE                             COMMAND                  SERVICE     CREATED         STATUS                            PORTS
+trafficjamz-client      trafficjamz-client:latest         "/docker-entrypoint.…"   client      9 seconds ago   Up 6 seconds (health: starting)   80/tcp, 443/tcp
+trafficjamz-influxdb    influxdb:2.7                      "/entrypoint.sh infl…"   influxdb    9 seconds ago   Up 8 seconds                      0.0.0.0:8086->8086/tcp, [::]:8086->8086/tcp
+trafficjamz-kafka       confluentinc/cp-kafka:7.3.0       "/etc/confluent/dock…"   kafka       9 seconds ago   Up 7 seconds                      0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+trafficjamz-mongodb     mongo:6                           "docker-entrypoint.s…"   mongodb     9 seconds ago   Up 8 seconds                      0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp
+trafficjamz-nginx       nginx:stable-alpine               "/docker-entrypoint.…"   nginx       9 seconds ago   Up 6 seconds                      0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+trafficjamz-postgres    postgres:15                       "docker-entrypoint.s…"   postgres    9 seconds ago   Up 8 seconds                      0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+trafficjamz-redis       redis:7-alpine                    "docker-entrypoint.s…"   redis       9 seconds ago   Up 8 seconds                      0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+trafficjamz-server      trafficjamz-server:latest         "docker-entrypoint.s…"   server      9 seconds ago   Up 7 seconds (health: starting)   5000/tcp
+trafficjamz-zookeeper   confluentinc/cp-zookeeper:7.3.0   "/etc/confluent/dock…"   zookeeper   9 seconds ago   Up 8 seconds                      2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+[rebuild_all] Server logs (last 200 lines):
+trafficjamz-server  | Using simplified passport without models dependency
+trafficjamz-server  | Current environment: Production
+trafficjamz-server  | Database connection config: {
+trafficjamz-server  |   host: 'db.nrlaqkpojtvvheosnpaz.supabase.co',
+trafficjamz-server  |   port: '6543',
+trafficjamz-server  |   database: 'postgres',
+trafficjamz-server  |   user: 'postgres',
+trafficjamz-server  |   environment: 'production'
+trafficjamz-server  | }
+trafficjamz-server  | =====     Using SSL for database connection: true
+trafficjamz-server  | =====     Using production database connection with pooler     =====
+trafficjamz-server  | Current directory: /app/src
+trafficjamz-server  | Resolved routes path: /app/src/routes
+trafficjamz-server  | Routes directory exists: true
+trafficjamz-server  | Defining Group schema...
+trafficjamz-server  | Creating Group model...
+trafficjamz-server  | Group model created successfully
+trafficjamz-server  | Starting application...
+trafficjamz-server  | Connecting to MongoDB: Connection string found
+trafficjamz-server  | (node:1) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+trafficjamz-server  | (Use `node --trace-warnings ...` to show where the warning was created)
+trafficjamz-server  | (node:1) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+trafficjamz-server  | mediasoup Worker 1 created [pid:18]
+trafficjamz-server  | mediasoup Worker 2 created [pid:20]
+trafficjamz-server  | mediasoup Worker 3 created [pid:22]
+trafficjamz-server  | mediasoup Worker 4 created [pid:24]
+trafficjamz-server  | mediasoup Worker 5 created [pid:26]
+trafficjamz-server  | mediasoup Worker 6 created [pid:28]
+trafficjamz-server  | mediasoup Worker 7 created [pid:30]
+trafficjamz-server  | 7 mediasoup Workers created successfully.
+trafficjamz-server  | AudioService initialized with 7 mediasoup workers
+trafficjamz-server  | InfluxDB connection has been established successfully.
+trafficjamz-server  | Ethereal Email account created for testing: yq4cyybl6v3ynvtv@ethereal.email
+trafficjamz-server  | Email service initialized successfully
+trafficjamz-server  | MongoDB connected successfully
+trafficjamz-server  | Connection state: 1
+trafficjamz-server  | MongoDB connected successfully. Starting server with full functionality.
+trafficjamz-server  | Server running on port 5000
+trafficjamz-server  | MongoDB connection state: connected
+trafficjamz-server  | 
+trafficjamz-server  | === INCOMING REQUEST HEADERS ===
+trafficjamz-server  | Method: GET
+trafficjamz-server  | URL: /health
+trafficjamz-server  | Headers: {
+trafficjamz-server  |   "host": "localhost:5000",
+trafficjamz-server  |   "user-agent": "curl/7.74.0",
+trafficjamz-server  |   "accept": "*/*"
+trafficjamz-server  | }
+trafficjamz-server  | Body: {}
+[rebuild_all] Client logs (last 200 lines):
+trafficjamz-client  | 🚦 Starting TrafficJamz frontend container...
+trafficjamz-client  | 🔐 TLS certs found. Using production HTTPS config.
+[rebuild_all] Done at Tue Sep 16 18:18:47 MDT 2025
+[rebuild_all] Log file: /mnt/c/Users/richc/Projects/TrafficJamz/logs/rebuild_all.log
+If server build fails during apt with clearsigned/NOSPLIT errors, run the script again with host networking explicitly enabled in your environment or run the local dev servers while we diagnose network/proxy/CA issues.
