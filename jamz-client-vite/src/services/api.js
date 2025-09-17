@@ -29,27 +29,29 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   try {
     if (!config || !config.url) return config;
+    // If the request URL is absolute (starts with scheme or //), don't modify it
+    const isAbsolute = /^([a-zA-Z][a-zA-Z0-9+.-]*:)?\/\//.test(config.url) || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(config.url);
+    if (isAbsolute) return config;
+
+    // Ensure a single leading slash for relative URLs
+    config.url = config.url.replace(/^\/+/, '/');
 
     const baseHasApi = (api.defaults.baseURL || '').replace(/\/$/, '').endsWith('/api');
 
-    // If baseURL ends with '/api' and caller also prefixed '/api', strip the extra '/api'
     if (baseHasApi) {
-      // Remove leading double-slashes and normalize
-      config.url = config.url.replace(/^\/+/, '/');
-
-        // If caller included '/api' too, strip it. Also log stack to trace origin during debugging
-        if (config.url.startsWith('/api/')) {
-          // DEBUG: throw so DevTools will pause on the exact call site (enable "Pause on exceptions")
-          // If caller included '/api' too, strip it.
-
-          config.url = config.url.replace(/^\/api/, '');
-          if (!config.url.startsWith('/')) config.url = '/' + config.url;
-        } else if (config.url === '/api') {
-          // convert '/api' -> '/'
-          config.url = '/';
-        }
+      // Strip any number of leading '/api' segments from the caller's URL so that
+      // baseURL '/api' + caller '/api/auth' => final '/api/auth' (no double-prefix).
+      // Examples:
+      //  - '/api/api/auth' -> '/auth'
+      //  - '/api/auth' -> '/auth'
+      //  - '/api' -> '/'
+      while (config.url.startsWith('/api/')) {
+        config.url = config.url.replace(/^\/api/, '');
+      }
+      if (config.url === '/api') config.url = '/';
+      if (!config.url.startsWith('/')) config.url = '/' + config.url;
     } else {
-      // Ensure no accidental double slashes when baseURL doesn't end with '/'
+      // Normalize duplicate slashes for non-api-base cases
       config.url = config.url.replace(/\/+/g, '/');
     }
 
