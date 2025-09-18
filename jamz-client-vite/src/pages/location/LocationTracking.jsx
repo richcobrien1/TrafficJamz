@@ -860,10 +860,11 @@ const LocationTracking = () => {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Fullscreen Map Container */}
-      <Box 
-        ref={mapContainerRef}
-        sx={{ 
+      {/* Fullscreen Map Wrapper: keep the actual map container empty and render the loading overlay as a sibling
+          Mapbox requires the target container to be empty when creating a map instance. Rendering the spinner
+          as a child caused the warning and interactivity problems. */}
+      <Box
+        sx={{
           position: 'absolute',
           top: 0,
           left: 0,
@@ -872,8 +873,22 @@ const LocationTracking = () => {
           zIndex: 0
         }}
       >
+        {/* Empty div for Mapbox to mount into - must have no child nodes */}
+        <Box
+          ref={mapContainerRef}
+          id="mapbox-container"
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+        />
+
+        {/* Loading overlay is rendered as a sibling, absolutely positioned over the map container */}
         {!mapLoaded && (
-          <Box sx={{ 
+          <Box sx={{
             position: 'absolute',
             top: 0,
             left: 0,
@@ -883,7 +898,8 @@ const LocationTracking = () => {
             alignItems: 'center',
             justifyContent: 'center',
             bgcolor: 'action.hover',
-            zIndex: 1
+            zIndex: 1,
+            pointerEvents: 'none'
           }}>
             <CircularProgress size={60} />
           </Box>
