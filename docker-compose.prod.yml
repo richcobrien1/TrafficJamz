@@ -147,7 +147,6 @@ services:
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs:ro
-      - ./jamz-client-vite/dist:/usr/share/nginx/html:ro
     ports:
       - "80:80"
       - "443:443"

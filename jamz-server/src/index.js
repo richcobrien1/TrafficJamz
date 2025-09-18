@@ -152,6 +152,7 @@ const audioRoutes = require('./routes/audio.routes');
 const locationRoutes = require('./routes/location.routes');
 const subscriptionRoutes = require('./routes/subscriptions.routes');
 const notificationRoutes = require('./routes/notifications.routes');
+const placesRoutes = require('./routes/places.routes');
 
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
@@ -324,6 +325,7 @@ function setupServer() {
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/groups', groupRoutes);
+  app.use('/api', placesRoutes);
   app.use('/api/audio', audioRoutes);
   app.use('/api/location', locationRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);

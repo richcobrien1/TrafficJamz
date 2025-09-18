@@ -406,13 +406,25 @@ const GroupDetail = () => {
                   <Typography variant="h6">
                     Members ({group.members?.length || 0})
                   </Typography>
-                  <Button 
-                    variant="outlined" 
-                    startIcon={<PersonAddIcon />}
-                    onClick={() => setOpenInviteDialog(true)}
-                  >
-                    Invite
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<PersonAddIcon />}
+                      onClick={() => setOpenInviteDialog(true)}
+                    >
+                      Invite
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => {
+                        // Navigate to location tracking and signal to open create-place dialog
+                        navigate(`/location-tracking/${groupId}`, { state: { openCreatePlace: true } });
+                      }}
+                    >
+                      Create
+                    </Button>
+                  </Box>
                 </Box>
                 
                 <Paper>

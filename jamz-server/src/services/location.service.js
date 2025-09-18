@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Location = require('../models/location.model');
 const Group = require('../models/group.model');
 const ProximityAlert = require('../models/proximity-alert.model');
@@ -223,11 +224,15 @@ class LocationService {
 
       // Get latest location for each member
       const locations = [];
+      // Ensure groupId is an ObjectId for reliable matching against stored ObjectIds
+      const groupIdObj = mongoose.Types.ObjectId(groupId);
+
       for (const memberId of memberIds) {
         try {
+          // Use $in to match the group id against the array of shared_with_group_ids
           const location = await Location.findOne({
             user_id: memberId,
-            shared_with_group_ids: groupId
+            shared_with_group_ids: { $in: [groupIdObj] }
           }).sort({ timestamp: -1 });
 
           if (location) {
