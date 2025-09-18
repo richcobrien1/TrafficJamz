@@ -27,17 +27,17 @@ export const AuthProvider = ({ children }) => {
         // Check if we have a token in localStorage
         const token = localStorage.getItem('token');
         if (token) {
-          console.log('Found existing token in localStorage');
+          if (process.env.NODE_ENV === 'development') console.log('Found existing token in localStorage');
           
           // Fetch user profile with the token
             try {
               const response = await api.get('/users/profile');
             if (response.data) {
               setUser(response.data);
-              console.log('User profile fetched successfully');
+              if (process.env.NODE_ENV === 'development') console.log('User profile fetched successfully');
             }
           } catch (profileError) {
-            console.warn('Could not fetch user profile:', profileError);
+            if (process.env.NODE_ENV === 'development') console.warn('Could not fetch user profile:', profileError);
             // Token might be invalid, remove it
             localStorage.removeItem('token');
             setUser(null);
@@ -59,17 +59,15 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
-  console.log('Attempting login with:', email);
-  const response = await api.post('/auth/login', { email, password });
+      if (process.env.NODE_ENV === 'development') console.log('Attempting login with:', email);
+      const response = await api.post('/auth/login', { email, password });
       
       if (response.data) {
-        console.log('Login successful');
         setUser(response.data.user);
         
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
-        console.log('Token stored in localStorage after login');
+        if (process.env.NODE_ENV === 'development') console.log('Token stored in localStorage after login');
       }
       
       return response.data;
