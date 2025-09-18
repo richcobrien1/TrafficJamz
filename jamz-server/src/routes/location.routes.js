@@ -68,6 +68,7 @@ router.get('/group/:groupId',
   async (req, res) => {
     try {
       const locations = await locationService.getGroupMembersLocations(req.params.groupId, req.user.user_id);
+      console.log(`GET /api/location/group/${req.params.groupId} -> returning ${locations.length} locations`);
       res.json({ success: true, locations });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });

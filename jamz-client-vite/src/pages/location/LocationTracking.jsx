@@ -35,126 +35,33 @@ import {
   Toolbar,
   Collapse
 } from '@mui/material';
-import { 
+import PlaceControls from '../../components/PlaceControls';
+import {
   ArrowBack as ArrowBackIcon,
   MyLocation as MyLocationIcon,
   LocationOn as LocationIcon,
   LocationOff as LocationOffIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
   Refresh as RefreshIcon,
+  Visibility as VisibilityIcon,
   Settings as SettingsIcon,
   Navigation as NavigationIcon,
-  Speed as SpeedIcon,
-  BatteryFull as BatteryIcon,
-  Menu as MenuIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
-  Close as CloseIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
-import api from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
-import mapboxgl from 'mapbox-gl';
-import '../../styles/map/MapboxMap.css'; // Mapbox Map CSS styling
 
 const LocationTracking = () => {
-  const { groupId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  // State variables
-  const [group, setGroup] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [members, setMembers] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [sharingLocation, setSharingLocation] = useState(true);
-  const [showProximityAlerts, setShowProximityAlerts] = useState(true);
-  const [proximityDistance, setProximityDistance] = useState(100);
-  const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
-  const [openMemberDialog, setOpenMemberDialog] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
-  const [highAccuracyMode, setHighAccuracyMode] = useState(true);
-  const [updateInterval, setUpdateInterval] = useState(15);
-  const [locationError, setLocationError] = useState(null);
-  
-  // New state variables for UI controls
-  const [showControls, setShowControls] = useState(true);
-  const [showMembersList, setShowMembersList] = useState(false);
-  const [showLocationInfo, setShowLocationInfo] = useState(true);
-  const [controlsOpacity, setControlsOpacity] = useState(0.85);
-  
-  // Rate limiting state variables
-  const [retryDelay, setRetryDelay] = useState(15); // Default retry delay in seconds
-  const [isRateLimited, setIsRateLimited] = useState(false);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
-  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
-  
-  // Geolocation state
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [geolocationRetries, setGeolocationRetries] = useState(0);
-  
-  // Refs
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const watchIdRef = useRef(null);
-  const markersRef = useRef({});
-  const timerRef = useRef(null);
-  
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 
-  'pk.eyJ1IjoicmljaGNvYnJpZW4iLCJhIjoiY21mb2o0eXMyMDZndDJxcHN6aThpemF2ZyJ9.P0sztHmrR8vgJw6uEjfUoA';
-  if (!MAPBOX_TOKEN) {
-    console.error('Missing Mapbox token');
-    return;
-  };
+
+  // Default coordinates provided by user (used when no location available)
+  const DEFAULT_LAT = 39.573640;
+  const DEFAULT_LNG = -104.882029;
     
-  // ✅ Map Initialization
-  useEffect(() => {
-    if (mapContainerRef.current) {
-      initializeMap();
-    }
-  }, [mapContainerRef.current]);
-
-  // ✅ Component Initialization
-  useEffect(() => {
-    fetchGroupDetails();
-
-    if (sharingLocation) {
-      startLocationTracking();
-    }
-
-    timerRef.current = setTimeout(() => {
-      // Your deferred logic here (e.g. retry, telemetry ping)
-    }, 3000);
-
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-
-      if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-
-      if (mapRef.current) {
-        mapRef.current.remove();
-      }
-    };
-  }, [groupId]);
-  
-  // Periodically fetch locations of other members with rate limiting protection
-  useEffect(() => {
-    // Function to fetch member locations with rate limiting protection
-    const fetchWithRateLimitProtection = async () => {
-      // Skip if we're rate limited
-      if (isRateLimited) {
-        console.log(`Rate limited. Waiting ${retryDelay} seconds before next attempt.`);
-        return;
-      }
+          
       
+  // Periodic fetch for member locations with basic rate-limit/backoff handling
+  useEffect(() => {
+    const fetchWithRateLimitProtection = async () => {
       // Enforce minimum time between requests (at least 5 seconds)
       const now = Date.now();
       const timeSinceLastFetch = now - lastFetchTime;
@@ -399,16 +306,151 @@ const LocationTracking = () => {
       }
       
       setLocations(locationData);
-      
+
       // Update map markers
       updateMapMarkers(locationData);
-      
+
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
         checkProximityAlerts(locationData);
       }
+      // Return data for callers that want to compose additional runtime data
+      return locationData;
     } catch (error) {
       console.error('Error fetching member locations:', error);
+      return [];
+    }
+  };
+
+  // If navigated here with state requesting openCreatePlace, auto-open the add-place dialog
+  useEffect(() => {
+    try {
+      const navState = window.history.state && window.history.state.state ? window.history.state.state : null;
+      if (navState && navState.openCreatePlace) {
+        const openAt = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : (mapRef.current ? (() => { const c = mapRef.current.getCenter(); return { lat: c.lat, lng: c.lng }; })() : null);
+        if (openAt) {
+          window.dispatchEvent(new CustomEvent('tj:open-place-dialog', { detail: openAt }));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [userLocation]);
+
+  // Fetch nearby places using Mapbox Geocoding API (POI & address)
+  const fetchPlacesAround = async (lng, lat, limit = 6) => {
+    if (!mapboxgl || !mapboxgl.accessToken) return [];
+    try {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=poi,address&limit=${limit}&access_token=${mapboxgl.accessToken}`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (!data || !data.features) return [];
+      return data.features.map((f, i) => ({
+        user_id: `place_${f.id || i}`,
+        username: f.text + (f.properties && f.properties.address ? ` (${f.properties.address})` : ''),
+        coordinates: { latitude: f.center[1], longitude: f.center[0] },
+        timestamp: new Date().toISOString(),
+        battery_level: null,
+        place: true
+      }));
+    } catch (e) {
+      console.error('Error fetching places from Mapbox:', e);
+      return [];
+    }
+  };
+
+  // Fetch places from backend for the current group
+  const fetchPlacesForGroup = async () => {
+    if (!groupId) return [];
+    try {
+      const resp = await api.get(`/groups/${groupId}/places`);
+      const places = resp.data.places || [];
+      // Normalize places into a 'location-like' shape so updateMapMarkers can render them
+      return places.map(p => ({
+        user_id: `place_${p._id}`,
+        username: p.name,
+        coordinates: { latitude: p.coordinates.latitude, longitude: p.coordinates.longitude },
+        timestamp: p.createdAt,
+        battery_level: null,
+        place: true,
+        raw: p
+      }));
+    } catch (e) {
+      console.warn('Failed to fetch places for group', e);
+      return [];
+    }
+  };
+
+  // Promise wrapper for getCurrentPosition with timeout
+  const getCurrentPositionAsync = (timeout = 8000) => new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('Geolocation not available'));
+    let timedOut = false;
+    const to = setTimeout(() => {
+      timedOut = true;
+      reject(new Error('Geolocation timeout'));
+    }, timeout);
+    navigator.geolocation.getCurrentPosition((pos) => {
+      if (timedOut) return;
+      clearTimeout(to);
+      resolve(pos);
+    }, (err) => {
+      if (timedOut) return;
+      clearTimeout(to);
+      reject(err);
+    }, { enableHighAccuracy: true, maximumAge: 30000, timeout });
+  });
+
+  // Compose runtime data: member locations, user's GPS location, and nearby places
+  const generateRuntimeData = async (center) => {
+    try {
+      // Ensure member locations are fresh
+      const membersData = await fetchMemberLocations();
+
+      // Attempt to get the user's current GPS position (non-blocking)
+      let userPos = null;
+      try {
+        const p = await getCurrentPositionAsync(6000);
+        userPos = {
+          user_id: user?.id || 'current-user',
+          username: user?.username || 'You',
+          coordinates: {
+            latitude: p.coords.latitude,
+            longitude: p.coords.longitude,
+            accuracy: p.coords.accuracy || 0,
+            altitude: p.coords.altitude || 0,
+            heading: p.coords.heading || 0,
+            speed: p.coords.speed || 0
+          },
+          timestamp: new Date().toISOString(),
+          battery_level: null
+        };
+        setUserLocation(userPos.coordinates);
+      } catch (e) {
+        // ignore geolocation failures; there's already a fallback elsewhere
+      }
+
+      // Fetch nearby places around the given center
+      const placeResults = await fetchPlacesAround(center.lng, center.lat, 6);
+
+      // Merge member locations, user position (de-dup by user_id), and places
+      const merged = [];
+      const seen = new Set();
+      (membersData || []).forEach(m => { seen.add(String(m.user_id)); merged.push(m); });
+      if (userPos && !seen.has(String(userPos.user_id))) { merged.push(userPos); seen.add(String(userPos.user_id)); }
+      (placeResults || []).forEach(p => { if (!seen.has(p.user_id)) merged.push(p); });
+
+      // Also fetch backend places and include them (places may be separate from Mapbox POI results)
+      try {
+        const backendPlaces = await fetchPlacesForGroup();
+        backendPlaces.forEach(bp => { if (!seen.has(bp.user_id)) { merged.push(bp); seen.add(bp.user_id); } });
+      } catch (e) {
+        // ignore
+      }
+
+      setLocations(merged);
+      updateMapMarkers(merged);
+    } catch (e) {
+      console.error('Error generating runtime data:', e);
     }
   };
   
@@ -433,23 +475,31 @@ const LocationTracking = () => {
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: 'mapbox://styles/mapbox/outdoors-v11',
-        center: [-74.0060, 40.7128], // Default to NYC
+        center: [DEFAULT_LNG, DEFAULT_LAT], // Default to user-provided location
         zoom: 13
       });
       
       map.on('load', () => {
         setMapLoaded(true);
         mapRef.current = map;
+        // expose map globally for PlaceControls to read center and for external triggers
+        try { window.__TJ_MAP__ = map; } catch (e) { /* ignore */ }
         
         // Add user location marker if available
         if (userLocation) {
           centerMapOnLocation(userLocation);
         }
         
-        // Add markers for all members
-        if (locations.length > 0) {
+        // Add markers for all members (or flush any pending queued locations)
+        if (pendingLocationsRef.current) {
+          console.debug('Flushing pending locations to map', pendingLocationsRef.current);
+          updateMapMarkers(pendingLocationsRef.current);
+          pendingLocationsRef.current = null;
+        } else if (locations.length > 0) {
           updateMapMarkers(locations);
         }
+
+        // No automatic DEV fallback markers here; map will render actual member locations and places from backend
         
         // Add navigation controls
         map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
@@ -459,12 +509,65 @@ const LocationTracking = () => {
           },
           trackUserLocation: true
         }), 'bottom-right');
+
+        // When the map stops moving, regenerate runtime data (members + places + user pos)
+        const onMoveEnd = () => {
+          try {
+            const center = map.getCenter();
+            generateRuntimeData({ lng: center.lng, lat: center.lat });
+          } catch (e) {
+            console.error('Error during map moveend runtime data generation', e);
+          }
+        };
+
+        // Map click to open Add Place dialog with clicked coordinates
+        map.on('click', (e) => {
+          try {
+            const { lngLat } = e;
+            window.dispatchEvent(new CustomEvent('tj:open-place-dialog', { detail: { lat: lngLat.lat, lng: lngLat.lng } }));
+          } catch (err) {
+            console.error('Failed to dispatch open-place-dialog', err);
+          }
+        });
+
+        map.on('moveend', onMoveEnd);
+
+        // Initial runtime data generation at map center
+        try {
+          const c = map.getCenter();
+          generateRuntimeData({ lng: c.lng, lat: c.lat });
+        } catch (e) {
+          console.error('Initial runtime data generation failed', e);
+        }
       });
     } catch (error) {
       console.error('Error initializing map:', error);
       setMapLoaded(true); // Set to true anyway to show the UI
     }
   };
+
+  // Re-fetch places when signaled (from PlaceControls or other parts)
+  useEffect(() => {
+    const handler = () => {
+      console.debug('tj:places:changed - refetching places');
+      // regenerate data to include backend places
+      if (mapRef.current) {
+        const c = mapRef.current.getCenter();
+        generateRuntimeData({ lng: c.lng, lat: c.lat });
+      } else {
+        // fallback to member fetch + places
+        fetchMemberLocations().then(async (md) => {
+          const backendPlaces = await fetchPlacesForGroup();
+          const merged = [...(md || []), ...backendPlaces];
+          setLocations(merged);
+          updateMapMarkers(merged);
+        });
+      }
+    };
+
+    window.addEventListener('tj:places:changed', handler);
+    return () => window.removeEventListener('tj:places:changed', handler);
+  }, [groupId]);
   
   // Start tracking the user's location
   const startLocationTracking = () => {
@@ -707,57 +810,180 @@ const LocationTracking = () => {
   
   // Update map markers for all members
   const updateMapMarkers = (locationData) => {
-    if (!mapRef.current || !mapboxgl) return;
-    
+    console.debug('updateMapMarkers called with', locationData);
+
+    // If the map isn't initialized yet, queue the locations for later
+    if (!mapRef.current || !mapboxgl) {
+      console.debug('Map not ready - queuing locations', locationData);
+      pendingLocationsRef.current = locationData;
+      return;
+    }
+
     // Remove existing markers
     Object.values(markersRef.current).forEach(marker => marker.remove());
     markersRef.current = {};
+  const labelCollisionItems = [];
     
     // Add new markers
-    locationData.forEach(location => {
+    locationData.forEach((location, idx) => {
       if (!location.coordinates) return;
       
       const { latitude, longitude } = location.coordinates;
       
-      // Create marker element
-      const markerEl = document.createElement('div');
-      markerEl.className = 'location-marker';
-      markerEl.style.width = '30px';
-      markerEl.style.height = '30px';
-      markerEl.style.borderRadius = '50%';
-      markerEl.style.backgroundColor = location.user_id === (user?.id || 'current-user') ? '#2196f3' : '#ff9800';
-      markerEl.style.border = '2px solid white';
-      markerEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      markerEl.style.cursor = 'pointer';
-      markerEl.style.display = 'flex';
-      markerEl.style.justifyContent = 'center';
-      markerEl.style.alignItems = 'center';
-      
-      // Add user initial or icon
-      const initial = document.createElement('span');
-      initial.textContent = location.username.charAt(0).toUpperCase();
+  console.debug('Creating marker for', location.user_id, location.username, latitude, longitude);
+
+      // Build a compound marker element: label above pin with a small spike for visual anchoring
+      const wrapper = document.createElement('div');
+      wrapper.className = 'location-marker-wrapper';
+      wrapper.style.display = 'flex';
+      wrapper.style.flexDirection = 'column';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.pointerEvents = 'auto';
+
+  // Label element (above pin)
+    const labelEl = document.createElement('div');
+      labelEl.className = location.place ? 'location-label place-label' : 'location-label';
+      // Prefer first_name when available, otherwise username or user_id
+      const labelText = (location.first_name && location.first_name.trim()) ? location.first_name.trim() : (location.username || location.user_id || 'Unknown');
+      labelEl.textContent = labelText;
+  labelEl.style.background = 'white';
+  labelEl.style.padding = '4px 10px';
+  labelEl.style.borderRadius = '14px';
+  labelEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+  labelEl.style.fontSize = '13px';
+  labelEl.style.color = '#111';
+  labelEl.style.whiteSpace = 'nowrap';
+  labelEl.style.pointerEvents = 'none'; // allow clicks to reach the pin
+  labelEl.style.transition = 'transform 140ms ease, box-shadow 140ms ease';
+      // Small stagger to reduce label collision
+      const stagger = Math.min(idx, 4) * -6; // up to -24px
+      labelEl.style.transform = `translateY(${stagger}px)`;
+
+  // Pin element (circle with initial)
+      const pinEl = document.createElement('div');
+      pinEl.className = 'location-marker';
+  // Slightly larger pins for places
+  pinEl.style.width = location.place ? '36px' : '32px';
+  pinEl.style.height = location.place ? '36px' : '32px';
+  pinEl.style.borderRadius = '50%';
+  // Use distinct color for places vs users
+  pinEl.style.backgroundColor = location.place ? '#388e3c' : (location.user_id === (user?.id || 'current-user') ? '#1976d2' : '#ff9800');
+  pinEl.style.border = '2px solid white';
+  pinEl.style.boxShadow = '0 4px 10px rgba(0,0,0,0.18)';
+  pinEl.style.cursor = 'pointer';
+  pinEl.style.display = 'flex';
+  pinEl.style.justifyContent = 'center';
+  pinEl.style.alignItems = 'center';
+  pinEl.style.transition = 'transform 160ms ease, box-shadow 160ms ease';
+
+  const initial = document.createElement('span');
+  const nameForInitial = (location.first_name && location.first_name.trim()) ? location.first_name.trim() : ((location.username || String(location.user_id || '')).trim());
+  // Use a map-pin emoji for places instead of initial
+  initial.textContent = location.place ? '📍' : (nameForInitial ? nameForInitial.charAt(0).toUpperCase() : '?');
       initial.style.color = 'white';
       initial.style.fontWeight = 'bold';
-      markerEl.appendChild(initial);
-      
-      // Create and add the marker
-      const marker = new mapboxgl.Marker(markerEl)
+  initial.style.fontSize = '14px';
+      pinEl.appendChild(initial);
+
+      // Spike (triangle) to visually indicate the map anchor point
+      const spike = document.createElement('div');
+      spike.className = 'location-pin-spike';
+      spike.style.width = '0';
+      spike.style.height = '0';
+      spike.style.borderLeft = '6px solid transparent';
+      spike.style.borderRight = '6px solid transparent';
+      spike.style.borderTop = `8px solid ${location.place ? '#2e7d32' : (location.user_id === (user?.id || 'current-user') ? '#2196f3' : '#ff9800')}`;
+  spike.style.marginTop = '2px';
+
+  // Compose wrapper: label on top, then pin, then spike
+      wrapper.appendChild(labelEl);
+      wrapper.appendChild(pinEl);
+      wrapper.appendChild(spike);
+
+      // Hover interactions: enlarge pin and lift label
+      pinEl.addEventListener('mouseenter', () => {
+        pinEl.style.transform = 'scale(1.08)';
+        labelEl.style.transform = `translateY(${stagger - 6}px) scale(1.03)`;
+        labelEl.style.boxShadow = '0 4px 10px rgba(0,0,0,0.18)';
+      });
+      pinEl.addEventListener('mouseleave', () => {
+        pinEl.style.transform = 'scale(1)';
+        labelEl.style.transform = `translateY(${stagger}px)`;
+        labelEl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
+      });
+
+      // Create and add the marker - anchor at the bottom so spike points to coordinate
+      // Use a slight negative Y offset so the spike visually points to the coordinate
+      const popupHtml = location.place ?
+        `<strong>Place: ${location.username || 'Unknown'}</strong><br>
+         ${location.raw && location.raw.address ? `${location.raw.address}<br>` : ''}
+         Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}`
+        :
+        `<strong>${location.username || 'Unknown'}</strong><br>
+         Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}<br>
+         ${location.coordinates && location.coordinates.speed > 0 ? `Speed: ${Math.round(location.coordinates.speed * 3.6)} km/h<br>` : ''}
+         Battery: ${location.battery_level || 'N/A'}%`;
+
+      const marker = new mapboxgl.Marker(wrapper, { anchor: 'bottom', offset: [0, -8] })
         .setLngLat([longitude, latitude])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(
-          `<strong>${location.username}</strong><br>
-           Last updated: ${new Date(location.timestamp).toLocaleTimeString()}<br>
-           ${location.coordinates.speed > 0 ? `Speed: ${Math.round(location.coordinates.speed * 3.6)} km/h<br>` : ''}
-           Battery: ${location.battery_level}%`
-        ))
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupHtml))
         .addTo(mapRef.current);
-      
-      markersRef.current[location.user_id] = marker;
-      
-      // Show popup for user's own location
+
+      // Keep a reference to the marker so it can be removed/updated later
+      const markerKey = `${location.user_id}__${idx}`;
+      markersRef.current[markerKey] = marker;
+
+      // If this is the current user, open the popup briefly
       if (location.user_id === (user?.id || 'current-user')) {
-        marker.togglePopup();
+        try {
+          marker.togglePopup();
+        } catch (e) {
+          // ignore popup toggle errors
+        }
+      }
+      // Collect label info for collision avoidance
+      try {
+        const point = mapRef.current.project([longitude, latitude]);
+        labelCollisionItems.push({
+          labelEl,
+          x: point.x,
+          y: point.y,
+          width: labelEl.offsetWidth || 80,
+          height: labelEl.offsetHeight || 20,
+          idx
+        });
+      } catch (e) {
+        // fail silently if projection not available
       }
     });
+
+    // Simple collision avoidance: horizontal stacking around marker screen x
+    if (labelCollisionItems.length > 1 && mapRef.current) {
+      // Sort by x so we handle left-to-right
+      labelCollisionItems.sort((a, b) => a.x - b.x);
+      const spacing = 8; // px between labels
+      for (let i = 0; i < labelCollisionItems.length; i++) {
+        const base = labelCollisionItems[i];
+        // try to place label centered at its x; if overlap with previous, shift to the right
+        let offsetX = 0;
+        if (i > 0) {
+          const prev = labelCollisionItems[i - 1];
+          const prevRight = prev.x + prev.width / 2 + prev._offsetX || prev.x + prev.width / 2;
+          const curLeftDesired = base.x - base.width / 2;
+          if (curLeftDesired < prevRight + spacing) {
+            offsetX = (prevRight + spacing) - (base.x - base.width / 2);
+          }
+        }
+        // Apply alternating small vertical nudge to reduce exact stacking
+        const verticalNudge = (base.idx % 2 === 0) ? -6 : -12;
+        base._offsetX = offsetX;
+        // Apply transform (keep existing translateY stagger)
+        const existingTranslateY = base.labelEl.style.transform || '';
+        // Remove any translateX portion from existing transform
+        const newTransform = `${existingTranslateY.replace(/translateX\([^)]*\)/, '').trim()} translateX(${offsetX}px)`;
+        base.labelEl.style.transform = newTransform + ` translateY(${verticalNudge}px)`;
+      }
+    }
   };
   
   // Check for proximity alerts
@@ -951,6 +1177,32 @@ const LocationTracking = () => {
               <RefreshIcon />
             </IconButton>
           </Tooltip>
+
+          {/* Debug Locations button removed - use real backend data and PlaceControls to add places */}
+
+                    {/* Show Test Markers immediately (runtime helper) */}
+                    <Tooltip title="Show Test Markers">
+                      <IconButton
+                        color="inherit"
+                        onClick={() => {
+                          const now = new Date().toISOString();
+                          const testMarkers = [
+                            { user_id: user?.id || 't1', username: user?.username || 'You', coordinates: { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG }, timestamp: now, battery_level: 90 },
+                            { user_id: 't2', username: 'Test B', coordinates: { latitude: DEFAULT_LAT + 0.0015, longitude: DEFAULT_LNG + 0.0015 }, timestamp: now, battery_level: 65 },
+                            { user_id: 't3', username: 'Test C', coordinates: { latitude: DEFAULT_LAT - 0.0015, longitude: DEFAULT_LNG - 0.0015 }, timestamp: now, battery_level: 40 }
+                          ];
+                          setLocations(testMarkers);
+                          updateMapMarkers(testMarkers);
+                          // Center map on the first test marker for quick visibility
+                          if (mapRef.current) {
+                            mapRef.current.flyTo({ center: [DEFAULT_LNG, DEFAULT_LAT], zoom: 15, essential: true });
+                          }
+                          console.log('Test markers injected at default location');
+                        }}
+                      >
+                        <LocationIcon />
+                      </IconButton>
+                    </Tooltip>
           
           <Tooltip title="Settings">
             <IconButton 
@@ -958,6 +1210,49 @@ const LocationTracking = () => {
               onClick={() => setOpenSettingsDialog(true)}
             >
               <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+
+          {/* Debug: project DEFAULT coords to screen and draw overlay */}
+          <Tooltip title="Show Projection Debug Dot">
+            <IconButton
+              color="inherit"
+              onClick={() => {
+                if (!mapRef.current) {
+                  console.log('Map not ready for projection test');
+                  return;
+                }
+                // Convert lngLat to container pixels
+                const point = mapRef.current.project([DEFAULT_LNG, DEFAULT_LAT]);
+
+                // Remove existing debug dot
+                const existing = document.getElementById('projection-debug-dot');
+                if (existing) existing.remove();
+
+                const dot = document.createElement('div');
+                dot.id = 'projection-debug-dot';
+                dot.style.position = 'absolute';
+                dot.style.width = '16px';
+                dot.style.height = '16px';
+                dot.style.borderRadius = '50%';
+                dot.style.background = 'red';
+                dot.style.boxShadow = '0 0 6px rgba(255,0,0,0.9)';
+                dot.style.zIndex = 99999;
+                dot.style.left = `${point.x - 8}px`;
+                dot.style.top = `${point.y - 8}px`;
+                dot.style.pointerEvents = 'none';
+
+                // Attach to the map container's parent so it overlays the map
+                const container = document.getElementById('mapbox-container');
+                if (container && container.parentElement) {
+                  container.parentElement.appendChild(dot);
+                  console.log('Projection debug dot placed at', point);
+                } else {
+                  console.log('Could not find map container to attach debug dot');
+                }
+              }}
+            >
+              <NavigationIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
@@ -982,6 +1277,8 @@ const LocationTracking = () => {
           {showControls ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         </IconButton>
       </Tooltip>
+  {/* Place controls for adding simple Lat/Lng POIs */}
+  <PlaceControls groupId={groupId} />
       
       {/* Toggle Members List Button */}
       <Tooltip title={showMembersList ? "Hide Members" : "Show Members"}>
