@@ -14,6 +14,17 @@ export default defineConfig({
     hmr: {
       overlay: true,
     },
+    // Proxy API calls to the backend (useful when running the client via Vite locally)
+    // Set VITE_BACKEND_URL in your environment to override the default target.
+    proxy: {
+      '/api': {
+        // prefer explicit env override, then localhost:5050 (docker-compose mapped), then host.docker.internal
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:5050' || 'http://host.docker.internal:5000',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      }
+    }
   },
   resolve: {
     alias: {
