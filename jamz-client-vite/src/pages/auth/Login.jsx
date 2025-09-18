@@ -51,14 +51,13 @@ const Login = () => {
       
       // Call the login function from AuthContext
       const response = await login(email, password);
-      console.log('Login successful, response:', response);
       
       // Verify token was stored in localStorage
       const token = localStorage.getItem('token');
       if (!token) {
-        console.warn('Token not found in localStorage after login');
-      } else {
-        console.log('Token successfully stored in localStorage');
+        // Keep user-facing error; internal logging handled by AuthContext in dev
+        setError('Login succeeded but token storage failed. Try again.');
+        return;
       }
       
       // Navigate to dashboard or redirect URL
