@@ -51,31 +51,55 @@ app.use((req, res, next) => {
 // ===== END HEADER LOGGER =====
 
 // ===== CORS Configuration =====
+// Allowlist for known production/origin values. Localhost variants are handled
+// dynamically to accept optional ports (e.g. http://localhost, http://localhost:80).
 const allowedOrigins = [
-  'http://localhost:5173',           // Vite dev server
-  'http://localhost:8080',           // Frontend nginx (HTTP)
-  'https://localhost:3443',          // Frontend nginx (HTTPS)
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us'        // Android apps
 ];
 
+// Helper: permissive localhost matcher (accepts http(s)://localhost(:port)?)
+function isLocalhostOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const u = new URL(origin);
+    return (u.hostname === 'localhost' || u.hostname === '127.0.0.1');
+  } catch (e) {
+    return false;
+  }
+}
+
 const corsOptionsDelegate = function (req, callback) {
   const origin = req.header('Origin');
 
-  if (!origin || allowedOrigins.includes(origin)) {
-    callback(null, {
-      origin: origin || true,
+  // If there's no Origin header, treat it as a same-origin/internal request
+  // (for example: curl from container, or proxy that strips Origin). Allow it.
+  if (!origin) {
+    return callback(null, {
+      origin: true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       exposedHeaders: ['Content-Length', 'Authorization'],
       optionsSuccessStatus: 204
     });
-  } else {
-    console.log('🔒 Blocked CORS for origin:', origin);
-    callback(new Error('Not allowed by CORS'));
   }
+
+  // Accept explicit allowed origins or localhost variants
+  if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
+    return callback(null, {
+      origin: origin,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['Content-Length', 'Authorization'],
+      optionsSuccessStatus: 204
+    });
+  }
+
+  console.log('🔒 Blocked CORS for origin:', origin);
+  callback(new Error('Not allowed by CORS'));
 };
 
 app.use(cors(corsOptionsDelegate));         // Applies to all requests
@@ -258,6 +282,20 @@ function setupServer() {
   });
 
   // Use routes
+  // --- Defensive middleware: collapse duplicate /api prefixes (e.g. /api/api/... -> /api/...) ---
+  app.use((req, res, next) => {
+    try {
+      if (req.url && /^\/api(?:\/api)+/.test(req.url)) {
+        const oldUrl = req.url;
+        req.url = req.url.replace(/^\/api(?:\/api)+/, '/api');
+        console.log(`Normalized duplicate /api prefix: ${oldUrl} -> ${req.url}`);
+      }
+    } catch (e) {
+      // non-fatal
+    }
+    next();
+  });
+
   // --- Compatibility middleware: rewrite requests that lost the /api prefix ---
   // Some reverse proxies or misconfigured nginx instances may strip the leading
   // /api prefix before forwarding. To keep runtime behavior resilient, rewrite
