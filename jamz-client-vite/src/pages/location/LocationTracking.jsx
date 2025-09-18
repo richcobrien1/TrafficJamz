@@ -104,7 +104,8 @@ const LocationTracking = () => {
   const markersRef = useRef({});
   const timerRef = useRef(null);
   
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '***MAPBOX_PUBLIC_TOKEN_REMOVED***';
+  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 
+  '***MAPBOX_PUBLIC_TOKEN_REMOVED***';
   if (!MAPBOX_TOKEN) {
     console.error('Missing Mapbox token');
     return;
