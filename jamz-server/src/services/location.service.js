@@ -29,15 +29,23 @@ class LocationService {
       });
 
       // Get user's groups to share location with
+      // Note: older schema used `members` while newer schema uses `group_members`.
       const groups = await Group.find({
-        'members.user_id': user_id,
+        'group_members.user_id': user_id,
         status: 'active'
+      });
+
+      // Ensure compatibility with documents that may still use `members`
+      groups.forEach(g => {
+        if (!g.members && g.group_members) {
+          g.members = g.group_members;
+        }
       });
 
       // Filter groups based on location sharing settings
       const sharedGroups = groups.filter(group => {
-        const member = group.members.find(m => m.user_id === user_id);
-        return group.settings.location_sharing_required && member && member.status === 'active';
+        const member = (group.members || []).find(m => m.user_id === user_id);
+        return group.settings && group.settings.location_sharing_required && member && member.status === 'active';
       });
 
       // Add group IDs to location
@@ -193,21 +201,20 @@ class LocationService {
       if (!group) {
         throw new Error('Group not found');
       }
-
       if (!group.isMember(requesterId)) {
         throw new Error('User is not a member of this group');
       }
 
-      // Get all active members - Add null check for group.members
-      // and handle both UUID and non-UUID member IDs
+      // Get all active members - support both `group_members` and legacy `members`
+      const membersArr = group.group_members || group.members || [];
       let memberIds = [];
-      if (group.members && Array.isArray(group.members)) {
+      if (Array.isArray(membersArr) && membersArr.length > 0) {
         // Filter active members
-        const activeMembers = group.members.filter(member => member && member.status === 'active');
-        
+        const activeMembers = membersArr.filter(member => member && member.status === 'active');
+
         // Extract user_ids from active members
         memberIds = activeMembers.map(member => member.user_id);
-        
+
         // Log for debugging
         console.log(`Group ${groupId} has ${activeMembers.length} active members with IDs: ${JSON.stringify(memberIds)}`);
       } else {
@@ -274,10 +281,20 @@ class LocationService {
   async getUserLocation(user_id, requesterId) {
     try {
       // Check if requester has permission to view user's location
+      // Use group_members field for query and support legacy `members` via a broader query
       const sharedGroups = await Group.find({
-        'members.user_id': { $all: [user_id, requesterId] },
+        'group_members.user_id': { $all: [user_id, requesterId] },
         status: 'active'
       });
+
+      // Also accept legacy documents that might still be using `members`
+      if (sharedGroups.length === 0) {
+        const legacyShared = await Group.find({
+          'members.user_id': { $all: [user_id, requesterId] },
+          status: 'active'
+        });
+        sharedGroups.push(...legacyShared);
+      }
 
       if (sharedGroups.length === 0) {
         throw new Error('Permission denied');
