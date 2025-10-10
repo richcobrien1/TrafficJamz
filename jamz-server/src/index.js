@@ -153,6 +153,7 @@ const locationRoutes = require('./routes/location.routes');
 const subscriptionRoutes = require('./routes/subscriptions.routes');
 const notificationRoutes = require('./routes/notifications.routes');
 const placesRoutes = require('./routes/places.routes');
+const configRoutes = require('./routes/config.routes');
 
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
@@ -330,6 +331,7 @@ function setupServer() {
   app.use('/api/location', locationRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/config', configRoutes);
 
   // Health check endpoint
   app.get('/health', async (req, res) => {
@@ -450,10 +452,17 @@ function setupServer() {
 
   // Start server using the HTTP server instance instead of app directly
   if (process.env.NODE_ENV !== 'test') {
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`MongoDB connection state: ${getMongoConnectionStateDescription(mongoose.connection.readyState)}`);
-    });
+    try {
+      console.log(`Attempting to start server on port ${PORT}...`);
+      server.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ Server successfully started and listening on port ${PORT}`);
+        console.log(`MongoDB connection state: ${getMongoConnectionStateDescription(mongoose.connection.readyState)}`);
+      });
+    } catch (serverError) {
+      console.error('❌ Failed to start server:', serverError);
+      console.error('Server error stack:', serverError.stack);
+      process.exit(1);
+    }
   }
 }
 
@@ -484,10 +493,13 @@ async function startApplication() {
     
     // Setup routes and start server regardless of MongoDB connection status
     // This ensures the application is resilient to database failures
+    console.log('Setting up server...');
     setupServer();
+    console.log('Server setup complete.');
     
   } catch (error) {
     console.error('Application startup error:', error);
+    console.error('Error stack:', error.stack);
     console.warn('Starting server with limited functionality due to startup error.');
     setupServer();
   }
@@ -495,5 +507,17 @@ async function startApplication() {
 
 // Start the application
 startApplication();
+
+// Global error handlers to catch crashes
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  console.error('Stack trace:', error.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 module.exports = app;

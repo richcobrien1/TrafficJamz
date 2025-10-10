@@ -3,6 +3,7 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
+import { configService } from '../services/api.service';
 
 // Create the auth context
 const AuthContext = createContext();
@@ -17,8 +18,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [config, setConfig] = useState(null);
 
   useEffect(() => {
+    // Skip auth check for dev routes that don't need authentication
+    if (window.location.pathname.startsWith('/dev/')) {
+      setLoading(false);
+      return;
+    }
+    
     // Check for existing token on component mount
     const checkAuth = async () => {
       try {
@@ -27,17 +35,26 @@ export const AuthProvider = ({ children }) => {
         // Check if we have a token in localStorage
         const token = localStorage.getItem('token');
         if (token) {
-          if (process.env.NODE_ENV === 'development') console.log('Found existing token in localStorage');
+          if (import.meta.env.MODE === 'development') console.log('Found existing token in localStorage');
           
           // Fetch user profile with the token
             try {
               const response = await api.get('/users/profile');
             if (response.data) {
               setUser(response.data);
-              if (process.env.NODE_ENV === 'development') console.log('User profile fetched successfully');
+              if (import.meta.env.MODE === 'development') console.log('User profile fetched successfully');
+              
+              // Load client config
+              try {
+                const configResponse = await configService.getClientConfig();
+                setConfig(configResponse.config);
+                if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
+              } catch (configError) {
+                console.warn('Could not fetch client config:', configError);
+              }
             }
           } catch (profileError) {
-            if (process.env.NODE_ENV === 'development') console.warn('Could not fetch user profile:', profileError);
+            if (import.meta.env.MODE === 'development') console.warn('Could not fetch user profile:', profileError);
             // Token might be invalid, remove it
             localStorage.removeItem('token');
             setUser(null);
@@ -59,17 +76,27 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      if (process.env.NODE_ENV === 'development') console.log('Attempting login with:', email);
+
+      if (import.meta.env.MODE === 'development') console.log('Attempting login with:', email);
       const response = await api.post('/auth/login', { email, password });
-      
+
       if (response.data) {
         setUser(response.data.user);
-        
+
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
-        if (process.env.NODE_ENV === 'development') console.log('Token stored in localStorage after login');
+        if (import.meta.env.MODE === 'development') console.log('Token stored in localStorage after login');
+
+        // Load client config
+        try {
+          const configResponse = await configService.getClientConfig();
+          setConfig(configResponse.config);
+          if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
+        } catch (configError) {
+          console.warn('Could not fetch client config:', configError);
+        }
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
@@ -94,6 +121,15 @@ export const AuthProvider = ({ children }) => {
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
         console.log('Token stored in localStorage after registration');
+        
+        // Load client config
+        try {
+          const configResponse = await configService.getClientConfig();
+          setConfig(configResponse.config);
+          if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
+        } catch (configError) {
+          console.warn('Could not fetch client config:', configError);
+        }
       }
       
       return response.data;
@@ -203,6 +239,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
+    config,
     login,
     register,
     logout,

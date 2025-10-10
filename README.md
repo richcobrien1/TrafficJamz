@@ -1,12 +1,91 @@
 # TrafficJamz / Jamz
-Jamz is a web, iPhone, Android app that connects to TrafficJamz service platform that provides a group of subscribed-connected active group users with audio communications including music to be able in real-time hear and speak to each other anytime. Plus real-time location service so they can track where each other is at any time. An example use case is a group of skiers who can talk and listen to music together as a group and anywhere they are on the mountain.
 
-Of-course we would need native Galaxy and iPhone apps for communications and location service.
+## Overview
 
-Phone apps would need a way to mute both microphone and speakers separately or both when necessary.
+TrafficJamz (Jamz) is a comprehensive real-time communication and location tracking platform designed for group activities. It provides secure, scalable audio communication and location services for subscribed users in active group settings.
 
-Location service should allow for audio speech to provide proximity distance between group member. Obviously the app is designed to provide location management amongst the group members so they can effortlessly find each other when they get separated.
+## Core Features
 
-Security is also critical in that audio and location data must be kept secret to only those group members.
+### 🎵 Real-Time Audio Communication
+- **Group Voice Chat**: Full-duplex audio communication between group members
+- **Music Streaming**: Shared music playback across the group
+- **Audio Controls**: Independent mute controls for microphone and speakers
+- **WebRTC Powered**: Low-latency peer-to-peer audio using MediaSoup
 
-As this is a subscriber service scalability is top priority.
+### 📍 Real-Time Location Tracking
+- **Live Location Sharing**: GPS tracking with real-time position updates
+- **Proximity Alerts**: Audio notifications for group member distances
+- **Location History**: Historical location data with InfluxDB time-series storage
+- **Privacy Controls**: Granular location sharing permissions (precise, approximate, hidden)
+
+### 👥 Group Management
+- **Dynamic Groups**: Create and manage groups with role-based permissions
+- **Membership System**: Owner, Subscriber, Member, and Invitee roles
+- **Invitation System**: Secure group joining with token-based invites
+- **Subscription Model**: Premium features for paying subscribers
+
+### 🔐 Security & Privacy
+- **End-to-End Security**: Encrypted audio and location data
+- **Group Isolation**: Data accessible only to authorized group members
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: Protection against abuse and DoS attacks
+
+## Supported Platforms
+
+- **Web Application**: React/Vite-based responsive web app
+- **iOS App**: Native iPhone application
+- **Android App**: Native Android application
+- **Cross-Platform**: Capacitor/Ionic hybrid app support
+
+## Technology Stack
+
+### Frontend
+- **React 19** with Vite build system
+- **Material-UI** component library
+- **Mapbox GL JS** for interactive maps
+- **Socket.io Client** for real-time communication
+
+### Backend
+- **Node.js/Express** API server
+- **Socket.io** for WebSocket connections
+- **MediaSoup** for WebRTC audio processing
+- **PostgreSQL** for relational data
+- **MongoDB** for document storage
+- **Redis** for caching and sessions
+- **InfluxDB** for time-series location data
+- **Kafka** for internal messaging
+
+### Infrastructure
+- **Docker** containerization
+- **Kubernetes** orchestration
+- **NGINX** reverse proxy and load balancing
+- **AWS/GCP/Azure** cloud deployment options
+
+## Example Use Cases
+
+- **Winter Sports**: Skiers maintaining group communication while on slopes
+- **Hiking Groups**: Outdoor enthusiasts tracking locations and communicating
+- **Event Coordination**: Festival attendees staying connected
+- **Team Activities**: Any group requiring real-time coordination
+
+## Architecture Highlights
+
+- **Microservices Design**: Modular backend services
+- **Scalable Infrastructure**: Horizontal scaling with Kubernetes
+- **Real-Time Processing**: Event-driven architecture with Kafka
+- **Multi-Cloud Support**: Flexible deployment across cloud providers
+
+## Getting Started
+
+See [Development Stack Overview](docs/Development_Stack_Overview.md) for local development setup.
+
+## Documentation
+
+- [Development Runs](docs/DEV_RUNS.md)
+- [Infrastructure Deployment](docs/Infrastructure_Deployment.md)
+- [Users Roles](docs/Users_Roles.md)
+- [API Endpoints](docs/pre-docker/api_endpoints.md)
+
+## Contributing
+
+This is a commercial application with specific business requirements. Contributions should align with the core mission of secure group communication and location services.

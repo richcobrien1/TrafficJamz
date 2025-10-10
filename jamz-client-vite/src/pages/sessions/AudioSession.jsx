@@ -456,7 +456,7 @@ const AudioSession = () => {
     // This could be a WebSocket connection or another method
     
     // Example with WebSocket
-    const wsUrl = `${process.env.REACT_APP_WS_URL || 'wss://your-api-domain.com'}/audio/${sessionId}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL || 'wss://your-api-domain.com'}/audio/${sessionId}`;
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
