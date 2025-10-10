@@ -91,11 +91,7 @@ function App() {
                     <AudioSession />
                   </ProtectedRoute>
                 } />
-                <Route path="/dev/map" element={
-                  // <ProtectedRoute>
-                    <MapboxMap />
-                  // </ProtectedRoute>
-                } />
+                <Route path="/dev/map" element={<MapboxMap />} />
                 <Route path="/location-tracking/:groupId" element={
                   <ProtectedRoute>
                     <LocationTracking />

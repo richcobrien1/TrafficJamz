@@ -18,6 +18,12 @@ class AudioService {
    */
   async initialize() {
     try {
+      // Skip MediaSoup initialization if disabled (for testing/development)
+      if (process.env.DISABLE_MEDIASOUP === 'true') {
+        console.log('MediaSoup initialization skipped (DISABLE_MEDIASOUP=true)');
+        return;
+      }
+
       // Create mediasoup workers (CPU cores - 1, minimum 1)
       const numWorkers = Math.max(1, require('os').cpus().length - 1);
       await mediasoupConfig.createWorkers(numWorkers);
@@ -35,6 +41,11 @@ class AudioService {
    * @returns {Promise<Object>} - Newly created audio session
    */
   async createAudioSession(groupId, sessionData, creatorId) {
+    // Check if MediaSoup is disabled
+    if (process.env.DISABLE_MEDIASOUP === 'true') {
+      throw new Error('Audio sessions are disabled (MediaSoup not initialized)');
+    }
+
     try {
       // Check if group exists
       const group = await Group.findById(groupId);
