@@ -104,6 +104,7 @@ const LocationTracking = () => {
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
   const [satelliteMode, setSatelliteMode] = useState(false);
   const [showPlaces, setShowPlaces] = useState(false);
+  const [placeSelectionMode, setPlaceSelectionMode] = useState(false);
   const [accuracyThreshold] = useState(100); // Default accuracy threshold in meters
   const [useBestReading] = useState(false); // Whether to use best GPS reading from buffer
   const [gpsReadingsBuffer, setGpsReadingsBuffer] = useState([]); // Buffer for GPS readings
@@ -115,6 +116,7 @@ const LocationTracking = () => {
   const pendingLocationsRef = useRef(null);
   const watchIdRef = useRef(null);
   const locationDataRef = useRef(null);
+  const centerMarkerRef = useRef(null);
   
   // Get parameters and context
   const { groupId } = useParams();
@@ -306,7 +308,9 @@ const LocationTracking = () => {
         allLocations = [currentUserLocation, ...filteredEnrichedLocations];
       }
 
-      updateMapMarkers(allLocations);
+      if (!placeSelectionMode) {
+        updateMapMarkers(allLocations);
+      }
 
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
@@ -358,22 +362,64 @@ const LocationTracking = () => {
           // Get current member locations
           const memberLocations = await fetchMemberLocations();
           
-          // Combine member locations and places
-          const allLocations = [...memberLocations, ...places];
+          // Include current user location if available
+          const currentUserLoc = userLocation ? [{
+            user_id: user?.id || 'current-user',
+            username: user?.username || 'CurrentUser',
+            first_name: user?.first_name || null,
+            coordinates: userLocation,
+            timestamp: new Date().toISOString(),
+            battery_level: 85
+          }] : [];
           
-          // Update markers to include places
-          updateMapMarkers(allLocations);
+          // Combine member locations and places
+          const allLocations = [...currentUserLoc, ...memberLocations, ...places];
+          
+          // Update markers to include places (but hide member locations during place selection mode)
+          if (!placeSelectionMode) {
+            updateMapMarkers(allLocations);
+          } else {
+            // During place selection mode, only show places
+            updateMapMarkers(places);
+          }
         } catch (error) {
           console.error('Error fetching places:', error);
         }
       } else if (!showPlaces && mapRef.current) {
-        // When not showing places, just show member locations
-        fetchMemberLocationsAndUpdateMarkers();
+        // When not showing places, just show member locations (but hide during place selection mode)
+        if (!placeSelectionMode) {
+          // Include current user location
+          const currentUserLoc = userLocation ? [{
+            user_id: user?.id || 'current-user',
+            username: user?.username || 'CurrentUser',
+            first_name: user?.first_name || null,
+            coordinates: userLocation,
+            timestamp: new Date().toISOString(),
+            battery_level: 85
+          }] : [];
+          const allLocations = [...currentUserLoc, ...locations];
+          updateMapMarkers(allLocations);
+        }
       }
     };
     
     updatePlacesOnMap();
   }, [showPlaces, groupId, members, userLocation]);
+  
+  // Handle place selection mode changes
+  useEffect(() => {
+    if (placeSelectionMode && mapRef.current) {
+      createCenterMarker();
+    } else {
+      // Always try to remove center marker when not in place selection mode
+      removeCenterMarker();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      removeCenterMarker();
+    };
+  }, [placeSelectionMode]);
 
   // Fetch nearby places using Mapbox Geocoding API (POI & address)
   const fetchPlacesAround = async (lng, lat, limit = 6) => {
@@ -503,6 +549,23 @@ const LocationTracking = () => {
       const merged = [];
       const seen = new Set();
       (enrichedMembersData || []).forEach(m => { seen.add(String(m.user_id)); merged.push(m); });
+      
+      // Add current user if available
+      if (userLocation) {
+        const currentUserLoc = {
+          user_id: user?.id || 'current-user',
+          username: user?.username || 'CurrentUser',
+          first_name: user?.first_name || null,
+          coordinates: userLocation,
+          timestamp: new Date().toISOString(),
+          battery_level: 85
+        };
+        if (!seen.has(String(currentUserLoc.user_id))) {
+          merged.push(currentUserLoc);
+          seen.add(String(currentUserLoc.user_id));
+        }
+      }
+
       // (placeResults || []).forEach(p => { if (!seen.has(p.user_id)) merged.push(p); });
 
       // Also fetch backend places and include them (places may be separate from Mapbox POI results)
@@ -514,7 +577,9 @@ const LocationTracking = () => {
       // }
 
       setLocations(merged);
-      updateMapMarkers(merged);
+      if (!placeSelectionMode) {
+        updateMapMarkers(merged);
+      }
     } catch (e) {
       console.error('Error generating runtime data:', e);
     }
@@ -528,6 +593,9 @@ const LocationTracking = () => {
       setMapLoaded(true); // Show UI anyway
       return;
     }
+    
+    // Ensure any leftover center marker is removed
+    removeCenterMarker();
     
     try {
       // Check if the map container ref is available
@@ -573,16 +641,21 @@ const LocationTracking = () => {
         // Add markers for all members (or flush any pending queued locations)
         if (pendingLocationsRef.current) {
           // console.debug('Flushing pending locations to map', pendingLocationsRef.current);
-          updateMapMarkers(pendingLocationsRef.current);
+          if (!placeSelectionMode) {
+            updateMapMarkers(pendingLocationsRef.current);
+          }
           pendingLocationsRef.current = null;
         } else if (locations.length > 0) {
-          updateMapMarkers(locations);
+          if (!placeSelectionMode) {
+            updateMapMarkers(locations);
+          }
         }
 
         // No automatic DEV fallback markers here; map will render actual member locations and places from backend
         
         // Add navigation controls
         map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+        // Add geolocate control for user location
         map.addControl(new mapboxgl.GeolocateControl({
           positionOptions: {
             enableHighAccuracy: true
@@ -917,128 +990,207 @@ const LocationTracking = () => {
     setOpenLocationDialog(true);
   }, []);
   
+  // Handle member click in the members list
+  const handleMemberClick = useCallback((member) => {
+    // Find the member's location data
+    const memberLocation = locations.find(loc => loc.user_id === member.user_id);
+    if (memberLocation) {
+      setSelectedLocation(memberLocation);
+      setOpenLocationDialog(true);
+    }
+  }, [locations]);
+  
+  // Create center marker for place selection
+  const createCenterMarker = () => {
+    if (!mapRef.current || centerMarkerRef.current) return;
+    
+    // Create the center marker element
+    const centerElement = document.createElement('div');
+    centerElement.style.width = '24px';
+    centerElement.style.height = '24px';
+    centerElement.style.borderRadius = '50%';
+    centerElement.style.backgroundColor = '#2196f3';
+    centerElement.style.border = '3px solid white';
+    centerElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+    centerElement.style.position = 'relative';
+    
+    // Add a crosshair or target symbol
+    centerElement.innerHTML = '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 12px; font-weight: bold;">+</div>';
+    
+    // Create marker positioned at map center
+    const center = mapRef.current.getCenter();
+    centerMarkerRef.current = new mapboxgl.Marker(centerElement, {
+      anchor: 'center'
+    })
+      .setLngLat([center.lng, center.lat])
+      .addTo(mapRef.current);
+    
+    // Update marker position when map moves
+    const updateCenterMarker = () => {
+      if (centerMarkerRef.current && mapRef.current) {
+        const newCenter = mapRef.current.getCenter();
+        centerMarkerRef.current.setLngLat([newCenter.lng, newCenter.lat]);
+      }
+    };
+    
+    mapRef.current.on('move', updateCenterMarker);
+    
+    // Store the update function for cleanup
+    centerMarkerRef.current.updateFunction = updateCenterMarker;
+  };
+  
+  // Remove center marker
+  const removeCenterMarker = () => {
+    if (centerMarkerRef.current) {
+      if (centerMarkerRef.current.updateFunction && mapRef.current) {
+        mapRef.current.off('move', centerMarkerRef.current.updateFunction);
+      }
+      centerMarkerRef.current.remove();
+      centerMarkerRef.current = null;
+    }
+  };
+  
+  // Toggle place selection mode
+  const togglePlaceSelectionMode = () => {
+    const newMode = !placeSelectionMode;
+    setPlaceSelectionMode(newMode);
+    
+    if (newMode) {
+      // Enter place selection mode
+      createCenterMarker();
+      // Center map on user location if available, or current center
+      if (userLocation) {
+        centerMapOnLocation(userLocation);
+      }
+    } else {
+      // Exit place selection mode - record the place
+      if (mapRef.current && centerMarkerRef.current) {
+        const center = mapRef.current.getCenter();
+        createPlaceAtLocation(center.lat, center.lng);
+      }
+      removeCenterMarker();
+    }
+  };
+  
+  // Create a place at the specified location
+  const createPlaceAtLocation = async (lat, lng) => {
+    try {
+      // Prompt for place name
+      const placeName = prompt('Enter a name for this place:', 'New Place');
+      if (!placeName || placeName.trim() === '') {
+        return; // User cancelled or entered empty name
+      }
+      
+      const placeData = {
+        name: placeName.trim(),
+        latitude: lat,
+        longitude: lng
+      };
+      
+      const response = await api.post(`/groups/${groupId}/places`, placeData);
+      
+      if (response.data.success) {
+        console.log('Place created successfully:', response.data.place);
+        // Refresh places on map
+        setShowPlaces(true);
+        // Show success message
+        alert(`Place "${placeName}" created successfully!`);
+      } else {
+        throw new Error(response.data.message || 'Failed to create place');
+      }
+      
+    } catch (error) {
+      console.error('Error creating place:', error);
+      alert('Failed to create place. Please try again.');
+    }
+  };
+  
   // Update map markers for all members
   const updateMapMarkers = (locationData) => {
-    // console.debug('updateMapMarkers called with', locationData);
-    console.log('updateMapMarkers called with', locationData.length, 'locations');
-    console.log('Map ref exists:', !!mapRef.current);
-    console.log('Map loaded state:', mapLoaded);
-
     // If the map isn't initialized yet, queue the locations for later
     if (!mapRef.current || !mapboxgl) {
-      // console.debug('Map not ready - queuing locations', locationData);
-      console.log('Map not ready - queuing locations');
       pendingLocationsRef.current = locationData;
       return;
     }
 
     // Remove existing markers
-    Object.values(markersRef.current).forEach(marker => marker.remove());
+    console.log('Removing', Object.keys(markersRef.current).length, 'existing markers');
+    Object.values(markersRef.current).forEach(marker => {
+      if (marker && typeof marker.remove === 'function') {
+        marker.remove();
+      }
+    });
     markersRef.current = {};
     
     // Add new markers
     locationData.forEach((location, idx) => {
       if (!location.coordinates) {
-        console.log(`Skipping location ${idx} - no coordinates:`, location);
         return;
       }
       
       const { latitude, longitude } = location.coordinates;
-      
-      console.log(`Creating marker for location ${idx}:`, {
-        user_id: location.user_id,
-        username: location.username,
-        latitude,
-        longitude,
-        hasUsername: !!location.username
-      });
-      
-      // Debug: Check if this is the current user marker
-      if (location.user_id === (user?.id || 'current-user')) {
-        console.log('CURRENT USER MARKER COORDINATES:', { latitude, longitude });
-        console.log('Current userLocation state:', userLocation);
-      }
-      const wrapper = document.createElement('div');
-      wrapper.className = 'location-marker-wrapper';
-      wrapper.style.display = 'flex';
-      wrapper.style.flexDirection = 'column';
-      wrapper.style.alignItems = 'center';
-      wrapper.style.pointerEvents = 'auto';
 
-  // Pin element (circle with initial)
-      const pinEl = document.createElement('div');
-      pinEl.className = 'location-marker';
-  // Slightly larger pins for places
-  pinEl.style.width = location.place ? '36px' : '32px';
-  pinEl.style.height = location.place ? '36px' : '32px';
-  pinEl.style.borderRadius = '50%';
-  // Use distinct color for places vs users
-  pinEl.style.backgroundColor = location.place ? '#388e3c' : (location.user_id === (user?.id || 'current-user') ? '#1976d2' : '#ff9800');
-  pinEl.style.border = '2px solid white';
-  pinEl.style.boxShadow = '0 4px 10px rgba(0,0,0,0.18)';
-  pinEl.style.cursor = 'pointer';
-  pinEl.style.display = 'flex';
-  pinEl.style.justifyContent = 'center';
-  pinEl.style.alignItems = 'center';
-  pinEl.style.transition = 'transform 160ms ease, box-shadow 160ms ease';
+      // Create marker container
+      const markerEl = document.createElement('div');
+      markerEl.style.position = 'relative';
+      markerEl.style.cursor = 'pointer';
+      markerEl.style.width = '32px';
+      markerEl.style.height = '40px'; // Extra height for spike
+      markerEl.style.display = 'flex';
+      markerEl.style.flexDirection = 'column';
+      markerEl.style.alignItems = 'center';
 
-  const initial = document.createElement('span');
-  // Use first letter of formatted display name for privacy
-  const displayName = location.place ? (location.username || 'Unknown Place') : formatDisplayName(location.username, location.first_name);
-  initial.textContent = location.place ? '📍' : (displayName ? displayName.charAt(0).toUpperCase() : '?');
-      initial.style.color = 'white';
-      initial.style.fontWeight = 'bold';
-  initial.style.fontSize = '14px';
-      pinEl.appendChild(initial);
+      // Create the circle with first initial
+      const circleEl = document.createElement('div');
+      circleEl.style.width = '24px';
+      circleEl.style.height = '24px';
+      circleEl.style.borderRadius = '50%';
+      circleEl.style.backgroundColor = location.place ? 'green' : 'orange';
+      circleEl.style.border = '2px solid white';
+      circleEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      circleEl.style.display = 'flex';
+      circleEl.style.alignItems = 'center';
+      circleEl.style.justifyContent = 'center';
+      circleEl.style.color = 'white';
+      circleEl.style.fontSize = '12px';
+      circleEl.style.fontWeight = 'bold';
+      circleEl.style.textTransform = 'uppercase';
 
-      // Spike (triangle) to visually indicate the map anchor point
-      const spike = document.createElement('div');
-      spike.className = 'location-pin-spike';
-      spike.style.width = '0';
-      spike.style.height = '0';
-      spike.style.borderLeft = '6px solid transparent';
-      spike.style.borderRight = '6px solid transparent';
-      spike.style.borderTop = `8px solid ${location.place ? '#2e7d32' : (location.user_id === (user?.id || 'current-user') ? '#2196f3' : '#ff9800')}`;
-  spike.style.marginTop = '2px';
+      // Add first initial
+      const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
+      circleEl.textContent = firstInitial;
 
-  // Compose wrapper: pin and spike only
-      wrapper.appendChild(pinEl);
-      wrapper.appendChild(spike);
+      // Create the spike (triangle pointing down)
+      const spikeEl = document.createElement('div');
+      spikeEl.style.width = '0';
+      spikeEl.style.height = '0';
+      spikeEl.style.borderLeft = '6px solid transparent';
+      spikeEl.style.borderRight = '6px solid transparent';
+      spikeEl.style.borderTop = `8px solid ${location.place ? 'green' : 'orange'}`;
+      spikeEl.style.marginTop = '-2px'; // Slight overlap to connect with circle
 
-      // Handle clicks/taps on pins (for mobile and desktop)
-      pinEl.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent map click from firing
-        // Use callback to open location details dialog
-        handleMarkerClick(location);
-      });
+      // Assemble marker
+      markerEl.appendChild(circleEl);
+      markerEl.appendChild(spikeEl);
 
-      // Hover interactions for desktop (optional, since click handles mobile)
-      pinEl.addEventListener('mouseenter', () => {
-        pinEl.style.transform = 'scale(1.08)';
-      });
-      pinEl.addEventListener('mouseleave', () => {
-        pinEl.style.transform = 'scale(1)';
-      });
+      // Add hover details
+      const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
+      const lastUpdate = new Date(location.timestamp).toLocaleString();
+      markerEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
 
-      // Create and add the marker - anchor at the bottom so spike points to coordinate
-      // Use a slight negative Y offset so the spike visually points to the coordinate
-      const popupHtml = location.place ?
-        `<strong>Place: ${location.username || 'Unknown'}</strong><br>
-         ${location.raw && location.raw.address ? `${location.raw.address}<br>` : ''}
-         Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}`
-        :
-        `<strong>${location.username || 'Unknown'}</strong><br>
-         ${location.placeholder ? 'Location not available - enable location sharing to show your position' : 
-           `Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}`}<br>
-         ${!location.placeholder && location.coordinates && location.coordinates.speed > 0 ? `Speed: ${Math.round(location.coordinates.speed * 3.6)} km/h<br>` : ''}
-         ${!location.placeholder ? `Battery: ${location.battery_level || 'N/A'}%` : ''}`;
-
-      const marker = new mapboxgl.Marker(wrapper, { anchor: 'bottom', offset: [0, -8] })
+      // Create and add the marker - properly anchored to geographic coordinates
+      const marker = new mapboxgl.Marker(markerEl, {
+        anchor: 'center' // Center the marker on its geographic position
+      })
         .setLngLat([longitude, latitude])
         .addTo(mapRef.current);
 
-      console.log(`Marker added to map for ${location.username} at [${longitude}, ${latitude}]`);
-
+      // Add click handler
+      markerEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleMarkerClick(location);
+      });
+      
       // Keep a reference to the marker so it can be removed/updated later
       const markerKey = `${location.user_id}__${idx}`;
       markersRef.current[markerKey] = marker;
@@ -1063,8 +1215,10 @@ const LocationTracking = () => {
     // Combine current user location with existing member locations
     const allLocations = [currentUserLocation, ...filteredLocations];
     
-    // Update markers with combined locations
-    updateMapMarkers(allLocations);
+    // Update markers with combined locations (but hide during place selection mode)
+    if (!placeSelectionMode) {
+      updateMapMarkers(allLocations);
+    }
   };
   
   // Check for proximity alerts
@@ -1312,8 +1466,12 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Center on My Location / Show Places Button */}
-      <Tooltip title={showPlaces ? "Center on My Location" : "Show My Places"}>
+      {/* Center on My Location / Place Selection Button */}
+      <Tooltip title={
+        placeSelectionMode ? 
+          "Record Location as Place" : 
+          (userLocation ? "Center on My Location" : "Select Location for Place")
+      }>
         <span>
           <IconButton
             sx={{
@@ -1321,34 +1479,27 @@ const LocationTracking = () => {
               top: showControls ? 72 : 16,
               right: 136,
               zIndex: 10,
-              bgcolor: 'background.paper',
-              color: 'text.primary',
+              bgcolor: placeSelectionMode ? 'primary.main' : 'background.paper',
+              color: placeSelectionMode ? 'primary.contrastText' : 'text.primary',
               boxShadow: 2,
-              opacity: userLocation || showPlaces ? 1 : 0.7,
+              opacity: userLocation || placeSelectionMode ? 1 : 0.7,
               '&:hover': {
-                bgcolor: 'background.paper',
+                bgcolor: placeSelectionMode ? 'primary.dark' : 'background.paper',
                 opacity: 1,
               }
             }}
-            onClick={() => {
-              if (showPlaces) {
-                // Currently showing places, switch to centering mode
-                setShowPlaces(false);
+            onClick={placeSelectionMode ? togglePlaceSelectionMode : 
+              (() => {
                 if (userLocation) {
                   centerMapOnLocation(userLocation);
-                } else if (mapRef.current) {
-                  // Center on current map center if no user location
-                  const center = mapRef.current.getCenter();
-                  centerMapOnLocation({ latitude: center.lat, longitude: center.lng });
+                } else {
+                  // If no user location, enter place selection mode
+                  togglePlaceSelectionMode();
                 }
-              } else {
-                // Currently in centering mode, switch to places mode
-                setShowPlaces(true);
-                // TODO: Implement places overlay/showing logic
-              }
-            }}
+              })
+            }
           >
-            {showPlaces ? <MyLocationIcon /> : <PlaceIcon />}
+            {placeSelectionMode ? <PlaceIcon /> : <MyLocationIcon />}
           </IconButton>
         </span>
       </Tooltip>
