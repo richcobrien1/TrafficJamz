@@ -26,10 +26,18 @@
     import axios from 'axios';
 
     // 🔗 Create axios instance with base API URL
-    const rawBase = import.meta.env.VITE_API_BASE || '';
+    const rawBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+
+    // Debug logging
+    console.log('🔧 API Configuration:');
+    console.log('  VITE_API_BASE:', import.meta.env.VITE_API_BASE);
+    console.log('  rawBase:', rawBase);
+    console.log('  All env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
 
     // Normalize baseURL: remove trailing slash
     const normalizedBase = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
+
+    console.log('  normalizedBase:', normalizedBase);
 
     const api = axios.create({
       baseURL: normalizedBase, // must be defined in .env
