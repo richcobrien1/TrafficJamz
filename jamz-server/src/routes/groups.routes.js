@@ -444,9 +444,6 @@ router.get('/:group_id/members',
   }
 );
 
-// Apply the same pattern to all remaining routes
-// Adding checkMongoDBConnection middleware and enhanced error handling
-
 /**
  * @route POST /api/groups/:group_id/members
  * @desc Add member to group
@@ -496,8 +493,198 @@ router.post('/:group_id/members',
   }
 );
 
-// Add similar error handling and MongoDB connection checks to all remaining routes
-// For brevity, I'm not showing all routes, but the pattern should be applied to each one
+/**
+ * @route GET /api/groups/:group_id/invitations
+ * @desc Get group invitations
+ * @access Private
+ */
+router.get('/:group_id/invitations',
+  passport.authenticate('jwt', { session: false }),
+  checkMongoDBConnection, // Add MongoDB connection check
+  [
+    param('group_id').isMongoId().withMessage('Invalid group ID'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      // Set a timeout for the database operation
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timed out')), 10000)
+      );
+      
+      // Execute the invitations fetch with a timeout
+      const invitationsPromise = groupService.getGroupInvitations(req.params.group_id, req.user.user_id);
+      const invitations = await Promise.race([invitationsPromise, timeoutPromise]);
+      
+      res.json({ success: true, invitations });
+    } catch (error) {
+      console.error('Error fetching group invitations:', error);
+      
+      // Enhanced error handling
+      if (error.message === 'Database operation timed out') {
+        return res.status(504).json({
+          success: false,
+          message: 'Database operation timed out. Please try again.',
+          error: 'TIMEOUT'
+        });
+      }
+      
+      if (error.name === 'CastError') {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid group ID format',
+          error: 'INVALID_ID'
+        });
+      }
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ 
+          success: false, 
+          message: error.message,
+          error: 'NOT_FOUND'
+        });
+      }
+      
+      res.status(400).json({ 
+        success: false, 
+        message: error.message,
+        error: 'FETCH_INVITATIONS_FAILED'
+      });
+    }
+  }
+);
+router.post('/:group_id/invitations',
+  passport.authenticate('jwt', { session: false }),
+  checkMongoDBConnection, // Add MongoDB connection check
+  [
+    param('group_id').isLength({ min: 1 }).withMessage('Group ID is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('text').optional().isString().withMessage('Text message must be a string')
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { email, text } = req.body;
+      
+      // Set a timeout for the database operation
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timed out')), 10000)
+      );
+      
+      // Execute the invitation creation with a timeout
+      const invitationPromise = groupService.inviteToGroup(req.params.group_id, email, req.user.user_id);
+      const invitation = await Promise.race([invitationPromise, timeoutPromise]);
+      
+      res.status(201).json({ 
+        success: true, 
+        message: 'Invitation sent successfully',
+        invitation: {
+          id: invitation._id,
+          email: invitation.email,
+          invited_by: invitation.invited_by,
+          invited_at: invitation.invited_at,
+          status: invitation.status,
+          expires_at: invitation.expires_at
+        }
+      });
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      
+      // Enhanced error handling
+      if (error.message === 'Database operation timed out') {
+        return res.status(504).json({
+          success: false,
+          message: 'Database operation timed out. Please try again.',
+          error: 'TIMEOUT'
+        });
+      }
+      
+      if (error.name === 'CastError') {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid group ID format',
+          error: 'INVALID_ID'
+        });
+      }
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ 
+          success: false, 
+          message: error.message,
+          error: 'NOT_FOUND'
+        });
+      }
+      
+      res.status(400).json({ 
+        success: false, 
+        message: error.message,
+        error: 'INVITATION_FAILED'
+      });
+    }
+  }
+);
+
+/**
+ * @route DELETE /api/groups/:group_id/members/:member_id
+ * @desc Remove member from group
+ * @access Private
+ */
+router.delete('/:group_id/members/:member_id',
+  passport.authenticate('jwt', { session: false }),
+  checkMongoDBConnection, // Add MongoDB connection check
+  [
+    param('group_id').isMongoId().withMessage('Invalid group ID'),
+    param('member_id').isMongoId().withMessage('Invalid member ID'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      // Set a timeout for the database operation
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timed out')), 10000)
+      );
+      
+      // Execute the member removal with a timeout
+      const removePromise = groupService.removeGroupMember(req.params.group_id, req.params.member_id, req.user.user_id);
+      await Promise.race([removePromise, timeoutPromise]);
+      
+      res.json({ success: true, message: 'Member removed successfully' });
+    } catch (error) {
+      console.error('Error removing group member:', error);
+      
+      // Enhanced error handling
+      if (error.message === 'Database operation timed out') {
+        return res.status(504).json({
+          success: false,
+          message: 'Database operation timed out. Please try again.',
+          error: 'TIMEOUT'
+        });
+      }
+      
+      if (error.name === 'CastError') {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid ID format',
+          error: 'INVALID_ID'
+        });
+      }
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ 
+          success: false, 
+          message: error.message,
+          error: 'NOT_FOUND'
+        });
+      }
+      
+      res.status(400).json({ 
+        success: false, 
+        message: error.message,
+        error: 'REMOVE_MEMBER_FAILED'
+      });
+    }
+  }
+);
 
 // Export the router
 module.exports = router;

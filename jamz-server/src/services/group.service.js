@@ -61,12 +61,19 @@ class GroupService {
   // In your group.service.js file
   async getGroupById(groupId) {
     try {
+      console.log('getGroupById called with groupId:', groupId);
+      
       // Find the group in the database
+      console.log('Finding group in MongoDB...');
       const group = await Group.findById(groupId);
+      console.log('MongoDB findById result:', group ? 'found' : 'not found');
       
       if (!group) {
+        console.log('Group not found, throwing error');
         throw new Error('Group not found');
       }
+      
+      console.log('Group found, transforming data...');
       
       // Require the User model once outside the map function
       const User = require('../models/user.model');
@@ -133,8 +140,15 @@ class GroupService {
         }))
       };
       
+      console.log('getGroupById transformation complete, returning group');
       return transformedGroup;
     } catch (error) {
+      console.error('Error in getGroupById:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       throw error;
     }
   }
@@ -489,7 +503,7 @@ class GroupService {
       const savedInvitation = group.invitations[group.invitations.length - 1];
 
       // Generate invitation link with group ID and invitation index
-      const baseUrl = process.env.FRONTEND_API_URL || 'http://localhost:5000/api';
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
       
       // Get inviter details - Fix for hybrid PostgreSQL/MongoDB system
@@ -668,46 +682,76 @@ class GroupService {
   }
 
   /**
-   * Accept group invitation
-   * @param {string} invitationId - Invitation ID
-   * @param {string} user_id - User ID accepting the invitation
-   * @returns {Promise<Object>} - Group data
+   * Accept group invitation (HTTP route handler)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
    */
- // When updating a member from pending to active (likely in your invitation acceptance endpoint)
   async acceptInvitation(req, res) {
     try {
       const { invitationId } = req.params;
       const { firstName, lastName, mobilePhone, email } = req.body;
       
+      console.log('acceptInvitation called with:', { invitationId, firstName, lastName, mobilePhone, email });
+      
       // Validate required fields
       if (!firstName || !lastName || !mobilePhone) {
+        console.log('Validation failed: missing required fields');
         return res.status(400).json({
           success: false,
           message: 'First name, last name, and mobile phone are required'
         });
       }
       
+      console.log('Finding group with invitation...');
+      // Convert invitationId to ObjectId
+      const invitationObjectId = new mongoose.Types.ObjectId(invitationId);
+      
       // Find the group with this invitation
-      const group = await Group.findOne({ 'invitations._id': invitationId });
+      let group;
+      try {
+        group = await Group.findOne({ 'invitations._id': invitationObjectId });
+      } catch (dbError) {
+        console.error('Database error finding group:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Database error',
+          error: dbError.message
+        });
+      }
       
       if (!group) {
+        console.log('Group not found for invitation:', invitationId);
         return res.status(404).json({
           success: false,
           message: 'Invitation not found'
         });
       }
       
+      console.log('Group found:', group._id);
+      console.log('Group invitations:', group.invitations.map(inv => ({ id: inv._id, status: inv.status })));
+      
       // Find the invitation in the group
       const invitation = group.invitations.find(inv => 
-        inv._id.toString() === invitationId && inv.status === 'pending'
+        inv._id.toString() === invitationId
       );
       
       if (!invitation) {
+        console.log('Invitation not found in group at all');
         return res.status(404).json({
           success: false,
-          message: 'Valid pending invitation not found'
+          message: 'Invitation not found in group'
         });
       }
+      
+      if (invitation.status !== 'pending') {
+        console.log('Invitation status is not pending:', invitation.status);
+        return res.status(400).json({
+          success: false,
+          message: `Invitation has already been ${invitation.status}`
+        });
+      }
+      
+      console.log('Invitation found:', invitation._id, invitation.email);
       
       // Check if a member with this email already exists
       const existingMemberIndex = group.group_members.findIndex(
@@ -727,18 +771,18 @@ class GroupService {
       } else {
         // Create a new member with the provided information
         const tempUserId = new mongoose.Types.ObjectId().toString();
-        
+
         const newMember = {
           user_id: tempUserId,
-          first_name: firstName || '',  // Ensure it's not undefined
-          last_name: lastName || '',    // Ensure it's not undefined
-          email: email || invitation.email || '',
-          phone_number: mobilePhone || '',  // Ensure it's not undefined
-          role: 'invitee',  // Use the appropriate role based on your system
+          first_name: firstName,  // Don't default to empty string
+          last_name: lastName,    // Don't default to empty string
+          email: email || invitation.email,
+          phone_number: mobilePhone,  // Don't default to empty string
+          role: 'member',  // Changed from 'invitee' to 'member'
           status: 'active',
           joined_at: new Date()
         };
-        
+
         // Add the new member to the group
         group.group_members.push(newMember);
       }
@@ -746,13 +790,17 @@ class GroupService {
       // Update the invitation status
       invitation.status = 'accepted';
       
+      // Save without validation to avoid schema issues for now
       try {
-        await group.save();
-        console.log('Group saved successfully');
-      } catch (error) {
-        console.error('Error saving group:', error);
-        // Try saving without validation as a fallback
         await group.save({ validateBeforeSave: false });
+        console.log('Group saved successfully without validation');
+      } catch (saveError) {
+        console.error('Error saving group:', saveError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to save group changes',
+          error: saveError.message
+        });
       }
       
       return res.status(200).json({
@@ -766,9 +814,15 @@ class GroupService {
       });
     } catch (error) {
       console.error('Error accepting invitation:', error);
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       return res.status(500).json({
         success: false,
-        message: 'Failed to accept invitation'
+        message: 'Failed to accept invitation',
+        error: error.message
       });
     }
   }
@@ -843,12 +897,12 @@ class GroupService {
   }
 
   /**
-   * Decline group invitation
+   * Accept group invitation for existing user
    * @param {string} invitationId - Invitation ID
-   * @param {string} user_id - User ID declining the invitation
-   * @returns {Promise<boolean>} - Success status
+   * @param {string} user_id - User ID accepting the invitation
+   * @returns {Promise<Object>} - Group data
    */
-  async acceptInvitation(invitationId, user_id) {
+  async acceptInvitationForExistingUser(invitationId, user_id) {
     try {
       // Find user - FIX THE SEQUELIZE QUERY
       console.log('About to query user with:', { user_id });

@@ -72,7 +72,7 @@ export const ROUTES = [
     icon: "🔄",
   },
   {
-    path: "/groups/invitation/:inviteId",
+    path: "/invitations/:groupId/:invitationIndex",
     name: "Accept Invitation",
     element: <InvitationAccept />,
     public: true,

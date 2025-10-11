@@ -22,8 +22,7 @@ const InvitationAccept = () => {
   const { groupId, invitationIndex } = useParams();
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
-  const [group, setGroup] = useState(null);
-  const [invitation, setInvitation] = useState(null);
+  const [invitationData, setInvitationData] = useState(null);
   const [isRegisteredUser, setIsRegisteredUser] = useState(null);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -37,47 +36,20 @@ const InvitationAccept = () => {
       try {
         setStatus('loading');
         
-        // First, fetch the group to get the invitation
-  const groupResponse = await api.get(`/groups/${groupId}`);
-        const fetchedGroup = groupResponse.data.group;
-        setGroup(fetchedGroup);
+        // Fetch invitation details from the API
+        const response = await api.get(`/invitations/${groupId}/${invitationIndex}`);
+        const data = response.data;
         
-        // Convert index to number
-        const numericIndex = parseInt(invitationIndex, 10);
-        
-        // Check if the invitation index is valid
-        if (!fetchedGroup.invitations || 
-            !Array.isArray(fetchedGroup.invitations) ||
-            numericIndex < 0 || 
-            numericIndex >= fetchedGroup.invitations.length) {
-          setStatus('error');
-          setError('Invalid invitation');
-          return;
-        }
-        
-        const fetchedInvitation = fetchedGroup.invitations[numericIndex];
-        setInvitation(fetchedInvitation);
-        
-        if (!fetchedInvitation || !fetchedInvitation.id) {
-          setStatus('error');
-          setError('Invalid invitation data');
-          return;
-        }
+        setInvitationData(data);
         
         // Check if the invitation email belongs to a registered user
         try {
-          const checkUserResponse = await api.get(`/users/check-email?email=${fetchedInvitation.email}`);
+          const checkUserResponse = await api.get(`/users/check-email?email=${data.invitation.email}`);
           setIsRegisteredUser(checkUserResponse.data.exists);
-
-          console.log('Registered user is: ' + checkUserResponse.data.exists, checkUserResponse)
           
           if (checkUserResponse.data.exists) {
-            // If user exists we need to get their First, Last, and UserId
-            // then we need to add to the group.
-            
-
+            setStatus('ready_to_accept');
           } else {
-            // User is not registered, show the form
             setStatus('show_form');
           }
         } catch (err) {
@@ -107,29 +79,16 @@ const InvitationAccept = () => {
     try {
       setStatus('accepting');
       
-      let acceptResponse;
-      
-      if (isRegisteredUser) {
-        // For registered users, simply accept the invitation
-  acceptResponse = await api.post(`/groups/invitations/${invitation.id}/accept`);
-      } else {
-        // For new users, accept with additional profile data
-  acceptResponse = await api.post(`/groups/invitations/${invitation.id}/accept-new`, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          mobilePhone: formData.mobilePhone,
-          email: invitation.email
-        });
-      }
+      // Accept the invitation using the correct API endpoint
+      const acceptResponse = await api.post(`/invitations/${invitationData.invitationId}/accept`, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        mobilePhone: formData.mobilePhone,
+        email: invitationData.invitation.email
+      });
       
       console.log('Accept response:', acceptResponse.data);
       
-      // Fetch the updated group data to get the latest member list
-  const updatedGroupResponse = await api.get(`/groups/${groupId}`);
-      const updatedGroup = updatedGroupResponse.data.group;
-      
-      // Update the state with the latest group data
-      setGroup(updatedGroup);
       setStatus('success');
     } catch (err) {
       console.error('Error accepting invitation:', err);
@@ -182,7 +141,7 @@ const InvitationAccept = () => {
           </Typography>
           
           <Typography variant="body1" sx={{ mb: 3 }} align="center">
-            You've been invited to join <strong>{group?.name}</strong>
+            You've been invited to join <strong>{invitationData?.group?.name}</strong>
           </Typography>
           
           {error && (
@@ -259,7 +218,7 @@ const InvitationAccept = () => {
         </Typography>
         
         <Typography variant="body1" sx={{ mb: 3 }}>
-          You've been invited to join <strong>{group?.name}</strong>. Click the button below to accept the invitation.
+          You've been invited to join <strong>{invitationData?.group?.name}</strong>. Click the button below to accept the invitation.
         </Typography>
         
         <Button
@@ -282,39 +241,13 @@ const InvitationAccept = () => {
         </Typography>
         
         <Typography variant="body1" sx={{ mb: 3 }}>
-          You have successfully joined the group <strong>{group?.name}</strong>.
+          You have successfully joined the group <strong>{invitationData?.group?.name}</strong>.
         </Typography>
-        
-        <Box sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper', mb: 3 }}>
-          <Typography variant="h6" sx={{ px: 2, pt: 2 }}>
-            Group Members ({group?.members?.length || 0})
-          </Typography>
-          
-          <List>
-            {group?.members?.map((member) => (
-              <ListItem key={member.id}>
-                <ListItemAvatar>
-                  <Avatar src={member.profile_image_url || ''}>
-                    {member.username ? member.username[0] : (member.first_name ? member.first_name[0] : '?')}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText 
-                  primary={`${member.first_name || ''} ${member.last_name || ''}`.trim() || member.username || 'Invitee'} 
-                  secondary={
-                    <Typography variant="body2" color="text.secondary">
-                      {member.role + member.role.slice(1)}
-                    </Typography>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
         
         <Button 
           variant="contained" 
           color="primary" 
-          onClick={handleContinue}
+          onClick={() => navigate(`/groups/${groupId}`)}
           size="large"
         >
           Continue to Group
