@@ -245,14 +245,11 @@ class UserService {
    * @param {string} email - email
    * @returns {Promise<Object>} - User data
    */
-   async getUserByEmail(req) {
-
-    console.log('===========================>  Requested Email: ' + req.query.email)
-
+   async getUserByEmail(email) {
     try {
       // Changed from findByPk to findOne with email
       const user = await User.findOne({ 
-        where: { email: req.query.email } 
+        where: { email: email } 
       });
       if (!user) {
         throw new Error('User not found');

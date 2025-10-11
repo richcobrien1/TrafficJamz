@@ -185,20 +185,20 @@ const Dashboard = () => {
               />
             </ListItem>
             <Divider />
-            <ListItem button onClick={() => navigate('/')}>
+            <ListItem component="button" onClick={() => navigate('/')}>
               <ListItemAvatar>
                 <Avatar><GroupIcon /></Avatar>
               </ListItemAvatar>
               <ListItemText primary="Groups" />
             </ListItem>
-            <ListItem button onClick={() => navigate('/profile')}>
+            <ListItem component="button" onClick={() => navigate('/profile')}>
               <ListItemAvatar>
                 <Avatar><AccountCircleIcon /></Avatar>
               </ListItemAvatar>
               <ListItemText primary="Profile" />
             </ListItem>
             <Divider />
-            <ListItem button onClick={handleLogout}>
+            <ListItem component="button" onClick={handleLogout}>
               <ListItemAvatar>
                 <Avatar><LogoutIcon /></Avatar>
               </ListItemAvatar>
