@@ -166,3 +166,6 @@
     );
 
     export default api;
+
+    // Export Mapbox token for client-side use
+    export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;

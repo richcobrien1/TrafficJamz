@@ -34,35 +34,41 @@ export const AuthProvider = ({ children }) => {
         
         // Check if we have a token in localStorage
         const token = localStorage.getItem('token');
-        if (token) {
-          if (import.meta.env.MODE === 'development') console.log('Found existing token in localStorage');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+        
+        if (import.meta.env.MODE === 'development') console.log('Found existing token in localStorage');
+        
+        // Set a timeout for the API call
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Auth check timeout')), 5000);
+        });
+        
+        // Fetch user profile with the token
+        const profilePromise = api.get('/users/profile');
+        
+        const response = await Promise.race([profilePromise, timeoutPromise]);
+        
+        if (response.data) {
+          setUser(response.data);
+          if (import.meta.env.MODE === 'development') console.log('User profile fetched successfully');
           
-          // Fetch user profile with the token
-            try {
-              const response = await api.get('/users/profile');
-            if (response.data) {
-              setUser(response.data);
-              if (import.meta.env.MODE === 'development') console.log('User profile fetched successfully');
-              
-              // Load client config
-              try {
-                const configResponse = await configService.getClientConfig();
-                setConfig(configResponse.config);
-                if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
-              } catch (configError) {
-                console.warn('Could not fetch client config:', configError);
-              }
-            }
-          } catch (profileError) {
-            if (import.meta.env.MODE === 'development') console.warn('Could not fetch user profile:', profileError);
-            // Token might be invalid, remove it
-            localStorage.removeItem('token');
-            setUser(null);
+          // Load client config
+          try {
+            const configResponse = await configService.getClientConfig();
+            setConfig(configResponse.config);
+            if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
+          } catch (configError) {
+            console.warn('Could not fetch client config:', configError);
           }
         }
       } catch (error) {
-        console.error('Auth check error:', error);
-        setError(error.message);
+        if (import.meta.env.MODE === 'development') console.warn('Could not fetch user profile:', error);
+        // Token might be invalid, remove it
+        localStorage.removeItem('token');
+        setUser(null);
       } finally {
         setLoading(false);
       }

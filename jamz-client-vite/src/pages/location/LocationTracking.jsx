@@ -1,8 +1,11 @@
 // jamz-client-vite/src/pages/location/LocationTracking.jsx
 // LocationTracking.jsx - A component for tracking and displaying group member locations in real-time
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import api, { MAPBOX_TOKEN } from '../../services/api';
+import mapboxgl from 'mapbox-gl';
 import { 
   Container, 
   Badge,
@@ -20,6 +23,7 @@ import {
   AlertTitle,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   ListItemAvatar,
   Avatar,
@@ -35,7 +39,6 @@ import {
   Toolbar,
   Collapse
 } from '@mui/material';
-import PlaceControls from '../../components/PlaceControls';
 import {
   ArrowBack as ArrowBackIcon,
   MyLocation as MyLocationIcon,
@@ -48,134 +51,163 @@ import {
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
   People as PeopleIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Satellite as SatelliteIcon,
+  Place as PlaceIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
 
-  // Default coordinates provided by user (used when no location available)
-  const DEFAULT_LAT = 39.573640;
-  const DEFAULT_LNG = -104.882029;
-    
-          
-      
-  // Periodic fetch for member locations with basic rate-limit/backoff handling
-  useEffect(() => {
-    const fetchWithRateLimitProtection = async () => {
-      // Enforce minimum time between requests (at least 5 seconds)
-      const now = Date.now();
-      const timeSinceLastFetch = now - lastFetchTime;
-      const minTimeBetweenFetches = 5000; // 5 seconds minimum
-      
-      if (timeSinceLastFetch < minTimeBetweenFetches) {
-        console.log(`Too soon since last fetch (${Math.round(timeSinceLastFetch/1000)}s). Minimum wait time is ${minTimeBetweenFetches/1000}s.`);
-        return;
+  // Default coordinates - try to use last known location from localStorage, fallback to Denver, CO
+  const getDefaultCenter = () => {
+    try {
+      const lastLocation = localStorage.getItem('lastUserLocation');
+      if (lastLocation) {
+        const parsed = JSON.parse(lastLocation);
+        return [parsed.longitude, parsed.latitude];
       }
-      
-      // Update last fetch time
-      setLastFetchTime(now);
-      
-      try {
-        // In a real implementation, fetch actual location data
-        let locationData;
-        try {
-          const response = await api.get(`/location/group/${groupId}`);
-          locationData = response.data.locations;
-          
-          // Reset consecutive errors and retry delay on success
-          if (consecutiveErrors > 0) {
-            setConsecutiveErrors(0);
-            setRetryDelay(15); // Reset to default
-          }
-        } catch (error) {
-          console.log('Error fetching location data:', error);
-          
-          // Handle rate limiting (429 Too Many Requests)
-          if (error.response && error.response.status === 429) {
-            console.log('Rate limited by server. Implementing backoff strategy.');
-            setIsRateLimited(true);
-            
-            // Increase consecutive errors
-            const newErrorCount = consecutiveErrors + 1;
-            setConsecutiveErrors(newErrorCount);
-            
-            // Implement exponential backoff (15s, 30s, 60s, 120s, etc.)
-            const newDelay = Math.min(15 * Math.pow(2, newErrorCount - 1), 900); // Max 15 minutes
-            setRetryDelay(newDelay);
-            
-            // Set a timer to clear the rate limit after the delay
-            setTimeout(() => {
-              console.log(`Rate limit timeout expired. Resuming fetches.`);
-              setIsRateLimited(false);
-            }, newDelay * 1000);
-          }
-          
-          console.log('Using mock location data due to API error:', error);
-          // Fallback to mock data
-          locationData = [
-            {
-              user_id: user?.id || 'current-user',
-              username: user?.username || 'CurrentUser',
-              coordinates: userLocation || {
-                latitude: 39.40307408791466,
-                longitude: -104.88774754460103,
-                accuracy: 10,
-                altitude: 100,
-                heading: 90,
-                speed: 0
-              },
-              timestamp: new Date().toISOString(),
-              battery_level: 85,
-              connection_type: 'wifi'
-            },
-            {
-              user_id: 'user2',
-              username: 'JaneDoe',
-              coordinates: {
-                latitude: 40.7138,
-                longitude: -74.0070,
-                accuracy: 15,
-                altitude: 105,
-                heading: 180,
-                speed: 5
-              },
-              timestamp: new Date().toISOString(),
-              battery_level: 65,
-              connection_type: 'cellular'
-            },
-            {
-              user_id: 'user3',
-              username: 'BobSmith',
-              coordinates: {
-                latitude: 40.7118,
-                longitude: -74.0050,
-                accuracy: 20,
-                altitude: 95,
-                heading: 270,
-                speed: 2
-              },
-              timestamp: new Date().toISOString(),
-              battery_level: 45,
-              connection_type: 'cellular'
-            }
-          ];
-        }
-        
-        setLocations(locationData);
-        
-        // Update map markers
-        updateMapMarkers(locationData);
-        
-        // Check for proximity alerts
-        if (showProximityAlerts && userLocation) {
-          checkProximityAlerts(locationData);
-        }
-      } catch (error) {
-        console.error('Error in fetchMemberLocations:', error);
-      }
-    };
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+    // Fallback to Denver, CO (more reasonable than Atlantic Ocean)
+    return [-104.882029, 39.573640];
+  };
 
-    // Initial fetch when component mounts
+  const [defaultCenter] = useState(getDefaultCenter);
+    
+  // State variables
+  const [sharingLocation, setSharingLocation] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const [retryDelay, setRetryDelay] = useState(15);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [showProximityAlerts, setShowProximityAlerts] = useState(true);
+  const [userLocation, setUserLocation] = useState(null);
+  const [group, setGroup] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [geolocationRetries, setGeolocationRetries] = useState(0);
+  const [highAccuracyMode, setHighAccuracyMode] = useState(true);
+  const [updateInterval, setUpdateInterval] = useState(30);
+  const [proximityDistance, setProximityDistance] = useState(100);
+  const [controlsOpacity, setControlsOpacity] = useState(0.9);
+  const [showControls, setShowControls] = useState(true);
+  const [showMembersList, setShowMembersList] = useState(false);
+  const [showLocationInfo, setShowLocationInfo] = useState(false);
+  const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [openLocationDialog, setOpenLocationDialog] = useState(false);
+  const [satelliteMode, setSatelliteMode] = useState(false);
+  const [showPlaces, setShowPlaces] = useState(false);
+  const [accuracyThreshold] = useState(100); // Default accuracy threshold in meters
+  const [useBestReading] = useState(false); // Whether to use best GPS reading from buffer
+  const [gpsReadingsBuffer, setGpsReadingsBuffer] = useState([]); // Buffer for GPS readings
+  
+  // Refs
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef({});
+  const pendingLocationsRef = useRef(null);
+  const watchIdRef = useRef(null);
+  const locationDataRef = useRef(null);
+  
+  // Get parameters and context
+  const { groupId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Fetch member locations with rate limiting protection
+  const fetchWithRateLimitProtection = async () => {
+    // Don't fetch if we don't have member data yet
+    if (!members || members.length === 0) {
+      console.log('Skipping location fetch - member data not loaded yet');
+      return;
+    }
+    
+    // Enforce minimum time between requests (at least 5 seconds)
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastFetchTime;
+    const minTimeBetweenFetches = 5000; // 5 seconds minimum
+    
+    if (timeSinceLastFetch < minTimeBetweenFetches) {
+      // console.log(`Too soon since last fetch (${Math.round(timeSinceLastFetch/1000)}s). Minimum wait time is ${minTimeBetweenFetches/1000}s.`);
+      return;
+    }
+    
+    // Update last fetch time
+    setLastFetchTime(now);
+    
+    try {
+      const response = await api.get(`/location/group/${groupId}`);
+      const locationData = response.data.locations;
+      
+      // Reset consecutive errors and retry delay on success
+      if (consecutiveErrors > 0) {
+        setConsecutiveErrors(0);
+        setRetryDelay(15); // Reset to default
+      }
+      
+      // Enrich location data with usernames from members
+      const enrichedLocations = locationData.map(location => {
+        const member = members.find(m => m.user_id === location.user_id);
+        
+        // Special handling for current user - always use their real username
+        if (location.user_id === user?.id) {
+          return {
+            ...location,
+            username: user?.username || 'CurrentUser',
+            first_name: user?.first_name || null
+          };
+        }
+
+        // Only include users that have proper member data
+        if (member) {
+          return {
+            ...location,
+            username: member.username,
+            first_name: member.first_name
+          };
+        }
+
+        // Skip users without member data (return null to filter out later)
+        return null;
+      }).filter(location => location !== null); // Remove null entries
+
+      setLocations(enrichedLocations);
+
+      // Update map markers - include current user location if available
+      let allLocations = enrichedLocations;
+      if (userLocation) {
+        const currentUserLocation = {
+          user_id: user?.id || 'current-user',
+          username: user?.username || 'CurrentUser',
+          first_name: user?.first_name || null,
+          coordinates: userLocation,
+          timestamp: new Date().toISOString(),
+          battery_level: 85
+        };
+        // Filter out any existing current user location from API data to avoid duplicates
+        const filteredEnrichedLocations = enrichedLocations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
+        allLocations = [currentUserLocation, ...filteredEnrichedLocations];
+      }
+
+      updateMapMarkers(allLocations);
+
+      // Check for proximity alerts
+      if (showProximityAlerts && userLocation) {
+        checkProximityAlerts(enrichedLocations);
+      }
+    } catch (error) {
+      console.error('Error in fetchMemberLocations (rate limited):', error);
+    }
+  };
+
+  useEffect(() => {    // Initial fetch when component mounts
     if (sharingLocation) {
       fetchWithRateLimitProtection();
     }
@@ -195,48 +227,27 @@ const LocationTracking = () => {
     try {
       setLoading(true);
       
-      // In a real implementation, fetch actual group data
-      let groupData;
-  try {
-  const response = await api.get(`/groups/${groupId}`);
-        groupData = response.data.group;
-      } catch (error) {
-        console.log('Using mock group data due to API error:', error);
-        // Fallback to mock data
-        groupData = {
-          id: groupId,
-          name: 'Mountain Explorers',
-          description: 'A group for mountain skiing enthusiasts',
-          members: [
-            {
-              user_id: user?.id || 'current-user',
-              username: user?.username || 'CurrentUser',
-              profile_image_url: user?.profile_image_url,
-              status: 'active'
-            },
-            {
-              user_id: 'user2',
-              username: 'JaneDoe',
-              profile_image_url: null,
-              status: 'active'
-            },
-            {
-              user_id: 'user3',
-              username: 'BobSmith',
-              profile_image_url: null,
-              status: 'active'
-            }
-          ]
-        };
-      }
+      const response = await api.get(`/groups/${groupId}`);
+      const groupData = response.data.group;
       
-      setGroup(groupData);
-      setMembers(groupData.members);
+      console.log('Group data received:', groupData);
+      console.log('Members in group:', groupData.members);
       
-      // Fetch initial member locations
-      fetchMemberLocations();
-      
-      setError('');
+    setGroup(groupData);
+    setMembers(groupData.members);
+    
+    // Fetch initial member locations with the fresh member data
+    fetchMemberLocations(groupData.members);
+    
+    // If location sharing is enabled, also start the rate-limited fetching
+    if (sharingLocation) {
+      // Small delay to ensure the initial fetch completes first
+      setTimeout(() => {
+        fetchWithRateLimitProtection();
+      }, 100);
+    }
+    
+    setError('');
     } catch (error) {
       console.error('Error fetching group details:', error);
       setError('Failed to load group details. Please try again later.');
@@ -246,96 +257,123 @@ const LocationTracking = () => {
   };
   
   // Fetch locations of all group members
-  const fetchMemberLocations = async () => {
+  const fetchMemberLocations = async (membersData = null) => {
     try {
-      // In a real implementation, fetch actual location data
-      let locationData;
-      try {
-        const response = await api.get(`/location/group/${groupId}`);
-        locationData = response.data.locations;
-      } catch (error) {
-        console.log('Using mock location data due to API error:', error);
-        // Fallback to mock data
-        locationData = [
-          {
-            user_id: user?.id || 'current-user', // Add null check with default value
-            username: user?.username || 'CurrentUser',
-            coordinates: userLocation || {
-              latitude: 40.7128,
-              longitude: -74.0060,
-              accuracy: 10,
-              altitude: 100,
-              heading: 90,
-              speed: 0
-            },
-            timestamp: new Date().toISOString(),
-            battery_level: 85,
-            connection_type: 'wifi'
-          },
-          {
-            user_id: 'user2',
-            username: 'JaneDoe',
-            coordinates: {
-              latitude: 40.7138,
-              longitude: -74.0070,
-              accuracy: 15,
-              altitude: 105,
-              heading: 180,
-              speed: 5
-            },
-            timestamp: new Date().toISOString(),
-            battery_level: 65,
-            connection_type: 'cellular'
-          },
-          {
-            user_id: 'user3',
-            username: 'BobSmith',
-            coordinates: {
-              latitude: 40.7118,
-              longitude: -74.0050,
-              accuracy: 20,
-              altitude: 95,
-              heading: 270,
-              speed: 2
-            },
-            timestamp: new Date().toISOString(),
-            battery_level: 45,
-            connection_type: 'cellular'
-          }
-        ];
-      }
+      const response = await api.get(`/location/group/${groupId}`);
+      const locationData = response.data.locations;
       
-      setLocations(locationData);
+      // Enrich location data with usernames from members
+      const enrichedLocations = locationData.map(location => {
+        const member = (membersData || members).find(m => m.user_id === location.user_id);
+        
+        // Special handling for current user - always use their real username
+        if (location.user_id === user?.id) {
+          return {
+            ...location,
+            username: user?.username || 'CurrentUser',
+            first_name: user?.first_name || null
+          };
+        }
 
-      // Update map markers
-      updateMapMarkers(locationData);
+        // Only include users that have proper member data
+        if (member) {
+          return {
+            ...location,
+            username: member.username,
+            first_name: member.first_name
+          };
+        }
+
+        // Skip users without member data (return null to filter out later)
+        return null;
+      }).filter(location => location !== null); // Remove null entries
+
+      setLocations(enrichedLocations);
+
+      // Update map markers - include current user location if available
+      let allLocations = enrichedLocations;
+      if (userLocation) {
+        const currentUserLocation = {
+          user_id: user?.id || 'current-user',
+          username: user?.username || 'CurrentUser',
+          first_name: user?.first_name || null,
+          coordinates: userLocation,
+          timestamp: new Date().toISOString(),
+          battery_level: 85
+        };
+        // Filter out any existing current user location from API data to avoid duplicates
+        const filteredEnrichedLocations = enrichedLocations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
+        allLocations = [currentUserLocation, ...filteredEnrichedLocations];
+      }
+
+      updateMapMarkers(allLocations);
 
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
-        checkProximityAlerts(locationData);
+        checkProximityAlerts(enrichedLocations);
       }
+      
       // Return data for callers that want to compose additional runtime data
-      return locationData;
+      return enrichedLocations;
     } catch (error) {
       console.error('Error fetching member locations:', error);
       return [];
     }
+  };  // Fetch member locations and update markers (including current user if available)
+  const fetchMemberLocationsAndUpdateMarkers = async () => {
+    // Don't fetch if we don't have member data yet
+    if (!members || members.length === 0) {
+      console.log('Skipping manual location fetch - member data not loaded yet');
+      return;
+    }
+    
+    const memberLocations = await fetchMemberLocations();
+    setLocations(memberLocations);
+    
+    // The fetchMemberLocations function now handles including current user location
+    // No need to duplicate the logic here
   };
 
-  // If navigated here with state requesting openCreatePlace, auto-open the add-place dialog
+  // Initialize map when component mounts
   useEffect(() => {
-    try {
-      const navState = window.history.state && window.history.state.state ? window.history.state.state : null;
-      if (navState && navState.openCreatePlace) {
-        const openAt = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : (mapRef.current ? (() => { const c = mapRef.current.getCenter(); return { lat: c.lat, lng: c.lng }; })() : null);
-        if (openAt) {
-          window.dispatchEvent(new CustomEvent('tj:open-place-dialog', { detail: openAt }));
+    // console.log('LocationTracking component mounted, initializing map');
+    initializeMap();
+  }, []);
+
+  // Fetch group details when component mounts
+  useEffect(() => {
+    // console.log('LocationTracking component mounted, fetching group details');
+    fetchGroupDetails();
+  }, []);
+
+  // Handle places toggle
+  useEffect(() => {
+    const updatePlacesOnMap = async () => {
+      if (showPlaces && mapRef.current) {
+        try {
+          // Fetch places for the group
+          const places = await fetchPlacesForGroup();
+          console.log('Fetched places:', places);
+          
+          // Get current member locations
+          const memberLocations = await fetchMemberLocations();
+          
+          // Combine member locations and places
+          const allLocations = [...memberLocations, ...places];
+          
+          // Update markers to include places
+          updateMapMarkers(allLocations);
+        } catch (error) {
+          console.error('Error fetching places:', error);
         }
+      } else if (!showPlaces && mapRef.current) {
+        // When not showing places, just show member locations
+        fetchMemberLocationsAndUpdateMarkers();
       }
-    } catch (e) {
-      // ignore
-    }
-  }, [userLocation]);
+    };
+    
+    updatePlacesOnMap();
+  }, [showPlaces, groupId, members, userLocation]);
 
   // Fetch nearby places using Mapbox Geocoding API (POI & address)
   const fetchPlacesAround = async (lng, lat, limit = 6) => {
@@ -381,6 +419,45 @@ const LocationTracking = () => {
     }
   };
 
+  // Format name as "First Name Last Initial" for privacy
+  const formatDisplayName = (username, firstName, lastName) => {
+    // If we have first and last name, use "First LastInitial."
+    if (firstName && lastName) {
+      return `${firstName.trim()} ${lastName.trim().charAt(0).toUpperCase()}.`;
+    }
+    
+    // If we have first name only, use it
+    if (firstName) {
+      return firstName.trim();
+    }
+    
+    // If we have username, try to parse it
+    if (username) {
+      // Check if username contains a space (first last format)
+      const parts = username.trim().split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0]} ${parts[1].charAt(0).toUpperCase()}.`;
+      }
+      // Check if username contains underscore or dot (common separators)
+      const underscoreParts = username.split('_');
+      if (underscoreParts.length >= 2) {
+        return `${underscoreParts[0]} ${underscoreParts[1].charAt(0).toUpperCase()}.`;
+      }
+      const dotParts = username.split('.');
+      if (dotParts.length >= 2) {
+        return `${dotParts[0]} ${dotParts[1].charAt(0).toUpperCase()}.`;
+      }
+      // For "Member X" format, just return the first name part
+      if (username.startsWith('Member ')) {
+        return username;
+      }
+      // Just use the username as-is if it doesn't have separators
+      return username;
+    }
+    
+    return username || 'Unknown';
+  };
+
   // Promise wrapper for getCurrentPosition with timeout
   const getCurrentPositionAsync = (timeout = 8000) => new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error('Geolocation not available'));
@@ -392,6 +469,13 @@ const LocationTracking = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       if (timedOut) return;
       clearTimeout(to);
+      
+      // Check accuracy before resolving
+      if (pos.coords.accuracy > accuracyThreshold) {
+        reject(new Error(`Position too inaccurate: ${pos.coords.accuracy} meters`));
+        return;
+      }
+      
       resolve(pos);
     }, (err) => {
       if (timedOut) return;
@@ -400,52 +484,34 @@ const LocationTracking = () => {
     }, { enableHighAccuracy: true, maximumAge: 30000, timeout });
   });
 
-  // Compose runtime data: member locations, user's GPS location, and nearby places
+  // Generate runtime data (members + places + user position) for a given map center
   const generateRuntimeData = async (center) => {
+    // Don't fetch if we don't have member data yet
+    if (!members || members.length === 0) {
+      console.log('Skipping runtime data generation - member data not loaded yet');
+      return;
+    }
+    
     try {
       // Ensure member locations are fresh
-      const membersData = await fetchMemberLocations();
-
-      // Attempt to get the user's current GPS position (non-blocking)
-      let userPos = null;
-      try {
-        const p = await getCurrentPositionAsync(6000);
-        userPos = {
-          user_id: user?.id || 'current-user',
-          username: user?.username || 'You',
-          coordinates: {
-            latitude: p.coords.latitude,
-            longitude: p.coords.longitude,
-            accuracy: p.coords.accuracy || 0,
-            altitude: p.coords.altitude || 0,
-            heading: p.coords.heading || 0,
-            speed: p.coords.speed || 0
-          },
-          timestamp: new Date().toISOString(),
-          battery_level: null
-        };
-        setUserLocation(userPos.coordinates);
-      } catch (e) {
-        // ignore geolocation failures; there's already a fallback elsewhere
-      }
+      const enrichedMembersData = await fetchMemberLocations();
 
       // Fetch nearby places around the given center
-      const placeResults = await fetchPlacesAround(center.lng, center.lat, 6);
+      // const placeResults = await fetchPlacesAround(center.lng, center.lat, 6);
 
-      // Merge member locations, user position (de-dup by user_id), and places
+      // Merge member locations and places (user location handled separately by location tracking)
       const merged = [];
       const seen = new Set();
-      (membersData || []).forEach(m => { seen.add(String(m.user_id)); merged.push(m); });
-      if (userPos && !seen.has(String(userPos.user_id))) { merged.push(userPos); seen.add(String(userPos.user_id)); }
-      (placeResults || []).forEach(p => { if (!seen.has(p.user_id)) merged.push(p); });
+      (enrichedMembersData || []).forEach(m => { seen.add(String(m.user_id)); merged.push(m); });
+      // (placeResults || []).forEach(p => { if (!seen.has(p.user_id)) merged.push(p); });
 
       // Also fetch backend places and include them (places may be separate from Mapbox POI results)
-      try {
-        const backendPlaces = await fetchPlacesForGroup();
-        backendPlaces.forEach(bp => { if (!seen.has(bp.user_id)) { merged.push(bp); seen.add(bp.user_id); } });
-      } catch (e) {
-        // ignore
-      }
+      // try {
+      //   const backendPlaces = await fetchPlacesForGroup();
+      //   backendPlaces.forEach(bp => { if (!seen.has(bp.user_id)) { merged.push(bp); seen.add(bp.user_id); } });
+      // } catch (e) {
+      //   // ignore
+      // }
 
       setLocations(merged);
       updateMapMarkers(merged);
@@ -456,34 +522,48 @@ const LocationTracking = () => {
   
   // Initialize the map
   const initializeMap = () => {
+    // console.log('Initializing map, mapboxgl available:', !!mapboxgl);
     if (!mapboxgl) {
       console.error('Mapbox GL JS is not available');
+      setMapLoaded(true); // Show UI anyway
       return;
     }
     
     try {
       // Check if the map container ref is available
       if (!mapContainerRef.current) {
-        console.error('Map container ref is not available yet');
-        // Set a timeout to try again
-        setTimeout(initializeMap, 100);
+        // console.error('Map container ref is not available yet - retrying in 100ms');
+        // Retry after a short delay to allow DOM to be ready
+        setTimeout(() => {
+          initializeMap();
+        }, 100);
         return;
       }
+      // console.log('Map container ref is available, proceeding with map creation');
       
       mapboxgl.accessToken = MAPBOX_TOKEN;
+      // console.log('Mapbox token set:', MAPBOX_TOKEN ? 'YES' : 'NO');
       
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/outdoors-v11',
-        center: [DEFAULT_LNG, DEFAULT_LAT], // Default to user-provided location
+        style: 'mapbox://styles/mapbox/streets-v12', // Try a different style
+        center: defaultCenter, // Use last known location or neutral fallback
         zoom: 13
       });
       
+      // console.log('Map object created:', !!map);
+      
       map.on('load', () => {
+        // console.log('Map loaded successfully!');
         setMapLoaded(true);
         mapRef.current = map;
         // expose map globally for PlaceControls to read center and for external triggers
         try { window.__TJ_MAP__ = map; } catch (e) { /* ignore */ }
+        
+        // Add error event listener
+        map.on('error', (e) => {
+          console.error('Map error:', e);
+        });
         
         // Add user location marker if available
         if (userLocation) {
@@ -492,7 +572,7 @@ const LocationTracking = () => {
         
         // Add markers for all members (or flush any pending queued locations)
         if (pendingLocationsRef.current) {
-          console.debug('Flushing pending locations to map', pendingLocationsRef.current);
+          // console.debug('Flushing pending locations to map', pendingLocationsRef.current);
           updateMapMarkers(pendingLocationsRef.current);
           pendingLocationsRef.current = null;
         } else if (locations.length > 0) {
@@ -540,35 +620,13 @@ const LocationTracking = () => {
           console.error('Initial runtime data generation failed', e);
         }
       });
+
     } catch (error) {
       console.error('Error initializing map:', error);
       setMapLoaded(true); // Set to true anyway to show the UI
     }
   };
 
-  // Re-fetch places when signaled (from PlaceControls or other parts)
-  useEffect(() => {
-    const handler = () => {
-      console.debug('tj:places:changed - refetching places');
-      // regenerate data to include backend places
-      if (mapRef.current) {
-        const c = mapRef.current.getCenter();
-        generateRuntimeData({ lng: c.lng, lat: c.lat });
-      } else {
-        // fallback to member fetch + places
-        fetchMemberLocations().then(async (md) => {
-          const backendPlaces = await fetchPlacesForGroup();
-          const merged = [...(md || []), ...backendPlaces];
-          setLocations(merged);
-          updateMapMarkers(merged);
-        });
-      }
-    };
-
-    window.addEventListener('tj:places:changed', handler);
-    return () => window.removeEventListener('tj:places:changed', handler);
-  }, [groupId]);
-  
   // Start tracking the user's location
   const startLocationTracking = () => {
     if (!navigator.geolocation) {
@@ -585,8 +643,8 @@ const LocationTracking = () => {
     
     const options = {
       enableHighAccuracy: highAccuracyMode,
-      timeout: 20000, // Increased timeout to 20 seconds
-      maximumAge: 30000 // Allow cached positions up to 30 seconds old
+      timeout: 30000, // Increased to 30 seconds for better GPS acquisition
+      maximumAge: 10000 // Reduced to 10 seconds for fresher positions
     };
     
     try {
@@ -599,23 +657,10 @@ const LocationTracking = () => {
           startWatchingPosition();
         },
         (error) => {
-          console.log('Error getting initial position, falling back to default location:', error);
-          
-          // If we can't get the initial position, use a default and start watching anyway
-          const defaultLocation = {
-            latitude: 40.7128,
-            longitude: -74.0060,
-            accuracy: 1000,
-            altitude: 0,
-            heading: 0,
-            speed: 0
-          };
-          
-          setUserLocation(defaultLocation);
-          setLocationError('Using default location. ' + getGeolocationErrorMessage(error));
-          
-          // Start watching position even if initial position failed
-          startWatchingPosition();
+          console.log('Error getting initial position:', error);
+          setLocationError('Failed to get initial location. ' + getGeolocationErrorMessage(error));
+          setIsGettingLocation(false);
+          // Don't start watching if initial position failed - user can try again
         },
         options
       );
@@ -630,8 +675,8 @@ const LocationTracking = () => {
   const startWatchingPosition = () => {
     const options = {
       enableHighAccuracy: highAccuracyMode,
-      timeout: 20000, // Increased timeout to 20 seconds
-      maximumAge: 30000 // Allow cached positions up to 30 seconds old
+      timeout: 25000, // Increased to 25 seconds for better GPS acquisition
+      maximumAge: 15000 // Allow cached positions up to 15 seconds old
     };
     
     try {
@@ -651,26 +696,92 @@ const LocationTracking = () => {
   const handlePositionSuccess = (position) => {
     const { latitude, longitude, accuracy, altitude, heading, speed } = position.coords;
     
-    const newLocation = {
+    // Filter out obviously inaccurate positions (> accuracy threshold)
+    if (accuracy > accuracyThreshold) {
+      console.log('Position too inaccurate, skipping:', accuracy, 'meters (threshold:', accuracyThreshold, 'meters)');
+      return;
+    }
+    
+    const newReading = {
       latitude,
       longitude,
       accuracy,
       altitude: altitude || 0,
       heading: heading || 0,
-      speed: speed || 0
+      speed: speed || 0,
+      timestamp: Date.now()
     };
     
-    setUserLocation(newLocation);
-    setLocationError(null);
-    setIsGettingLocation(false);
-    setGeolocationRetries(0); // Reset retry counter on success
-    
-    // Update the server with the new location
-    updateLocationOnServer(newLocation);
-    
-    // Center map on user's location if this is the first location update
-    if (!userLocation && mapRef.current) {
-      centerMapOnLocation(newLocation);
+    if (useBestReading) {
+      // Add to buffer
+      setGpsReadingsBuffer(prev => {
+        const updated = [...prev, newReading];
+        
+        // Keep only readings from the last 10 seconds
+        const recentReadings = updated.filter(reading => 
+          Date.now() - reading.timestamp < 10000
+        );
+        
+        // If we have multiple readings, use the most accurate one
+        if (recentReadings.length >= 3) {
+          const bestReading = recentReadings.reduce((best, current) => 
+            current.accuracy < best.accuracy ? current : best
+          );
+          
+          // console.log('Using best reading from buffer:', bestReading, 'from', recentReadings.length, 'readings');
+          setUserLocation(bestReading);
+          setLocationError(null);
+          setIsGettingLocation(false);
+          setGeolocationRetries(0);
+          
+          // Save to localStorage for future map centering
+          try {
+            localStorage.setItem('lastUserLocation', JSON.stringify(bestReading));
+          } catch (e) {
+            // Ignore localStorage errors
+          }
+          
+          // Update the server with the best location
+          updateLocationOnServer(bestReading);
+          
+          // Center map on user's location if this is the first location update
+          if (!userLocation && mapRef.current) {
+            centerMapOnLocation(bestReading);
+          }
+          
+          // Update map markers to include current user location
+          updateMapMarkersWithUserLocation(bestReading);
+          
+          // Clear buffer after using
+          return [];
+        }
+        
+        return recentReadings;
+      });
+    } else {
+      // Use immediate reading
+      setUserLocation(newReading);
+      setLocationError(null);
+      setIsGettingLocation(false);
+      setGeolocationRetries(0);
+      
+      // Save to localStorage for future map centering
+      try {
+        localStorage.setItem('lastUserLocation', JSON.stringify(newReading));
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+      
+      // Update the server with the new location
+      updateLocationOnServer(newReading);
+      
+      // Center map on user's location if this is the first location update
+      if (!userLocation && mapRef.current) {
+        centerMapOnLocation(newReading);
+      }
+      
+      // Update map markers to include current user location
+      updateMapMarkersWithUserLocation(newReading);
     }
   };
   
@@ -687,43 +798,22 @@ const LocationTracking = () => {
     
     // If we've tried too many times, stop retrying
     if (newRetryCount >= 3) {
-      setLocationError(`${errorMessage} Using default or last known location.`);
+      setLocationError(`${errorMessage} Please check your location permissions and try again.`);
       setIsGettingLocation(false);
-      
-      // Use default location if we don't have one yet
-      if (!userLocation) {
-        const defaultLocation = {
-          latitude: 40.7128,
-          longitude: -74.0060,
-          accuracy: 1000,
-          altitude: 0,
-          heading: 0,
-          speed: 0
-        };
-        
-        setUserLocation(defaultLocation);
-        
-        // Center map on default location
-        if (mapRef.current) {
-          centerMapOnLocation(defaultLocation);
-        }
-      }
+      return;
     } else {
-      // Try again with less strict options
-      setLocationError(`${errorMessage} Retrying... (${newRetryCount}/3)`);
-      
-      // Retry with less strict options
+      // Retry with high accuracy maintained and longer timeout
       setTimeout(() => {
         navigator.geolocation.getCurrentPosition(
           handlePositionSuccess,
           handlePositionError,
           {
-            enableHighAccuracy: false, // Try without high accuracy
-            timeout: 30000, // Longer timeout
-            maximumAge: 60000 // Accept older cached positions
+            enableHighAccuracy: true, // Keep high accuracy for retries
+            timeout: 45000, // Longer timeout for retry
+            maximumAge: 20000 // Accept slightly older cached positions
           }
         );
-      }, 1000); // Wait 1 second before retrying
+      }, 2000); // Wait 2 seconds before retrying
     }
   };
   
@@ -755,6 +845,7 @@ const LocationTracking = () => {
       watchIdRef.current = null;
     }
     setIsGettingLocation(false);
+    setGpsReadingsBuffer([]); // Clear any buffered readings
   };
   
   // Toggle location sharing on/off
@@ -766,14 +857,8 @@ const LocationTracking = () => {
       startLocationTracking();
     } else {
       stopLocationTracking();
-      
-      // Notify server that user stopped sharing
-      api.post(`/location/stop-sharing`, {
-        group_id: groupId,
-        user_id: user?.id || 'current-user'
-      }).catch(error => {
-        console.error('Error notifying server about stopping location sharing:', error);
-      });
+      // Note: No need to notify server about stopping location sharing
+      // The server will naturally stop receiving updates
     }
   };
   
@@ -781,17 +866,20 @@ const LocationTracking = () => {
   const updateLocationOnServer = async (location) => {
     try {
       const locationData = {
-        group_id: groupId,
-        user_id: user?.id || 'current-user', // Add null check with default value
-        coordinates: location,
-        timestamp: new Date().toISOString(),
+        coordinates: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          altitude: location.altitude || 0,
+          accuracy: location.accuracy || 0,
+          heading: location.heading || 0,
+          speed: location.speed || 0
+        },
         battery_level: 85, // In a real app, get actual battery level
         connection_type: navigator.connection ? navigator.connection.type : 'unknown'
       };
       
-  await api.post('/location/update', locationData).catch(error => {
-        console.log('Mock location update - would send:', locationData);
-      });
+      await api.post('/location/update', locationData);
+      // console.log('Location updated successfully on server');
     } catch (error) {
       console.error('Error updating location on server:', error);
     }
@@ -799,22 +887,47 @@ const LocationTracking = () => {
   
   // Center the map on a specific location
   const centerMapOnLocation = (location) => {
-    if (mapRef.current) {
+    console.log('Centering map on location:', location);
+    console.log('Map ref exists:', !!mapRef.current);
+    
+    if (mapRef.current && location && location.latitude && location.longitude) {
+      console.log('Flying to:', [location.longitude, location.latitude]);
       mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
         zoom: 15,
         essential: true
       });
+    } else {
+      console.log('Cannot center map - missing map ref or location data');
     }
   };
   
+  // Toggle satellite mode
+  const toggleSatelliteMode = (enabled) => {
+    if (mapRef.current) {
+      const newStyle = enabled ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/streets-v12';
+      mapRef.current.setStyle(newStyle);
+      setSatelliteMode(enabled);
+    }
+  };
+  
+  // Handle marker click to open location dialog
+  const handleMarkerClick = useCallback((location) => {
+    setSelectedLocation(location);
+    setOpenLocationDialog(true);
+  }, []);
+  
   // Update map markers for all members
   const updateMapMarkers = (locationData) => {
-    console.debug('updateMapMarkers called with', locationData);
+    // console.debug('updateMapMarkers called with', locationData);
+    console.log('updateMapMarkers called with', locationData.length, 'locations');
+    console.log('Map ref exists:', !!mapRef.current);
+    console.log('Map loaded state:', mapLoaded);
 
     // If the map isn't initialized yet, queue the locations for later
     if (!mapRef.current || !mapboxgl) {
-      console.debug('Map not ready - queuing locations', locationData);
+      // console.debug('Map not ready - queuing locations', locationData);
+      console.log('Map not ready - queuing locations');
       pendingLocationsRef.current = locationData;
       return;
     }
@@ -822,42 +935,35 @@ const LocationTracking = () => {
     // Remove existing markers
     Object.values(markersRef.current).forEach(marker => marker.remove());
     markersRef.current = {};
-  const labelCollisionItems = [];
     
     // Add new markers
     locationData.forEach((location, idx) => {
-      if (!location.coordinates) return;
+      if (!location.coordinates) {
+        console.log(`Skipping location ${idx} - no coordinates:`, location);
+        return;
+      }
       
       const { latitude, longitude } = location.coordinates;
       
-  console.debug('Creating marker for', location.user_id, location.username, latitude, longitude);
-
-      // Build a compound marker element: label above pin with a small spike for visual anchoring
+      console.log(`Creating marker for location ${idx}:`, {
+        user_id: location.user_id,
+        username: location.username,
+        latitude,
+        longitude,
+        hasUsername: !!location.username
+      });
+      
+      // Debug: Check if this is the current user marker
+      if (location.user_id === (user?.id || 'current-user')) {
+        console.log('CURRENT USER MARKER COORDINATES:', { latitude, longitude });
+        console.log('Current userLocation state:', userLocation);
+      }
       const wrapper = document.createElement('div');
       wrapper.className = 'location-marker-wrapper';
       wrapper.style.display = 'flex';
       wrapper.style.flexDirection = 'column';
       wrapper.style.alignItems = 'center';
       wrapper.style.pointerEvents = 'auto';
-
-  // Label element (above pin)
-    const labelEl = document.createElement('div');
-      labelEl.className = location.place ? 'location-label place-label' : 'location-label';
-      // Prefer first_name when available, otherwise username or user_id
-      const labelText = (location.first_name && location.first_name.trim()) ? location.first_name.trim() : (location.username || location.user_id || 'Unknown');
-      labelEl.textContent = labelText;
-  labelEl.style.background = 'white';
-  labelEl.style.padding = '4px 10px';
-  labelEl.style.borderRadius = '14px';
-  labelEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
-  labelEl.style.fontSize = '13px';
-  labelEl.style.color = '#111';
-  labelEl.style.whiteSpace = 'nowrap';
-  labelEl.style.pointerEvents = 'none'; // allow clicks to reach the pin
-  labelEl.style.transition = 'transform 140ms ease, box-shadow 140ms ease';
-      // Small stagger to reduce label collision
-      const stagger = Math.min(idx, 4) * -6; // up to -24px
-      labelEl.style.transform = `translateY(${stagger}px)`;
 
   // Pin element (circle with initial)
       const pinEl = document.createElement('div');
@@ -877,9 +983,9 @@ const LocationTracking = () => {
   pinEl.style.transition = 'transform 160ms ease, box-shadow 160ms ease';
 
   const initial = document.createElement('span');
-  const nameForInitial = (location.first_name && location.first_name.trim()) ? location.first_name.trim() : ((location.username || String(location.user_id || '')).trim());
-  // Use a map-pin emoji for places instead of initial
-  initial.textContent = location.place ? '📍' : (nameForInitial ? nameForInitial.charAt(0).toUpperCase() : '?');
+  // Use first letter of formatted display name for privacy
+  const displayName = location.place ? (location.username || 'Unknown Place') : formatDisplayName(location.username, location.first_name);
+  initial.textContent = location.place ? '📍' : (displayName ? displayName.charAt(0).toUpperCase() : '?');
       initial.style.color = 'white';
       initial.style.fontWeight = 'bold';
   initial.style.fontSize = '14px';
@@ -895,21 +1001,23 @@ const LocationTracking = () => {
       spike.style.borderTop = `8px solid ${location.place ? '#2e7d32' : (location.user_id === (user?.id || 'current-user') ? '#2196f3' : '#ff9800')}`;
   spike.style.marginTop = '2px';
 
-  // Compose wrapper: label on top, then pin, then spike
-      wrapper.appendChild(labelEl);
+  // Compose wrapper: pin and spike only
       wrapper.appendChild(pinEl);
       wrapper.appendChild(spike);
 
-      // Hover interactions: enlarge pin and lift label
+      // Handle clicks/taps on pins (for mobile and desktop)
+      pinEl.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent map click from firing
+        // Use callback to open location details dialog
+        handleMarkerClick(location);
+      });
+
+      // Hover interactions for desktop (optional, since click handles mobile)
       pinEl.addEventListener('mouseenter', () => {
         pinEl.style.transform = 'scale(1.08)';
-        labelEl.style.transform = `translateY(${stagger - 6}px) scale(1.03)`;
-        labelEl.style.boxShadow = '0 4px 10px rgba(0,0,0,0.18)';
       });
       pinEl.addEventListener('mouseleave', () => {
         pinEl.style.transform = 'scale(1)';
-        labelEl.style.transform = `translateY(${stagger}px)`;
-        labelEl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
       });
 
       // Create and add the marker - anchor at the bottom so spike points to coordinate
@@ -920,70 +1028,43 @@ const LocationTracking = () => {
          Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}`
         :
         `<strong>${location.username || 'Unknown'}</strong><br>
-         Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}<br>
-         ${location.coordinates && location.coordinates.speed > 0 ? `Speed: ${Math.round(location.coordinates.speed * 3.6)} km/h<br>` : ''}
-         Battery: ${location.battery_level || 'N/A'}%`;
+         ${location.placeholder ? 'Location not available - enable location sharing to show your position' : 
+           `Last updated: ${location.timestamp ? new Date(location.timestamp).toLocaleTimeString() : 'Unknown'}`}<br>
+         ${!location.placeholder && location.coordinates && location.coordinates.speed > 0 ? `Speed: ${Math.round(location.coordinates.speed * 3.6)} km/h<br>` : ''}
+         ${!location.placeholder ? `Battery: ${location.battery_level || 'N/A'}%` : ''}`;
 
       const marker = new mapboxgl.Marker(wrapper, { anchor: 'bottom', offset: [0, -8] })
         .setLngLat([longitude, latitude])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupHtml))
         .addTo(mapRef.current);
+
+      console.log(`Marker added to map for ${location.username} at [${longitude}, ${latitude}]`);
 
       // Keep a reference to the marker so it can be removed/updated later
       const markerKey = `${location.user_id}__${idx}`;
       markersRef.current[markerKey] = marker;
-
-      // If this is the current user, open the popup briefly
-      if (location.user_id === (user?.id || 'current-user')) {
-        try {
-          marker.togglePopup();
-        } catch (e) {
-          // ignore popup toggle errors
-        }
-      }
-      // Collect label info for collision avoidance
-      try {
-        const point = mapRef.current.project([longitude, latitude]);
-        labelCollisionItems.push({
-          labelEl,
-          x: point.x,
-          y: point.y,
-          width: labelEl.offsetWidth || 80,
-          height: labelEl.offsetHeight || 20,
-          idx
-        });
-      } catch (e) {
-        // fail silently if projection not available
-      }
     });
-
-    // Simple collision avoidance: horizontal stacking around marker screen x
-    if (labelCollisionItems.length > 1 && mapRef.current) {
-      // Sort by x so we handle left-to-right
-      labelCollisionItems.sort((a, b) => a.x - b.x);
-      const spacing = 8; // px between labels
-      for (let i = 0; i < labelCollisionItems.length; i++) {
-        const base = labelCollisionItems[i];
-        // try to place label centered at its x; if overlap with previous, shift to the right
-        let offsetX = 0;
-        if (i > 0) {
-          const prev = labelCollisionItems[i - 1];
-          const prevRight = prev.x + prev.width / 2 + prev._offsetX || prev.x + prev.width / 2;
-          const curLeftDesired = base.x - base.width / 2;
-          if (curLeftDesired < prevRight + spacing) {
-            offsetX = (prevRight + spacing) - (base.x - base.width / 2);
-          }
-        }
-        // Apply alternating small vertical nudge to reduce exact stacking
-        const verticalNudge = (base.idx % 2 === 0) ? -6 : -12;
-        base._offsetX = offsetX;
-        // Apply transform (keep existing translateY stagger)
-        const existingTranslateY = base.labelEl.style.transform || '';
-        // Remove any translateX portion from existing transform
-        const newTransform = `${existingTranslateY.replace(/translateX\([^)]*\)/, '').trim()} translateX(${offsetX}px)`;
-        base.labelEl.style.transform = newTransform + ` translateY(${verticalNudge}px)`;
-      }
-    }
+  };
+  
+  // Update map markers including current user location
+  const updateMapMarkersWithUserLocation = (userLocationData) => {
+    // Create current user location object
+    const currentUserLocation = {
+      user_id: user?.id || 'current-user',
+      username: user?.username || 'CurrentUser',
+      first_name: user?.first_name || null,
+      coordinates: userLocationData,
+      timestamp: new Date().toISOString(),
+      battery_level: 85 // Default battery level
+    };
+    
+    // Filter out any existing current user location from API data to avoid duplicates
+    const filteredLocations = locations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
+    
+    // Combine current user location with existing member locations
+    const allLocations = [currentUserLocation, ...filteredLocations];
+    
+    // Update markers with combined locations
+    updateMapMarkers(allLocations);
   };
   
   // Check for proximity alerts
@@ -1029,18 +1110,6 @@ const LocationTracking = () => {
       return `${Math.round(meters)}m`;
     } else {
       return `${(meters / 1000).toFixed(1)}km`;
-    }
-  };
-  
-  // Handle member selection
-  const handleMemberClick = (member) => {
-    setSelectedMember(member);
-    setOpenMemberDialog(true);
-    
-    // Find member's location
-    const memberLocation = locations.find(loc => loc.user_id === member.user_id);
-    if (memberLocation && memberLocation.coordinates) {
-      centerMapOnLocation(memberLocation.coordinates);
     }
   };
   
@@ -1124,10 +1193,12 @@ const LocationTracking = () => {
             alignItems: 'center',
             justifyContent: 'center',
             bgcolor: 'action.hover',
-            zIndex: 1,
-            pointerEvents: 'none'
+            zIndex: 1
           }}>
             <CircularProgress size={60} />
+            <Typography sx={{ position: 'absolute', top: '60%', color: 'text.secondary', fontSize: '12px' }}>
+              Loading map...
+            </Typography>
           </Box>
         )}
       </Box>
@@ -1135,12 +1206,13 @@ const LocationTracking = () => {
       {/* Top App Bar */}
       <AppBar 
         position="absolute" 
-        color="transparent" 
+        color="default" 
         elevation={0}
         sx={{ 
           opacity: controlsOpacity,
           backdropFilter: 'blur(2px)',
-          bgcolor: 'rgba(255,255,255,0.8)',
+          bgcolor: 'rgba(0,0,0,0.7)',
+          color: 'text.primary',
           transition: 'all 0.3s ease',
           top: showControls ? 0 : -64,
           zIndex: 10
@@ -1172,38 +1244,12 @@ const LocationTracking = () => {
           <Tooltip title="Refresh Locations">
             <IconButton 
               color="inherit"
-              onClick={fetchMemberLocations}
+              onClick={fetchMemberLocationsAndUpdateMarkers}
             >
               <RefreshIcon />
             </IconButton>
           </Tooltip>
 
-          {/* Debug Locations button removed - use real backend data and PlaceControls to add places */}
-
-                    {/* Show Test Markers immediately (runtime helper) */}
-                    <Tooltip title="Show Test Markers">
-                      <IconButton
-                        color="inherit"
-                        onClick={() => {
-                          const now = new Date().toISOString();
-                          const testMarkers = [
-                            { user_id: user?.id || 't1', username: user?.username || 'You', coordinates: { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG }, timestamp: now, battery_level: 90 },
-                            { user_id: 't2', username: 'Test B', coordinates: { latitude: DEFAULT_LAT + 0.0015, longitude: DEFAULT_LNG + 0.0015 }, timestamp: now, battery_level: 65 },
-                            { user_id: 't3', username: 'Test C', coordinates: { latitude: DEFAULT_LAT - 0.0015, longitude: DEFAULT_LNG - 0.0015 }, timestamp: now, battery_level: 40 }
-                          ];
-                          setLocations(testMarkers);
-                          updateMapMarkers(testMarkers);
-                          // Center map on the first test marker for quick visibility
-                          if (mapRef.current) {
-                            mapRef.current.flyTo({ center: [DEFAULT_LNG, DEFAULT_LAT], zoom: 15, essential: true });
-                          }
-                          console.log('Test markers injected at default location');
-                        }}
-                      >
-                        <LocationIcon />
-                      </IconButton>
-                    </Tooltip>
-          
           <Tooltip title="Settings">
             <IconButton 
               color="inherit"
@@ -1213,46 +1259,12 @@ const LocationTracking = () => {
             </IconButton>
           </Tooltip>
 
-          {/* Debug: project DEFAULT coords to screen and draw overlay */}
-          <Tooltip title="Show Projection Debug Dot">
-            <IconButton
-              color="inherit"
-              onClick={() => {
-                if (!mapRef.current) {
-                  console.log('Map not ready for projection test');
-                  return;
-                }
-                // Convert lngLat to container pixels
-                const point = mapRef.current.project([DEFAULT_LNG, DEFAULT_LAT]);
-
-                // Remove existing debug dot
-                const existing = document.getElementById('projection-debug-dot');
-                if (existing) existing.remove();
-
-                const dot = document.createElement('div');
-                dot.id = 'projection-debug-dot';
-                dot.style.position = 'absolute';
-                dot.style.width = '16px';
-                dot.style.height = '16px';
-                dot.style.borderRadius = '50%';
-                dot.style.background = 'red';
-                dot.style.boxShadow = '0 0 6px rgba(255,0,0,0.9)';
-                dot.style.zIndex = 99999;
-                dot.style.left = `${point.x - 8}px`;
-                dot.style.top = `${point.y - 8}px`;
-                dot.style.pointerEvents = 'none';
-
-                // Attach to the map container's parent so it overlays the map
-                const container = document.getElementById('mapbox-container');
-                if (container && container.parentElement) {
-                  container.parentElement.appendChild(dot);
-                  console.log('Projection debug dot placed at', point);
-                } else {
-                  console.log('Could not find map container to attach debug dot');
-                }
-              }}
+          <Tooltip title={satelliteMode ? "Switch to Streets View" : "Switch to Satellite View"}>
+            <IconButton 
+              color={satelliteMode ? "primary" : "inherit"}
+              onClick={() => toggleSatelliteMode(!satelliteMode)}
             >
-              <NavigationIcon />
+              <SatelliteIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
@@ -1267,6 +1279,7 @@ const LocationTracking = () => {
             right: 16,
             zIndex: 10,
             bgcolor: 'background.paper',
+            color: 'text.primary',
             boxShadow: 2,
             '&:hover': {
               bgcolor: 'background.paper',
@@ -1277,8 +1290,6 @@ const LocationTracking = () => {
           {showControls ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         </IconButton>
       </Tooltip>
-  {/* Place controls for adding simple Lat/Lng POIs */}
-  <PlaceControls groupId={groupId} />
       
       {/* Toggle Members List Button */}
       <Tooltip title={showMembersList ? "Hide Members" : "Show Members"}>
@@ -1289,6 +1300,7 @@ const LocationTracking = () => {
             right: 76,
             zIndex: 10,
             bgcolor: 'background.paper',
+            color: 'text.primary',
             boxShadow: 2,
             '&:hover': {
               bgcolor: 'background.paper',
@@ -1300,25 +1312,45 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Center on My Location Button */}
-      <Tooltip title="Center on My Location">
-        <IconButton
-          sx={{
-            position: 'absolute',
-            top: showControls ? 72 : 16,
-            right: 136,
-            zIndex: 10,
-            bgcolor: 'background.paper',
-            boxShadow: 2,
-            '&:hover': {
+      {/* Center on My Location / Show Places Button */}
+      <Tooltip title={showPlaces ? "Center on My Location" : "Show My Places"}>
+        <span>
+          <IconButton
+            sx={{
+              position: 'absolute',
+              top: showControls ? 72 : 16,
+              right: 136,
+              zIndex: 10,
               bgcolor: 'background.paper',
-            }
-          }}
-          onClick={() => userLocation && centerMapOnLocation(userLocation)}
-          disabled={!userLocation}
-        >
-          <MyLocationIcon />
-        </IconButton>
+              color: 'text.primary',
+              boxShadow: 2,
+              opacity: userLocation || showPlaces ? 1 : 0.7,
+              '&:hover': {
+                bgcolor: 'background.paper',
+                opacity: 1,
+              }
+            }}
+            onClick={() => {
+              if (showPlaces) {
+                // Currently showing places, switch to centering mode
+                setShowPlaces(false);
+                if (userLocation) {
+                  centerMapOnLocation(userLocation);
+                } else if (mapRef.current) {
+                  // Center on current map center if no user location
+                  const center = mapRef.current.getCenter();
+                  centerMapOnLocation({ latitude: center.lat, longitude: center.lng });
+                }
+              } else {
+                // Currently in centering mode, switch to places mode
+                setShowPlaces(true);
+                // TODO: Implement places overlay/showing logic
+              }
+            }}
+          >
+            {showPlaces ? <MyLocationIcon /> : <PlaceIcon />}
+          </IconButton>
+        </span>
       </Tooltip>
       
       {/* Alerts and Errors */}
@@ -1374,7 +1406,8 @@ const LocationTracking = () => {
             p: 2,
             opacity: controlsOpacity,
             backdropFilter: 'blur(2px)',
-            bgcolor: 'rgba(255,255,255,0.8)',
+            bgcolor: 'rgba(0,0,0,0.8)',
+            color: 'text.primary',
             borderRadius: 2,
             maxWidth: 600,
             mx: 'auto'
@@ -1420,7 +1453,8 @@ const LocationTracking = () => {
             boxSizing: 'border-box',
             opacity: controlsOpacity,
             backdropFilter: 'blur(2px)',
-            bgcolor: 'rgba(255,255,255,0.8)',
+            bgcolor: 'rgba(0,0,0,0.8)',
+            color: 'text.primary',
             border: 'none',
             boxShadow: 3,
             height: 'calc(100% - 64px)',
@@ -1454,9 +1488,7 @@ const LocationTracking = () => {
               <React.Fragment key={member.user_id}>
                 {index > 0 && <Divider component="li" />}
                 <ListItem 
-                  button 
                   component="li"
-                  onClick={() => handleMemberClick(member)}
                   secondaryAction={
                     <Chip 
                       label={distance ? formatDistance(distance) : 'Unknown'}
@@ -1465,29 +1497,31 @@ const LocationTracking = () => {
                     />
                   }
                 >
-                  <ListItemAvatar>
-                    <Badge
-                      overlap="circular"
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                      variant="dot"
-                      color={isOnline ? "success" : "error"}
-                    >
-                      <Avatar 
-                        src={member.profile_image_url} 
-                        alt={member.username}
+                  <ListItemButton onClick={() => handleMemberClick(member)}>
+                    <ListItemAvatar>
+                      <Badge
+                        overlap="circular"
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        variant="dot"
+                        color={isOnline ? "success" : "error"}
                       >
-                        {member.username.charAt(0).toUpperCase()}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText 
-                    primary={member.username}
-                    secondary={
-                      memberLocation ? 
-                        `Last updated: ${new Date(memberLocation.timestamp).toLocaleTimeString()}` : 
-                        'Location not shared'
-                    }
-                  />
+                        <Avatar 
+                          src={member.profile_image_url} 
+                          alt={member.username}
+                        >
+                          {member.username.charAt(0).toUpperCase()}
+                        </Avatar>
+                      </Badge>
+                    </ListItemAvatar>
+                    <ListItemText 
+                      primary={member.username}
+                      secondary={
+                        memberLocation ? 
+                          `Last updated: ${new Date(memberLocation.timestamp).toLocaleTimeString()}` : 
+                          'Location not shared'
+                      }
+                    />
+                  </ListItemButton>
                 </ListItem>
               </React.Fragment>
             );
@@ -1508,6 +1542,38 @@ const LocationTracking = () => {
             <FormControlLabel
               control={
                 <Switch 
+                  checked={satelliteMode} 
+                  onChange={(e) => toggleSatelliteMode(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Satellite View"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
+              Show satellite imagery with street overlays
+            </Typography>
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={false} // TODO: Connect to actual theme state
+                  onChange={(e) => {/* TODO: Implement theme toggle */}}
+                  color="primary"
+                />
+              }
+              label="Dark Mode"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
+              Toggle between light and dark theme
+            </Typography>
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Switch 
                   checked={highAccuracyMode} 
                   onChange={(e) => setHighAccuracyMode(e.target.checked)}
                   color="primary"
@@ -1517,6 +1583,42 @@ const LocationTracking = () => {
             />
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
               Uses GPS for more precise location but consumes more battery
+            </Typography>
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={useBestReading} 
+                  onChange={(e) => setUseBestReading(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Use Best GPS Reading"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
+              Collect multiple GPS readings and use the most accurate one. Improves accuracy but adds slight delay.
+            </Typography>
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <Typography gutterBottom>Minimum Accuracy Threshold (meters)</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Slider
+                value={accuracyThreshold}
+                min={50}
+                max={1000}
+                step={25}
+                onChange={(e, newValue) => setAccuracyThreshold(newValue)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={value => `${value}m`}
+                sx={{ mr: 2, flexGrow: 1 }}
+              />
+              <Typography>{accuracyThreshold}m</Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Positions worse than this accuracy will be rejected. Lower values = better accuracy but fewer location updates.
             </Typography>
           </Box>
           
@@ -1592,142 +1694,138 @@ const LocationTracking = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Member Details Dialog */}
+      {/* Location Details Dialog */}
       <Dialog 
-        open={openMemberDialog} 
-        onClose={() => setOpenMemberDialog(false)}
+        open={openLocationDialog} 
+        onClose={() => setOpenLocationDialog(false)}
         maxWidth="sm"
         fullWidth
       >
-        {selectedMember && (
+        {selectedLocation && (
           <>
-            <DialogTitle>{selectedMember.username}</DialogTitle>
+            <DialogTitle>
+              {selectedLocation.place ? `📍 ${selectedLocation.username || 'Place'}` : `${selectedLocation.username || 'Unknown'}`}
+            </DialogTitle>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                 <Avatar 
-                  src={selectedMember.profile_image_url}
                   sx={{ 
                     width: 80, 
                     height: 80,
                     mb: 1,
-                    bgcolor: selectedMember.user_id === (user?.id || 'current-user') ? 'primary.main' : 'secondary.main'
+                    bgcolor: selectedLocation.place ? 'success.main' : 
+                             (selectedLocation.user_id === (user?.id || 'current-user') ? 'primary.main' : 'secondary.main')
                   }}
                 >
-                  {selectedMember.username.charAt(0).toUpperCase()}
+                  {selectedLocation.place ? '📍' : (selectedLocation.username ? selectedLocation.username.charAt(0).toUpperCase() : '?')}
                 </Avatar>
-                <Typography variant="h6">{selectedMember.username}</Typography>
+                <Typography variant="h6">
+                  {selectedLocation.place ? (selectedLocation.username || 'Unknown Place') : (selectedLocation.username || 'Unknown')}
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {selectedMember.status === 'active' ? 'Active Member' : 'Inactive'}
+                  {selectedLocation.place ? 'Saved Location' : 
+                   (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
                 </Typography>
               </Box>
               
               {/* Location details */}
-              {(() => {
-                const memberLocation = locations.find(loc => loc.user_id === selectedMember.user_id);
-                if (!memberLocation) {
-                  return (
-                    <Alert severity="info">
-                      No location data available for this member.
-                    </Alert>
-                  );
-                }
-                
-                return (
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Location Details
-                    </Typography>
-                    <List dense>
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Location Details
+                </Typography>
+                <List dense>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Last Updated" 
+                      secondary={new Date(selectedLocation.timestamp).toLocaleString()} 
+                    />
+                  </ListItem>
+                  
+                  {selectedLocation.coordinates && (
+                    <>
                       <ListItem>
                         <ListItemText 
-                          primary="Last Updated" 
-                          secondary={new Date(memberLocation.timestamp).toLocaleString()} 
+                          primary="Coordinates" 
+                          secondary={`${selectedLocation.coordinates.latitude.toFixed(6)}, ${selectedLocation.coordinates.longitude.toFixed(6)}`} 
                         />
                       </ListItem>
                       
-                      {memberLocation.coordinates && (
-                        <>
-                          <ListItem>
-                            <ListItemText 
-                              primary="Coordinates" 
-                              secondary={`${memberLocation.coordinates.latitude.toFixed(6)}, ${memberLocation.coordinates.longitude.toFixed(6)}`} 
-                            />
-                          </ListItem>
-                          
-                          <ListItem>
-                            <ListItemText 
-                              primary="Accuracy" 
-                              secondary={`±${Math.round(memberLocation.coordinates.accuracy)} meters`} 
-                            />
-                          </ListItem>
-                          
-                          {memberLocation.coordinates.altitude && (
-                            <ListItem>
-                              <ListItemText 
-                                primary="Altitude" 
-                                secondary={`${Math.round(memberLocation.coordinates.altitude)} meters`} 
-                              />
-                            </ListItem>
-                          )}
-                          
-                          {memberLocation.coordinates.speed > 0 && (
-                            <ListItem>
-                              <ListItemText 
-                                primary="Speed" 
-                                secondary={`${Math.round(memberLocation.coordinates.speed * 3.6)} km/h`} 
-                              />
-                            </ListItem>
-                          )}
-                          
-                          {userLocation && (
-                            <ListItem>
-                              <ListItemText 
-                                primary="Distance from you" 
-                                secondary={formatDistance(calculateDistance(
-                                  userLocation.latitude,
-                                  userLocation.longitude,
-                                  memberLocation.coordinates.latitude,
-                                  memberLocation.coordinates.longitude
-                                ))} 
-                              />
-                            </ListItem>
-                          )}
-                        </>
+                      {!selectedLocation.place && selectedLocation.coordinates.accuracy && (
+                        <ListItem>
+                          <ListItemText 
+                            primary="Accuracy" 
+                            secondary={`±${Math.round(selectedLocation.coordinates.accuracy)} meters`} 
+                          />
+                        </ListItem>
                       )}
                       
-                      <ListItem>
-                        <ListItemText 
-                          primary="Battery Level" 
-                          secondary={`${memberLocation.battery_level}%`} 
-                        />
-                      </ListItem>
+                      {!selectedLocation.place && selectedLocation.coordinates.altitude && (
+                        <ListItem>
+                          <ListItemText 
+                            primary="Altitude" 
+                            secondary={`${Math.round(selectedLocation.coordinates.altitude)} meters`} 
+                          />
+                        </ListItem>
+                      )}
                       
-                      <ListItem>
-                        <ListItemText 
-                          primary="Connection" 
-                          secondary={memberLocation.connection_type} 
-                        />
-                      </ListItem>
-                    </List>
-                  </Box>
-                );
-              })()}
+                      {!selectedLocation.place && selectedLocation.coordinates.speed > 0 && (
+                        <ListItem>
+                          <ListItemText 
+                            primary="Speed" 
+                            secondary={`${Math.round(selectedLocation.coordinates.speed * 3.6)} km/h`} 
+                          />
+                        </ListItem>
+                      )}
+                      
+                      {!selectedLocation.place && userLocation && (
+                        <ListItem>
+                          <ListItemText 
+                            primary="Distance from you" 
+                            secondary={formatDistance(calculateDistance(
+                              userLocation.latitude,
+                              userLocation.longitude,
+                              selectedLocation.coordinates.latitude,
+                              selectedLocation.coordinates.longitude
+                            ))} 
+                          />
+                        </ListItem>
+                      )}
+                    </>
+                  )}
+                  
+                  {selectedLocation.place && selectedLocation.raw && selectedLocation.raw.address && (
+                    <ListItem>
+                      <ListItemText 
+                        primary="Address" 
+                        secondary={selectedLocation.raw.address} 
+                      />
+                    </ListItem>
+                  )}
+                  
+                  {!selectedLocation.place && (
+                    <ListItem>
+                      <ListItemText 
+                        primary="Battery Level" 
+                        secondary={`${selectedLocation.battery_level || 'N/A'}%`} 
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </Box>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setOpenMemberDialog(false)}>Close</Button>
-              <Button 
-                color="primary"
-                onClick={() => {
-                  const memberLocation = locations.find(loc => loc.user_id === selectedMember.user_id);
-                  if (memberLocation && memberLocation.coordinates) {
-                    centerMapOnLocation(memberLocation.coordinates);
-                    setOpenMemberDialog(false);
-                  }
-                }}
-                disabled={!locations.find(loc => loc.user_id === selectedMember.user_id)?.coordinates}
-              >
-                Center on Map
-              </Button>
+              <Button onClick={() => setOpenLocationDialog(false)}>Close</Button>
+              {selectedLocation.coordinates && (
+                <Button 
+                  color="primary"
+                  onClick={() => {
+                    centerMapOnLocation(selectedLocation.coordinates);
+                    setOpenLocationDialog(false);
+                  }}
+                >
+                  Center on Map
+                </Button>
+              )}
             </DialogActions>
           </>
         )}

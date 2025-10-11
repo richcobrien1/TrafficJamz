@@ -73,7 +73,7 @@ export default function PlaceControls({ groupId, onPlacesChanged }) {
   return (
     <>
       <Tooltip title="Add Place">
-        <Fab color="primary" size="medium" onClick={openDialog} sx={{ position: 'absolute', right: 24, bottom: 24, zIndex: 1200 }}>
+        <Fab color="primary" size="medium" onClick={openDialog} sx={{ position: 'absolute', right: 74, bottom: 24, zIndex: 1200 }}>
           <AddLocationIcon />
         </Fab>
       </Tooltip>

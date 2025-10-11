@@ -22,7 +22,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 import MapboxMap from './components/MapboxMap';
@@ -43,17 +43,35 @@ const Profile = lazy(() => import('./pages/profile/Profile'));
 const SubscriptionPlans = lazy(() => import('./pages/misc/SubscriptionPlans'));
 const NotFound = lazy(() => import('./pages/misc/NotFound'));
 
-// Theme setup
-const theme = createTheme({
-  palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#dc004e' },
-    background: { default: '#f5f5f5' },
-  },
-});
+// Root redirect component that checks auth status
+const RootRedirect = () => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
+};
 
 function App() {
   const location = useLocation();
+
+  const theme = createTheme({
+    palette: {
+      mode: 'dark',
+      primary: {
+        main: '#1976d2',
+      },
+      secondary: {
+        main: '#dc004e',
+      },
+    },
+  });
+
+  // Debug logging
+  console.log('🚀 App component rendering');
+  console.log('Current location:', location.pathname);
 
   return (
     <ThemeProvider theme={theme}>
@@ -91,7 +109,11 @@ function App() {
                     <AudioSession />
                   </ProtectedRoute>
                 } />
-                <Route path="/dev/map" element={<MapboxMap />} />
+                <Route path="/dev/map" element={
+                  <ProtectedRoute>
+                    <MapboxMap />
+                  </ProtectedRoute>
+                } />
                 <Route path="/location-tracking/:groupId" element={
                   <ProtectedRoute>
                     <LocationTracking />
@@ -108,11 +130,15 @@ function App() {
                   </ProtectedRoute>
                 } />
 
-                {/* Redirect root */}
-                <Route path="/" element={<Navigate to="/dashboard" />} />
+                {/* Redirect root based on auth status */}
+                <Route path="/" element={<RootRedirect />} />
 
-                {/* Catch-all */}
-                <Route path="*" element={<NotFound />} />
+                {/* Catch-all - redirect to login if not authenticated */}
+                <Route path="*" element={
+                  <ProtectedRoute>
+                    <NotFound />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </motion.div>
           </AnimatePresence>

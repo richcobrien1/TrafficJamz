@@ -45,7 +45,9 @@ class LocationService {
 
       // Filter groups based on location sharing settings
       const sharedGroups = groups.filter(group => {
-        const member = (group.members || []).find(m => m.user_id === user_id);
+        // Ensure compatibility with documents that may still use `members`
+        const membersArr = group.members || group.group_members || [];
+        const member = membersArr.find(m => m.user_id === user_id);
         return group.settings && group.settings.location_sharing_required && member && member.status === 'active';
       });
 
@@ -224,15 +226,15 @@ class LocationService {
 
       // Get latest location for each member
       const locations = [];
-      // Ensure groupId is an ObjectId for reliable matching against stored ObjectIds
-      const groupIdObj = mongoose.Types.ObjectId(groupId);
+      // Use groupId directly as MongoDB can handle string IDs
+      const groupIdStr = groupId;
 
       for (const memberId of memberIds) {
         try {
           // Use $in to match the group id against the array of shared_with_group_ids
           const location = await Location.findOne({
             user_id: memberId,
-            shared_with_group_ids: { $in: [groupIdObj] }
+            shared_with_group_ids: { $in: [groupIdStr] }
           }).sort({ timestamp: -1 });
 
           if (location) {
