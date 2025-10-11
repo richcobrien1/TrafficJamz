@@ -249,6 +249,18 @@ const LocationTracking = () => {
       }, 100);
     }
     
+    // Check if group has places by fetching them
+    try {
+      const placesResponse = await api.get(`/groups/${groupId}/places`);
+      const places = placesResponse.data.places || [];
+      if (places.length > 0) {
+        setShowPlaces(true);
+      }
+    } catch (placesError) {
+      console.warn('Could not fetch places for group:', placesError);
+      // Don't fail the whole load if places fetch fails
+    }
+    
     setError('');
     } catch (error) {
       console.error('Error fetching group details:', error);
@@ -1056,12 +1068,9 @@ const LocationTracking = () => {
     setPlaceSelectionMode(newMode);
     
     if (newMode) {
-      // Enter place selection mode
+      // Enter place selection mode - create center marker at current map center
       createCenterMarker();
-      // Center map on user location if available, or current center
-      if (userLocation) {
-        centerMapOnLocation(userLocation);
-      }
+      // Don't force centering on user location - let user select any location on map
     } else {
       // Exit place selection mode - record the place
       if (mapRef.current && centerMarkerRef.current) {
@@ -1091,8 +1100,28 @@ const LocationTracking = () => {
       
       if (response.data.success) {
         console.log('Place created successfully:', response.data.place);
-        // Refresh places on map
+        
+        // Immediately add the new place to the map
+        const newPlace = {
+          user_id: `place_${response.data.place._id}`,
+          username: response.data.place.name,
+          coordinates: { 
+            latitude: response.data.place.coordinates.latitude, 
+            longitude: response.data.place.coordinates.longitude 
+          },
+          timestamp: response.data.place.createdAt,
+          battery_level: null,
+          place: true,
+          raw: response.data.place
+        };
+        
+        // Add to current locations and update markers
+        setLocations(prevLocations => [...prevLocations, newPlace]);
+        updateMapMarkers([...locations, newPlace]);
+        
+        // Enable places display
         setShowPlaces(true);
+        
         // Show success message
         alert(`Place "${placeName}" created successfully!`);
       } else {
@@ -1180,7 +1209,7 @@ const LocationTracking = () => {
 
       // Create and add the marker - properly anchored to geographic coordinates
       const marker = new mapboxgl.Marker(markerEl, {
-        anchor: 'center' // Center the marker on its geographic position
+        anchor: 'bottom' // Anchor at bottom so spike points to exact location
       })
         .setLngLat([longitude, latitude])
         .addTo(mapRef.current);
@@ -1419,6 +1448,15 @@ const LocationTracking = () => {
               onClick={() => toggleSatelliteMode(!satelliteMode)}
             >
               <SatelliteIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
+            <IconButton 
+              color={showPlaces ? "secondary" : "inherit"}
+              onClick={() => setShowPlaces(!showPlaces)}
+            >
+              <PlaceIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
