@@ -154,6 +154,7 @@ const subscriptionRoutes = require('./routes/subscriptions.routes');
 const notificationRoutes = require('./routes/notifications.routes');
 const placesRoutes = require('./routes/places.routes');
 const configRoutes = require('./routes/config.routes');
+const invitationsRoutes = require('./routes/invitations.routes');
 
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
@@ -332,6 +333,7 @@ function setupServer() {
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/config', configRoutes);
+  app.use('/api/invitations', invitationsRoutes);
 
   // Health check endpoint
   app.get('/health', async (req, res) => {

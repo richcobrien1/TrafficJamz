@@ -91,7 +91,7 @@ function App() {
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/register" element={<Register />} />
                 <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                <Route path="/groups/invitation/:inviteId" element={<InvitationAccept />} />
+                <Route path="/invitations/:groupId/:invitationIndex" element={<InvitationAccept />} />
 
                 {/* Protected routes */}
                 <Route path="/dashboard" element={

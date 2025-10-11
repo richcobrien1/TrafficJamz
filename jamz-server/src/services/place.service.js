@@ -6,6 +6,11 @@ class PlaceService {
   async createPlace({ name, description, type, latitude, longitude, address, groupId, createdBy }) {
     if (!groupId) throw new Error('groupId required');
 
+    // Validate groupId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      throw new Error('Invalid groupId format');
+    }
+
     // Verify group exists
     const group = await Group.findById(groupId).exec();
     if (!group) throw new Error('Group not found');
@@ -16,7 +21,7 @@ class PlaceService {
       type: type || 'poi',
       coordinates: { latitude, longitude },
       address,
-      created_by: createdBy ? new mongoose.Types.ObjectId(createdBy) : undefined,
+      created_by: createdBy && mongoose.Types.ObjectId.isValid(createdBy) ? new mongoose.Types.ObjectId(createdBy) : undefined,
       shared_with_group_ids: [new mongoose.Types.ObjectId(groupId)]
     });
 
@@ -26,6 +31,7 @@ class PlaceService {
 
   async listPlacesForGroup(groupId) {
     if (!groupId) return [];
+    if (!mongoose.Types.ObjectId.isValid(groupId)) return [];
     return Place.find({ shared_with_group_ids: new mongoose.Types.ObjectId(groupId) }).lean().exec();
   }
 

@@ -32,16 +32,24 @@ router.get('/profile',
 
 /**
  * @route GET /api/users/check-email
- * @desc Get current user profile
- * @access Private
+ * @desc Check if email exists
+ * @access Public
  */
 router.get('/check-email', 
-  passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
-      const user = await userService.getUserByEmail(req.user.email);
-      res.json({ success: true, user });
+      const { email } = req.query;
+      if (!email) {
+        return res.status(400).json({ success: false, message: 'Email parameter is required' });
+      }
+      
+      const user = await userService.getUserByEmail(email);
+      res.json({ success: true, exists: !!user, user: user ? { user_id: user.user_id, username: user.username } : null });
     } catch (error) {
+      // If user not found, return exists: false
+      if (error.message === 'User not found') {
+        return res.json({ success: true, exists: false });
+      }
       res.status(400).json({ success: false, message: error.message });
     }
   }

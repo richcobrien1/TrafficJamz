@@ -37,7 +37,8 @@ import {
   MoreVert as MoreVertIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  ExitToApp as LeaveIcon
+  ExitToApp as LeaveIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../../contexts/AuthContext';
@@ -69,6 +70,8 @@ const GroupDetail = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showAudioSession, setShowAudioSession] = useState(false);  // In your GroupDetails component
+  const [invitations, setInvitations] = useState([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -84,6 +87,7 @@ const GroupDetail = () => {
   
   useEffect(() => {
     fetchGroupDetails();
+    fetchInvitations();
   }, [groupId]);
   
   const fetchGroupDetails = async () => {
@@ -100,6 +104,19 @@ const GroupDetail = () => {
       setError('Failed to load group details. Please try again later.');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchInvitations = async () => {
+    try {
+      setInvitationsLoading(true);
+      const response = await api.get(`/groups/${groupId}/invitations`);
+      setInvitations(response.data.invitations || []);
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+      // Don't set error state for invitations, just log it
+    } finally {
+      setInvitationsLoading(false);
     }
   };
   
@@ -130,7 +147,13 @@ const GroupDetail = () => {
         text: inviteTextMsg
       });
       
+      // Reset form fields after successful invitation
+      setInviteEmail('');
+      setInviteTextMsg('');
       setOpenInviteDialog(false);
+      
+      // Refresh the invitations list
+      fetchInvitations();
       
       // Show success message or update UI
     } catch (error) {
@@ -161,9 +184,18 @@ const GroupDetail = () => {
       
       console.log('Update response:', response.data);
       
-      // Update local state with the response
-      setGroup(response.data.group);
+      // Update only the changed fields instead of replacing the entire group object
+      // to preserve member details that might not be included in the update response
+      setGroup(prevGroup => ({
+        ...prevGroup,
+        name: response.data.group.name || response.data.group.group_name,
+        description: response.data.group.description || response.data.group.group_description,
+        privacy_level: response.data.group.privacy_level,
+        avatar_url: response.data.group.avatar_url,
+        updatedAt: response.data.group.updatedAt
+      }));
       setEditMode(false);
+      setOpenEditDialog(false); // Close the dialog after successful save
       setError('');
     } catch (error) {
       console.error('Error updating group:', error);
@@ -309,6 +341,7 @@ const GroupDetail = () => {
             <Tabs value={tabValue} onChange={handleTabChange} centered>
               <Tab label="Details" />
               <Tab label="Members" />
+              <Tab label="Invited" />
             </Tabs>
           </Box>
           
@@ -400,7 +433,7 @@ const GroupDetail = () => {
                   </Grid>
                 </Grid>
               </Box>
-            ) : (
+            ) : tabValue === 1 ? (
               <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6">
@@ -414,6 +447,7 @@ const GroupDetail = () => {
                     >
                       Invite
                     </Button>
+                    {/* Temporarily hidden - Create functionality moved to map interface
                     <Button
                       variant="contained"
                       color="primary"
@@ -424,6 +458,7 @@ const GroupDetail = () => {
                     >
                       Create
                     </Button>
+                    */}
                   </Box>
                 </Box>
                 
@@ -448,19 +483,21 @@ const GroupDetail = () => {
                                 </Avatar>
                               </ListItemAvatar>
                               <ListItemText 
+                                disableTypography
                                 primary={
-                                  <>
-                                    {`${member.first_name || ''} ${member.last_name || ''}`}
-                                    {member.user_id === user?.user_id && ' (You)'}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body1">
+                                      {`${member.first_name || ''} ${member.last_name || ''}`}
+                                      {member.user_id === user?.user_id && ' (You)'}
+                                    </Typography>
                                     {member.user_id === group.owner_id && (
                                       <Chip 
                                         label="Owner" 
                                         size="small" 
                                         color="primary"
-                                        sx={{ ml: 1 }}
                                       />
                                     )}
-                                  </>
+                                  </Box>
                                 }
                                 secondary={member.email}
                               />
@@ -475,6 +512,72 @@ const GroupDetail = () => {
                       </ListItem>
                     )}
                   </List>
+                </Paper>
+              </Box>
+            ) : (
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6">
+                    Pending Invitations ({invitations?.length || 0})
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<PersonAddIcon />}
+                    onClick={() => setOpenInviteDialog(true)}
+                  >
+                    Send New Invitation
+                  </Button>
+                </Box>
+                
+                <Paper>
+                  {invitationsLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : invitations && invitations.length > 0 ? (
+                    <List>
+                      {invitations.map((invitation, index) => (
+                        <React.Fragment key={invitation._id || index}>
+                          <ListItem>
+                            <ListItemAvatar>
+                              <Avatar>
+                                <PersonIcon />
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText 
+                              primary={invitation.email}
+                              secondary={
+                                <Box>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Invited {new Date(invitation.invited_at).toLocaleDateString()}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                            <Chip 
+                              label={invitation.status} 
+                              size="small" 
+                              color={invitation.status === 'pending' ? 'warning' : invitation.status === 'accepted' ? 'success' : 'error'}
+                              sx={{ ml: 2 }}
+                            />
+                          </ListItem>
+                          {index < invitations.length - 1 && <Divider />}
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  ) : (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body1" color="text.secondary">
+                        No pending invitations
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Send invitations to grow your group!
+                      </Typography>
+                    </Box>
+                  )}
                 </Paper>
               </Box>
             )}
