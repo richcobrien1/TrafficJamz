@@ -9,7 +9,10 @@ const MapboxMap = () => {
   // For dev route, use env token directly (don't wait for config)
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
 
-  // Mock data for Breckenridge ski area
+  console.log('🗺️ MapboxMap component rendering');
+  console.log('Token available:', !!token);
+
+  // Mock data for Breckenridge ski area with 5 friends and brewery
   const mockLocations = [
     {
       id: 'user1',
@@ -33,11 +36,26 @@ const MapboxMap = () => {
       color: '#45B7D1'
     },
     {
-      id: 'restaurant1',
-      name: 'Blue River Bistro',
-      type: 'restaurant',
-      coordinates: [-106.0385, 39.4825], // Near base area
-      color: '#FFA07A'
+      id: 'user4',
+      name: 'David Wilson',
+      type: 'user',
+      coordinates: [-106.0412, 39.4834], // Near base
+      color: '#96CEB4'
+    },
+    {
+      id: 'user5',
+      name: 'Emma Brown',
+      type: 'user',
+      coordinates: [-106.0355, 39.4798], // Village area
+      color: '#FFEAA7'
+    },
+    {
+      id: 'brewery1',
+      name: 'Breckenridge Brewery',
+      type: 'brewery',
+      coordinates: [-106.0385, 39.4825], // Breckenridge Brewery location
+      color: '#D63031',
+      meetupTime: '5:00 PM'
     }
   ];
 
@@ -83,10 +101,10 @@ const MapboxMap = () => {
         const markerElement = document.createElement('div');
         markerElement.className = 'custom-marker';
         markerElement.style.backgroundColor = location.color;
-        markerElement.style.width = location.type === 'restaurant' ? '20px' : '15px';
-        markerElement.style.height = location.type === 'restaurant' ? '20px' : '15px';
-        markerElement.style.borderRadius = '50%';
-        markerElement.style.border = '2px solid white';
+        markerElement.style.width = location.type === 'brewery' ? '25px' : location.type === 'restaurant' ? '20px' : '15px';
+        markerElement.style.height = location.type === 'brewery' ? '25px' : location.type === 'restaurant' ? '20px' : '15px';
+        markerElement.style.borderRadius = location.type === 'brewery' ? '4px' : '50%';
+        markerElement.style.border = location.type === 'brewery' ? '3px solid #FFD700' : '2px solid white';
         markerElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
 
         const marker = new mapboxgl.Marker(markerElement)
@@ -98,7 +116,7 @@ const MapboxMap = () => {
           .setHTML(`
             <div style="font-family: Arial, sans-serif; padding: 5px;">
               <strong>${location.name}</strong><br>
-              <small>${location.type === 'restaurant' ? 'Restaurant' : 'Group Member'}</small>
+              <small>${location.type === 'brewery' ? 'Brewery - Meetup at ' + location.meetupTime : location.type === 'restaurant' ? 'Restaurant' : 'Group Member'}</small>
             </div>
           `);
 
@@ -121,9 +139,11 @@ const MapboxMap = () => {
         <span style="color: #FF6B6B;">●</span> Alice Johnson<br>
         <span style="color: #4ECDC4;">●</span> Bob Smith<br>
         <span style="color: #45B7D1;">●</span> Carol Davis<br>
+        <span style="color: #96CEB4;">●</span> David Wilson<br>
+        <span style="color: #FFEAA7;">●</span> Emma Brown<br>
         <br>
-        <strong>Restaurants</strong><br>
-        <span style="color: #FFA07A;">●</span> Blue River Bistro
+        <strong>Meetup Location</strong><br>
+        <span style="color: #D63031;">■</span> Breckenridge Brewery (5:00 PM)
       `;
 
       map.getContainer().appendChild(legend);
@@ -135,11 +155,15 @@ const MapboxMap = () => {
   }, [token]);
 
   return (
-    <div
-      ref={mapContainerRef}
-      className="mapbox-container"
-      style={{ width: '100%', height: '600px' }}
-    />
+    <div style={{ padding: '20px' }}>
+      <h1>🗺️ TrafficJamz Meetup Map</h1>
+      <p>5 Friends + Breckenridge Brewery Meetup at 5:00 PM</p>
+      <div
+        ref={mapContainerRef}
+        className="mapbox-container"
+        style={{ width: '100%', height: '600px', border: '2px solid #ccc', borderRadius: '8px' }}
+      />
+    </div>
   );
 };
 
