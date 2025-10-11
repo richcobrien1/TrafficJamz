@@ -1,6 +1,6 @@
 // jamz-client-vite/src/pages/auth/Login.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -24,18 +24,26 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
-  const handleLoginSuccess = () => {
+  // Stable navigation function
+  const handleRedirect = useCallback(() => {
     const redirectUrl = localStorage.getItem('redirectAfterLogin');
     if (redirectUrl) {
-      localStorage.removeItem('redirectAfterLogin'); // Clear it
+      localStorage.removeItem('redirectAfterLogin');
       navigate(redirectUrl);
     } else {
-      navigate('/dashboard'); // Or your default route
+      navigate('/dashboard');
     }
-  };
+  }, [navigate]);
+  
+  // Auto-redirect when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      handleRedirect();
+    }
+  }, [isAuthenticated, handleRedirect]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,22 +58,12 @@ const Login = () => {
       setLoading(true);
       
       // Call the login function from AuthContext
-      const response = await login(email, password);
+      await login(email, password);
       
-      // Verify token was stored in localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        // Keep user-facing error; internal logging handled by AuthContext in dev
-        setError('Login succeeded but token storage failed. Try again.');
-        return;
-      }
-      
-      // Navigate to dashboard or redirect URL
-      handleLoginSuccess();
+      // Navigation will be handled by useEffect when isAuthenticated becomes true
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.message || error.message || 'Failed to login. Please check your credentials.');
-    } finally {
       setLoading(false);
     }
   };

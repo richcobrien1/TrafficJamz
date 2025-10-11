@@ -16,8 +16,8 @@ class PlaceService {
       type: type || 'poi',
       coordinates: { latitude, longitude },
       address,
-      created_by: createdBy ? mongoose.Types.ObjectId(createdBy) : undefined,
-      shared_with_group_ids: [mongoose.Types.ObjectId(groupId)]
+      created_by: createdBy ? new mongoose.Types.ObjectId(createdBy) : undefined,
+      shared_with_group_ids: [new mongoose.Types.ObjectId(groupId)]
     });
 
     await place.save();
@@ -26,7 +26,7 @@ class PlaceService {
 
   async listPlacesForGroup(groupId) {
     if (!groupId) return [];
-    return Place.find({ shared_with_group_ids: mongoose.Types.ObjectId(groupId) }).lean().exec();
+    return Place.find({ shared_with_group_ids: new mongoose.Types.ObjectId(groupId) }).lean().exec();
   }
 
   async deletePlace(placeId, requestingUserId) {

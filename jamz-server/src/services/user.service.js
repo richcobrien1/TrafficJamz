@@ -291,7 +291,12 @@ class UserService {
 
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
-          user[field] = updateData[field];
+          // Convert empty strings to null for phone_number to avoid validation issues
+          if (field === 'phone_number' && updateData[field] === '') {
+            user[field] = null;
+          } else {
+            user[field] = updateData[field];
+          }
         }
       }
 

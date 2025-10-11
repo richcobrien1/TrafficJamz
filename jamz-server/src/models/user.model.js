@@ -29,7 +29,7 @@ const User = sequelize.define('users', {
     allowNull: true,
     unique: true,
     validate: {
-      is: /^\+?[1-9]\d{1,14}$/
+      is: /^(\+?[1-9]\d{1,14})?$/
     }
   },
   password_hash: {

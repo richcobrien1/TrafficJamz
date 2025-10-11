@@ -1,0 +1,341 @@
+Using simplified passport without models dependency
+Current environment: Development
+=====     Using development database connection (Supabase pooler)     =====
+Current directory: C:\Users\richc\Projects\TrafficJamz\jamz-server\src
+Resolved routes path: C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes
+Routes directory exists: true
+Defining Group schema...
+Creating Group model...
+Group model created successfully
+Starting application...
+Connecting to MongoDB: Connection string found
+(node:49964) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49964) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+mediasoup Worker 1 created [pid:15468]
+MongoDB connected successfully
+Connection state: 1
+MongoDB connected successfully. Starting server with full functionality.
+Setting up server...
+Attempting to start server on port 5000...
+Server setup complete.
+✅ Server successfully started and listening on port 5000
+MongoDB connection state: connected
+mediasoup Worker 2 created [pid:58668]
+InfluxDB connection has been established successfully.
+mediasoup Worker 3 created [pid:53884]
+mediasoup Worker 4 created [pid:33040]
+mediasoup Worker 5 created [pid:31200]
+Ethereal Email account created for testing: ynh4yltzeya647wz@ethereal.email
+Email service initialized successfully
+mediasoup Worker 6 created [pid:58492]
+mediasoup Worker 7 created [pid:16156]
+7 mediasoup Workers created successfully.
+AudioService initialized with 7 mediasoup workers
+Executing (default): SELECT 1+1 AS result
+✅ PostgreSQL connection established successfully
+
+=== INCOMING REQUEST HEADERS ===
+Method: GET
+URL: /api/status
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*"
+}
+Body: {}
+[0mGET /api/status [32m200[0m 16.569 ms - 95[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /auth/login
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "46"
+}
+Body: { email: 'test@example.com', password: 'test' }
+Rewriting request URL -> /auth/login -> /api/auth/login
+Login attempt for: test@example.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: test@example.com
+Login attempt for: test@example.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'test@example.com');
+User found: Yes
+Validating password...
+Password validation result: Invalid
+Login error: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:107:15)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+Login error details: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:107:15)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+[0mPOST /auth/login [33m401[0m 556.712 ms - 55[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: GET
+URL: /api/status
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*"
+}
+Body: {}
+[0mGET /api/status [32m200[0m 3.468 ms - 95[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/login
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "46"
+}
+Body: { email: 'test@example.com', password: 'test' }
+Login attempt for: test@example.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: test@example.com
+Login attempt for: test@example.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'test@example.com');
+User found: Yes
+Validating password...
+Password validation result: Invalid
+Login error: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:107:15)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+Login error details: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:107:15)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+[0mPOST /api/auth/login [33m401[0m 606.938 ms - 55[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/register
+Headers: {
+  "host": "localhost:5000",
+  "connection": "keep-alive",
+  "content-type": "application/json",
+  "accept": "*/*",
+  "accept-language": "*",
+  "sec-fetch-mode": "cors",
+  "user-agent": "node",
+  "accept-encoding": "gzip, deflate",
+  "content-length": "72"
+}
+Body: {
+  username: 'richc',
+  email: 'smoke@example.com',
+  password: 'Sm0kePass!'
+}
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND ("users"."email" = 'smoke@example.com' OR "users"."username" = 'richc')) LIMIT 1;
+Executing (default): INSERT INTO "users" ("user_id","username","email","password_hash","status","preferences","mfa_enabled","mfa_methods","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING "user_id","username","email","phone_number","password_hash","first_name","last_name","profile_image_url","date_of_birth","last_login","status","preferences","mfa_enabled","mfa_methods","createdAt","updatedAt","deletedAt";
+Executing (default): INSERT INTO "users" ("user_id","username","email","password_hash","status","preferences","mfa_enabled","mfa_methods","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING "user_id","username","email","phone_number","password_hash","first_name","last_name","profile_image_url","date_of_birth","last_login","status","preferences","mfa_enabled","mfa_methods","createdAt","updatedAt","deletedAt";
+Executing (default): INSERT INTO "users" ("user_id","username","email","password_hash","status","preferences","mfa_enabled","mfa_methods","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING "user_id","username","email","phone_number","password_hash","first_name","last_name","profile_image_url","date_of_birth","last_login","status","preferences","mfa_enabled","mfa_methods","createdAt","updatedAt","deletedAt";
+[0mPOST /api/auth/register [33m400[0m 956.025 ms - 116[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/login
+Headers: {
+  "host": "localhost:5000",
+  "connection": "keep-alive",
+  "content-type": "application/json",
+  "accept": "*/*",
+  "accept-language": "*",
+  "sec-fetch-mode": "cors",
+  "user-agent": "node",
+  "accept-encoding": "gzip, deflate",
+  "content-length": "53"
+}
+Body: { email: 'smoke@example.com', password: 'Sm0kePass!' }
+Login attempt for: smoke@example.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: smoke@example.com
+Login attempt for: smoke@example.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'smoke@example.com');
+User found: No
+Login error: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:98:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+Login error details: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:98:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+[0mPOST /api/auth/login [33m401[0m 63.604 ms - 55[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /auth/login
+Headers: {
+  "host": "localhost:5000",
+  "connection": "keep-alive",
+  "content-type": "application/json",
+  "accept": "*/*",
+  "accept-language": "*",
+  "sec-fetch-mode": "cors",
+  "user-agent": "node",
+  "accept-encoding": "gzip, deflate",
+  "content-length": "53"
+}
+Body: { email: 'smoke@example.com', password: 'Sm0kePass!' }
+Rewriting request URL -> /auth/login -> /api/auth/login
+Login attempt for: smoke@example.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: smoke@example.com
+Login attempt for: smoke@example.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'smoke@example.com');
+User found: No
+Login error: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:98:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+Login error details: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:98:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+[0mPOST /auth/login [33m401[0m 53.711 ms - 55[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/login
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "48"
+}
+Body: { email: 'richcobrien', password: '1Topgun123$' }
+[0mPOST /api/auth/login [33m400[0m 2.878 ms - 122[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/register
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "84"
+}
+Body: {
+  username: 'richcobrien',
+  email: 'richcobrien1@gmail.com',
+  password: '1Topgun123$'
+}
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND ("users"."email" = 'richcobrien1@gmail.com' OR "users"."username" = 'richcobrien')) LIMIT 1;
+[0mPOST /api/auth/register [33m400[0m 436.182 ms - 77[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/login
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "59"
+}
+Body: { email: 'richcobrien1@gmail.com', password: '1Topgun123$' }
+Login attempt for: richcobrien1@gmail.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: richcobrien1@gmail.com
+Login attempt for: richcobrien1@gmail.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'richcobrien1@gmail.com');
+User found: No
+Login error: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:98:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+Login error details: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:98:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+[0mPOST /api/auth/login [33m401[0m 56.896 ms - 55[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/login
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "58"
+}
+Body: { email: 'richcobrien@gmail.com', password: '1Topgun123$' }
+Login attempt for: richcobrien@gmail.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: richcobrien@gmail.com
+Login attempt for: richcobrien@gmail.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'richcobrien@gmail.com');
+User found: Yes
+Validating password...
+Password validation result: Invalid
+Login error: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:107:15)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+Login error details: Error: Invalid email or password
+    at UserService.login (C:\Users\richc\Projects\TrafficJamz\jamz-server\src\services\user.service.js:107:15)
+    at async C:\Users\richc\Projects\TrafficJamz\jamz-server\src\routes\auth.routes.js:68:20
+[0mPOST /api/auth/login [33m401[0m 154.452 ms - 55[0m
+
+=== INCOMING REQUEST HEADERS ===
+Method: POST
+URL: /api/auth/login
+Headers: {
+  "host": "localhost:5000",
+  "user-agent": "curl/8.8.0",
+  "accept": "*/*",
+  "content-type": "application/json",
+  "content-length": "60"
+}
+Body: { email: 'richcobrien@hotmail.com', password: '1Topgun123$' }
+Login attempt for: richcobrien@hotmail.com
+Environment: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'Set',
+  POSTGRES_HOST: 'aws-0-us-east-1.pooler.supabase.com'
+}
+Calling userService.login with email: richcobrien@hotmail.com
+Login attempt for: richcobrien@hotmail.com
+Executing (default): SELECT "user_id", "username", "email", "phone_number", "password_hash", "first_name", "last_name", "profile_image_url", "date_of_birth", "last_login", "status", "preferences", "mfa_enabled", "mfa_methods", "createdAt", "updatedAt", "deletedAt" FROM "users" AS "users" WHERE ("users"."deletedAt" IS NULL AND "users"."email" = 'richcobrien@hotmail.com');
+User found: Yes
+Validating password...
+Password validation result: Valid
+Executing (default): UPDATE "users" SET "last_login"=$1,"updatedAt"=$2 WHERE "user_id" = $3
+generateTokens - user snapshot: {
+  user_id: '2f089fec-0f70-47c2-b485-fa83ec034e0f',
+  username: 'richcobrien'
+}
+Login successful for: richcobrien@hotmail.com
+[0mPOST /api/auth/login [32m200[0m 667.682 ms - 1204[0m

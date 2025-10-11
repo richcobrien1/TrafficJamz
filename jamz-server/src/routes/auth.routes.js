@@ -166,25 +166,18 @@ router.post('/verify-mfa',
 );
 
 /**
- * @route POST /api/auth/setup-mfa
- * @desc Setup MFA for user
+ * @route POST /api/auth/logout
+ * @desc Logout user (client-side token removal is primary, this is for server-side cleanup)
  * @access Private
  */
-router.post('/setup-mfa',
-  passport.authenticate('jwt', { session: false }),
-  [
-    body('method').isIn(['app', 'sms', 'email']).withMessage('Invalid MFA method'),
-    validate
-  ],
-  async (req, res) => {
-    try {
-      const { method } = req.body;
-      const result = await userService.setupMFA(req.user.user_id, method);
-      res.json({ success: true, ...result });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
+router.post('/logout', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    // For JWT, logout is primarily handled client-side by removing the token
+    // This endpoint can be used for server-side cleanup if needed (e.g., token blacklisting)
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Logout failed' });
   }
-);
+});
 
 module.exports = router;

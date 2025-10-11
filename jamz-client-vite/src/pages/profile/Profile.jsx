@@ -75,7 +75,14 @@ const Profile = () => {
       setError('');
       setSuccess('');
       
-      await updateProfile(formData);
+      // Only send updatable fields (exclude username and email for security)
+      const updateData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone_number: formData.phone_number
+      };
+      
+      await updateProfile(updateData);
       
       setSuccess('Profile updated successfully');
     } catch (error) {
@@ -217,6 +224,8 @@ const Profile = () => {
                       name="username"
                       value={formData.username}
                       onChange={handleChange}
+                      disabled
+                      helperText="Username cannot be changed"
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -227,6 +236,8 @@ const Profile = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      disabled
+                      helperText="Email cannot be changed"
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
