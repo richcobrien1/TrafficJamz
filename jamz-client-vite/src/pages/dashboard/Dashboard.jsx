@@ -273,8 +273,16 @@ const Dashboard = () => {
                     </Typography>
                   )}
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
-                    <Button>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<MicIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/audio-session/${group.id}`);
+                      }}
+                    >
                       Join Audio
                     </Button>
                     <Button
