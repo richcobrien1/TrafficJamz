@@ -100,9 +100,10 @@ const AudioSession = () => {
   
   // Initialize component
   useEffect(() => {
-    // Automatically join audio session when component mounts
+    // Initialize microphone capture automatically, but do not auto-connect
+    // signaling. Users will manually connect to signaling using the UI.
     handleJoinAudio();
-    
+
     // Fetch session details
     fetchSessionDetails();
     
@@ -360,7 +361,7 @@ const AudioSession = () => {
       // First, check if the session exists
       let sessionData;
       try {
-  const response = await api.get(`/audio/sessions/${sessionId}`);
+        const response = await api.get(`/audio/sessions/group/${sessionId}`);
         if (response.data && response.data.session) {
           sessionData = response.data.session;
         }
@@ -373,9 +374,9 @@ const AudioSession = () => {
       if (!sessionData) {
         try {
           const createResponse = await api.post('/audio/sessions', {
-            group_id: sessionId, // Assuming sessionId is the group ID
-            created_by: user.id,
-            type: 'voice_only'
+            group_id: sessionId,
+            session_type: 'voice_only',
+            device_type: 'web'
           });
           
           if (createResponse.data && createResponse.data.session) {
@@ -412,15 +413,9 @@ const AudioSession = () => {
       // Set the session in state
       setSession(sessionData);
       
-      // Fetch participants
-      try {
-  const participantsResponse = await api.get(`/audio/sessions/${sessionData.id}/participants`);
-        if (participantsResponse.data && participantsResponse.data.participants) {
-          setParticipants(participantsResponse.data.participants);
-        }
-      } catch (participantsError) {
-        console.error('Error fetching participants:', participantsError);
-        // Continue anyway, we can update participants later
+      // Set participants from session data
+      if (sessionData.participants) {
+        setParticipants(sessionData.participants.filter(p => !p.left_at));
       }
       
       // Initialize WebRTC connection
@@ -435,172 +430,314 @@ const AudioSession = () => {
   };
   
   // Initialize WebRTC connection
-  const initializeWebRTC = (sessionId) => {
+  const initializeWebRTC = async (sessionId) => {
     try {
-      // Set up signaling - this could be WebSocket or your existing WebRTC signaling
-      const signaling = setupSignaling(sessionId);
-      
+      console.log('Initializing WebRTC for session:', sessionId);
+
+      // Set up signaling first
+      // Note: setupSignaling now is called explicitly by user action (Connect)
+      // so initializeWebRTC will only prepare the RTCPeerConnection when
+      // signaling is available.
+      const signaling = signalingRef.current;
+      if (!signaling) {
+        console.warn('Signaling not connected yet, skipping WebRTC init');
+        return;
+      }
+
       // Initialize peer connection
-      setupPeerConnection(signaling);
-      
+      await setupPeerConnection(signaling);
+
       setWebrtcReady(true);
+      console.log('WebRTC initialization complete');
     } catch (error) {
       console.error('Error initializing WebRTC:', error);
       setError('Failed to initialize audio connection');
     }
-  };
-  
-  // Set up signaling for WebRTC
+  };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
-    // Use your existing WebRTC signaling mechanism
-    // This could be a WebSocket connection or another method
-    
-    // Example with WebSocket
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'wss://your-api-domain.com'}/audio/${sessionId}`;
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onopen = () => {
-      console.log('WebSocket connection established');
+    // Use Socket.IO for signaling. Default to same-origin so dev servers
+    // using the same port don't need an explicit VITE_WS_URL set.
+    const socketUrl = import.meta.env.VITE_WS_URL || window.location.origin;
+    const socket = io(socketUrl, {
+      transports: ['websocket'],
+      // default path '/socket.io' is fine unless your server uses a custom path
+    });
+
+    socket.on('connect', () => {
+      console.log('Socket.IO connection established');
       setConnecting(false);
       setConnected(true);
-    };
-    
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      handleSignalingMessage(message, ws); // Pass ws as the signaling object
-    };
-    
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+
+      // Join the audio session room
+      socket.emit('join-audio-session', { sessionId });
+
+      // Send ready signal to let others know we're here
+      socket.emit('webrtc-ready', { sessionId });
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket.IO connection closed');
       setConnected(false);
-      setError('Connection error');
-    };
-    
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-      setConnected(false);
-    };
-    
-    // Store the signaling object in the ref
-    signalingRef.current = ws;
-    
-    return ws;
+    });
+
+    // WebRTC signaling events
+    socket.on('webrtc-offer', async (data) => {
+      await handleOffer(data, socket);
+    });
+
+    socket.on('webrtc-answer', async (data) => {
+      await handleAnswer(data, socket);
+    });
+
+    socket.on('webrtc-candidate', async (data) => {
+      await handleCandidate(data, socket);
+    });
+
+    socket.on('webrtc-ready', (data) => {
+      // Another participant is ready, initiate connection if we're not already connected
+      if (rtcConnectionRef.current && rtcConnectionRef.current.connectionState === 'new') {
+        createAndSendOffer(socket);
+      }
+    });
+
+    // Participant presence events
+    socket.on('participant-joined', (data) => {
+      console.log('Participant joined via socket:', data);
+      const newParticipant = {
+        id: data.userId || null,
+        socketId: data.socketId || null,
+        display_name: data.display_name || null
+      };
+      setParticipants(prev => {
+        // avoid duplicates
+        const exists = prev.some(p => p.socketId === newParticipant.socketId || p.id === newParticipant.id);
+        if (exists) return prev;
+        return [...prev, newParticipant];
+      });
+    });
+
+    socket.on('participant-left', (data) => {
+      console.log('Participant left via socket:', data);
+      setParticipants(prev => prev.filter(p => p.socketId !== data.socketId && p.id !== data.userId));
+    });
+
+    // Store the socket in state and ref
+    setSocket(socket);
+    signalingRef.current = socket;
+
+    return socket;
   };
   
   // Handle signaling messages
-  const handleSignalingMessage = (message, signaling) => {
-    switch (message.type) {
-      case 'offer':
-        handleOffer(message, signaling);
-        break;
-      case 'answer':
-        handleAnswer(message, signaling);
-        break;
-      case 'candidate':
-        handleCandidate(message, signaling);
-        break;
-      case 'participant_joined':
-        handleParticipantJoined(message.participant);
-        break;
-      case 'participant_left':
-        handleParticipantLeft(message.participant_id);
-        break;
-      default:
-        console.log('Unknown message type:', message.type);
+  const handleSignalingMessage = async (message, signaling) => {
+    console.log('Received signaling message:', message.type);
+
+    try {
+      switch (message.type) {
+        case 'offer':
+          await handleOffer(message, signaling);
+          break;
+        case 'answer':
+          await handleAnswer(message, signaling);
+          break;
+        case 'candidate':
+          await handleCandidate(message, signaling);
+          break;
+        case 'participant_joined':
+          handleParticipantJoined(message.participant);
+          break;
+        case 'participant_left':
+          handleParticipantLeft(message.participant_id);
+          break;
+        case 'ready':
+          // Another participant is ready, initiate connection if we're not already connected
+          if (rtcConnectionRef.current && rtcConnectionRef.current.connectionState === 'new') {
+            await createAndSendOffer(signaling);
+          }
+          break;
+        default:
+          console.log('Unknown message type:', message.type);
+      }
+    } catch (error) {
+      console.error('Error handling signaling message:', error);
     }
   };
   
   // Set up peer connection
-  const setupPeerConnection = (signaling) => {
+  const setupPeerConnection = async (signaling) => {
+    console.log('Setting up peer connection...');
+
     const configuration = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-        // Add TURN servers for production
+        { urls: 'stun:stun1.l.google.com:19302' },
+        // Add TURN servers for production if needed
+        // { urls: 'turn:your-turn-server.com', username: 'user', credential: 'pass' }
       ]
     };
-    
+
     const peerConnection = new RTCPeerConnection(configuration);
     rtcConnectionRef.current = peerConnection;
-    
-    // Add local stream to peer connection
+
+    // Add local stream to peer connection when available
     if (localStream) {
+      console.log('Adding local stream to peer connection');
       localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
       });
     }
-    
+
     // Handle ICE candidates
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        signaling.send(JSON.stringify({
-          type: 'candidate',
-          candidate: event.candidate
-        }));
+        console.log('Sending ICE candidate');
+        signaling.emit('webrtc-candidate', {
+          candidate: event.candidate,
+          sessionId: sessionId
+        });
       }
     };
-    
+
     // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
-      console.log('Connection state:', peerConnection.connectionState);
+      console.log('Connection state changed:', peerConnection.connectionState);
+      setConnected(peerConnection.connectionState === 'connected');
+      setConnecting(peerConnection.connectionState === 'connecting');
     };
-    
-    // Handle tracks from remote peers
+
+    // Handle ICE connection state changes
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log('ICE connection state:', peerConnection.iceConnectionState);
+    };
+
+    // Handle remote stream
     peerConnection.ontrack = (event) => {
-      // Create audio element for remote stream
-      const audioElement = new Audio();
-      audioElement.srcObject = event.streams[0];
-      audioElement.play().catch(error => console.error('Error playing audio:', error));
-      
-      // Store the audio element
-      const remoteAudios = document.getElementById('remote-audios');
-      if (remoteAudios) {
-        remoteAudios.appendChild(audioElement);
+      console.log('Received remote track:', event.track.kind);
+      if (event.track.kind === 'audio') {
+        handleRemoteAudioStream(event.streams[0]);
       }
     };
-    
+
+    // Store signaling reference
+    signalingRef.current = signaling;
+
     return peerConnection;
   };
   
-  // WebRTC signaling handlers
-  const handleOffer = async (message, signaling) => {
+  // Handle remote audio stream
+  const handleRemoteAudioStream = (stream) => {
+    console.log('Handling remote audio stream');
+
+    // Create audio element for remote stream
+    const audioElement = new Audio();
+    audioElement.srcObject = stream;
+    audioElement.volume = outputVolume;
+    audioElement.autoplay = true;
+
+    // Store the audio element
+    const remoteAudios = document.getElementById('remote-audios');
+    if (remoteAudios) {
+      // Remove any existing audio elements for this stream
+      const existingAudios = remoteAudios.querySelectorAll('audio');
+      existingAudios.forEach(audio => {
+        if (audio.srcObject === stream) {
+          audio.remove();
+        }
+      });
+
+      remoteAudios.appendChild(audioElement);
+    }
+  };
+  
+  // Create and send offer
+  const createAndSendOffer = async (signaling) => {
     try {
       const peerConnection = rtcConnectionRef.current;
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
-      
+      if (!peerConnection) {
+        console.error('No peer connection available');
+        return;
+      }
+
+      console.log('Creating offer...');
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+
+      console.log('Sending offer...');
+      signaling.emit('webrtc-offer', {
+        offer: peerConnection.localDescription,
+        sessionId: sessionId
+      });
+    } catch (error) {
+      console.error('Error creating/sending offer:', error);
+    }
+  };
+
+  // WebRTC signaling handlers
+  const handleOffer = async (data, signaling) => {
+    try {
+      const peerConnection = rtcConnectionRef.current;
+      if (!peerConnection) {
+        console.error('No peer connection available for offer');
+        return;
+      }
+
+      console.log('Handling offer...');
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+      console.log('Creating answer...');
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
-      
-      // Send answer
-      signaling.send(JSON.stringify({
-        type: 'answer',
-        answer: peerConnection.localDescription
-      }));
+
+      console.log('Sending answer...');
+      signaling.emit('webrtc-answer', {
+        answer: peerConnection.localDescription,
+        sessionId: sessionId
+      });
     } catch (error) {
       console.error('Error handling offer:', error);
     }
   };
-  
-  const handleAnswer = async (message, signaling) => {
+
+  const handleAnswer = async (data, signaling) => {
     try {
       const peerConnection = rtcConnectionRef.current;
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+      if (!peerConnection) {
+        console.error('No peer connection available for answer');
+        return;
+      }
+
+      console.log('Handling answer...');
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
     } catch (error) {
       console.error('Error handling answer:', error);
     }
   };
-  
-  const handleCandidate = async (message, signaling) => {
+
+  const handleCandidate = async (data, signaling) => {
     try {
       const peerConnection = rtcConnectionRef.current;
-      await peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+      if (!peerConnection) {
+        console.error('No peer connection available for candidate');
+        return;
+      }
+
+      console.log('Adding ICE candidate...');
+      await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
     } catch (error) {
       console.error('Error handling ICE candidate:', error);
     }
   };
   
   const handleParticipantJoined = (participant) => {
+    console.log('Participant joined:', participant);
     setParticipants(prev => [...prev, participant]);
+
+    // If we have a peer connection ready and this isn't us joining, initiate connection
+    if (rtcConnectionRef.current && signalingRef.current && participant.id !== user?.id) {
+      console.log('Initiating WebRTC connection with new participant');
+      // Send ready signal to trigger connection establishment
+      signalingRef.current.emit('webrtc-ready', { sessionId });
+    }
   };
   
   const handleParticipantLeft = (participantId) => {
@@ -623,7 +760,8 @@ const AudioSession = () => {
       
       // Close signaling connection
       if (signalingRef.current) {
-        signalingRef.current.close();
+        signalingRef.current.emit('leave-audio-session', { sessionId });
+        signalingRef.current.disconnect();
       }
       
     } catch (error) {
@@ -663,9 +801,34 @@ const AudioSession = () => {
             color="secondary" 
             onClick={handleLeaveAudio}
             disabled={!isJoined}
+            sx={{ mr: 2 }}
           >
             Leave Audio
           </Button>
+
+          {connected ? (
+            <Button variant="contained" color="error" onClick={() => {
+              // Disconnect signaling
+              if (signalingRef.current) {
+                signalingRef.current.emit('leave-audio-session', { sessionId });
+                signalingRef.current.disconnect();
+                setSocket(null);
+                signalingRef.current = null;
+                setConnected(false);
+              }
+            }}>
+              Disconnect Signaling
+            </Button>
+          ) : (
+            <Button variant="contained" color="primary" onClick={() => {
+              // Connect signaling
+              const s = setupSignaling(sessionId);
+              // once connected, try to initialize WebRTC
+              s.on('connect', () => initializeWebRTC(sessionId));
+            }}>
+              Connect Signaling
+            </Button>
+          )}
         </Box>
         
         {/* Show loading or audio controls based on localStream */}
@@ -816,6 +979,31 @@ const AudioSession = () => {
             
             {/* Hidden container for remote audio elements */}
             <div id="remote-audios" style={{ display: 'none' }}></div>
+
+            {/* Participant list */}
+            <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+              <Typography variant="subtitle1">Participants</Typography>
+              <List dense>
+                {participants.map((p, idx) => (
+                  <React.Fragment key={p.socketId || p.id || idx}>
+                    <ListItem>
+                      <ListItemAvatar>
+                        <Avatar>
+                          <GroupIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText primary={p.display_name || p.id || p.socketId || 'Unknown'} secondary={p.socketId ? `socket:${p.socketId}` : ''} />
+                    </ListItem>
+                    <Divider variant="inset" component="li" />
+                  </React.Fragment>
+                ))}
+                {participants.length === 0 && (
+                  <ListItem>
+                    <ListItemText primary="No participants yet" />
+                  </ListItem>
+                )}
+              </List>
+            </Paper>
           </Box>
         )}
       </Paper>

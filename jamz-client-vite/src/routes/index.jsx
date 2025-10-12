@@ -35,7 +35,7 @@ export const ROUTES = [
     icon: "📊",
   },
   {
-    path: "/audio/:sessionId",
+    path: "/audio-session/:sessionId",
     name: "Audio Session",
     element: <AudioSession />,
     icon: "🎧",
