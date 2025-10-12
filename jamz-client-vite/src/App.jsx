@@ -12,7 +12,7 @@
 //
 // Notes:
 //   - Public routes: /auth/login, /auth/register, /auth/forgot-password, /groups/invitation/:inviteId
-//   - Protected routes: /dashboard, /groups/:groupId, /audio/:sessionId, /location-tracking/:groupId, /profile, /subscription-plans
+//   - Protected routes: /dashboard, /groups/:groupId, /audio-session/:sessionId, /location-tracking/:groupId, /profile, /subscription-plans
 //   - Root ("/") currently redirects to /dashboard
 //   - Catch-all (*) renders <NotFound />
 //   - Mapbox dev route (/dev/map) is currently unprotected for testing
@@ -104,7 +104,7 @@ function App() {
                     <GroupDetail />
                   </ProtectedRoute>
                 } />
-                <Route path="/audio/:sessionId" element={
+                <Route path="/audio-session/:sessionId" element={
                   <ProtectedRoute>
                     <AudioSession />
                   </ProtectedRoute>
