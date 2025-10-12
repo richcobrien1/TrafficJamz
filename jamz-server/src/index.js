@@ -249,6 +249,17 @@ io.on('connection', (socket) => {
   // Use shared util for sessionId requirement and truncated payload logging
   const { requireSessionId } = require('./utils/socket-utils');
 
+  // Mediasoup service (lazy require to avoid heavy startup when disabled)
+  let mediasoupService = null;
+  if (process.env.DISABLE_MEDIASOUP !== 'true') {
+    try {
+      mediasoupService = require('./services/mediasoup.service');
+    } catch (e) {
+      console.error('Could not load mediasoup service:', e.message);
+      mediasoupService = null;
+    }
+  }
+
   // Simple per-socket rate limiter for bursty events (time window in ms)
   const rateLimitSocketEvent = (socket, key, maxCount, windowMs) => {
     const now = Date.now();
@@ -388,6 +399,55 @@ io.on('connection', (socket) => {
       });
     } catch (err) {
       console.error('webrtc-ready handler error:', err);
+    }
+  });
+
+  // Mediasoup transport handshake helpers (basic)
+  socket.on('mediasoup-create-transport', async (data, cb) => {
+    try {
+      if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
+
+      const transportInfo = await mediasoupService.createWebRtcTransport(sessionId);
+      // return transport params to client
+      cb && cb({ success: true, transport: {
+        id: transportInfo.id,
+        iceParameters: transportInfo.iceParameters,
+        iceCandidates: transportInfo.iceCandidates,
+        dtlsParameters: transportInfo.dtlsParameters
+      }});
+    } catch (err) {
+      console.error('mediasoup-create-transport handler error:', err);
+      cb && cb({ success: false, error: err.message });
+    }
+  });
+
+  socket.on('mediasoup-connect-transport', async (data, cb) => {
+    try {
+      if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
+
+      await mediasoupService.connectTransport(sessionId, data.transportId, data.dtlsParameters);
+      cb && cb({ success: true });
+    } catch (err) {
+      console.error('mediasoup-connect-transport handler error:', err);
+      cb && cb({ success: false, error: err.message });
+    }
+  });
+
+  socket.on('mediasoup-produce', async (data, cb) => {
+    try {
+      if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
+
+      const res = await mediasoupService.produce(sessionId, data.transportId, data.kind || 'audio', data.rtpParameters, { socketId: socket.id });
+      cb && cb({ success: true, id: res.id });
+    } catch (err) {
+      console.error('mediasoup-produce handler error:', err);
+      cb && cb({ success: false, error: err.message });
     }
   });
 
