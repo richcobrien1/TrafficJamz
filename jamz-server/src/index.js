@@ -15,11 +15,23 @@ const socketIo = require('socket.io'); // You'll need to install this package
 // Load environment variables
 dotenv.config();
 
+// Runtime toggle for audio signaling — can be changed without restarting the process
+let audioSignalingEnabled = process.env.DISABLE_AUDIO_SIGNALING !== 'true';
+
+
 // Import the enhanced MongoDB connection module
 const { connectMongoDB, isMongoDBConnected, mongoose } = require('./config/mongodb');
 
 // Initialize Express app
 const app = express();
+
+// Expose runtime flag on app.locals so route modules can read/update it
+app.locals.audioSignalingEnabled = audioSignalingEnabled;
+// Initialize simple in-memory metrics for rate-limit hits
+app.locals.rateLimitMetrics = {
+  candidates: 0,
+  musicSync: 0
+};
 
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -138,6 +150,10 @@ app.use('/api/', limiter);
 // Initialize Passport
 app.use(passport.initialize());
 
+// Mount debug routes early (router implemented in src/routes/debug.routes.js)
+const debugRoutes = require('./routes/debug.routes');
+app.use('/api/debug', debugRoutes);
+
 // Debugging only, Add this near the top of your index.js file
 const path = require('path');
 console.log('Current directory:', __dirname);
@@ -176,6 +192,13 @@ const io = socketIo(server, {
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
+  // Per-socket state for simple rate limiting
+  socket._rateState = {
+    lastCandidatesTs: 0,
+    candidateCountWindow: 0,
+    lastMusicSyncTs: 0,
+    musicSyncCountWindow: 0
+  };
   
   // Join a group room
   socket.on('join-group', (groupId) => {
@@ -204,6 +227,208 @@ io.on('connection', (socket) => {
     // Broadcast audio data to group members
     socket.to(`group-${data.groupId}`).emit('audio-data', data);
   });
+
+  // WebRTC Audio Session Signaling Events (defensive handlers)
+  // Register these handlers only if audio signaling is enabled. This allows
+  // disabling signaling via the DISABLE_AUDIO_SIGNALING env var during
+  // debugging or when running a minimal backend.
+  if (process.env.DISABLE_AUDIO_SIGNALING !== 'true') {
+  const safeEmitToRoom = (room, event, payload, excludeSocket = true) => {
+    try {
+      if (!room || typeof event !== 'string') return;
+      if (excludeSocket) {
+        socket.to(room).emit(event, payload);
+      } else {
+        io.to(room).emit(event, payload);
+      }
+    } catch (e) {
+      console.error('Safe emit error:', e);
+    }
+  };
+
+  // Use shared util for sessionId requirement and truncated payload logging
+  const { requireSessionId } = require('./utils/socket-utils');
+
+  // Simple per-socket rate limiter for bursty events (time window in ms)
+  const rateLimitSocketEvent = (socket, key, maxCount, windowMs) => {
+    const now = Date.now();
+    const state = socket._rateState || (socket._rateState = {});
+    if (!state[key + 'Ts']) {
+      state[key + 'Ts'] = now;
+      state[key + 'Count'] = 1;
+      return true;
+    }
+    if (now - state[key + 'Ts'] > windowMs) {
+      state[key + 'Ts'] = now;
+      state[key + 'Count'] = 1;
+      return true;
+    }
+    state[key + 'Count'] = (state[key + 'Count'] || 0) + 1;
+    const allowed = state[key + 'Count'] <= maxCount;
+    if (!allowed) {
+      try {
+        // Increment a simple in-memory metric for this rate-limit event
+        const metrics = app.locals && app.locals.rateLimitMetrics;
+        if (metrics && typeof metrics[key] === 'number') metrics[key]++;
+      } catch (e) {
+        // non-fatal
+      }
+    }
+    return allowed;
+  };
+
+  socket.on('join-audio-session', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+  const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return; // ignore malformed payloads
+
+      const room = `audio-${sessionId}`;
+      socket.join(room);
+      console.log(`Socket ${socket.id} joined audio session ${sessionId}`);
+
+      // Notify others in the session (exclude sender)
+      safeEmitToRoom(room, 'participant-joined', {
+        userId: data.userId || null,
+        socketId: socket.id
+      });
+    } catch (err) {
+      console.error('join-audio-session handler error:', err);
+    }
+  });
+
+  socket.on('leave-audio-session', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+
+      const room = `audio-${sessionId}`;
+      socket.leave(room);
+      console.log(`Socket ${socket.id} left audio session ${sessionId}`);
+
+      safeEmitToRoom(room, 'participant-left', {
+        userId: data.userId || null,
+        socketId: socket.id
+      });
+    } catch (err) {
+      console.error('leave-audio-session handler error:', err);
+    }
+  });
+
+  // WebRTC Signaling Events - validate payloads and guard each handler
+  socket.on('webrtc-offer', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId || !data.offer) return;
+      const room = `audio-${sessionId}`;
+      safeEmitToRoom(room, 'webrtc-offer', {
+        offer: data.offer,
+        from: socket.id,
+        sessionId,
+        userId: data.userId || null
+      });
+    } catch (err) {
+      console.error('webrtc-offer handler error:', err);
+    }
+  });
+
+  socket.on('webrtc-answer', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId || !data.answer) return;
+      const room = `audio-${sessionId}`;
+      safeEmitToRoom(room, 'webrtc-answer', {
+        answer: data.answer,
+        from: socket.id,
+        sessionId,
+        userId: data.userId || null
+      });
+    } catch (err) {
+      console.error('webrtc-answer handler error:', err);
+    }
+  });
+
+  socket.on('webrtc-candidate', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId || !data.candidate) return;
+      // Rate limit ICE candidates: max 50 per 5 seconds per socket
+      if (!rateLimitSocketEvent(socket, 'candidates', 50, 5000)) {
+        // drop silently but record a metric/log
+        console.warn(`Rate limit exceeded for webrtc-candidate from ${socket.id}`);
+        return;
+      }
+      const room = `audio-${sessionId}`;
+      safeEmitToRoom(room, 'webrtc-candidate', {
+        candidate: data.candidate,
+        from: socket.id,
+        sessionId,
+        userId: data.userId || null
+      });
+    } catch (err) {
+      console.error('webrtc-candidate handler error:', err);
+    }
+  });
+
+  socket.on('webrtc-ready', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      const room = `audio-${sessionId}`;
+      // Broadcast ready state to others but avoid repeatedly echoing back
+      safeEmitToRoom(room, 'webrtc-ready', {
+        from: socket.id,
+        sessionId,
+        userId: data.userId || null
+      });
+    } catch (err) {
+      console.error('webrtc-ready handler error:', err);
+    }
+  });
+
+  // Audio control and music sync events (defensive)
+  socket.on('audio-control', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId || !data.action) return;
+      const room = `audio-${sessionId}`;
+      safeEmitToRoom(room, 'audio-control', {
+        action: data.action,
+        userId: data.userId || null,
+        sessionId,
+        ...data
+      });
+    } catch (err) {
+      console.error('audio-control handler error:', err);
+    }
+  });
+
+  socket.on('music-sync', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      // Rate limit music-sync: max 10 per 10 seconds per socket
+      if (!rateLimitSocketEvent(socket, 'musicSync', 10, 10000)) {
+        console.warn(`Rate limit exceeded for music-sync from ${socket.id}`);
+        return;
+      }
+      const room = `audio-${sessionId}`;
+      safeEmitToRoom(room, 'music-sync', {
+        ...data,
+        from: socket.id
+      });
+    } catch (err) {
+      console.error('music-sync handler error:', err);
+    }
+  });
+  }
   
   // Handle disconnection
   socket.on('disconnect', () => {
@@ -259,6 +484,20 @@ function setupServer() {
         timestamp: new Date().toISOString()
       });
     }
+  });
+
+  // Runtime toggle endpoints for audio signaling (debugging)
+  // Debug routes moved to src/routes/debug.routes.js and mounted earlier.
+  // Keep the top-level audioSignalingEnabled variable and app.locals in sync.
+  // app.locals.audioSignalingEnabled may be updated by the debug router.
+  // Synchronize on each request to ensure runtime reads the latest value.
+  app.use((req, res, next) => {
+    if (typeof req.app.locals.audioSignalingEnabled === 'boolean') {
+      audioSignalingEnabled = req.app.locals.audioSignalingEnabled;
+    } else {
+      req.app.locals.audioSignalingEnabled = audioSignalingEnabled;
+    }
+    next();
   });
 
   // Add MongoDB test endpoint
