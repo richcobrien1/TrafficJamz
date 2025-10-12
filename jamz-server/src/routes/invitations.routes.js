@@ -139,15 +139,29 @@ router.get('/:groupId/:invitationIndex',
 /**
  * @route POST /api/invitations/:invitationId/accept
  * @desc Accept group invitation
- * @access Public
+ * @access Private (for registered users) or Public (for new users with form data)
  */
 router.post('/:invitationId/accept',
+  (req, res, next) => {
+    // If token is provided, authenticate; otherwise, allow for new users
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      passport.authenticate('jwt', { session: false }, (err, user, info) => {
+        if (err) return next(err);
+        if (!user) return res.status(401).json({ success: false, message: 'Invalid token' });
+        req.user = user;
+        next();
+      })(req, res, next);
+    } else {
+      // No token, proceed for new users (validation will check required fields)
+      next();
+    }
+  },
   [
     param('invitationId').isLength({ min: 1 }).withMessage('Invitation ID is required'),
-    body('firstName').isLength({ min: 1 }).withMessage('First name is required'),
-    body('lastName').isLength({ min: 1 }).withMessage('Last name is required'),
-    body('mobilePhone').isLength({ min: 1 }).withMessage('Mobile phone is required'),
-    body('email').optional().isEmail().withMessage('Valid email is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('firstName').optional().isLength({ min: 1 }).withMessage('First name is required'),
+    body('lastName').optional().isLength({ min: 1 }).withMessage('Last name is required'),
+    body('mobilePhone').optional().isLength({ min: 1 }).withMessage('Mobile phone is required'),
     validate
   ],
   async (req, res) => {
@@ -157,10 +171,31 @@ router.post('/:invitationId/accept',
 
       console.log(`Accepting invitation: ${invitationId}`);
       console.log(`Request body:`, { firstName, lastName, mobilePhone, email });
+      console.log(`Authenticated user:`, req.user ? req.user.username : 'None');
+
+      let userData = { firstName, lastName, mobilePhone, email };
+
+      // If user is authenticated, use their data and override
+      if (req.user) {
+        userData = {
+          firstName: req.user.first_name,
+          lastName: req.user.last_name,
+          mobilePhone: req.user.phone_number,
+          email: req.user.email
+        };
+        console.log('Using authenticated user data:', userData);
+      } else {
+        // For new users, ensure required fields are provided
+        if (!firstName || !lastName || !mobilePhone) {
+          return res.status(400).json({
+            success: false,
+            message: 'First name, last name, and mobile phone are required for new users'
+          });
+        }
+      }
 
       // Use the existing acceptInvitation method from groupService
-      // Note: This method handles the response directly, so don't await it
-      groupService.acceptInvitation(req, res);
+      groupService.acceptInvitation(req, res, userData);
 
     } catch (error) {
       console.error('Error accepting invitation:', error);

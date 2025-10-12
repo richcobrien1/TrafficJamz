@@ -423,6 +423,22 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('mediasoup-get-rtpCapabilities', async (data, cb) => {
+    try {
+      if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
+
+      // Ensure router exists and return its RTP capabilities
+      const router = await mediasoupService.createRouter(sessionId);
+      const caps = router.rtpCapabilities || null;
+      cb && cb({ success: true, rtpCapabilities: caps });
+    } catch (err) {
+      console.error('mediasoup-get-rtpCapabilities handler error:', err);
+      cb && cb({ success: false, error: err.message });
+    }
+  });
+
   socket.on('mediasoup-connect-transport', async (data, cb) => {
     try {
       if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
@@ -652,6 +668,22 @@ function setupServer() {
       postgres: postgresStatus,
       socketio: io ? 'initialized' : 'not initialized'
     });
+  });
+
+  // Mediasoup debug/status endpoint (lazy-load service)
+  app.get('/api/debug/mediasoup', (req, res) => {
+    if (process.env.DISABLE_MEDIASOUP === 'true') {
+      return res.json({ enabled: false, message: 'mediasoup disabled via DISABLE_MEDIASOUP' });
+    }
+
+    try {
+      const ms = require('./services/mediasoup.service');
+      const status = ms && typeof ms.getStatus === 'function' ? ms.getStatus() : { worker: false, routers: 0, transports: 0 };
+      return res.json({ enabled: true, status });
+    } catch (e) {
+      console.error('Error loading mediasoup service for debug endpoint:', e);
+      return res.status(500).json({ enabled: false, error: e.message });
+    }
   });
 
 

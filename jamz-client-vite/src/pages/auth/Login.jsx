@@ -1,7 +1,7 @@
 // jamz-client-vite/src/pages/auth/Login.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Container, 
   Box, 
@@ -26,11 +26,21 @@ const Login = () => {
   
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If a protected route redirected here, capture the origin and persist
+  // it so the redirect helper can navigate back after login.
+  useEffect(() => {
+    const from = location.state?.from;
+    if (from) {
+      localStorage.setItem('redirectAfterLogin', from);
+    }
+  }, [location]);
   
   // Stable navigation function
   const handleRedirect = useCallback(() => {
     const redirectUrl = localStorage.getItem('redirectAfterLogin');
-    if (redirectUrl) {
+    if (redirectUrl && redirectUrl !== '/login') {  // Avoid redirecting to invalid /login
       localStorage.removeItem('redirectAfterLogin');
       navigate(redirectUrl);
     } else {
@@ -128,7 +138,7 @@ const Login = () => {
               </Link>
             </Grid>
             <Grid item xs>
-              <Link component={RouterLink} to="/register" variant="body2">
+              <Link component={RouterLink} to="/auth/register" state={{ from: location.state?.from }} variant="body2">
                 {"Don't have an account? Sign Up"}
               </Link>
             </Grid>
