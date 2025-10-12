@@ -447,6 +447,13 @@ const AudioSession = () => {
       // Initialize peer connection
       await setupPeerConnection(signaling);
 
+      // Attempt mediasoup publish handshake (graceful fallback to native P2P)
+      try {
+        await startMediasoupPublish(signaling);
+      } catch (e) {
+        console.warn('Mediasoup publish failed or unavailable, fallback to native PeerConnection:', e.message || e);
+      }
+
       setWebrtcReady(true);
       console.log('WebRTC initialization complete');
     } catch (error) {
@@ -670,6 +677,79 @@ const AudioSession = () => {
     } catch (error) {
       console.error('Error creating/sending offer:', error);
     }
+  };
+
+  // Attempt to publish using mediasoup handshake; graceful fallback to native
+  const startMediasoupPublish = async (signaling) => {
+    if (!signaling) throw new Error('No signaling available');
+    if (!localStream) throw new Error('No local stream');
+
+    return new Promise((resolve, reject) => {
+      // Request a transport from server
+      signaling.emit('mediasoup-create-transport', { sessionId }, async (resp) => {
+        try {
+          if (!resp || !resp.success) {
+            // mediasoup disabled or failed
+            return reject(new Error(resp && resp.error ? resp.error : 'mediasoup-unavailable'));
+          }
+
+          const transport = resp.transport;
+          if (!transport) return reject(new Error('no-transport'));
+
+          // For simplicity we will use the native RTCPeerConnection to send audio
+          // after connecting DTLS via mediasoup-connect-transport. This is a light
+          // handshake and does not require mediasoup-client on the browser.
+
+          // Connect transport (server will map DTLS parameters, but since we're not
+          // using mediasoup-client to manage DTLS directly, attempt to call connect
+          // and then fallback to native publishing.
+          signaling.emit('mediasoup-connect-transport', { sessionId, transportId: transport.id, dtlsParameters: {} }, async (connectResp) => {
+            if (!connectResp || !connectResp.success) {
+              // fallback to native P2P
+              try {
+                await nativePublishFallback(signaling);
+                return resolve({ mode: 'native-fallback' });
+              } catch (e) {
+                return reject(e);
+              }
+            }
+
+            // Server reported connected; but without mediasoup-client the full
+            // mediasoup transport lifecycle can't complete on the browser. Fall back.
+            try {
+              await nativePublishFallback(signaling);
+              resolve({ mode: 'native-after-connect' });
+            } catch (e) {
+              reject(e);
+            }
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+  };
+
+  // Native peer connection publish fallback: create offer and send via socket.io
+  const nativePublishFallback = async (signaling) => {
+    if (!rtcConnectionRef.current) await setupPeerConnection(signaling);
+    const pc = rtcConnectionRef.current;
+    if (!pc) throw new Error('No RTCPeerConnection available');
+
+    // Ensure tracks are added
+    if (localStream) {
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    }
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    return new Promise((resolve, reject) => {
+      signaling.emit('webrtc-offer', { offer: pc.localDescription, sessionId }, (ack) => {
+        // ack might be undefined depending on server handlers; resolve anyway
+        resolve(ack || { success: true });
+      });
+    });
   };
 
   // WebRTC signaling handlers
