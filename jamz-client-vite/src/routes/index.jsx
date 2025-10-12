@@ -5,6 +5,7 @@ const Login = lazy(() => import("../pages/auth/Login"));
 const Register = lazy(() => import("../pages/auth/Register"));
 const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
 const AudioSession = lazy(() => import("../pages/sessions/AudioSession"));
+const AudioSessionErrorBoundary = lazy(() => import("../components/AudioSessionErrorBoundary"));
 const GroupDetail = lazy(() => import("../pages/groups/GroupDetail"));
 const LocationTracking = lazy(() => import("../pages/location/LocationTracking"));
 const Profile = lazy(() => import("../pages/profile/Profile"));
@@ -37,7 +38,11 @@ export const ROUTES = [
   {
     path: "/audio-session/:sessionId",
     name: "Audio Session",
-    element: <AudioSession />,
+    element: (
+      <AudioSessionErrorBoundary>
+        <AudioSession />
+      </AudioSessionErrorBoundary>
+    ),
     icon: "🎧",
   },
   {

@@ -68,15 +68,22 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
-  'ionic://trafficjam.v2u.us'        // Android apps
+  'ionic://trafficjam.v2u.us',       // Android apps
+  'http://192.178.58.146:5173'       // User's network IP for mobile testing
 ];
 
-// Helper: permissive localhost matcher (accepts http(s)://localhost(:port)?)
+// Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
 function isLocalhostOrigin(origin) {
   if (!origin) return false;
   try {
     const u = new URL(origin);
-    return (u.hostname === 'localhost' || u.hostname === '127.0.0.1');
+    // Allow localhost and 127.0.0.1
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+      return true;
+    }
+    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16.x.x-172.31.x.x)
+    const ipRegex = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/;
+    return ipRegex.test(u.hostname);
   } catch (e) {
     return false;
   }
@@ -175,23 +182,37 @@ const invitationsRoutes = require('./routes/invitations.routes');
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
   cors: {
-    origin: [
-      'http://localhost:5173', // For local development
-      'https://trafficjam.v2u.us', // For production client
-      'capacitor://trafficjam.v2u.us',  // For iOS apps
-      'ionic://trafficjam.v2u.us', // For Android apps
-    ],
+    origin: function (origin, callback) {
+      console.log('🔍 Socket.IO CORS check for origin:', origin);
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        console.log('✅ Allowing request with no origin');
+        return callback(null, true);
+      }
+
+      // Check against allowed origins
+      if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
+        console.log('✅ Allowing origin:', origin);
+        return callback(null, true);
+      }
+
+      console.log('🔒 Blocked Socket.IO CORS for origin:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   },
   // For audio streaming, increase ping timeout
   pingTimeout: 60000,
+  // Add polling configuration
+  allowEIO3: true,
+  transports: ['polling', 'websocket']
 });
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('New client connected:', socket.id);
+  console.log('✅ New client connected:', socket.id, 'from:', socket.handshake.address, 'origin:', socket.handshake.headers.origin);
   // Per-socket state for simple rate limiting
   socket._rateState = {
     lastCandidatesTs: 0,

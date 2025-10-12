@@ -7,6 +7,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true, // Listen on all interfaces for mobile access
     middlewareMode: false,
     fs: {
       strict: false,
@@ -18,8 +19,8 @@ export default defineConfig({
     // Set VITE_BACKEND_URL in your environment to override the default target.
     proxy: {
       '/api': {
-        // prefer explicit env override, then localhost:5000 (backend server), then host.docker.internal
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000' || 'http://host.docker.internal:5000',
+        // Use network IP for mobile testing, fallback to localhost for local development
+        target: process.env.VITE_BACKEND_URL || 'http://192.178.58.146:5000' || 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         ws: true
@@ -29,7 +30,7 @@ export default defineConfig({
       // the dev server origin for socket.io without attempting to talk to
       // Vite's own websocket endpoint.
       '/socket.io': {
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000',
+        target: process.env.VITE_BACKEND_URL || 'http://192.178.58.146:5000' || 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         ws: true
