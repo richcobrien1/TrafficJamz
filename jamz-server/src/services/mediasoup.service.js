@@ -1,9 +1,9 @@
 const mediasoup = require('mediasoup');
-const os = require('os');
 
 // Simple in-memory mediasoup manager: one worker, routers per session
 let worker = null;
 const routers = new Map();
+const transports = new Map(); // sessionId -> Map(transportId -> transport)
 
 async function createWorkerIfNeeded() {
   if (worker) return worker;
@@ -44,53 +44,33 @@ async function createWebRtcTransport(sessionId, listenIps = [{ ip: '0.0.0.0', an
     initialAvailableOutgoingBitrate: 100000,
   });
 
-  return {
-    id: transport.id,
-    iceParameters: transport.iceParameters,
-    iceCandidates: transport.iceCandidates,
-    dtlsParameters: transport.dtlsParameters,
-    sctpParameters: transport.sctpParameters,
-    _transport: transport
-  };
+  // Store transport
+  if (!transports.has(sessionId)) {
+    transports.set(sessionId, new Map());
+  }
+  transports.get(sessionId).set(transport.id, transport);
+
+  return transport;
 }
 
 async function connectTransport(sessionId, transportId, dtlsParameters) {
-  const router = await createRouter(sessionId);
-  const trans = Array.from(router.transports).find(t => t[0] === transportId || (t[1] && t[1].id === transportId));
-  // traverse router.transports map entries
-  let transport = null;
-  for (const [id, t] of router._transports || []) {
-    if (id === transportId) transport = t;
-  }
-  // fallback: try router.getTransportById if available
-  if (!transport && typeof router.getTransportById === 'function') {
-    try { transport = router.getTransportById(transportId); } catch (e) { /* ignore */ }
-  }
+  const sessionTransports = transports.get(sessionId);
+  if (!sessionTransports) throw new Error('Session not found');
 
-  if (!transport) {
-    // Attempt to find in router._transports map by iterating
-    for (const pair of router._transports || []) {
-      if (pair && pair[0] === transportId) transport = pair[1];
-    }
-  }
-
+  const transport = sessionTransports.get(transportId);
   if (!transport) throw new Error('Transport not found');
+
   await transport.connect({ dtlsParameters });
   return true;
 }
 
 async function produce(sessionId, transportId, kind, rtpParameters, appData = {}) {
-  const router = await createRouter(sessionId);
-  // find transport object
-  let transport = null;
-  if (typeof router.getTransportById === 'function') {
-    transport = router.getTransportById(transportId);
-  } else {
-    for (const pair of router._transports || []) {
-      if (pair && pair[0] === transportId) transport = pair[1];
-    }
-  }
-  if (!transport) throw new Error('Transport not found for produce');
+  const sessionTransports = transports.get(sessionId);
+  if (!sessionTransports) throw new Error('Session not found');
+
+  const transport = sessionTransports.get(transportId);
+  if (!transport) throw new Error('Transport not found');
+
   const producer = await transport.produce({ kind, rtpParameters, appData });
   return { id: producer.id };
 }

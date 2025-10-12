@@ -2,7 +2,7 @@
 // This file contains the registration component for the Traffic Jamz application.
 
 import React, { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Container, 
   Box, 
@@ -38,6 +38,8 @@ const Register = () => {
   
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/';
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,8 +98,11 @@ const Register = () => {
         phone_number: formData.phone_number
       };
       
-      await register(userData);
-      navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
+  // Register will store the token and set the user in AuthContext.
+  // After registration, redirect back to the originating page (if any),
+  // otherwise to the app root/dashboard so the new user remains logged in.
+  await register(userData);
+  navigate(from, { replace: true });
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to register. Please try again.');
       setActiveStep(0);

@@ -92,7 +92,7 @@ const Dashboard = () => {
   const handleMenuClose = () => setAnchorEl(null);
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/auth/login');
   };
 
   const handleCreateGroup = async () => {
@@ -243,7 +243,7 @@ const Dashboard = () => {
         ) : (
           <Grid container spacing={3}>
             {groups.map((group) => (
-              <Grid item xs={12} sm={6} md={4} key={group.id}>
+              <Grid item size={{ xs: 12, sm: 6, md: 4 }} key={group.id}>
                 <Paper
                   sx={{
                     p: 3,

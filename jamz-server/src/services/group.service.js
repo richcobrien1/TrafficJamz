@@ -769,11 +769,24 @@ class GroupService {
           group.group_members[existingMemberIndex].email = email;
         }
       } else {
-        // Create a new member with the provided information
-        const tempUserId = new mongoose.Types.ObjectId().toString();
+        // Check if a registered user with this email exists
+        let actualUserId = tempUserId;
+        try {
+          const registeredUser = await User.findOne({ where: { email: email || invitation.email } });
+          if (registeredUser) {
+            actualUserId = registeredUser.user_id;
+            console.log('Found registered user, using real user_id:', actualUserId);
+          } else {
+            console.log('No registered user found, using temp user_id');
+          }
+        } catch (userError) {
+          console.error('Error checking for registered user:', userError);
+          // Continue with temp user_id
+        }
 
+        // Create a new member with the provided information
         const newMember = {
-          user_id: tempUserId,
+          user_id: actualUserId,
           first_name: firstName,  // Don't default to empty string
           last_name: lastName,    // Don't default to empty string
           email: email || invitation.email,

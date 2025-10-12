@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
+import * as mediasoupClient from 'mediasoup-client';
 import { 
   Container, 
   Box, 
@@ -100,6 +101,17 @@ const AudioSession = () => {
   
   // Initialize component
   useEffect(() => {
+    // If sessionId is missing (bad route), bail out early and don't attempt
+    // to auto-join or call backend APIs. This prevents POSTs with
+    // `undefined` session IDs and avoids initializing WebRTC with
+    // undefined session identifiers.
+    if (!sessionId) {
+      console.warn('AudioSession mounted without sessionId in route params');
+      setError('Missing session ID in URL');
+      setLoading(false);
+      return;
+    }
+
     // Initialize microphone capture automatically, but do not auto-connect
     // signaling. Users will manually connect to signaling using the UI.
     handleJoinAudio();
@@ -348,83 +360,97 @@ const AudioSession = () => {
   
   // Fetch session details from API
   const fetchSessionDetails = async () => {
-    try {
-      setLoading(true);
-      
-      // Check if we have the necessary data
-      if (!sessionId || !user) {
-        setError('Missing session ID or user information');
-        setLoading(false);
-        return;
-      }
-      
-      // First, check if the session exists
-      let sessionData;
+    console.log('fetchSessionDetails start', { sessionId, user });
+    setLoading(true);
+
+    if (!sessionId || !user) {
+      setError('Missing session ID or user information');
+      setLoading(false);
+      return;
+    }
+
+    let sessionData = null;
+
+    // Helper to log axios error details
+    const logAxiosError = (prefix, err) => {
       try {
-        const response = await api.get(`/audio/sessions/group/${sessionId}`);
-        if (response.data && response.data.session) {
-          sessionData = response.data.session;
+        console.error(prefix, err && err.message ? err.message : err);
+        if (err && err.response) {
+          console.error(prefix + ' - response status:', err.response.status);
+          console.error(prefix + ' - response data:', err.response.data);
         }
-      } catch (error) {
-        // Session might not exist yet, which is fine
-        console.log('Session not found, will create a new one');
+      } catch (e) {
+        console.error('Failed to log axios error', e);
       }
-      
-      // If session doesn't exist, create it
-      if (!sessionData) {
-        try {
-          const createResponse = await api.post('/audio/sessions', {
-            group_id: sessionId,
-            session_type: 'voice_only',
-            device_type: 'web'
-          });
-          
-          if (createResponse.data && createResponse.data.session) {
-            sessionData = createResponse.data.session;
-          } else {
-            throw new Error('Failed to create session');
-          }
-        } catch (createError) {
-          console.error('Error creating audio session:', createError);
+    };
+
+    // Try to GET existing session
+    try {
+      const response = await api.get(`/audio/sessions/group/${sessionId}`);
+      if (response && response.data && response.data.session) {
+        sessionData = response.data.session;
+      }
+    } catch (err) {
+      logAxiosError('GET /audio/sessions/group failed', err);
+      // proceed to create
+    }
+
+    // Create session if missing
+    if (!sessionData) {
+      try {
+        const createResponse = await api.post('/audio/sessions', {
+          group_id: sessionId,
+          session_type: 'voice_only',
+          device_type: 'web'
+        });
+
+        if (createResponse && createResponse.data && createResponse.data.session) {
+          sessionData = createResponse.data.session;
+        } else {
+          console.error('Create session returned unexpected body', createResponse && createResponse.data);
           setError('Failed to create audio session');
           setLoading(false);
           return;
         }
+      } catch (err) {
+        logAxiosError('POST /audio/sessions failed', err);
+        setError('Failed to create audio session');
+        setLoading(false);
+        return;
       }
-      
-      // Now join the session as a participant
-      try {
-  const joinResponse = await api.post(`/audio/sessions/${sessionData.id}/join`, {
-          user_id: user.id,
-          display_name: user.name || user.username || 'User',
-          device_type: 'web'
-        });
-        
-        if (joinResponse.data && joinResponse.data.success) {
-          console.log('Successfully joined audio session');
-        } else {
-          console.warn('Join response incomplete:', joinResponse);
-        }
-      } catch (joinError) {
-        // If joining fails, we might already be a participant
-        console.warn('Error joining session, might already be a participant:', joinError);
+    }
+
+    // Join the session as a participant (best-effort)
+    try {
+      const joinResponse = await api.post(`/audio/sessions/${sessionData.id}/join`, {
+        user_id: user.id,
+        display_name: user.name || user.username || 'User',
+        device_type: 'web'
+      });
+
+      if (!(joinResponse && joinResponse.data && joinResponse.data.success)) {
+        console.warn('Join response incomplete or false', joinResponse && joinResponse.data);
+      } else {
+        console.log('Successfully joined audio session');
       }
-      
-      // Set the session in state
+    } catch (err) {
+      logAxiosError('POST join session failed', err);
+      // not fatal - we may already be a member
+    }
+
+    // Apply session state
+    try {
       setSession(sessionData);
-      
-      // Set participants from session data
+
       if (sessionData.participants) {
         setParticipants(sessionData.participants.filter(p => !p.left_at));
       }
-      
-      // Initialize WebRTC connection
-      initializeWebRTC(sessionData.id);
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error in fetchSessionDetails:', error);
-      setError('Failed to load or create audio session');
+
+      // Note: WebRTC initialization is deferred until signaling connects
+    } catch (err) {
+      console.error('Error applying session state:', err);
+      setError('Failed to initialize session state');
+    } finally {
       setLoading(false);
     }
   };
@@ -462,9 +488,14 @@ const AudioSession = () => {
     }
   };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
-    // Use Socket.IO for signaling. Default to same-origin so dev servers
-    // using the same port don't need an explicit VITE_WS_URL set.
-    const socketUrl = import.meta.env.VITE_WS_URL || window.location.origin;
+    // Use Socket.IO for signaling. Prefer an explicit VITE_WS_URL if set.
+    // In development, prefer to connect to the backend (VITE_BACKEND_URL)
+    // so we don't accidentally talk to the Vite dev server's websocket
+    // endpoint which isn't a Socket.IO server.
+    const envWs = import.meta.env.VITE_WS_URL;
+    const envBackend = import.meta.env.VITE_BACKEND_URL || (window && window.location && (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin));
+    const socketUrl = envWs || envBackend;
+
     const socket = io(socketUrl, {
       transports: ['websocket'],
       // default path '/socket.io' is fine unless your server uses a custom path
@@ -684,50 +715,56 @@ const AudioSession = () => {
     if (!signaling) throw new Error('No signaling available');
     if (!localStream) throw new Error('No local stream');
 
-    return new Promise((resolve, reject) => {
-      // Request a transport from server
-      signaling.emit('mediasoup-create-transport', { sessionId }, async (resp) => {
-        try {
-          if (!resp || !resp.success) {
-            // mediasoup disabled or failed
-            return reject(new Error(resp && resp.error ? resp.error : 'mediasoup-unavailable'));
-          }
+    // Request RTP capabilities from server
+    const rtpCapsResp = await new Promise((res) => signaling.emit('mediasoup-get-rtpCapabilities', { sessionId }, (r) => res(r)));
+    if (!rtpCapsResp || !rtpCapsResp.success) throw new Error('mediasoup unavailable or disabled');
 
-          const transport = resp.transport;
-          if (!transport) return reject(new Error('no-transport'));
+    // Create a mediasoup Device
+    const device = new mediasoupClient.Device();
+    try {
+      await device.load({ routerRtpCapabilities: rtpCapsResp.rtpCapabilities });
+    } catch (err) {
+      console.warn('Failed to load mediasoup Device, falling back to native:', err.message);
+      return nativePublishFallback(signaling);
+    }
 
-          // For simplicity we will use the native RTCPeerConnection to send audio
-          // after connecting DTLS via mediasoup-connect-transport. This is a light
-          // handshake and does not require mediasoup-client on the browser.
+    // Create server transport
+    const createResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
+    if (!createResp || !createResp.success) {
+      console.warn('mediasoup create transport failed, fallback to native');
+      return nativePublishFallback(signaling);
+    }
 
-          // Connect transport (server will map DTLS parameters, but since we're not
-          // using mediasoup-client to manage DTLS directly, attempt to call connect
-          // and then fallback to native publishing.
-          signaling.emit('mediasoup-connect-transport', { sessionId, transportId: transport.id, dtlsParameters: {} }, async (connectResp) => {
-            if (!connectResp || !connectResp.success) {
-              // fallback to native P2P
-              try {
-                await nativePublishFallback(signaling);
-                return resolve({ mode: 'native-fallback' });
-              } catch (e) {
-                return reject(e);
-              }
-            }
+    const serverTransport = createResp.transport;
 
-            // Server reported connected; but without mediasoup-client the full
-            // mediasoup transport lifecycle can't complete on the browser. Fall back.
-            try {
-              await nativePublishFallback(signaling);
-              resolve({ mode: 'native-after-connect' });
-            } catch (e) {
-              reject(e);
-            }
-          });
-        } catch (err) {
-          reject(err);
-        }
+    // Create send transport on the client
+    const sendTransport = device.createSendTransport({
+      id: serverTransport.id,
+      iceParameters: serverTransport.iceParameters,
+      iceCandidates: serverTransport.iceCandidates,
+      dtlsParameters: serverTransport.dtlsParameters
+    });
+
+    // Wire up transport events
+    sendTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
+      signaling.emit('mediasoup-connect-transport', { sessionId, transportId: serverTransport.id, dtlsParameters }, (resp) => {
+        if (resp && resp.success) callback(); else errback(resp && resp.error ? new Error(resp.error) : new Error('connect failed'));
       });
     });
+
+    sendTransport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
+      signaling.emit('mediasoup-produce', { sessionId, transportId: serverTransport.id, kind, rtpParameters }, (resp) => {
+        if (resp && resp.success) callback({ id: resp.id }); else errback(new Error(resp && resp.error ? resp.error : 'produce failed'));
+      });
+    });
+
+    // Produce audio track
+    const track = localStream.getAudioTracks()[0];
+    if (!track) return nativePublishFallback(signaling);
+
+    const producer = await sendTransport.produce({ track });
+    console.log('Mediasoup producer created', producer.id);
+    return { mode: 'mediasoup', producerId: producer.id };
   };
 
   // Native peer connection publish fallback: create offer and send via socket.io
@@ -840,7 +877,7 @@ const AudioSession = () => {
       
       // Close signaling connection
       if (signalingRef.current) {
-        signalingRef.current.emit('leave-audio-session', { sessionId });
+        signalingRef.current.emit('leave-audio-session', { sessionId: session?.id || sessionId });
         signalingRef.current.disconnect();
       }
       
@@ -890,7 +927,7 @@ const AudioSession = () => {
             <Button variant="contained" color="error" onClick={() => {
               // Disconnect signaling
               if (signalingRef.current) {
-                signalingRef.current.emit('leave-audio-session', { sessionId });
+                signalingRef.current.emit('leave-audio-session', { sessionId: session?.id || sessionId });
                 signalingRef.current.disconnect();
                 setSocket(null);
                 signalingRef.current = null;
@@ -900,12 +937,17 @@ const AudioSession = () => {
               Disconnect Signaling
             </Button>
           ) : (
-            <Button variant="contained" color="primary" onClick={() => {
-              // Connect signaling
-              const s = setupSignaling(sessionId);
-              // once connected, try to initialize WebRTC
-              s.on('connect', () => initializeWebRTC(sessionId));
-            }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => {
+                // Connect signaling
+                const s = setupSignaling(session?.id || sessionId);
+                // once connected, try to initialize WebRTC
+                s.on('connect', () => initializeWebRTC(session?.id || sessionId));
+              }}
+              disabled={!session}
+            >
               Connect Signaling
             </Button>
           )}
