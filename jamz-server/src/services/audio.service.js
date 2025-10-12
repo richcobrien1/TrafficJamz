@@ -148,51 +148,35 @@ class AudioService {
    */
   async joinAudioSession(sessionId, user_id, deviceType = 'web') {
     try {
-      const handleJoinAudio = () => {
-        if (!localStream) {
-          // If stream isn't ready yet, initialize it first
-          initializeAudioStream().then(() => {
-            // Then join the audio session
-            joinAudioSession();
-          });
-        } else {
-          // Stream is already initialized, just join
-          joinAudioSession();
-        }
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      if (session.status !== 'active') {
+        throw new Error('Audio session is not active');
+      }
+
+      // Check if user is a member of the group
+      const group = await Group.findById(session.group_id);
+      if (!group || !group.isMember(user_id)) {
+        throw new Error('User is not a member of this group');
+      }
+
+      // Add user to participants if not already there
+      session.addParticipant(user_id, deviceType);
+      await session.save();
+
+      // Get router
+      const room = this.rooms.get(sessionId);
+      if (!room) {
+        throw new Error('Audio session room not found');
+      }
+
+      return {
+        session,
+        rtpCapabilities: room.router.rtpCapabilities
       };
-      
-      const joinAudioSession = async () => {
-
-        const session = await AudioSession.findById(sessionId);
-        if (!session) {
-          throw new Error('Audio session not found');
-        }
-
-        if (session.status !== 'active') {
-          throw new Error('Audio session is not active');
-        }
-
-        // Check if user is a member of the group
-        const group = await Group.findById(session.group_id);
-        if (!group || !group.isMember(user_id)) {
-          throw new Error('User is not a member of this group');
-        }
-
-        // Add user to participants if not already there
-        session.addParticipant(user_id, deviceType);
-        await session.save();
-
-        // Get router
-        const room = this.rooms.get(sessionId);
-        if (!room) {
-          throw new Error('Audio session room not found');
-        }
-
-        return {
-          session,
-          rtpCapabilities: room.router.rtpCapabilities
-        };
-      }; 
     } catch (error) {
       throw error;
     }

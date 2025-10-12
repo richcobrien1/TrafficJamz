@@ -55,6 +55,13 @@ router.get('/sessions/group/:groupId',
     validate
   ],
   async (req, res) => {
+    // Set no-cache headers to prevent 304 responses
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
     try {
       const result = await audioService.getActiveAudioSession(req.params.groupId);
       res.json({ success: true, ...result });

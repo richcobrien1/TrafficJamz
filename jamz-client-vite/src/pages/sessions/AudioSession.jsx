@@ -25,7 +25,9 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Divider
+  Divider,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
@@ -60,6 +62,7 @@ const AudioSession = () => {
   const [inputLevel, setInputLevel] = useState(0);
   const [inputVolume, setInputVolume] = useState(1.0);
   const [outputVolume, setOutputVolume] = useState(1.0);
+  const [localAudioMonitoring, setLocalAudioMonitoring] = useState(false);
   
   // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
@@ -101,27 +104,63 @@ const AudioSession = () => {
   
   // Initialize component
   useEffect(() => {
-    // If sessionId is missing (bad route), bail out early and don't attempt
-    // to auto-join or call backend APIs. This prevents POSTs with
-    // `undefined` session IDs and avoids initializing WebRTC with
-    // undefined session identifiers.
-    if (!sessionId) {
-      console.warn('AudioSession mounted without sessionId in route params');
-      setError('Missing session ID in URL');
-      setLoading(false);
-      return;
-    }
+    let isMounted = true; // Track if component is still mounted
+    
+    const initializeComponent = async () => {
+      try {
+        console.log('AudioSession component mounting with sessionId:', sessionId);
+        
+        // If sessionId is missing (bad route), bail out early and don't attempt
+        // to auto-join or call backend APIs. This prevents POSTs with
+        // `undefined` session IDs and avoids initializing WebRTC with
+        // undefined session identifiers.
+        if (!sessionId) {
+          console.warn('AudioSession mounted without sessionId in route params');
+          if (isMounted) {
+            setError('Missing session ID in URL');
+            setLoading(false);
+          }
+          return;
+        }
 
-    // Initialize microphone capture automatically, but do not auto-connect
-    // signaling. Users will manually connect to signaling using the UI.
-    handleJoinAudio();
+        console.log('Session ID validated, proceeding with initialization');
 
-    // Fetch session details
-    fetchSessionDetails();
+        // Initialize microphone capture automatically, but do not auto-connect
+        // signaling. Users will manually connect to signaling using the UI.
+        console.log('Calling handleJoinAudio...');
+        await handleJoinAudio();
+      } catch (error) {
+        console.error('Error in handleJoinAudio:', error);
+        if (isMounted) {
+          setAudioError('Failed to initialize audio: ' + error.message);
+        }
+      }
+
+      try {
+        console.log('Calling fetchSessionDetails...');
+        await fetchSessionDetails();
+      } catch (error) {
+        console.error('Error in fetchSessionDetails:', error);
+        if (isMounted) {
+          setError('Failed to fetch session details: ' + error.message);
+          setLoading(false);
+        }
+      }
+    };
+
+    // Call the async initialization
+    initializeComponent().catch(error => {
+      console.error('Unhandled error in initializeComponent:', error);
+      if (isMounted) {
+        setError('Initialization failed: ' + error.message);
+        setLoading(false);
+      }
+    });
     
     // Enumerate available devices
-    navigator.mediaDevices.enumerateDevices()
+    navigator.mediaDevices?.enumerateDevices()
       .then(devices => {
+        if (!isMounted) return;
         const inputs = devices.filter(device => device.kind === 'audioinput');
         const outputs = devices.filter(device => device.kind === 'audiooutput');
         setAudioDevices({ inputs, outputs });
@@ -133,10 +172,16 @@ const AudioSession = () => {
         if (outputs.length > 0 && !selectedOutputDevice) {
           setSelectedOutputDevice(outputs[0].deviceId);
         }
+      })
+      .catch(error => {
+        console.error('Error enumerating devices:', error);
+        // Don't set error state for device enumeration failures
       });
     
     // Cleanup function for when component unmounts
     return () => {
+      console.log('AudioSession component unmounting');
+      isMounted = false;
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
@@ -209,7 +254,13 @@ const AudioSession = () => {
     setIsJoined(true);
     
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      console.log('🎤 Requesting microphone access...');
+      console.log('🎤 navigator.mediaDevices available:', !!navigator.mediaDevices);
+      console.log('🎤 getUserMedia available:', !!navigator.mediaDevices?.getUserMedia);
+      console.log('🎤 User agent:', navigator.userAgent);
+      console.log('🎤 Is mobile device:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -218,17 +269,38 @@ const AudioSession = () => {
         },
         video: false
       });
-      
+
+      console.log('✅ Microphone access granted!');
+      console.log('✅ Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      console.log('✅ Audio tracks count:', stream.getAudioTracks().length);
+      console.log('✅ Video tracks count:', stream.getVideoTracks().length);
+
       setLocalStream(stream);
       localStreamRef.current = stream;
-      console.log('Audio stream initialized successfully');
-      
+      console.log('🎵 Audio stream initialized successfully');
+
       // Set up audio level monitoring
       setupAudioLevelMonitoring(stream);
-      
+
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      setAudioError('Could not access microphone. Please check permissions.');
+      console.error('❌ Error accessing microphone:', error);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+
+      const errorMessage = error.name === 'NotAllowedError'
+        ? 'Microphone access denied. Please allow microphone permissions and refresh the page.'
+        : error.name === 'NotFoundError'
+        ? 'No microphone found. Please connect a microphone and refresh the page.'
+        : `Could not access microphone: ${error.message}`;
+
+      // Don't set audioError for mobile browsers - just log it
+      if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        setAudioError(errorMessage);
+      } else {
+        console.warn('📱 Microphone access blocked on mobile (expected):', errorMessage);
+      }
+      setIsJoined(false);
     }
   };
   
@@ -250,10 +322,15 @@ const AudioSession = () => {
   const toggleMute = () => {
     if (localStream) {
       const newMuteState = !isMuted;
+      console.log('🔇 Toggle mute:', { currentMuted: isMuted, newMuteState });
       localStream.getAudioTracks().forEach(track => {
+        console.log('🔇 Setting track enabled:', track.kind, 'from', track.enabled, 'to', !newMuteState);
         track.enabled = !newMuteState;
       });
       setIsMuted(newMuteState);
+      console.log('🔇 Mute state updated to:', newMuteState);
+    } else {
+      console.warn('🔇 Cannot toggle mute: no local stream available');
     }
   };
   
@@ -360,10 +437,11 @@ const AudioSession = () => {
   
   // Fetch session details from API
   const fetchSessionDetails = async () => {
-    console.log('fetchSessionDetails start', { sessionId, user });
+    console.log('🚀 fetchSessionDetails start', { sessionId, user, sessionIdType: typeof sessionId, userType: typeof user });
     setLoading(true);
 
     if (!sessionId || !user) {
+      console.error('Missing required parameters:', { sessionId, user });
       setError('Missing session ID or user information');
       setLoading(false);
       return;
@@ -386,18 +464,33 @@ const AudioSession = () => {
 
     // Try to GET existing session
     try {
-      const response = await api.get(`/audio/sessions/group/${sessionId}`);
-      if (response && response.data && response.data.session) {
+      console.log('Checking for existing audio session for group:', sessionId);
+      const response = await api.get(`/audio/sessions/group/${sessionId}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      console.log('GET session response status:', response.status);
+      console.log('GET session response data:', response.data);
+      
+      if (response.status === 200 && response.data && response.data.session) {
         sessionData = response.data.session;
+        console.log('Found existing session:', sessionData.id);
+      } else {
+        console.log('No existing session found (status:', response.status, ', data:', response.data, '), will create new one');
       }
     } catch (err) {
       logAxiosError('GET /audio/sessions/group failed', err);
+      console.log('GET failed, will attempt to create new session. Error details:', err.response?.status, err.response?.data);
       // proceed to create
     }
 
     // Create session if missing
     if (!sessionData) {
       try {
+        console.log('Creating new audio session for group:', sessionId);
         const createResponse = await api.post('/audio/sessions', {
           group_id: sessionId,
           session_type: 'voice_only',
@@ -406,44 +499,119 @@ const AudioSession = () => {
 
         if (createResponse && createResponse.data && createResponse.data.session) {
           sessionData = createResponse.data.session;
+          console.log('Session created successfully:', sessionData.id);
         } else {
           console.error('Create session returned unexpected body', createResponse && createResponse.data);
-          setError('Failed to create audio session');
-          setLoading(false);
-          return;
+          // Try to continue with a mock session for basic functionality
+          sessionData = {
+            id: `fallback-${sessionId}-${Date.now()}`,
+            group_id: sessionId,
+            session_type: 'voice_only',
+            participants: []
+          };
+          console.warn('⚠️ FALLBACK: Using fallback session data due to unexpected response:', {
+            id: sessionData.id,
+            group_id: sessionData.group_id,
+            session_type: sessionData.session_type,
+            participants: sessionData.participants
+          });
         }
       } catch (err) {
         logAxiosError('POST /audio/sessions failed', err);
-        setError('Failed to create audio session');
-        setLoading(false);
-        return;
+        // Create a fallback session to allow basic functionality
+        sessionData = {
+          id: `fallback-${sessionId}-${Date.now()}`,
+          group_id: sessionId,
+          session_type: 'voice_only',
+          participants: []
+        };
+        console.warn('⚠️ FALLBACK: Using fallback session due to creation failure:', {
+          id: sessionData.id,
+          group_id: sessionData.group_id,
+          session_type: sessionData.session_type,
+          participants: sessionData.participants,
+          error: err.message
+        });
       }
     }
 
-    // Join the session as a participant (best-effort)
-    try {
-      const joinResponse = await api.post(`/audio/sessions/${sessionData.id}/join`, {
-        user_id: user.id,
-        display_name: user.name || user.username || 'User',
-        device_type: 'web'
+    // Ensure we have valid session data
+    console.log('🔍 DEBUG: About to check sessionData validity.');
+    console.log('🔍 DEBUG: sessionData type:', typeof sessionData);
+    console.log('🔍 DEBUG: sessionData value:', JSON.stringify(sessionData, null, 2));
+    console.log('🔍 DEBUG: sessionData.id exists:', !!sessionData?.id);
+    console.log('🔍 DEBUG: sessionData.id value:', sessionData?.id);
+    console.log('🔍 DEBUG: sessionData._id exists:', !!sessionData?._id);
+    console.log('🔍 DEBUG: sessionData._id value:', sessionData?._id);
+    console.log('🔍 DEBUG: Boolean check result:', !sessionData || (!sessionData.id && !sessionData._id));
+    if (!sessionData || (!sessionData.id && !sessionData._id)) {
+      console.error('❌ ERROR: No valid session data available after all attempts.');
+      console.error('❌ ERROR: sessionData details:', {
+        exists: !!sessionData,
+        type: typeof sessionData,
+        value: sessionData,
+        hasId: !!(sessionData && sessionData.id),
+        idValue: sessionData?.id,
+        hasUnderscoreId: !!(sessionData && sessionData._id),
+        underscoreIdValue: sessionData?._id
       });
+      console.error('Session creation failed completely. This should not happen with fallback logic.');
+      setError('Unable to create or retrieve audio session. Please try refreshing the page.');
+      setLoading(false);
+      return;
+    }
 
-      if (!(joinResponse && joinResponse.data && joinResponse.data.success)) {
-        console.warn('Join response incomplete or false', joinResponse && joinResponse.data);
-      } else {
-        console.log('Successfully joined audio session');
+    // Normalize session data - map _id to id if needed
+    if (sessionData._id && !sessionData.id) {
+      sessionData.id = sessionData._id;
+      console.log('🔄 Mapped _id to id for session:', sessionData.id);
+    }
+
+    console.log('Successfully obtained session data:', sessionData.id);
+
+    // Join the session as a participant (best-effort)
+    if (sessionData && sessionData.id) {
+      try {
+        console.log('Joining audio session:', sessionData.id);
+        const joinResponse = await api.post(`/audio/sessions/${sessionData.id}/join`, {
+          display_name: user.first_name || user.username || 'User',
+          device_type: 'web'
+        });
+
+        if (!(joinResponse && joinResponse.data && joinResponse.data.success)) {
+          console.warn('Join response incomplete or false', joinResponse && joinResponse.data);
+        } else {
+          console.log('Successfully joined audio session');
+        }
+      } catch (err) {
+        logAxiosError('POST join session failed', err);
+        // Don't fail completely if join fails - user can still connect signaling
+        console.warn('Failed to join session, but continuing:', err.response?.data?.message || err.message);
       }
-    } catch (err) {
-      logAxiosError('POST join session failed', err);
-      // not fatal - we may already be a member
+    } else {
+      console.error('No valid session data to join');
+      setError('No valid session data available');
+      setLoading(false);
+      return;
     }
 
     // Apply session state
     try {
       setSession(sessionData);
 
-      if (sessionData.participants) {
-        setParticipants(sessionData.participants.filter(p => !p.left_at));
+      if (sessionData.participants && Array.isArray(sessionData.participants)) {
+        // Filter out participants who have left and ensure valid participant objects
+        const validParticipants = sessionData.participants
+          .filter(p => p && !p.left_at)
+          .map(p => ({
+            id: p.id || null,
+            socketId: p.socketId || null,
+            display_name: p.display_name || p.name || 'Unknown',
+            isMuted: p.isMuted || false
+          }));
+        setParticipants(validParticipants);
+      } else {
+        setParticipants([]);
       }
 
       // Note: WebRTC initialization is deferred until signaling connects
@@ -488,34 +656,75 @@ const AudioSession = () => {
     }
   };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
-    // Use Socket.IO for signaling. Prefer an explicit VITE_WS_URL if set.
-    // In development, prefer to connect to the backend (VITE_BACKEND_URL)
-    // so we don't accidentally talk to the Vite dev server's websocket
-    // endpoint which isn't a Socket.IO server.
-    const envWs = import.meta.env.VITE_WS_URL;
-    const envBackend = import.meta.env.VITE_BACKEND_URL || (window && window.location && (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin));
-    const socketUrl = envWs || envBackend;
+    // For mobile compatibility, connect to the current origin (Vite dev server)
+    // and let the Vite proxy handle forwarding to the backend
+    const socketUrl = window.location.origin;
+
+    console.log('🔌 Setting up Socket.IO signaling connection...');
+    console.log('🔌 Using Vite proxy via origin:', socketUrl);
+    console.log('🔌 Vite will proxy /socket.io to backend');
+    console.log('🔌 Environment variables:', {
+      VITE_WS_URL: import.meta.env.VITE_WS_URL,
+      VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
+      window_location: window.location.origin,
+      computed_socketUrl: socketUrl
+    });
 
     const socket = io(socketUrl, {
-      transports: ['websocket'],
-      // default path '/socket.io' is fine unless your server uses a custom path
+      transports: ['polling'], // Use only polling transport for mobile compatibility
+      timeout: 10000, // Increase timeout to 10 seconds
+      forceNew: true, // Force new connection
+      reconnection: true,
+      reconnectionAttempts: 3, // Reduce reconnection attempts
+      reconnectionDelay: 2000, // Increase delay
+      // Explicitly set the path
+      path: '/socket.io'
     });
 
     socket.on('connect', () => {
-      console.log('Socket.IO connection established');
+      console.log('✅ Socket.IO connection established successfully (using polling transport)');
+      console.log('✅ Socket transport used:', socket.io.engine.transport.name);
+      console.log('✅ Socket ID:', socket.id);
       setConnecting(false);
       setConnected(true);
 
       // Join the audio session room
       socket.emit('join-audio-session', { sessionId });
+      console.log('📡 Joined audio session room:', sessionId);
 
       // Send ready signal to let others know we're here
       socket.emit('webrtc-ready', { sessionId });
+      console.log('🚀 Sent webrtc-ready signal');
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket.IO connection closed');
+    socket.on('connect_error', (error) => {
+      console.error('❌ Socket.IO connection failed:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        description: error.description,
+        context: error.context,
+        type: error.type,
+        code: error.code
+      });
+      setConnecting(false);
       setConnected(false);
+      setError(`Failed to connect to signaling server: ${error.message}`);
+    });
+
+    socket.on('connect_timeout', () => {
+      console.error('⏰ Socket.IO connection timeout');
+      setConnecting(false);
+      setConnected(false);
+      setError('Connection to signaling server timed out. Is the backend server running?');
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Socket.IO connection closed:', reason);
+      setConnected(false);
+      setConnecting(false);
+      if (reason === 'io server disconnect') {
+        setError('Disconnected by server. Please try reconnecting.');
+      }
     });
 
     // WebRTC signaling events
@@ -541,22 +750,27 @@ const AudioSession = () => {
     // Participant presence events
     socket.on('participant-joined', (data) => {
       console.log('Participant joined via socket:', data);
-      const newParticipant = {
-        id: data.userId || null,
-        socketId: data.socketId || null,
-        display_name: data.display_name || null
-      };
-      setParticipants(prev => {
-        // avoid duplicates
-        const exists = prev.some(p => p.socketId === newParticipant.socketId || p.id === newParticipant.id);
-        if (exists) return prev;
-        return [...prev, newParticipant];
-      });
+      if (data) {
+        const newParticipant = {
+          id: data.userId || data.id || null,
+          socketId: data.socketId || null,
+          display_name: data.display_name || data.name || 'Unknown',
+          isMuted: data.isMuted || false
+        };
+        setParticipants(prev => {
+          // avoid duplicates
+          const exists = prev.some(p => p && (p.socketId === newParticipant.socketId || p.id === newParticipant.id));
+          if (exists) return prev;
+          return [...prev, newParticipant];
+        });
+      }
     });
 
     socket.on('participant-left', (data) => {
       console.log('Participant left via socket:', data);
-      setParticipants(prev => prev.filter(p => p.socketId !== data.socketId && p.id !== data.userId));
+      if (data) {
+        setParticipants(prev => prev.filter(p => p && (p.socketId !== data.socketId && p.id !== data.userId)));
+      }
     });
 
     // Store the socket in state and ref
@@ -887,24 +1101,58 @@ const AudioSession = () => {
   };
   
   // Render component
+  console.log('AudioSession render called', {
+    loading,
+    error,
+    audioError,
+    session: !!session,
+    isJoined,
+    localStream: !!localStream,
+    localStreamTracks: localStream ? localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })) : null,
+    connected,
+    connecting
+  });
+
+  // Defensive checks for required dependencies
+  if (typeof Container === 'undefined' || typeof Typography === 'undefined') {
+    return (
+      <div style={{ padding: '20px', color: 'red' }}>
+        <h4>Render Error</h4>
+        <p>Material-UI components not available</p>
+        <button onClick={() => window.location.reload()}>Reload Page</button>
+      </div>
+    );
+  }
+
+  // Ensure critical state variables are properly initialized
+  const safeParticipants = Array.isArray(participants) ? participants : [];
+  const safeSession = session || {};
+  const safeUser = user || {};
+
   return (
-    <Container maxWidth="md">
-      {/* Traffic Jam App Bar */}
-      <AppBar position="static" color="primary" sx={{ mb: 2 }}>
-        <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={() => navigate(-1)}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Traffic Jam - Audio Session
-          </Typography>
-          <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
-            <LeaveIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+      <Container maxWidth="md">
+        {/* Traffic Jam App Bar */}
+        <AppBar position="static" color="primary" sx={{ mb: 2 }}>
+          <Toolbar>
+            <IconButton edge="start" color="inherit" onClick={() => navigate(-1)}>
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              Traffic Jam - Audio Session
+            </Typography>
+            <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
+              <LeaveIcon />
+            </IconButton>
+          </Toolbar>
+        </AppBar>
       
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
         {audioError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {audioError}
@@ -927,7 +1175,7 @@ const AudioSession = () => {
             <Button variant="contained" color="error" onClick={() => {
               // Disconnect signaling
               if (signalingRef.current) {
-                signalingRef.current.emit('leave-audio-session', { sessionId: session?.id || sessionId });
+                signalingRef.current.emit('leave-audio-session', { sessionId: safeSession?.id || sessionId });
                 signalingRef.current.disconnect();
                 setSocket(null);
                 signalingRef.current = null;
@@ -941,14 +1189,29 @@ const AudioSession = () => {
               variant="contained" 
               color="primary" 
               onClick={() => {
-                // Connect signaling
-                const s = setupSignaling(session?.id || sessionId);
-                // once connected, try to initialize WebRTC
-                s.on('connect', () => initializeWebRTC(session?.id || sessionId));
+                try {
+                  console.log('🔘 Connect Signaling button clicked');
+                  setConnecting(true);
+                  setError(null); // Clear any previous errors
+                  
+                  // Connect signaling
+                  const s = setupSignaling(safeSession?.id || sessionId);
+                  console.log('📡 Signaling setup initiated, socket object:', s);
+                  
+                  // once connected, try to initialize WebRTC
+                  s.on('connect', () => {
+                    console.log('🎯 Socket connected, initializing WebRTC...');
+                    initializeWebRTC(safeSession?.id || sessionId);
+                  });
+                } catch (err) {
+                  console.error('❌ Error setting up signaling:', err);
+                  setConnecting(false);
+                  setError(`Failed to setup signaling: ${err.message}`);
+                }
               }}
-              disabled={!session}
+              disabled={!safeSession || !safeSession.id || connecting}
             >
-              Connect Signaling
+              {connecting ? 'Connecting...' : 'Connect Signaling'}
             </Button>
           )}
         </Box>
@@ -1042,6 +1305,23 @@ const AudioSession = () => {
               <Typography variant="subtitle1" gutterBottom>
                 Speaker Settings
               </Typography>
+
+              {/* Local Audio Monitoring Toggle */}
+              <Box sx={{ mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={localAudioMonitoring}
+                      onChange={(e) => setLocalAudioMonitoring(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Monitor Local Audio (hear yourself)"
+                />
+                <Typography variant="caption" color="textSecondary">
+                  Enable to test microphone input (low volume to avoid feedback)
+                </Typography>
+              </Box>
               
              {/* Volume Controls */}
               <Box sx={{ mb: 3, width: '100%' }}>
@@ -1102,24 +1382,44 @@ const AudioSession = () => {
             {/* Hidden container for remote audio elements */}
             <div id="remote-audios" style={{ display: 'none' }}></div>
 
+            {/* Local audio monitoring for testing */}
+            {localStream && localAudioMonitoring && (
+              <audio
+                ref={(audio) => {
+                  if (audio && localStream) {
+                    audio.srcObject = localStream;
+                    audio.volume = 0.1; // Low volume to avoid feedback
+                    audio.muted = false;
+                  }
+                }}
+                style={{ display: 'none' }}
+                autoPlay
+                muted={false}
+              />
+            )}
+
             {/* Participant list */}
             <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
               <Typography variant="subtitle1">Participants</Typography>
               <List dense>
-                {participants.map((p, idx) => (
-                  <React.Fragment key={p.socketId || p.id || idx}>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar>
-                          <GroupIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText primary={p.display_name || p.id || p.socketId || 'Unknown'} secondary={p.socketId ? `socket:${p.socketId}` : ''} />
-                    </ListItem>
-                    <Divider variant="inset" component="li" />
-                  </React.Fragment>
-                ))}
-                {participants.length === 0 && (
+                {safeParticipants && safeParticipants.length > 0 ? safeParticipants
+                  .filter(p => p) // Filter out any null/undefined participants
+                  .map((p, idx) => (
+                    <React.Fragment key={p.socketId || p.id || `participant-${idx}`}>
+                      <ListItem>
+                        <ListItemAvatar>
+                          <Avatar>
+                            <GroupIcon />
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText 
+                          primary={p.display_name || p.name || p.id || p.socketId || 'Unknown'} 
+                          secondary={p.socketId ? `socket:${p.socketId}` : (p.id ? `id:${p.id}` : '')} 
+                        />
+                      </ListItem>
+                      <Divider variant="inset" component="li" />
+                    </React.Fragment>
+                  )) : (
                   <ListItem>
                     <ListItemText primary="No participants yet" />
                   </ListItem>

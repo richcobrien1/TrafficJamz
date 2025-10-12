@@ -12,8 +12,9 @@ class EmailService {
   async init() {
     if (this.initialized) return;
 
-    // For production, you would use your actual SMTP settings
-    if (process.env.NODE_ENV === 'production' && process.env.SMTP_HOST) {
+    // Use real SMTP if configured, otherwise use Ethereal for testing
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS &&
+        !process.env.SMTP_USER.includes('your-') && !process.env.SMTP_PASS.includes('your-')) {
       this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT || 587,
@@ -23,8 +24,9 @@ class EmailService {
           pass: process.env.SMTP_PASS
         }
       });
+      console.log('Email service initialized with real SMTP:', process.env.SMTP_HOST);
     } else {
-      // For development/testing, use Ethereal
+      // For development/testing without SMTP config, use Ethereal
       this.testAccount = await nodemailer.createTestAccount();
       this.transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -35,7 +37,7 @@ class EmailService {
           pass: this.testAccount.pass
         }
       });
-      console.log('Ethereal Email account created for testing:', this.testAccount.user);
+      console.log('Email service initialized with Ethereal for testing:', this.testAccount.user);
     }
 
     this.initialized = true;
@@ -50,13 +52,15 @@ class EmailService {
       console.log('Invitation data:', { groupName, inviterName, invitationLink });
 
       const mailOptions = {
-        from: `"Group App" <${this.testAccount ? this.testAccount.user : process.env.SMTP_USER}>`,
+        from: this.testAccount 
+          ? `"TrafficJamz" <${this.testAccount.user}>`
+          : `"TrafficJamz" <${process.env.SMTP_USER}>`,
         to,
         subject: `You've been invited to join ${groupName}`,
         text: `
           Hello,
 
-          ${inviterName} has invited you to join the group "${groupName}" on our app.
+          ${inviterName} has invited you to join the group "${groupName}" on TrafficJamz.
 
           To accept this invitation, please click on the following link:
           ${invitationLink}
@@ -66,12 +70,12 @@ class EmailService {
           If you did not request this invitation, please ignore this email.
 
           Best regards,
-          The Group App Team
+          The TrafficJamz Team
         `,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>You've been invited to join a group!</h2>
-            <p><strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on our app.</p>
+            <p><strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on TrafficJamz.</p>
             <p>To accept this invitation, please click on the button below:</p>
             <p style="text-align: center; margin: 30px 0;">
               <a href="${invitationLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a>
@@ -79,7 +83,7 @@ class EmailService {
             <p>This invitation will expire in 7 days.</p>
             <p>If you did not request this invitation, please ignore this email.</p>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-            <p style="color: #777; font-size: 12px;">Best regards,<br>The Group App Team</p>
+            <p style="color: #777; font-size: 12px;">Best regards,<br>The TrafficJamz Team</p>
           </div>
         `
       };
