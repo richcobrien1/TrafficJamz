@@ -24,6 +24,16 @@ export default defineConfig({
         secure: false,
         ws: true
       }
+      ,
+      // Proxy socket.io connections to the backend so the client can use
+      // the dev server origin for socket.io without attempting to talk to
+      // Vite's own websocket endpoint.
+      '/socket.io': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      }
     }
   },
   resolve: {
