@@ -17,6 +17,7 @@ import {
   TextField,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
+import { useAuth } from '../../contexts/AuthContext';
 
 const InvitationAccept = () => {
   const { groupId, invitationIndex } = useParams();
@@ -30,6 +31,7 @@ const InvitationAccept = () => {
     mobilePhone: ''
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   useEffect(() => {
     const checkInvitation = async () => {
@@ -47,16 +49,21 @@ const InvitationAccept = () => {
           const checkUserResponse = await api.get(`/users/check-email?email=${data.invitation.email}`);
           setIsRegisteredUser(checkUserResponse.data.exists);
           
-          if (checkUserResponse.data.exists) {
-            setStatus('ready_to_accept');
-          } else {
-            setStatus('show_form');
+          // Pre-fill form if user is logged in and email matches
+          if (user && user.email === data.invitation.email) {
+            setFormData({
+              firstName: user.first_name || '',
+              lastName: user.last_name || '',
+              mobilePhone: user.phone_number || ''
+            });
           }
         } catch (err) {
           console.error('Error checking user:', err);
-          // If we can't determine if user exists, show the form
-          setStatus('show_form');
+          // If we can't determine if user exists, proceed
         }
+        
+        // Always show the form
+        setStatus('show_form');
       } catch (err) {
         console.error('Error checking invitation:', err);
         setStatus('error');
@@ -65,7 +72,7 @@ const InvitationAccept = () => {
     };
 
     checkInvitation();
-  }, [groupId, invitationIndex, navigate]);
+  }, [groupId, invitationIndex, navigate, user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -79,13 +86,22 @@ const InvitationAccept = () => {
     try {
       setStatus('accepting');
       
-      // Accept the invitation using the correct API endpoint
-      const acceptResponse = await api.post(`/invitations/${invitationData.invitationId}/accept`, {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        mobilePhone: formData.mobilePhone,
+      let requestData = {
         email: invitationData.invitation.email
-      });
+      };
+      
+      // For new users, include form data
+      if (status === 'show_form') {
+        requestData = {
+          ...requestData,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          mobilePhone: formData.mobilePhone
+        };
+      }
+      
+      // Accept the invitation using the correct API endpoint
+      const acceptResponse = await api.post(`/invitations/${invitationData.invitationId}/accept`, requestData);
       
       console.log('Accept response:', acceptResponse.data);
       

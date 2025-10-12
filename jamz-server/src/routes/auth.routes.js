@@ -38,7 +38,23 @@ router.post('/register', [
     };
 
     const user = await userService.register(userData);
-    res.status(201).json({ success: true, message: user });
+
+    // Generate tokens for the newly created user so the frontend can
+    // behave the same as a login (store token, set user).
+    try {
+      const tokens = userService.generateTokens(user);
+      return res.status(201).json({
+        success: true,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: tokens.token_type,
+        user
+      });
+    } catch (tokenErr) {
+      // If token generation fails, still return created user but warn
+      console.error('Registration token generation failed:', tokenErr);
+      return res.status(201).json({ success: true, message: user });
+    }
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
