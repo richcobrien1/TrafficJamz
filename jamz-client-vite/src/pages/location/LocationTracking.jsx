@@ -103,11 +103,13 @@ const LocationTracking = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
   const [satelliteMode, setSatelliteMode] = useState(false);
-  const [showPlaces, setShowPlaces] = useState(false);
+  const [showPlaces, setShowPlaces] = useState(true);
   const [placeSelectionMode, setPlaceSelectionMode] = useState(false);
-  const [accuracyThreshold] = useState(100); // Default accuracy threshold in meters
-  const [useBestReading] = useState(false); // Whether to use best GPS reading from buffer
-  const [gpsReadingsBuffer, setGpsReadingsBuffer] = useState([]); // Buffer for GPS readings
+  const [draggingPlaceId, setDraggingPlaceId] = useState(null);
+  const [useBestReading, setUseBestReading] = useState(false);
+  const [gpsReadingsBuffer, setGpsReadingsBuffer] = useState([]);
+  const [accuracyThreshold, setAccuracyThreshold] = useState(100);
+  const [places, setPlaces] = useState([]);
   
   // Refs
   const mapContainerRef = useRef(null);
@@ -196,6 +198,11 @@ const LocationTracking = () => {
         // Filter out any existing current user location from API data to avoid duplicates
         const filteredEnrichedLocations = enrichedLocations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
         allLocations = [currentUserLocation, ...filteredEnrichedLocations];
+      }
+
+      // Add places if they should be shown
+      if (showPlaces) {
+        allLocations = [...allLocations, ...places];
       }
 
       updateMapMarkers(allLocations);
@@ -320,6 +327,11 @@ const LocationTracking = () => {
         allLocations = [currentUserLocation, ...filteredEnrichedLocations];
       }
 
+      // Add places if they should be shown
+      if (showPlaces) {
+        allLocations = [...allLocations, ...places];
+      }
+
       if (!placeSelectionMode) {
         updateMapMarkers(allLocations);
       }
@@ -346,6 +358,9 @@ const LocationTracking = () => {
     const memberLocations = await fetchMemberLocations();
     setLocations(memberLocations);
     
+    // Include places if they should be shown
+    const allLocations = showPlaces ? [...memberLocations, ...places] : memberLocations;
+    
     // The fetchMemberLocations function now handles including current user location
     // No need to duplicate the logic here
   };
@@ -368,8 +383,9 @@ const LocationTracking = () => {
       if (showPlaces && mapRef.current) {
         try {
           // Fetch places for the group
-          const places = await fetchPlacesForGroup();
-          console.log('Fetched places:', places);
+          const fetchedPlaces = await fetchPlacesForGroup();
+          console.log('Fetched places:', fetchedPlaces);
+          setPlaces(fetchedPlaces);
           
           // Get current member locations
           const memberLocations = await fetchMemberLocations();
@@ -384,15 +400,15 @@ const LocationTracking = () => {
             battery_level: 85
           }] : [];
           
-          // Combine member locations and places
-          const allLocations = [...currentUserLoc, ...memberLocations, ...places];
+          // Combine member locations, user location, and places
+          const allLocations = [...currentUserLoc, ...memberLocations, ...fetchedPlaces];
           
           // Update markers to include places (but hide member locations during place selection mode)
           if (!placeSelectionMode) {
             updateMapMarkers(allLocations);
           } else {
             // During place selection mode, only show places
-            updateMapMarkers(places);
+            updateMapMarkers(fetchedPlaces);
           }
         } catch (error) {
           console.error('Error fetching places:', error);
@@ -590,7 +606,9 @@ const LocationTracking = () => {
 
       setLocations(merged);
       if (!placeSelectionMode) {
-        updateMapMarkers(merged);
+        // Include places if they should be shown
+        const allLocations = showPlaces ? [...merged, ...places] : merged;
+        updateMapMarkers(allLocations);
       }
     } catch (e) {
       console.error('Error generating runtime data:', e);
@@ -654,12 +672,14 @@ const LocationTracking = () => {
         if (pendingLocationsRef.current) {
           // console.debug('Flushing pending locations to map', pendingLocationsRef.current);
           if (!placeSelectionMode) {
-            updateMapMarkers(pendingLocationsRef.current);
+            const allLocations = showPlaces ? [...pendingLocationsRef.current, ...places] : pendingLocationsRef.current;
+            updateMapMarkers(allLocations);
           }
           pendingLocationsRef.current = null;
         } else if (locations.length > 0) {
           if (!placeSelectionMode) {
-            updateMapMarkers(locations);
+            const allLocations = showPlaces ? [...locations, ...places] : locations;
+            updateMapMarkers(allLocations);
           }
         }
 
@@ -667,13 +687,6 @@ const LocationTracking = () => {
         
         // Add navigation controls
         map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-        // Add geolocate control for user location
-        map.addControl(new mapboxgl.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true
-          },
-          trackUserLocation: true
-        }), 'bottom-right');
 
         // When the map stops moving, regenerate runtime data (members + places + user pos)
         const onMoveEnd = () => {
@@ -685,13 +698,13 @@ const LocationTracking = () => {
           }
         };
 
-        // Map click to open Add Place dialog with clicked coordinates
+        // Map click to add place at clicked location
         map.on('click', (e) => {
           try {
             const { lngLat } = e;
-            window.dispatchEvent(new CustomEvent('tj:open-place-dialog', { detail: { lat: lngLat.lat, lng: lngLat.lng } }));
+            createPlaceAtLocation(lngLat.lat, lngLat.lng);
           } catch (err) {
-            console.error('Failed to dispatch open-place-dialog', err);
+            console.error('Failed to create place at clicked location', err);
           }
         });
 
@@ -703,6 +716,28 @@ const LocationTracking = () => {
           generateRuntimeData({ lng: c.lng, lat: c.lat });
         } catch (e) {
           console.error('Initial runtime data generation failed', e);
+        }
+
+        // Load places if they should be shown
+        if (showPlaces) {
+          fetchPlacesForGroup().then(fetchedPlaces => {
+            if (fetchedPlaces.length > 0) {
+              setPlaces(fetchedPlaces);
+              // Add places to current markers
+              const currentUserLoc = userLocation ? [{
+                user_id: user?.id || 'current-user',
+                username: user?.username || 'CurrentUser',
+                first_name: user?.first_name || null,
+                coordinates: userLocation,
+                timestamp: new Date().toISOString(),
+                battery_level: 85
+              }] : [];
+              const allLocations = [...currentUserLoc, ...locations, ...fetchedPlaces];
+              updateMapMarkers(allLocations);
+            }
+          }).catch(error => {
+            console.warn('Failed to load places on map load:', error);
+          });
         }
       });
 
@@ -728,8 +763,7 @@ const LocationTracking = () => {
     
     const options = {
       enableHighAccuracy: highAccuracyMode,
-      timeout: 30000, // Increased to 30 seconds for better GPS acquisition
-      maximumAge: 10000 // Reduced to 10 seconds for fresher positions
+      timeout: 30000 // Increased to 30 seconds for better GPS acquisition
     };
     
     try {
@@ -1032,7 +1066,7 @@ const LocationTracking = () => {
     // Create marker positioned at map center
     const center = mapRef.current.getCenter();
     centerMarkerRef.current = new mapboxgl.Marker(centerElement, {
-      anchor: 'center'
+      anchor: 'bottom' // Match the place marker anchor
     })
       .setLngLat([center.lng, center.lat])
       .addTo(mapRef.current);
@@ -1115,8 +1149,8 @@ const LocationTracking = () => {
           raw: response.data.place
         };
         
-        // Add to current locations and update markers
-        setLocations(prevLocations => [...prevLocations, newPlace]);
+        // Add to places state and update markers
+        setPlaces(prevPlaces => [...prevPlaces, newPlace]);
         updateMapMarkers([...locations, newPlace]);
         
         // Enable places display
@@ -1134,6 +1168,78 @@ const LocationTracking = () => {
     }
   };
   
+  // Delete a place
+  const deletePlace = async (placeId) => {
+    try {
+      if (!confirm('Are you sure you want to delete this place?')) {
+        return;
+      }
+      
+      const response = await api.delete(`/places/${placeId}`);
+      
+      if (response.data.success) {
+        console.log('Place deleted successfully:', placeId);
+        
+        // Remove the place from local state
+        setPlaces(prevPlaces => 
+          prevPlaces.filter(place => !(place.raw && place.raw._id === placeId))
+        );
+        
+        // Close the dialog
+        setOpenLocationDialog(false);
+        
+        // Show success message
+        alert('Place deleted successfully!');
+      } else {
+        throw new Error(response.data.message || 'Failed to delete place');
+      }
+      
+    } catch (error) {
+      console.error('Error deleting place:', error);
+      alert('Failed to delete place. Please try again.');
+    }
+  };
+  
+  // Enter dragging mode for a place
+  const enterPlaceDraggingMode = (placeId) => {
+    setDraggingPlaceId(placeId);
+    setOpenLocationDialog(false);
+    // Disable map interactions
+    if (mapRef.current) {
+      mapRef.current.dragPan.disable();
+      mapRef.current.scrollZoom.disable();
+      mapRef.current.doubleClickZoom.disable();
+    }
+  };
+
+  // Exit dragging mode
+  const exitPlaceDraggingMode = () => {
+    setDraggingPlaceId(null);
+    // Re-enable map interactions
+    if (mapRef.current) {
+      mapRef.current.dragPan.enable();
+      mapRef.current.scrollZoom.enable();
+      mapRef.current.doubleClickZoom.enable();
+    }
+  };
+
+  // Reset dragging mode on unmount
+  useEffect(() => {
+    return () => {
+      if (draggingPlaceId) {
+        exitPlaceDraggingMode();
+      }
+    };
+  }, [draggingPlaceId]);
+
+  // Update markers when dragging mode changes
+  useEffect(() => {
+    if (mapRef.current && (locations.length > 0 || (showPlaces && places.length > 0))) {
+      const allLocations = showPlaces ? [...locations, ...places] : locations;
+      updateMapMarkers(allLocations);
+    }
+  }, [draggingPlaceId, locations, places, showPlaces]);
+
   // Update map markers for all members
   const updateMapMarkers = (locationData) => {
     // If the map isn't initialized yet, queue the locations for later
@@ -1142,87 +1248,159 @@ const LocationTracking = () => {
       return;
     }
 
-    // Remove existing markers
-    console.log('Removing', Object.keys(markersRef.current).length, 'existing markers');
-    Object.values(markersRef.current).forEach(marker => {
-      if (marker && typeof marker.remove === 'function') {
-        marker.remove();
-      }
-    });
-    markersRef.current = {};
-    
-    // Add new markers
+    const newMarkerKeys = new Set();
+
+    // Update existing markers or create new ones
     locationData.forEach((location, idx) => {
       if (!location.coordinates) {
         return;
       }
       
       const { latitude, longitude } = location.coordinates;
+      const markerKey = location.place ? `place-${location.raw._id}` : location.user_id;
 
-      // Create marker container
-      const markerEl = document.createElement('div');
-      markerEl.style.position = 'relative';
-      markerEl.style.cursor = 'pointer';
-      markerEl.style.width = '32px';
-      markerEl.style.height = '40px'; // Extra height for spike
-      markerEl.style.display = 'flex';
-      markerEl.style.flexDirection = 'column';
-      markerEl.style.alignItems = 'center';
+      newMarkerKeys.add(markerKey);
 
-      // Create the circle with first initial
-      const circleEl = document.createElement('div');
-      circleEl.style.width = '24px';
-      circleEl.style.height = '24px';
-      circleEl.style.borderRadius = '50%';
-      circleEl.style.backgroundColor = location.place ? 'green' : 'orange';
-      circleEl.style.border = '2px solid white';
-      circleEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      circleEl.style.display = 'flex';
-      circleEl.style.alignItems = 'center';
-      circleEl.style.justifyContent = 'center';
-      circleEl.style.color = 'white';
-      circleEl.style.fontSize = '12px';
-      circleEl.style.fontWeight = 'bold';
-      circleEl.style.textTransform = 'uppercase';
+      let marker = markersRef.current[markerKey];
 
-      // Add first initial
-      const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
-      circleEl.textContent = firstInitial;
+      const shouldBeDraggable = location.place && location.raw && location.raw._id === draggingPlaceId;
 
-      // Create the spike (triangle pointing down)
-      const spikeEl = document.createElement('div');
-      spikeEl.style.width = '0';
-      spikeEl.style.height = '0';
-      spikeEl.style.borderLeft = '6px solid transparent';
-      spikeEl.style.borderRight = '6px solid transparent';
-      spikeEl.style.borderTop = `8px solid ${location.place ? 'green' : 'orange'}`;
-      spikeEl.style.marginTop = '-2px'; // Slight overlap to connect with circle
+      if (marker && (!shouldBeDraggable || marker.getLngLat().lng !== longitude || marker.getLngLat().lat !== latitude)) {
+        // Update position for non-draggable markers, or re-create if it should be draggable
+        if (!shouldBeDraggable) {
+          marker.setLngLat([longitude, latitude]);
+        } else {
+          // Re-create draggable markers to ensure proper draggable state
+          marker.remove();
+          marker = null;
+        }
+      }
 
-      // Assemble marker
-      markerEl.appendChild(circleEl);
-      markerEl.appendChild(spikeEl);
+      if (!marker) {
+        // Create new marker
+        // Create marker container
+        const markerEl = document.createElement('div');
+        markerEl.style.position = 'relative';
+        markerEl.style.cursor = 'pointer';
+        markerEl.style.width = '24px';
+        markerEl.style.height = '32px';
+        markerEl.style.display = 'block';
+        markerEl.style.boxSizing = 'border-box';
+        markerEl.style.margin = '0';
+        markerEl.style.padding = '0';
 
-      // Add hover details
-      const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
-      const lastUpdate = new Date(location.timestamp).toLocaleString();
-      markerEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
+        // Create the circle with first initial
+        const circleEl = document.createElement('div');
+        circleEl.style.position = 'absolute';
+        circleEl.style.top = '0';
+        circleEl.style.left = '50%';
+        circleEl.style.transform = 'translateX(-50%)';
+        circleEl.style.width = '24px';
+        circleEl.style.height = '24px';
+        circleEl.style.borderRadius = '50%';
+        circleEl.style.backgroundColor = location.place ? 'green' : 'orange';
+        circleEl.style.border = '2px solid white';
+        circleEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        circleEl.style.display = 'flex';
+        circleEl.style.alignItems = 'center';
+        circleEl.style.justifyContent = 'center';
+        circleEl.style.color = 'white';
+        circleEl.style.fontSize = '12px';
+        circleEl.style.fontWeight = 'bold';
+        circleEl.style.textTransform = 'uppercase';
 
-      // Create and add the marker - properly anchored to geographic coordinates
-      const marker = new mapboxgl.Marker(markerEl, {
-        anchor: 'bottom' // Anchor at bottom so spike points to exact location
-      })
-        .setLngLat([longitude, latitude])
-        .addTo(mapRef.current);
+        // Add first initial
+        const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
+        circleEl.textContent = firstInitial;
 
-      // Add click handler
-      markerEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleMarkerClick(location);
-      });
-      
-      // Keep a reference to the marker so it can be removed/updated later
-      const markerKey = `${location.user_id}__${idx}`;
-      markersRef.current[markerKey] = marker;
+        // Create the spike (triangle pointing down) - positioned entirely below circle with tip at marker bottom
+        const spikeEl = document.createElement('div');
+        spikeEl.style.position = 'absolute';
+        spikeEl.style.top = '24px'; // Position below circle
+        spikeEl.style.left = '50%';
+        spikeEl.style.transform = 'translateX(-50%)';
+        spikeEl.style.width = '12px';
+        spikeEl.style.height = '8px';
+        spikeEl.style.backgroundColor = location.place ? 'green' : 'orange';
+        spikeEl.style.clipPath = 'polygon(50% 100%, 0% 0%, 100% 0%)'; // Triangle pointing down with tip at bottom
+
+        // Assemble marker
+        markerEl.appendChild(circleEl);
+        markerEl.appendChild(spikeEl);
+
+        // Add hover details
+        const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
+        const lastUpdate = new Date(location.timestamp).toLocaleString();
+        markerEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
+
+        // Create and add the marker - properly anchored to geographic coordinates
+        marker = new mapboxgl.Marker(markerEl, {
+          anchor: 'bottom',
+          draggable: location.place && location.raw && location.raw._id === draggingPlaceId
+        })
+          .setLngLat([longitude, latitude])
+          .addTo(mapRef.current);
+
+        // Add dragend handler for all place markers (will check if dragging inside)
+        if (location.place && location.raw) {
+          marker.on('dragend', async () => {
+            // Only process if this place is currently being dragged
+            if (draggingPlaceId === location.raw._id) {
+              const lngLat = marker.getLngLat();
+              try {
+                const response = await api.put(`/places/${location.raw._id}`, {
+                  latitude: lngLat.lat,
+                  longitude: lngLat.lng
+                });
+                
+                if (response.data.success) {
+                  // Update local places state
+                  setPlaces(prevPlaces => 
+                    prevPlaces.map(place => 
+                      place.raw && place.raw._id === location.raw._id 
+                        ? { 
+                            ...place, 
+                            coordinates: { latitude: lngLat.lat, longitude: lngLat.lng },
+                            raw: { ...place.raw, coordinates: { latitude: lngLat.lat, longitude: lngLat.lng } }
+                          }
+                        : place
+                    )
+                  );
+                  exitPlaceDraggingMode();
+                } else {
+                  throw new Error(response.data.message || 'Failed to update place');
+                }
+              } catch (error) {
+                console.error('Error updating place coordinates:', error);
+                alert('Failed to update place location. Please try again.');
+                exitPlaceDraggingMode();
+              }
+            }
+          });
+        }
+
+        // Add click handler only for non-draggable markers
+        if (!shouldBeDraggable) {
+          markerEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleMarkerClick(location);
+          });
+        }
+        
+        // Store the marker
+        markersRef.current[markerKey] = marker;
+      }
+    });
+
+    // Remove markers that are no longer in the data
+    Object.keys(markersRef.current).forEach(markerKey => {
+      if (!newMarkerKeys.has(markerKey)) {
+        const marker = markersRef.current[markerKey];
+        if (marker && typeof marker.remove === 'function') {
+          marker.remove();
+        }
+        delete markersRef.current[markerKey];
+      }
     });
   };
   
@@ -1241,8 +1419,10 @@ const LocationTracking = () => {
     // Filter out any existing current user location from API data to avoid duplicates
     const filteredLocations = locations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
     
-    // Combine current user location with existing member locations
-    const allLocations = [currentUserLocation, ...filteredLocations];
+    // Combine current user location with existing member locations and places if shown
+    const allLocations = showPlaces 
+      ? [currentUserLocation, ...filteredLocations, ...places]
+      : [currentUserLocation, ...filteredLocations];
     
     // Update markers with combined locations (but hide during place selection mode)
     if (!placeSelectionMode) {
@@ -1385,6 +1565,39 @@ const LocationTracking = () => {
           </Box>
         )}
       </Box>
+      
+      {/* Dragging Mode Indicator */}
+      {draggingPlaceId && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 80,
+            left: 16,
+            right: 16,
+            zIndex: 15,
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
+            p: 2,
+            borderRadius: 2,
+            boxShadow: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <Typography variant="body1">
+            🏁 Drag the pin to reposition the place
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            size="small"
+            onClick={exitPlaceDraggingMode}
+          >
+            Cancel (ESC)
+          </Button>
+        </Box>
+      )}
       
       {/* Top App Bar */}
       <AppBar 
@@ -1542,41 +1755,30 @@ const LocationTracking = () => {
         </span>
       </Tooltip>
       
-      {/* Alerts and Errors */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: showControls ? 72 : 16,
-          left: 16,
-          right: 196,
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1
-        }}
-      >
+      {/* Alerts */}
+      <Box sx={{ position: 'absolute', top: 140, left: 16, right: 16, zIndex: 10 }}>
         {isGettingLocation && (
-          <Alert severity="info" sx={{ opacity: controlsOpacity }}>
+          <Alert severity="info" sx={{ opacity: controlsOpacity, mb: 1 }}>
             <AlertTitle>Getting Your Location</AlertTitle>
             Please wait while we determine your position...
           </Alert>
         )}
         
         {isRateLimited && (
-          <Alert severity="warning" sx={{ opacity: controlsOpacity }}>
+          <Alert severity="warning" sx={{ opacity: controlsOpacity, mb: 1 }}>
             <AlertTitle>Rate Limit Detected</AlertTitle>
             Too many location requests. Retrying in {retryDelay} seconds.
           </Alert>
         )}
         
         {locationError && (
-          <Alert severity="error" sx={{ opacity: controlsOpacity }}>
+          <Alert severity="error" sx={{ opacity: controlsOpacity, mb: 1 }}>
             {locationError}
           </Alert>
         )}
         
         {error && (
-          <Alert severity="error" sx={{ opacity: controlsOpacity }}>
+          <Alert severity="error" sx={{ opacity: controlsOpacity, mb: 1 }}>
             {error}
           </Alert>
         )}
@@ -2004,15 +2206,29 @@ const LocationTracking = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenLocationDialog(false)}>Close</Button>
+              {selectedLocation.place && selectedLocation.raw && (
+                <Button 
+                  color="error"
+                  onClick={() => deletePlace(selectedLocation.raw._id)}
+                >
+                  DELETE
+                </Button>
+              )}
               {selectedLocation.coordinates && (
                 <Button 
                   color="primary"
                   onClick={() => {
-                    centerMapOnLocation(selectedLocation.coordinates);
-                    setOpenLocationDialog(false);
+                    if (selectedLocation.place && selectedLocation.raw) {
+                      // For places, enter dragging mode
+                      enterPlaceDraggingMode(selectedLocation.raw._id);
+                    } else {
+                      // For other locations, just center the map
+                      centerMapOnLocation(selectedLocation.coordinates);
+                      setOpenLocationDialog(false);
+                    }
                   }}
                 >
-                  Center on Map
+                  {selectedLocation.place ? 'REPOSITION' : 'CENTER'}
                 </Button>
               )}
             </DialogActions>

@@ -48,6 +48,35 @@ const AudioSession = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  // Better mobile detection - avoid false positives from devtools responsive mode
+  const isMobile = (() => {
+    // Check for actual mobile device characteristics
+    const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.innerWidth <= 768;
+    const isIOSDevice = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+
+    // Additional check: if we're in a desktop browser but devtools responsive mode
+    // is making it look small, check if the device actually has a small screen
+    const actualScreenWidth = screen.width;
+    const isActuallySmallDevice = actualScreenWidth <= 768;
+
+
+    // Consider it mobile if it's actually a small device OR explicitly iOS/Android
+    const result = isActuallySmallDevice || isIOSDevice || isAndroid;
+    return result;
+  })();
+
+  // iOS Safari specifically requires user gesture for media access
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+                /Safari/.test(navigator.userAgent) &&
+                !/Chrome|CriOS|FxiOS|Opera/.test(navigator.userAgent);
+
+  // State for microphone initialization
+  const [micInitialized, setMicInitialized] = useState(false);
+  const [micInitializing, setMicInitializing] = useState(false);
+  const [requiresUserGesture, setRequiresUserGesture] = useState(true); // Always require user gesture for simplicity
+  
   // Session state
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +91,7 @@ const AudioSession = () => {
   const [inputLevel, setInputLevel] = useState(0);
   const [inputVolume, setInputVolume] = useState(1.0);
   const [outputVolume, setOutputVolume] = useState(1.0);
-  const [localAudioMonitoring, setLocalAudioMonitoring] = useState(false);
+  const [localAudioMonitoring, setLocalAudioMonitoring] = useState(false); // Disable by default for actual audio testing
   
   // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
@@ -125,14 +154,23 @@ const AudioSession = () => {
 
         console.log('Session ID validated, proceeding with initialization');
 
-        // Initialize microphone capture automatically, but do not auto-connect
-        // signaling. Users will manually connect to signaling using the UI.
-        console.log('Calling handleJoinAudio...');
-        await handleJoinAudio();
+        // NOTE: Always try to auto-initialize microphone on desktop
+        // If it fails, show error instead of requiring user gesture
+        console.log('🎤 Setting up auto-init timeout...');
+        setTimeout(() => {
+          console.log('🎤 Auto-init timeout triggered, calling initializeMicrophone...');
+          initializeMicrophone().then(() => {
+            console.log('🎤 Auto-init succeeded');
+          }).catch(error => {
+            console.log('🎤 Auto-init failed:', error.message, error.name);
+            // On desktop, don't require user gesture - show error instead
+            setAudioError(`Microphone access failed: ${error.message}. Please check your browser permissions and refresh the page.`);
+          });
+        }, 1000); // Small delay to ensure component is ready
       } catch (error) {
-        console.error('Error in handleJoinAudio:', error);
+        console.error('Error in component initialization:', error);
         if (isMounted) {
-          setAudioError('Failed to initialize audio: ' + error.message);
+          setError('Initialization failed: ' + error.message);
         }
       }
 
@@ -248,27 +286,111 @@ const AudioSession = () => {
     }
   }, [socket]);
   
-  // Join audio session
-  const handleJoinAudio = async () => {
-    console.log('Automatically joining audio session...');
-    setIsJoined(true);
-    
+  // Update volume of remote audio elements when outputVolume changes
+  useEffect(() => {
+    const remoteAudios = document.getElementById('remote-audios');
+    if (remoteAudios) {
+      const audioElements = remoteAudios.querySelectorAll('audio');
+      audioElements.forEach(audio => {
+        audio.volume = outputVolume;
+        console.log('🔊 Updated remote audio volume to:', outputVolume);
+      });
+    }
+  }, [outputVolume]);
+  
+  // Initialize microphone (called from user gesture for browsers that require it)
+  const initializeMicrophone = async () => {
+    console.log('🎤 Initializing microphone from user gesture...');
+    setMicInitializing(true);
+    setAudioError(null);
+
     try {
-      console.log('🎤 Requesting microphone access...');
       console.log('🎤 navigator.mediaDevices available:', !!navigator.mediaDevices);
       console.log('🎤 getUserMedia available:', !!navigator.mediaDevices?.getUserMedia);
+      console.log('🎤 webkitGetUserMedia available:', !!navigator.webkitGetUserMedia);
+      console.log('🎤 mozGetUserMedia available:', !!navigator.mozGetUserMedia);
+      console.log('🎤 Is secure context (HTTPS):', window.isSecureContext);
+      console.log('🎤 Protocol:', window.location.protocol);
+      console.log('🎤 Full navigator object keys:', Object.keys(navigator).filter(key => key.toLowerCase().includes('media') || key.toLowerCase().includes('webkit') || key.toLowerCase().includes('getuser')));
       console.log('🎤 User agent:', navigator.userAgent);
       console.log('🎤 Is mobile device:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+      console.log('🎤 Is iOS Safari:', /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS|Opera/.test(navigator.userAgent));
 
+      // Extract iOS version for better error messages
+      const iOSVersion = navigator.userAgent.match(/OS (\d+)_?(\d+)?/);
+      console.log('🎤 iOS version:', iOSVersion ? `${iOSVersion[1]}.${iOSVersion[2] || '0'}` : 'Not iOS');
+
+      // Get the appropriate getUserMedia function for cross-browser compatibility
+      let getUserMedia = null;
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+        console.log('🎤 Using modern navigator.mediaDevices.getUserMedia');
+      } else if (navigator.webkitGetUserMedia) {
+        getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
+        console.log('🎤 Using legacy navigator.webkitGetUserMedia');
+      } else if (navigator.mozGetUserMedia) {
+        getUserMedia = navigator.mozGetUserMedia.bind(navigator);
+        console.log('🎤 Using legacy navigator.mozGetUserMedia');
+      } else if (navigator.getUserMedia) {
+        getUserMedia = navigator.getUserMedia.bind(navigator);
+        console.log('🎤 Using fallback navigator.getUserMedia');
+      }
+
+      if (!getUserMedia) {
+        console.error('🎤 No getUserMedia API found!');
+        console.error('🎤 navigator object:', navigator);
+        throw new Error('getUserMedia is not supported in this browser');
+      }
+
+      // Create promise-based wrapper for older callback-based APIs
+      const getUserMediaPromise = (constraints) => {
+        return new Promise((resolve, reject) => {
+          // Remove timeout for debugging - let it hang if dialog not shown
+          // const timeout = setTimeout(() => {
+          //   reject(new Error('Microphone access timed out. Please check your browser settings and try again.'));
+          // }, 5000); // 5 second timeout
+
+          try {
+            // For modern API: navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)
+            if (getUserMedia === navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)) {
+              getUserMedia(constraints)
+                .then((stream) => {
+                  // clearTimeout(timeout);
+                  resolve(stream);
+                })
+                .catch((error) => {
+                  // clearTimeout(timeout);
+                  reject(error);
+                });
+            }
+            // For legacy APIs: navigator.webkitGetUserMedia(constraints, successCallback, errorCallback)
+            else {
+              getUserMedia(constraints,
+                (stream) => {
+                  // clearTimeout(timeout);
+                  resolve(stream);
+                },
+                (error) => {
+                  // clearTimeout(timeout);
+                  reject(error);
+                }
+              );
+            }
+          } catch (err) {
+            // clearTimeout(timeout);
+            console.error('🎤 Error in getUserMediaPromise wrapper:', err);
+            reject(err);
+          }
+        });
+      };
+
+      console.log('🎤 Starting getUserMedia call...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          deviceId: selectedInputDevice ? { exact: selectedInputDevice } : undefined
-        },
+        audio: true,
         video: false
       });
+      console.log('🎤 getUserMediaPromise resolved successfully');
 
       console.log('✅ Microphone access granted!');
       console.log('✅ Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
@@ -277,7 +399,10 @@ const AudioSession = () => {
 
       setLocalStream(stream);
       localStreamRef.current = stream;
-      console.log('🎵 Audio stream initialized successfully');
+      setMicInitialized(true);
+      setRequiresUserGesture(false); // Clear the flag if it was set
+      setIsJoined(true);
+      console.log('🎵 Microphone initialized successfully');
 
       // Set up audio level monitoring
       setupAudioLevelMonitoring(stream);
@@ -289,22 +414,25 @@ const AudioSession = () => {
       console.error('❌ Error stack:', error.stack);
 
       const errorMessage = error.name === 'NotAllowedError'
-        ? 'Microphone access denied. Please allow microphone permissions and refresh the page.'
+        ? 'Microphone access denied. Please allow microphone permissions and try again.'
         : error.name === 'NotFoundError'
-        ? 'No microphone found. Please connect a microphone and refresh the page.'
+        ? 'No microphone found. Please connect a microphone and try again.'
+        : error.name === 'NotSupportedError'
+        ? 'Microphone access not supported in this browser. Please use a modern browser.'
+        : error.message === 'getUserMedia is not supported in this browser'
+        ? `Your browser does not support microphone access. Current protocol: ${window.location.protocol}. For iPhone testing, you need HTTPS. Use ngrok: 'ngrok http 5173' then access via the HTTPS ngrok URL.`
+        : error.message === 'Microphone access timed out. Please check your browser settings and try again.'
+        ? 'Microphone access timed out. This often happens on mobile devices. Please ensure you are using HTTPS and try again.'
         : `Could not access microphone: ${error.message}`;
 
-      // Don't set audioError for mobile browsers - just log it
-      if (!/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        setAudioError(errorMessage);
-      } else {
-        console.warn('📱 Microphone access blocked on mobile (expected):', errorMessage);
-      }
+      setAudioError(errorMessage);
+      setMicInitialized(false);
       setIsJoined(false);
+      throw error; // Re-throw so the caller knows it failed
+    } finally {
+      setMicInitializing(false);
     }
-  };
-  
-  // Leave audio session
+  };  // Leave audio session
   const handleLeaveAudio = () => {
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
@@ -313,6 +441,8 @@ const AudioSession = () => {
     setIsJoined(false);
     setIsMuted(false);
     setIsPushToTalkActive(false);
+    setMicInitialized(false);
+    setAudioError(null);
     
     // Navigate back to the previous page
     navigate(-1);
@@ -413,21 +543,27 @@ const AudioSession = () => {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
-    const updateMeter = () => {
-      analyser.getByteFrequencyData(dataArray);
-      
-      let sum = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i];
+    let lastUpdateTime = 0;
+    const updateInterval = 100; // Update every 100ms instead of every frame
+    
+    const updateMeter = (timestamp) => {
+      if (timestamp - lastUpdateTime >= updateInterval) {
+        analyser.getByteFrequencyData(dataArray);
+        
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        
+        const average = sum / bufferLength;
+        setInputLevel(average / 255); // Normalize to 0-1
+        lastUpdateTime = timestamp;
       }
-      
-      const average = sum / bufferLength;
-      setInputLevel(average / 255); // Normalize to 0-1
       
       requestAnimationFrame(updateMeter);
     };
     
-    updateMeter();
+    requestAnimationFrame(updateMeter);
     
     return () => {
       source.disconnect();
@@ -625,35 +761,22 @@ const AudioSession = () => {
   
   // Initialize WebRTC connection
   const initializeWebRTC = async (sessionId) => {
-    try {
-      console.log('Initializing WebRTC for session:', sessionId);
+    console.log('🎥 Initializing WebRTC for session:', sessionId);
 
-      // Set up signaling first
-      // Note: setupSignaling now is called explicitly by user action (Connect)
-      // so initializeWebRTC will only prepare the RTCPeerConnection when
-      // signaling is available.
-      const signaling = signalingRef.current;
-      if (!signaling) {
-        console.warn('Signaling not connected yet, skipping WebRTC init');
-        return;
-      }
-
-      // Initialize peer connection
-      await setupPeerConnection(signaling);
-
-      // Attempt mediasoup publish handshake (graceful fallback to native P2P)
-      try {
-        await startMediasoupPublish(signaling);
-      } catch (e) {
-        console.warn('Mediasoup publish failed or unavailable, fallback to native PeerConnection:', e.message || e);
-      }
-
-      setWebrtcReady(true);
-      console.log('WebRTC initialization complete');
-    } catch (error) {
-      console.error('Error initializing WebRTC:', error);
-      setError('Failed to initialize audio connection');
+    // Set up signaling first
+    // Note: setupSignaling now is called explicitly by user action (Connect)
+    // so initializeWebRTC will only prepare the RTCPeerConnection when
+    // signaling is available.
+    const signaling = signalingRef.current;
+    if (!signaling) {
+      console.warn('🎥 Signaling not connected yet, skipping WebRTC init');
+      return;
     }
+
+    console.log('🎥 Setting up peer connection...');
+    await setupPeerConnection(signaling);
+
+    console.log('🎥 WebRTC initialization complete');
   };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
     // For mobile compatibility, connect to the current origin (Vite dev server)
@@ -729,20 +852,25 @@ const AudioSession = () => {
 
     // WebRTC signaling events
     socket.on('webrtc-offer', async (data) => {
+      console.log('📨 Received webrtc-offer:', data);
       await handleOffer(data, socket);
     });
 
     socket.on('webrtc-answer', async (data) => {
+      console.log('📨 Received webrtc-answer:', data);
       await handleAnswer(data, socket);
     });
 
     socket.on('webrtc-candidate', async (data) => {
+      console.log('📨 Received webrtc-candidate:', data);
       await handleCandidate(data, socket);
     });
 
     socket.on('webrtc-ready', (data) => {
+      console.log('📨 Received webrtc-ready from another participant:', data);
       // Another participant is ready, initiate connection if we're not already connected
       if (rtcConnectionRef.current && rtcConnectionRef.current.connectionState === 'new') {
+        console.log('🚀 Creating and sending offer...');
         createAndSendOffer(socket);
       }
     });
@@ -817,7 +945,7 @@ const AudioSession = () => {
   
   // Set up peer connection
   const setupPeerConnection = async (signaling) => {
-    console.log('Setting up peer connection...');
+    console.log('🔗 Setting up peer connection...');
 
     const configuration = {
       iceServers: [
@@ -830,11 +958,13 @@ const AudioSession = () => {
 
     const peerConnection = new RTCPeerConnection(configuration);
     rtcConnectionRef.current = peerConnection;
+    console.log('🔗 RTCPeerConnection created');
 
     // Add local stream to peer connection when available
     if (localStream) {
-      console.log('Adding local stream to peer connection');
+      console.log('🔗 Adding local stream to peer connection');
       localStream.getTracks().forEach(track => {
+        console.log('🔗 Adding track:', track.kind, track.id);
         peerConnection.addTrack(track, localStream);
       });
     }
@@ -842,7 +972,7 @@ const AudioSession = () => {
     // Handle ICE candidates
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('Sending ICE candidate');
+        console.log('🧊 Sending ICE candidate');
         signaling.emit('webrtc-candidate', {
           candidate: event.candidate,
           sessionId: sessionId
@@ -852,20 +982,32 @@ const AudioSession = () => {
 
     // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
-      console.log('Connection state changed:', peerConnection.connectionState);
+      console.log('🔗 Connection state changed:', peerConnection.connectionState);
+      console.log('🔗 Full connection state details:', {
+        connectionState: peerConnection.connectionState,
+        iceConnectionState: peerConnection.iceConnectionState,
+        iceGatheringState: peerConnection.iceGatheringState,
+        signalingState: peerConnection.signalingState
+      });
       setConnected(peerConnection.connectionState === 'connected');
       setConnecting(peerConnection.connectionState === 'connecting');
     };
 
     // Handle ICE connection state changes
     peerConnection.oniceconnectionstatechange = () => {
-      console.log('ICE connection state:', peerConnection.iceConnectionState);
+      console.log('🧊 ICE connection state:', peerConnection.iceConnectionState);
+      console.log('🧊 Full ICE state details:', {
+        iceConnectionState: peerConnection.iceConnectionState,
+        iceGatheringState: peerConnection.iceGatheringState,
+        signalingState: peerConnection.signalingState
+      });
     };
 
     // Handle remote stream
     peerConnection.ontrack = (event) => {
-      console.log('Received remote track:', event.track.kind);
+      console.log('🎵 Received remote track:', event.track.kind, event.track.id);
       if (event.track.kind === 'audio') {
+        console.log('🎵 Setting up remote audio stream');
         handleRemoteAudioStream(event.streams[0]);
       }
     };
@@ -878,13 +1020,43 @@ const AudioSession = () => {
   
   // Handle remote audio stream
   const handleRemoteAudioStream = (stream) => {
-    console.log('Handling remote audio stream');
+    console.log('🎵 Handling remote audio stream');
+    console.log('🎵 Remote stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled, readyState: t.readyState })));
 
     // Create audio element for remote stream
     const audioElement = new Audio();
     audioElement.srcObject = stream;
     audioElement.volume = outputVolume;
     audioElement.autoplay = true;
+    audioElement.muted = false;
+    console.log('🎵 Created audio element with volume:', outputVolume, 'autoplay:', audioElement.autoplay, 'muted:', audioElement.muted);
+
+    // Add event listeners to debug audio playback
+    audioElement.onloadedmetadata = () => console.log('🎵 Audio element loaded metadata');
+    audioElement.oncanplay = () => console.log('🎵 Audio element can play');
+    audioElement.onplay = () => console.log('🎵 Audio element started playing');
+    audioElement.onpause = () => console.log('🎵 Audio element paused');
+    audioElement.onerror = (e) => console.error('🎵 Audio element error:', e);
+    audioElement.onended = () => console.log('🎵 Audio element ended');
+
+    // Try to play immediately
+    audioElement.play().then(() => {
+      console.log('🎵 Audio element play() succeeded');
+    }).catch((error) => {
+      console.error('🎵 Audio element play() failed:', error);
+      // Try to play on user interaction if autoplay fails
+      const playOnInteraction = () => {
+        audioElement.play().then(() => {
+          console.log('🎵 Audio element play() succeeded on user interaction');
+        }).catch((err) => {
+          console.error('🎵 Audio element play() failed even on interaction:', err);
+        });
+        document.removeEventListener('click', playOnInteraction);
+        document.removeEventListener('touchstart', playOnInteraction);
+      };
+      document.addEventListener('click', playOnInteraction);
+      document.addEventListener('touchstart', playOnInteraction);
+    });
 
     // Store the audio element
     const remoteAudios = document.getElementById('remote-audios');
@@ -893,11 +1065,16 @@ const AudioSession = () => {
       const existingAudios = remoteAudios.querySelectorAll('audio');
       existingAudios.forEach(audio => {
         if (audio.srcObject === stream) {
+          console.log('🎵 Removing existing audio element');
           audio.remove();
         }
       });
 
+      console.log('🎵 Appending new audio element to DOM');
       remoteAudios.appendChild(audioElement);
+      console.log('🎵 Total audio elements in container:', remoteAudios.children.length);
+    } else {
+      console.warn('🎵 Remote audios container not found');
     }
   };
   
@@ -906,21 +1083,23 @@ const AudioSession = () => {
     try {
       const peerConnection = rtcConnectionRef.current;
       if (!peerConnection) {
-        console.error('No peer connection available');
+        console.error('❌ No peer connection available');
         return;
       }
 
-      console.log('Creating offer...');
+      console.log('📤 Creating offer...');
       const offer = await peerConnection.createOffer();
+      console.log('📤 Created offer, setting local description...');
       await peerConnection.setLocalDescription(offer);
 
-      console.log('Sending offer...');
+      console.log('📤 Sending offer via signaling...');
       signaling.emit('webrtc-offer', {
         offer: peerConnection.localDescription,
         sessionId: sessionId
       });
+      console.log('📤 Offer sent');
     } catch (error) {
-      console.error('Error creating/sending offer:', error);
+      console.error('❌ Error creating/sending offer:', error);
     }
   };
 
@@ -1008,24 +1187,26 @@ const AudioSession = () => {
     try {
       const peerConnection = rtcConnectionRef.current;
       if (!peerConnection) {
-        console.error('No peer connection available for offer');
+        console.error('❌ No peer connection available for offer');
         return;
       }
 
-      console.log('Handling offer...');
+      console.log('📥 Handling offer...');
       await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
 
-      console.log('Creating answer...');
+      console.log('📥 Creating answer...');
       const answer = await peerConnection.createAnswer();
+      console.log('📥 Setting local description...');
       await peerConnection.setLocalDescription(answer);
 
-      console.log('Sending answer...');
+      console.log('📥 Sending answer...');
       signaling.emit('webrtc-answer', {
         answer: peerConnection.localDescription,
         sessionId: sessionId
       });
+      console.log('📥 Answer sent');
     } catch (error) {
-      console.error('Error handling offer:', error);
+      console.error('❌ Error handling offer:', error);
     }
   };
 
@@ -1033,14 +1214,15 @@ const AudioSession = () => {
     try {
       const peerConnection = rtcConnectionRef.current;
       if (!peerConnection) {
-        console.error('No peer connection available for answer');
+        console.error('❌ No peer connection available for answer');
         return;
       }
 
-      console.log('Handling answer...');
+      console.log('📥 Handling answer...');
       await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+      console.log('📥 Remote description set');
     } catch (error) {
-      console.error('Error handling answer:', error);
+      console.error('❌ Error handling answer:', error);
     }
   };
 
@@ -1048,14 +1230,15 @@ const AudioSession = () => {
     try {
       const peerConnection = rtcConnectionRef.current;
       if (!peerConnection) {
-        console.error('No peer connection available for candidate');
+        console.error('❌ No peer connection available for candidate');
         return;
       }
 
-      console.log('Adding ICE candidate...');
+      console.log('📥 Adding ICE candidate...');
       await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+      console.log('📥 ICE candidate added');
     } catch (error) {
-      console.error('Error handling ICE candidate:', error);
+      console.error('❌ Error handling ICE candidate:', error);
     }
   };
   
@@ -1101,17 +1284,19 @@ const AudioSession = () => {
   };
   
   // Render component
-  console.log('AudioSession render called', {
-    loading,
-    error,
-    audioError,
-    session: !!session,
-    isJoined,
-    localStream: !!localStream,
-    localStreamTracks: localStream ? localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })) : null,
-    connected,
-    connecting
-  });
+  // console.log('AudioSession render called', {
+  //   loading,
+  //   error,
+  //   audioError,
+  //   session: !!session,
+  //   isJoined,
+  //   micInitialized,
+  //   micInitializing,
+  //   localStream: !!localStream,
+  //   localStreamTracks: localStream ? localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })) : null,
+  //   connected,
+  //   connecting
+  // });
 
   // Defensive checks for required dependencies
   if (typeof Container === 'undefined' || typeof Typography === 'undefined') {
@@ -1171,6 +1356,46 @@ const AudioSession = () => {
             Leave Audio
           </Button>
 
+          {/* Debug button */}
+          <Button
+            variant="outlined"
+            color="info"
+            onClick={() => {
+              console.log('🔍 DEBUG: Current WebRTC state');
+              console.log('🔍 Peer connection:', rtcConnectionRef.current);
+              if (rtcConnectionRef.current) {
+                console.log('🔍 Connection state:', rtcConnectionRef.current.connectionState);
+                console.log('🔍 ICE connection state:', rtcConnectionRef.current.iceConnectionState);
+                console.log('🔍 Signaling state:', rtcConnectionRef.current.signalingState);
+                console.log('🔍 Local description:', rtcConnectionRef.current.localDescription);
+                console.log('🔍 Remote description:', rtcConnectionRef.current.remoteDescription);
+              }
+              console.log('🔍 Local stream:', localStream);
+              if (localStream) {
+                console.log('🔍 Local tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+              }
+              const remoteAudios = document.getElementById('remote-audios');
+              if (remoteAudios) {
+                console.log('🔍 Remote audio elements:', remoteAudios.children.length);
+                Array.from(remoteAudios.children).forEach((audio, i) => {
+                  console.log(`🔍 Audio element ${i}:`, {
+                    srcObject: !!audio.srcObject,
+                    volume: audio.volume,
+                    muted: audio.muted,
+                    paused: audio.paused,
+                    readyState: audio.readyState,
+                    networkState: audio.networkState
+                  });
+                });
+              }
+              console.log('🔍 Signaling connected:', !!signalingRef.current);
+              console.log('🔍 Participants:', participants);
+            }}
+            sx={{ mr: 2 }}
+          >
+            Debug State
+          </Button>
+
           {connected ? (
             <Button variant="contained" color="error" onClick={() => {
               // Disconnect signaling
@@ -1216,21 +1441,78 @@ const AudioSession = () => {
           )}
         </Box>
         
-        {/* Show loading or audio controls based on localStream */}
-        {!localStream ? (
-          <Box sx={{ 
-            p: 3, 
-            display: 'flex', 
-            alignItems: 'center', 
+        {/* Show microphone initialization or audio controls based on micInitialized */}
+        {!micInitialized ? (
+          <Box sx={{
+            p: 3,
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'column',
             bgcolor: 'background.paper',
-            borderRadius: 1
+            borderRadius: 1,
+            minHeight: 200
           }}>
-            <CircularProgress size={24} sx={{ mb: 2 }} />
-            <Typography variant="body2">
-              Initializing audio... Please grant microphone permissions if prompted.
+            {console.log('🎤 Rendering mic init UI:', { micInitialized, requiresUserGesture, micInitializing })}
+            <MicIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Initialize Microphone
             </Typography>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3, maxWidth: 400 }}>
+              {requiresUserGesture ?
+                'Click the button below to grant microphone access. This is required for some browsers.' :
+                'Initializing microphone access...'
+              }
+            </Typography>
+            {requiresUserGesture ? (
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                startIcon={<MicIcon />}
+                onClick={initializeMicrophone}
+                disabled={micInitializing}
+                sx={{ minWidth: 200 }}
+              >
+                {micInitializing ? (
+                  <>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    Initializing...
+                  </>
+                ) : (
+                  'Grant Microphone Access'
+                )}
+              </Button>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <CircularProgress size={40} />
+                {audioError && (
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Alert severity="error" sx={{ mb: 2, maxWidth: 400 }}>
+                      {audioError}
+                    </Alert>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => {
+                        setAudioError(null);
+                        initializeMicrophone();
+                      }}
+                      disabled={micInitializing}
+                    >
+                      {micInitializing ? (
+                        <>
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                          Retrying...
+                        </>
+                      ) : (
+                        'Retry Microphone Access'
+                      )}
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
         ) : (
           <Box>
@@ -1388,7 +1670,7 @@ const AudioSession = () => {
                 ref={(audio) => {
                   if (audio && localStream) {
                     audio.srcObject = localStream;
-                    audio.volume = 0.1; // Low volume to avoid feedback
+                    audio.volume = 0.5; // Increased volume for testing
                     audio.muted = false;
                   }
                 }}
@@ -1398,7 +1680,38 @@ const AudioSession = () => {
               />
             )}
 
-            {/* Participant list */}
+            {/* Simple Audio Test */}
+            <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Audio Test
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Test your microphone by speaking. The level meter above should move when you talk.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    if (localStream) {
+                      console.log('🎤 Current audio tracks:', localStream.getAudioTracks().map(t => ({
+                        enabled: t.enabled,
+                        muted: t.muted,
+                        readyState: t.readyState,
+                        label: t.label
+                      })));
+                      alert(`Microphone working! Tracks: ${localStream.getAudioTracks().length}`);
+                    } else {
+                      alert('No microphone stream available');
+                    }
+                  }}
+                >
+                  Test Mic Status
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  Input Level: {Math.round(inputLevel * 100)}%
+                </Typography>
+              </Box>
+            </Paper>
             <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
               <Typography variant="subtitle1">Participants</Typography>
               <List dense>
