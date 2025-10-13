@@ -42,12 +42,13 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   MyLocation as MyLocationIcon,
+  GpsFixed as GpsFixedIcon,
+  Navigation as NavigationIcon,
   LocationOn as LocationIcon,
   LocationOff as LocationOffIcon,
   Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
   Settings as SettingsIcon,
-  Navigation as NavigationIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
   People as PeopleIcon,
@@ -91,6 +92,7 @@ const LocationTracking = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState(null);
+  const [locationInfo, setLocationInfo] = useState(null);
   const [geolocationRetries, setGeolocationRetries] = useState(0);
   const [highAccuracyMode, setHighAccuracyMode] = useState(true);
   const [updateInterval, setUpdateInterval] = useState(30);
@@ -284,7 +286,7 @@ const LocationTracking = () => {
       const locationData = response.data.locations;
       
       // Enrich location data with usernames from members
-      const enrichedLocations = locationData.map(location => {
+      let enrichedLocations = locationData.map(location => {
         const member = (membersData || members).find(m => m.user_id === location.user_id);
         
         // Special handling for current user - always use their real username
@@ -341,8 +343,92 @@ const LocationTracking = () => {
         checkProximityAlerts(enrichedLocations);
       }
       
-      // Return data for callers that want to compose additional runtime data
-      return enrichedLocations;
+      // Add mock test users for Warriors group testing
+      const mockUsers = [
+        {
+          user_id: 'mock_breanna',
+          username: 'Breanna O\'Brien',
+          first_name: 'Breanna',
+          last_name: 'O\'Brien',
+          coordinates: {
+            latitude: 39.7392 + (Math.random() - 0.5) * 0.01, // Denver area with small random offset
+            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            accuracy: 15,
+            altitude: 1609,
+            heading: 0,
+            speed: 0
+          },
+          timestamp: new Date(Date.now() - Math.random() * 300000).toISOString(), // Within last 5 minutes
+          battery_level: 78
+        },
+        {
+          user_id: 'mock_kaitlyn',
+          username: 'Kaitlyn O\'Brien',
+          first_name: 'Kaitlyn',
+          last_name: 'O\'Brien',
+          coordinates: {
+            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
+            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            accuracy: 12,
+            altitude: 1609,
+            heading: 0,
+            speed: 0
+          },
+          timestamp: new Date(Date.now() - Math.random() * 300000).toISOString(),
+          battery_level: 92
+        },
+        {
+          user_id: 'mock_joesel',
+          username: 'Joesel Varner',
+          first_name: 'Joesel',
+          last_name: 'Varner',
+          coordinates: {
+            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
+            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            accuracy: 18,
+            altitude: 1609,
+            heading: 0,
+            speed: 0
+          },
+          timestamp: new Date(Date.now() - Math.random() * 300000).toISOString(),
+          battery_level: 65
+        },
+        {
+          user_id: 'mock_lee',
+          username: 'Lee Williams',
+          first_name: 'Lee',
+          last_name: 'Williams',
+          coordinates: {
+            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
+            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            accuracy: 22,
+            altitude: 1609,
+            heading: 0,
+            speed: 0
+          },
+          timestamp: new Date(Date.now() - Math.random() * 300000).toISOString(),
+          battery_level: 88
+        },
+        {
+          user_id: 'mock_kalani',
+          username: 'Kalani Weldon',
+          first_name: 'Kalani',
+          last_name: 'Weldon',
+          coordinates: {
+            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
+            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            accuracy: 14,
+            altitude: 1609,
+            heading: 0,
+            speed: 0
+          },
+          timestamp: new Date(Date.now() - Math.random() * 300000).toISOString(),
+          battery_level: 73
+        }
+      ];
+
+      // Add mock users to enriched locations for testing
+      enrichedLocations = [...enrichedLocations, ...mockUsers];
     } catch (error) {
       console.error('Error fetching member locations:', error);
       return [];
@@ -624,6 +710,12 @@ const LocationTracking = () => {
       return;
     }
     
+    // Check if map is already initialized
+    if (mapRef.current) {
+      console.log('Map already initialized, skipping');
+      return;
+    }
+    
     // Ensure any leftover center marker is removed
     removeCenterMarker();
     
@@ -708,7 +800,13 @@ const LocationTracking = () => {
           }
         });
 
-        map.on('moveend', onMoveEnd);
+        // Comment out moveend event to anchor pins at geographic coordinates
+        // map.on('moveend', onMoveEnd);
+
+        // Add zoomend event to update locations when zooming
+        map.on('zoomend', () => {
+          fetchMemberLocationsAndUpdateMarkers();
+        });
 
         // Initial runtime data generation at map center
         try {
@@ -751,6 +849,7 @@ const LocationTracking = () => {
   const startLocationTracking = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
+      setIsGettingLocation(false); // Ensure loading state is cleared
       return;
     }
     
@@ -759,7 +858,55 @@ const LocationTracking = () => {
       return;
     }
     
+    // Clear any previous location errors when starting fresh
+    setLocationError(null);
+    setLocationInfo(null);
+    
     setIsGettingLocation(true);
+    
+    // Safety timeout: use last known location after 5 seconds if GPS doesn't respond
+    const safetyTimeout = setTimeout(() => {
+      if (isGettingLocation) {
+        console.warn('Geolocation request timed out after 5 seconds - using last known location');
+        setIsGettingLocation(false);
+        
+        // Try to use last known location from localStorage
+        try {
+          const lastLocation = localStorage.getItem('lastUserLocation');
+          if (lastLocation) {
+            const parsedLocation = JSON.parse(lastLocation);
+            console.log('Using last known location:', parsedLocation);
+            
+            // Set the last known location as current location
+            setUserLocation(parsedLocation);
+            setLocationError(null);
+            setGeolocationRetries(0);
+            
+            // Update the server with the cached location
+            updateLocationOnServer(parsedLocation);
+            
+            // Center map on the cached location
+            centerMapOnLocation(parsedLocation);
+            
+            // Update map markers
+            updateMapMarkersWithUserLocation(parsedLocation);
+            
+            // Continue with location watching in background
+            startWatchingPosition();
+            
+            // Show a subtle notification that we're using cached location
+            setLocationInfo('Using last known location. GPS may be slow to respond.');
+            setTimeout(() => setLocationInfo(null), 3000); // Clear after 3 seconds
+          } else {
+            // No cached location available
+            setLocationError('Location request timed out and no cached location available. Please try again.');
+          }
+        } catch (e) {
+          console.error('Error using cached location:', e);
+          setLocationError('Location request timed out. Please try again.');
+        }
+      }
+    }, 5000); // 5 seconds
     
     const options = {
       enableHighAccuracy: highAccuracyMode,
@@ -770,12 +917,14 @@ const LocationTracking = () => {
       // Use getCurrentPosition first to get an immediate position if available
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          clearTimeout(safetyTimeout); // Clear safety timeout on success
           handlePositionSuccess(position);
           
           // After getting initial position, start watching for updates
           startWatchingPosition();
         },
         (error) => {
+          clearTimeout(safetyTimeout); // Clear safety timeout on error
           console.log('Error getting initial position:', error);
           setLocationError('Failed to get initial location. ' + getGeolocationErrorMessage(error));
           setIsGettingLocation(false);
@@ -784,6 +933,7 @@ const LocationTracking = () => {
         options
       );
     } catch (error) {
+      clearTimeout(safetyTimeout); // Clear safety timeout on exception
       console.error('Error starting location tracking:', error);
       setLocationError('Failed to start location tracking. Please try again.');
       setIsGettingLocation(false);
@@ -1265,6 +1415,12 @@ const LocationTracking = () => {
 
       const shouldBeDraggable = location.place && location.raw && location.raw._id === draggingPlaceId;
 
+      // For places, always recreate markers to ensure proper positioning
+      if (marker && location.place) {
+        marker.remove();
+        marker = null;
+      }
+
       if (marker && (!shouldBeDraggable || marker.getLngLat().lng !== longitude || marker.getLngLat().lat !== latitude)) {
         // Update position for non-draggable markers, or re-create if it should be draggable
         if (!shouldBeDraggable) {
@@ -1277,24 +1433,15 @@ const LocationTracking = () => {
       }
 
       if (!marker) {
-        // Create new marker
-        // Create marker container
+        // Create new marker - simple anchored pin
         const markerEl = document.createElement('div');
-        markerEl.style.position = 'relative';
+        markerEl.style.display = 'flex';
+        markerEl.style.flexDirection = 'column';
+        markerEl.style.alignItems = 'center';
         markerEl.style.cursor = 'pointer';
-        markerEl.style.width = '24px';
-        markerEl.style.height = '32px';
-        markerEl.style.display = 'block';
-        markerEl.style.boxSizing = 'border-box';
-        markerEl.style.margin = '0';
-        markerEl.style.padding = '0';
 
-        // Create the circle with first initial
+        // Circle part
         const circleEl = document.createElement('div');
-        circleEl.style.position = 'absolute';
-        circleEl.style.top = '0';
-        circleEl.style.left = '50%';
-        circleEl.style.transform = 'translateX(-50%)';
         circleEl.style.width = '24px';
         circleEl.style.height = '24px';
         circleEl.style.borderRadius = '50%';
@@ -1307,24 +1454,18 @@ const LocationTracking = () => {
         circleEl.style.color = 'white';
         circleEl.style.fontSize = '12px';
         circleEl.style.fontWeight = 'bold';
-        circleEl.style.textTransform = 'uppercase';
 
-        // Add first initial
+        // Add initial
         const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
         circleEl.textContent = firstInitial;
 
-        // Create the spike (triangle pointing down) - positioned entirely below circle with tip at marker bottom
+        // Spike part
         const spikeEl = document.createElement('div');
-        spikeEl.style.position = 'absolute';
-        spikeEl.style.top = '24px'; // Position below circle
-        spikeEl.style.left = '50%';
-        spikeEl.style.transform = 'translateX(-50%)';
         spikeEl.style.width = '12px';
         spikeEl.style.height = '8px';
         spikeEl.style.backgroundColor = location.place ? 'green' : 'orange';
-        spikeEl.style.clipPath = 'polygon(50% 100%, 0% 0%, 100% 0%)'; // Triangle pointing down with tip at bottom
+        spikeEl.style.clipPath = 'polygon(50% 100%, 0% 0%, 100% 0%)';
 
-        // Assemble marker
         markerEl.appendChild(circleEl);
         markerEl.appendChild(spikeEl);
 
@@ -1333,10 +1474,10 @@ const LocationTracking = () => {
         const lastUpdate = new Date(location.timestamp).toLocaleString();
         markerEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
 
-        // Create and add the marker - properly anchored to geographic coordinates
+        // Create and add the marker
         marker = new mapboxgl.Marker(markerEl, {
           anchor: 'bottom',
-          draggable: location.place && location.raw && location.raw._id === draggingPlaceId
+          draggable: shouldBeDraggable
         })
           .setLngLat([longitude, latitude])
           .addTo(mapRef.current);
@@ -1683,11 +1824,12 @@ const LocationTracking = () => {
             top: showControls ? 72 : 16,
             right: 16,
             zIndex: 10,
-            bgcolor: 'background.paper',
-            color: 'text.primary',
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
             boxShadow: 2,
+            cursor: 'pointer',
             '&:hover': {
-              bgcolor: 'background.paper',
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
           }}
           onClick={toggleControls}
@@ -1704,11 +1846,12 @@ const LocationTracking = () => {
             top: showControls ? 72 : 16,
             right: 76,
             zIndex: 10,
-            bgcolor: 'background.paper',
-            color: 'text.primary',
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
             boxShadow: 2,
+            cursor: 'pointer',
             '&:hover': {
-              bgcolor: 'background.paper',
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
           }}
           onClick={toggleMembersList}
@@ -1717,42 +1860,57 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Center on My Location / Place Selection Button */}
-      <Tooltip title={
-        placeSelectionMode ? 
-          "Record Location as Place" : 
-          (userLocation ? "Center on My Location" : "Select Location for Place")
-      }>
-        <span>
-          <IconButton
-            sx={{
-              position: 'absolute',
-              top: showControls ? 72 : 16,
-              right: 136,
-              zIndex: 10,
-              bgcolor: placeSelectionMode ? 'primary.main' : 'background.paper',
-              color: placeSelectionMode ? 'primary.contrastText' : 'text.primary',
-              boxShadow: 2,
-              opacity: userLocation || placeSelectionMode ? 1 : 0.7,
-              '&:hover': {
-                bgcolor: placeSelectionMode ? 'primary.dark' : 'background.paper',
-                opacity: 1,
-              }
-            }}
-            onClick={placeSelectionMode ? togglePlaceSelectionMode : 
-              (() => {
-                if (userLocation) {
-                  centerMapOnLocation(userLocation);
-                } else {
-                  // If no user location, enter place selection mode
-                  togglePlaceSelectionMode();
-                }
-              })
+      {/* Center on My Location Button */}
+      <Tooltip title="Center on My Location">
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 136,
+            zIndex: 10,
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
+            boxShadow: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
-          >
-            {placeSelectionMode ? <PlaceIcon /> : <MyLocationIcon />}
-          </IconButton>
-        </span>
+          }}
+          onClick={() => {
+            if (userLocation) {
+              // If we already have location, center immediately
+              centerMapOnLocation(userLocation);
+            } else if (!sharingLocation) {
+              // If location sharing is not enabled, start it
+              toggleLocationSharing();
+              // The centering will happen automatically when location is acquired
+            }
+          }}
+        >
+          <MyLocationIcon />
+        </IconButton>
+      </Tooltip>
+      
+      {/* Place Selection Button */}
+      <Tooltip title="Select Location for Place">
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 196,
+            zIndex: 10,
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
+            boxShadow: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
+            }
+          }}
+          onClick={togglePlaceSelectionMode}
+        >
+          <PlaceIcon />
+        </IconButton>
       </Tooltip>
       
       {/* Alerts */}
@@ -1761,6 +1919,12 @@ const LocationTracking = () => {
           <Alert severity="info" sx={{ opacity: controlsOpacity, mb: 1 }}>
             <AlertTitle>Getting Your Location</AlertTitle>
             Please wait while we determine your position...
+          </Alert>
+        )}
+        
+        {locationInfo && (
+          <Alert severity="info" sx={{ opacity: controlsOpacity, mb: 1 }}>
+            {locationInfo}
           </Alert>
         )}
         
