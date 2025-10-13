@@ -35,15 +35,27 @@ class PlaceService {
     return Place.find({ shared_with_group_ids: new mongoose.Types.ObjectId(groupId) }).lean().exec();
   }
 
-  async deletePlace(placeId, requestingUserId) {
+  async updatePlace(placeId, updates, requestingUserId) {
     const place = await Place.findById(placeId).exec();
     if (!place) throw new Error('Place not found');
-    // Only creator can delete (simpler rule). Admin check could be added.
+    // Only creator can update
     if (place.created_by && requestingUserId && place.created_by.toString() !== requestingUserId.toString()) {
       throw new Error('Forbidden');
     }
-    await Place.deleteOne({ _id: placeId });
-    return true;
+    
+    const allowedUpdates = ['name', 'description', 'latitude', 'longitude'];
+    allowedUpdates.forEach(field => {
+      if (updates[field] !== undefined) {
+        if (field === 'latitude' || field === 'longitude') {
+          place.coordinates[field] = updates[field];
+        } else {
+          place[field] = updates[field];
+        }
+      }
+    });
+    
+    await place.save();
+    return place;
   }
 }
 

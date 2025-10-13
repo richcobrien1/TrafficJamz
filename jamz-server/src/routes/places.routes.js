@@ -30,15 +30,16 @@ router.get('/groups/:groupId/places', passport.authenticate('jwt', { session: fa
   }
 });
 
-// Delete a place
-router.delete('/places/:placeId', passport.authenticate('jwt', { session: false }), async (req, res) => {
+// Update a place
+router.put('/places/:placeId', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { placeId } = req.params;
+    const { name, description, latitude, longitude } = req.body;
     const requestingUserId = req.user && req.user.user_id;
-    await placeService.deletePlace(placeId, requestingUserId);
-    res.json({ success: true });
+    const updatedPlace = await placeService.updatePlace(placeId, { name, description, latitude, longitude }, requestingUserId);
+    res.json({ success: true, place: updatedPlace });
   } catch (error) {
-    console.error('Delete place error:', error);
+    console.error('Update place error:', error);
     res.status(400).json({ success: false, message: error.message });
   }
 });

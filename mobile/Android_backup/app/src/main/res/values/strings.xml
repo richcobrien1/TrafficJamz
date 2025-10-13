@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Real-time Audio Location App</string>
+    
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="warning">Warning</string>
+    
+    <!-- Main Activity -->
+    <string name="tab_audio">Audio</string>
+    <string name="tab_location">Location</string>
+    <string name="tab_groups">Groups</string>
+    <string name="tab_settings">Settings</string>
+    
+    <!-- Audio Communication -->
+    <string name="mic_on">Microphone On</string>
+    <string name="mic_off">Microphone Off</string>
+    <string name="speaker_on">Speaker On</string>
+    <string name="speaker_off">Speaker Off</string>
+    <string name="volume">Volume</string>
+    <string name="connecting">Connecting…</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="share_music">Share Music</string>
+    <string name="stop_sharing">Stop Sharing</string>
+    <string name="active_participants">Active Participants</string>
+    <string name="no_participants">No active participants</string>
+    
+    <!-- Location Tracking -->
+    <string name="my_location">My Location</string>
+    <string name="tracking_on">Location Tracking On</string>
+    <string name="tracking_off">Location Tracking Off</string>
+    <string name="proximity_settings">Proximity Settings</string>
+    <string name="proximity_threshold">Proximity Threshold</string>
+    <string name="meters">meters</string>
+    <string name="enable_notifications">Enable Proximity Notifications</string>
+    <string name="notification_sound">Notification Sound</string>
+    <string name="no_group_members">No group members to track</string>
+    
+    <!-- Group Management -->
+    <string name="create_group">Create Group</string>
+    <string name="join_group">Join Group</string>
+    <string name="leave_group">Leave Group</string>
+    <string name="group_name">Group Name</string>
+    <string name="group_code">Group Code</string>
+    <string name="invite_members">Invite Members</string>
+    <string name="no_groups">You are not a member of any groups</string>
+    <string name="members">Members</string>
+    
+    <!-- Settings -->
+    <string name="account_settings">Account Settings</string>
+    <string name="audio_settings">Audio Settings</string>
+    <string name="location_settings">Location Settings</string>
+    <string name="privacy_settings">Privacy Settings</string>
+    <string name="notification_settings">Notification Settings</string>
+    <string name="about">About</string>
+    <string name="logout">Logout</string>
+    <string name="audio_quality">Audio Quality</string>
+    <string name="location_accuracy">Location Accuracy</string>
+    <string name="background_tracking">Background Tracking</string>
+    <string name="data_usage">Data Usage</string>
+    <string name="version">Version</string>
+    
+    <!-- Authentication -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="name">Name</string>
+    <string name="reset_password">Reset Password</string>
+    
+    <!-- Permissions -->
+    <string name="permission_rationale_microphone">Microphone permission is needed for audio communication with your group members.</string>
+    <string name="permission_rationale_location">Location permission is needed to help you find group members and provide proximity notifications.</string>
+    <string name="permission_denied">Permission denied. Some features may not work properly.</string>
+    
+    <!-- Google Maps -->
+    <string name="google_maps_key">YOUR_MAPS_API_KEY</string>
+    
+    <!-- Errors -->
+    <string name="error_connection">Connection error. Please check your internet connection.</string>
+    <string name="error_authentication">Authentication failed. Please check your credentials.</string>
+    <string name="error_location">Could not get location. Please check your location settings.</string>
+    <string name="error_audio">Audio error. Please check your microphone settings.</string>
+    <string name="error_group">Group operation failed. Please try again.</string>
+</resources>

@@ -69,7 +69,8 @@ const allowedOrigins = [
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us',       // Android apps
-  'http://192.178.58.146:5173'       // User's network IP for mobile testing
+  'http://192.178.58.146:5173',      // User's network IP for mobile testing
+  'http://192.178.58.146:5174'       // Additional port for mobile testing
 ];
 
 // Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
