@@ -345,7 +345,7 @@ const GroupDetail = () => {
             </Tabs>
           </Box>
           
-          <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
+          <Container component="main" sx={{ flexGrow: 1, py: 4, maxWidth: '100%' }}>
             {tabValue === 0 ? (
               <Box>
                 <Paper sx={{ p: 3, mb: 3 }}>
@@ -379,8 +379,8 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                <Grid container spacing={3} sx={{ width: '100%' }}>
+                  <Grid item xs={12} sm={6} sx={{ display: 'flex' }}>
                     <Paper 
                       sx={{ 
                         p: 3, 
@@ -388,6 +388,8 @@ const GroupDetail = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
+                        minWidth: 0,
+                        flex: 1,
                         '&:hover': {
                           boxShadow: 6
                         }
@@ -397,16 +399,16 @@ const GroupDetail = () => {
                       <Avatar sx={{ bgcolor: 'primary.main', width: 60, height: 60, mb: 2 }}>
                         <MicIcon fontSize="large" />
                       </Avatar>
-                      <Typography variant="h6" gutterBottom>
+                      <Typography variant="h6" gutterBottom sx={{ wordBreak: 'break-word', textAlign: 'center' }}>
                         Join Audio Session
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" align="center">
+                      <Typography variant="body2" color="text.secondary" align="center" sx={{ wordBreak: 'break-word' }}>
                         Start or join a real-time audio conversation with group members
                       </Typography>
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} sx={{ display: 'flex' }}>
                     <Paper 
                       sx={{ 
                         p: 3, 
@@ -414,6 +416,8 @@ const GroupDetail = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
+                        minWidth: 0,
+                        flex: 1,
                         '&:hover': {
                           boxShadow: 6
                         }
@@ -423,10 +427,10 @@ const GroupDetail = () => {
                       <Avatar sx={{ bgcolor: 'secondary.main', width: 60, height: 60, mb: 2 }}>
                         <LocationIcon fontSize="large" />
                       </Avatar>
-                      <Typography variant="h6" gutterBottom>
+                      <Typography variant="h6" gutterBottom sx={{ wordBreak: 'break-word', textAlign: 'center' }}>
                         Location Tracking Now
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" align="center">
+                      <Typography variant="body2" color="text.secondary" align="center" sx={{ wordBreak: 'break-word' }}>
                         View the location of group members on a map
                       </Typography>
                     </Paper>
