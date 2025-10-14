@@ -1,5 +1,10 @@
-// jamz-client-vite/src/pages/location/LocationTracking.jsx
-// LocationTracking.jsx - A component for tracking and displaying group member locations in real-time
+// CRITICAL PIN CONFIGURATION:
+// =============================
+// Pins behave as GEOGRAPHIC ANCHORS that move with map panning/zooming
+// They ARE anchored to geographic coordinates and recalibrate on map changes
+// Pin positions change during map moveend/zoomend events
+// Map moveend/zoomend events are ENABLED to maintain this behavior
+// =============================
 
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -37,7 +42,8 @@ import {
   Drawer,
   AppBar,
   Toolbar,
-  Collapse
+  Collapse,
+  Snackbar
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -58,6 +64,23 @@ import {
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
+  // PIN BEHAVIOR CONFIGURATION - DO NOT CHANGE WITHOUT CAREFUL CONSIDERATION
+  // =======================================================================
+  // pinsAsScreenOverlays: When true, pins move with map viewport (geographic anchors)
+  // PIN BEHAVIOR CONFIGURATION:
+  // allowRecalibrationOnMapChange controls whether pins move with map viewport
+  // When true: pins are geographic anchors that move with map panning/zooming
+  // When false: pins stay fixed on screen like HUD overlays
+  const PIN_CONFIG = {
+    pinsAsScreenOverlays: false, // Set to false for geographic anchor behavior
+    allowRecalibrationOnMapChange: true // Set to true to enable geographic anchor behavior
+  };
+  // =======================================================================
+
+  // Get hooks
+  const { user } = useAuth();
+  const { groupId } = useParams();
+  const navigate = useNavigate();
 
   // Default coordinates - try to use last known location from localStorage, fallback to Denver, CO
   const getDefaultCenter = () => {
@@ -112,6 +135,9 @@ const LocationTracking = () => {
   const [gpsReadingsBuffer, setGpsReadingsBuffer] = useState([]);
   const [accuracyThreshold, setAccuracyThreshold] = useState(100);
   const [places, setPlaces] = useState([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('info');
   
   // Refs
   const mapContainerRef = useRef(null);
@@ -122,10 +148,17 @@ const LocationTracking = () => {
   const locationDataRef = useRef(null);
   const centerMarkerRef = useRef(null);
   
-  // Get parameters and context
-  const { groupId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  // Show drop notification
+  const showNotification = (message, severity = 'info') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   // Fetch member locations with rate limiting protection
   const fetchWithRateLimitProtection = async () => {
@@ -351,8 +384,8 @@ const LocationTracking = () => {
           first_name: 'Breanna',
           last_name: 'O\'Brien',
           coordinates: {
-            latitude: 39.7392 + (Math.random() - 0.5) * 0.01, // Denver area with small random offset
-            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            latitude: 39.7392 + 0.001, // Fixed offset for Denver area
+            longitude: -104.9903 + 0.001,
             accuracy: 15,
             altitude: 1609,
             heading: 0,
@@ -367,8 +400,8 @@ const LocationTracking = () => {
           first_name: 'Kaitlyn',
           last_name: 'O\'Brien',
           coordinates: {
-            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
-            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            latitude: 39.7392 + 0.002, // Fixed offset
+            longitude: -104.9903 + 0.002,
             accuracy: 12,
             altitude: 1609,
             heading: 0,
@@ -383,8 +416,8 @@ const LocationTracking = () => {
           first_name: 'Joesel',
           last_name: 'Varner',
           coordinates: {
-            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
-            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            latitude: 39.7392 - 0.001, // Fixed offset
+            longitude: -104.9903 - 0.001,
             accuracy: 18,
             altitude: 1609,
             heading: 0,
@@ -399,8 +432,8 @@ const LocationTracking = () => {
           first_name: 'Lee',
           last_name: 'Williams',
           coordinates: {
-            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
-            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            latitude: 39.7392 - 0.002, // Fixed offset
+            longitude: -104.9903 - 0.002,
             accuracy: 22,
             altitude: 1609,
             heading: 0,
@@ -415,8 +448,8 @@ const LocationTracking = () => {
           first_name: 'Kalani',
           last_name: 'Weldon',
           coordinates: {
-            latitude: 39.7392 + (Math.random() - 0.5) * 0.01,
-            longitude: -104.9903 + (Math.random() - 0.5) * 0.01,
+            latitude: 39.7392 + 0.003, // Fixed offset
+            longitude: -104.9903 + 0.003,
             accuracy: 14,
             altitude: 1609,
             heading: 0,
@@ -457,11 +490,41 @@ const LocationTracking = () => {
     initializeMap();
   }, []);
 
-  // Fetch group details when component mounts
+  // Fetch group details on component mount
   useEffect(() => {
-    // console.log('LocationTracking component mounted, fetching group details');
     fetchGroupDetails();
   }, []);
+
+  // Show notifications for location states
+  useEffect(() => {
+    if (isGettingLocation) {
+      showNotification('Getting your location...', 'info');
+    }
+  }, [isGettingLocation]);
+
+  useEffect(() => {
+    if (locationInfo) {
+      showNotification(locationInfo, 'info');
+    }
+  }, [locationInfo]);
+
+  useEffect(() => {
+    if (isRateLimited) {
+      showNotification(`Rate limit detected. Retrying in ${retryDelay} seconds.`, 'warning');
+    }
+  }, [isRateLimited, retryDelay]);
+
+  useEffect(() => {
+    if (locationError) {
+      showNotification(locationError, 'error');
+    }
+  }, [locationError]);
+
+  useEffect(() => {
+    if (error) {
+      showNotification(error, 'error');
+    }
+  }, [error]);
 
   // Handle places toggle
   useEffect(() => {
@@ -800,13 +863,27 @@ const LocationTracking = () => {
           }
         });
 
-        // Comment out moveend event to anchor pins at geographic coordinates
-        // map.on('moveend', onMoveEnd);
+        // CRITICAL PIN BEHAVIOR CONFIGURATION:
+        // allowRecalibrationOnMapChange controls pin behavior during map changes
+        // When true: pins are geographic anchors that move with map viewport
+        // When false: pins stay fixed on screen like HUD overlays
+        // Enable moveend/zoomend events for geographic anchor behavior
 
-        // Add zoomend event to update locations when zooming
-        map.on('zoomend', () => {
-          fetchMemberLocationsAndUpdateMarkers();
-        });
+        if (!PIN_CONFIG.allowRecalibrationOnMapChange) {
+          // HUD overlay mode - disable events so pins stay fixed on screen
+          // map.on('moveend', onMoveEnd);
+
+          // Disable zoomend event to prevent pin recalibration on zoom
+          // map.on('zoomend', () => {
+          //   fetchMemberLocationsAndUpdateMarkers();
+          // });
+        } else {
+          // Geographic anchor mode - enable events so pins move with map viewport
+          map.on('moveend', onMoveEnd);
+          map.on('zoomend', () => {
+            fetchMemberLocationsAndUpdateMarkers();
+          });
+        }
 
         // Initial runtime data generation at map center
         try {
@@ -1158,16 +1235,29 @@ const LocationTracking = () => {
   const centerMapOnLocation = (location) => {
     console.log('Centering map on location:', location);
     console.log('Map ref exists:', !!mapRef.current);
-    
-    if (mapRef.current && location && location.latitude && location.longitude) {
+
+    if (!mapRef.current) {
+      console.error('Map not initialized yet');
+      return;
+    }
+
+    if (!location || !location.latitude || !location.longitude) {
+      console.error('Invalid location data:', location);
+      showNotification('Unable to center map - location data unavailable', 'error');
+      return;
+    }
+
+    try {
       console.log('Flying to:', [location.longitude, location.latitude]);
       mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
         zoom: 15,
         essential: true
       });
-    } else {
-      console.log('Cannot center map - missing map ref or location data');
+      showNotification('Centered on your location', 'success');
+    } catch (error) {
+      console.error('Error centering map:', error);
+      showNotification('Failed to center map', 'error');
     }
   };
   
@@ -1325,7 +1415,7 @@ const LocationTracking = () => {
         return;
       }
       
-      const response = await api.delete(`/places/${placeId}`);
+      const response = await api.delete(`/groups/${groupId}/places/${placeId}`);
       
       if (response.data.success) {
         console.log('Place deleted successfully:', placeId);
@@ -1877,13 +1967,20 @@ const LocationTracking = () => {
             }
           }}
           onClick={() => {
+            // Always try to center on user's location
             if (userLocation) {
               // If we already have location, center immediately
               centerMapOnLocation(userLocation);
-            } else if (!sharingLocation) {
-              // If location sharing is not enabled, start it
-              toggleLocationSharing();
-              // The centering will happen automatically when location is acquired
+            } else {
+              // No location available - start location tracking to get it
+              if (!sharingLocation) {
+                toggleLocationSharing();
+              } else {
+                // Already sharing but no location yet - force acquisition
+                startLocationTracking();
+              }
+              // Show notification that we're getting location
+              showNotification('Getting your location...', 'info');
             }
           }}
         >
@@ -1913,40 +2010,17 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Alerts */}
-      <Box sx={{ position: 'absolute', top: 140, left: 16, right: 16, zIndex: 10 }}>
-        {isGettingLocation && (
-          <Alert severity="info" sx={{ opacity: controlsOpacity, mb: 1 }}>
-            <AlertTitle>Getting Your Location</AlertTitle>
-            Please wait while we determine your position...
-          </Alert>
-        )}
-        
-        {locationInfo && (
-          <Alert severity="info" sx={{ opacity: controlsOpacity, mb: 1 }}>
-            {locationInfo}
-          </Alert>
-        )}
-        
-        {isRateLimited && (
-          <Alert severity="warning" sx={{ opacity: controlsOpacity, mb: 1 }}>
-            <AlertTitle>Rate Limit Detected</AlertTitle>
-            Too many location requests. Retrying in {retryDelay} seconds.
-          </Alert>
-        )}
-        
-        {locationError && (
-          <Alert severity="error" sx={{ opacity: controlsOpacity, mb: 1 }}>
-            {locationError}
-          </Alert>
-        )}
-        
-        {error && (
-          <Alert severity="error" sx={{ opacity: controlsOpacity, mb: 1 }}>
-            {error}
-          </Alert>
-        )}
-      </Box>
+      {/* Drop Notification */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
       
       {/* Current Location Info */}
       <Collapse in={showLocationInfo && showControls && sharingLocation}>
@@ -2115,7 +2189,6 @@ const LocationTracking = () => {
                 <Switch 
                   checked={false} // TODO: Connect to actual theme state
                   onChange={(e) => {/* TODO: Implement theme toggle */}}
-                  color="primary"
                 />
               }
               label="Dark Mode"
