@@ -431,7 +431,7 @@ const GroupDetail = () => {
                         Location Tracking Now
                       </Typography>
                       <Typography variant="body2" color="text.secondary" align="center" sx={{ wordBreak: 'break-word' }}>
-                        View the location of group members on a map
+                        View the location of your group members on the map
                       </Typography>
                     </Paper>
                   </Grid>
