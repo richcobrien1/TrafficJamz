@@ -63,14 +63,19 @@ app.use((req, res, next) => {
 // ===== END HEADER LOGGER =====
 
 // ===== CORS Configuration =====
-// Allowlist for known production/origin values. Localhost variants are handled
-// dynamically to accept optional ports (e.g. http://localhost, http://localhost:80).
+// Dynamic CORS configuration using environment variables
 const allowedOrigins = [
+  process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev
+  process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us',       // Android apps
-  'http://192.178.58.146:5173',      // User's network IP for mobile testing
-  'http://192.178.58.146:5174'       // Additional port for mobile testing
+  'http://192.176.58.146:5173',      // User's network IP for mobile testing
+  'http://192.176.58.146:5174',      // Additional port for mobile testing
+  'http://192.176.58.146:5175',      // Network access port for mobile testing
+  'http://192.178.58.146:5173',      // Previous network IP for mobile testing
+  'http://192.178.58.146:5174',      // Previous additional port for mobile testing
+  'http://192.178.58.146:5175'       // Previous network access port for mobile testing
 ];
 
 // Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
