@@ -403,7 +403,7 @@ router.get('/:group_id/members',
   passport.authenticate('jwt', { session: false }),
   checkMongoDBConnection, // Add MongoDB connection check
   [
-    param('id').isMongoId().withMessage('Invalid group ID for get group'),
+    param('group_id').isMongoId().withMessage('Invalid group ID for get group'),
     validate
   ],
   async (req, res) => {
@@ -419,7 +419,7 @@ router.get('/:group_id/members',
       );
       
       // Execute the members fetch with a timeout
-      const membersPromise = groupService.getGroupMembers(req.params.id, filters);
+      const membersPromise = groupService.getGroupMembers(req.params.group_id, filters);
       const members = await Promise.race([membersPromise, timeoutPromise]);
       
       res.json({ success: true, members });
@@ -453,7 +453,7 @@ router.post('/:group_id/members',
   passport.authenticate('jwt', { session: false }),
   checkMongoDBConnection, // Add MongoDB connection check
   [
-    param('id').isMongoId().withMessage('Invalid group ID for add member to group'),
+    param('group_id').isMongoId().withMessage('Invalid group ID for add member to group'),
     body('user_id').exists().withMessage('User ID is required'),
     body('role').optional().isIn(['member', 'admin']).withMessage('Invalid role'),
     validate
@@ -468,7 +468,7 @@ router.post('/:group_id/members',
       );
       
       // Execute the add member operation with a timeout
-      const groupPromise = groupService.addGroupMember(req.params.id, user_id, role, req.user.user_id);
+      const groupPromise = groupService.addGroupMember(req.params.group_id, user_id, role, req.user.user_id);
       const group = await Promise.race([groupPromise, timeoutPromise]);
       
       res.status(201).json({ success: true, group });

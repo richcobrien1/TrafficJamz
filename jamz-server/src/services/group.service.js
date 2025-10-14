@@ -336,7 +336,7 @@ class GroupService {
       }
 
       // Check if group is at capacity
-      if (group.members.length >= group.max_members) {
+      if (group.group_members && group.group_members.length >= group.max_members) {
         throw new Error('Group has reached maximum capacity');
       }
 
