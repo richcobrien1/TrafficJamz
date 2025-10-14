@@ -17,6 +17,7 @@ TrafficJamz (Jamz) is a comprehensive real-time communication and location track
 - **Proximity Alerts**: Audio notifications for group member distances
 - **Location History**: Historical location data with InfluxDB time-series storage
 - **Privacy Controls**: Granular location sharing permissions (precise, approximate, hidden)
+- **Geographic Anchor Pins**: Map pins are anchored to geographic coordinates and move naturally with map panning and zooming. Pin positions update automatically as the map viewport changes, maintaining their real-world positions.
 
 ### 👥 Group Management
 - **Dynamic Groups**: Create and manage groups with role-based permissions

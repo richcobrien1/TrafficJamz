@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // Listen on all interfaces for mobile access
+    port: 5174, // Run on port 5174
     middlewareMode: false,
     fs: {
       strict: false,

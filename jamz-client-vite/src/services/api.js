@@ -26,7 +26,7 @@
     import axios from 'axios';
 
     // 🔗 Create axios instance with base API URL
-    const rawBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+    const rawBase = import.meta.env.VITE_API_BASE || 'http://192.178.58.146:5000/api';
 
     // Debug logging
     console.log('🔧 API Configuration:');
