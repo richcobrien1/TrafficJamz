@@ -66,6 +66,9 @@ import {
 const LocationTracking = () => {
   // PIN BEHAVIOR CONFIGURATION - DO NOT CHANGE WITHOUT CAREFUL CONSIDERATION
   // =======================================================================
+  // Visual constants
+  const PLACE_PIN_COLOR = '#4caf50'; // material green 500 - place pins
+  const MEMBER_PIN_COLOR = 'orange';
   // pinsAsScreenOverlays: When true, pins move with map viewport (geographic anchors)
   // PIN BEHAVIOR CONFIGURATION:
   // allowRecalibrationOnMapChange controls whether pins move with map viewport
@@ -149,21 +152,321 @@ const LocationTracking = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [openAggregatedDialog, setOpenAggregatedDialog] = useState(false);
+  const [aggregatedBucketMembers, setAggregatedBucketMembers] = useState([]);
   const [openCreatePlaceDialog, setOpenCreatePlaceDialog] = useState(false);
   const [createPlaceName, setCreatePlaceName] = useState('New Place');
   const [createPlaceCoords, setCreatePlaceCoords] = useState(null);
   const [isCreatingPlace, setIsCreatingPlace] = useState(false);
   const [createPlaceAddress, setCreatePlaceAddress] = useState('');
   const [createPlaceFeature, setCreatePlaceFeature] = useState(null);
+  const [bucketPrecision, setBucketPrecision] = useState(4); // digits for coordinate bucketing
+  // Screen-space clustering threshold (pixels) - persisted so tuning can be locked in
+  const [screenThreshold, setScreenThreshold] = useState(() => {
+    try {
+      const raw = localStorage.getItem('screenThreshold');
+      if (raw) return Number(raw);
+    } catch (e) {}
+    return 18; // default tuned value
+  });
   
   // Refs
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const placeSelectionModeRef = useRef(false);
   const markersRef = useRef({});
+  const lastKnownLocationsRef = useRef({});
   const pendingLocationsRef = useRef(null);
+  const updateMarkerDebounceRef = useRef(null);
+  const clusterModeRef = useRef(false);
+  const clusterSourceIdRef = useRef('tj_members_source');
+  const [clusterThreshold, setClusterThreshold] = useState(150); // above this, switch to clustered layer rendering
+
+  // Create cluster layers and source for large numbers of markers
+  const createClusterLayers = (locationData = []) => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const sourceId = clusterSourceIdRef.current;
+
+    // If source already exists, update it
+    if (map.getSource && map.getSource(sourceId)) {
+      try {
+        const features = locationData.map(loc => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [loc.coordinates.longitude, loc.coordinates.latitude] },
+          properties: { user_id: loc.user_id, username: loc.username, place: !!loc.place }
+        }));
+        map.getSource(sourceId).setData({ type: 'FeatureCollection', features });
+      } catch (e) { console.warn('Error updating existing cluster source', e); }
+      return;
+    }
+
+    const features = locationData.map(loc => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [loc.coordinates.longitude, loc.coordinates.latitude] },
+      properties: { user_id: loc.user_id, username: loc.username, place: !!loc.place }
+    }));
+
+    map.addSource(sourceId, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features },
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50
+    });
+
+    // Cluster circles
+    // Use circle layer for clusters (auto-size by point_count) and a symbol layer for numeric labels
+    map.addLayer({
+      id: `${sourceId}-clusters`,
+      type: 'circle',
+      source: sourceId,
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': MEMBER_PIN_COLOR,
+        'circle-radius': [
+          'step', ['get', 'point_count'], 18, 10, 22, 50, 28, 100, 36
+        ],
+        'circle-opacity': 0.9,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+      }
+    });
+
+    // Cluster count label (number) centered in cluster
+    map.addLayer({
+      id: `${sourceId}-cluster-count`,
+      type: 'symbol',
+      source: sourceId,
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-size': [
+          'step', ['get', 'point_count'], 12, 10, 14, 50, 16, 100, 18
+        ],
+        'text-allow-overlap': false,
+        'text-ignore-placement': false
+      },
+      paint: {
+        'text-color': '#ffffff'
+      }
+    });
+
+    // Unclustered points as single small circle or symbol
+    map.addLayer({
+      id: `${sourceId}-unclustered`,
+      type: 'circle',
+      source: sourceId,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': ['case', ['boolean', ['get', 'place'], false], PLACE_PIN_COLOR, MEMBER_PIN_COLOR],
+        'circle-radius': 8,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+      }
+    });
+
+    // Click handlers for cluster interactions (dev/prod): show aggregated member list or single item dialog
+    try {
+      // When clicking a cluster, retrieve its leaves and show aggregated dialog
+      map.on('click', `${sourceId}-clusters`, (e) => {
+        try {
+          const features = map.queryRenderedFeatures(e.point, { layers: [`${sourceId}-clusters`] });
+          if (!features || features.length === 0) return;
+          const cluster = features[0];
+          const clusterId = cluster.properties && (cluster.properties.cluster_id || cluster.properties.clusterId || cluster.properties.clusterId);
+          if (!clusterId) return;
+          const src = map.getSource(sourceId);
+          if (!src || !src.getClusterLeaves) return;
+          // Get up to 1000 leaves for display
+          src.getClusterLeaves(clusterId, 1000, 0, (err, leaves) => {
+            if (err) { console.warn('Error getting cluster leaves', err); return; }
+            const members = (leaves || []).map(f => ({
+              user_id: f.properties && f.properties.user_id,
+              username: f.properties && f.properties.username,
+              first_name: null,
+              coordinates: { latitude: f.geometry.coordinates[1], longitude: f.geometry.coordinates[0] },
+              timestamp: null
+            }));
+            setAggregatedBucketMembers(members);
+            setOpenAggregatedDialog(true);
+          });
+        } catch (err) {
+          console.warn('Cluster click handler error', err);
+        }
+      });
+
+      // When clicking an unclustered point, open the usual location dialog
+      map.on('click', `${sourceId}-unclustered`, (e) => {
+        try {
+          const features = e.features || map.queryRenderedFeatures(e.point, { layers: [`${sourceId}-unclustered`] });
+          if (!features || features.length === 0) return;
+          const f = features[0];
+          const props = f.properties || {};
+          const loc = {
+            user_id: props.user_id,
+            username: props.username,
+            coordinates: { latitude: f.geometry.coordinates[1], longitude: f.geometry.coordinates[0] },
+            timestamp: null,
+            place: !!props.place
+          };
+          handleMarkerClick(loc);
+        } catch (err) {
+          console.warn('Unclustered click handler error', err);
+        }
+      });
+
+      // Cursor feedback
+      map.on('mouseenter', `${sourceId}-clusters`, () => { try { map.getCanvas().style.cursor = 'pointer'; } catch (e) {} });
+      map.on('mouseleave', `${sourceId}-clusters`, () => { try { map.getCanvas().style.cursor = ''; } catch (e) {} });
+      map.on('mouseenter', `${sourceId}-unclustered`, () => { try { map.getCanvas().style.cursor = 'pointer'; } catch (e) {} });
+      map.on('mouseleave', `${sourceId}-unclustered`, () => { try { map.getCanvas().style.cursor = ''; } catch (e) {} });
+    } catch (e) {
+      console.warn('Failed to attach cluster click handlers', e);
+    }
+  };
+
+  const removeClusterLayers = () => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const sourceId = clusterSourceIdRef.current;
+    try {
+      // Remove event handlers we added for cluster interactions
+      try {
+        map.off('click', `${sourceId}-clusters`);
+        map.off('click', `${sourceId}-unclustered`);
+        map.off('mouseenter', `${sourceId}-clusters`);
+        map.off('mouseleave', `${sourceId}-clusters`);
+        map.off('mouseenter', `${sourceId}-unclustered`);
+        map.off('mouseleave', `${sourceId}-unclustered`);
+      } catch (e) {}
+
+      const layers = [`${sourceId}-clusters`, `${sourceId}-cluster-count`, `${sourceId}-unclustered`];
+      layers.forEach(l => { if (map.getLayer && map.getLayer(l)) map.removeLayer(l); });
+      if (map.getSource && map.getSource(sourceId)) map.removeSource(sourceId);
+    } catch (e) {
+      console.warn('Error removing cluster layers', e);
+    }
+  };
+
+  // Dev helper: simulate many member locations for testing performance
+  const simulateLocationLoad = (count = 200) => {
+    if (process.env.NODE_ENV !== 'production') console.debug('[simulateLocationLoad] generating', count, 'locations');
+    const baseLat = userLocation ? userLocation.latitude : defaultCenter[1];
+    const baseLng = userLocation ? userLocation.longitude : defaultCenter[0];
+    const generated = [];
+    for (let i = 0; i < count; i++) {
+      const jitterLat = baseLat + (Math.random() - 0.5) * 0.02;
+      const jitterLng = baseLng + (Math.random() - 0.5) * 0.02;
+      generated.push({
+        user_id: `sim_${i}`,
+        username: `Sim${i}`,
+        coordinates: { latitude: jitterLat, longitude: jitterLng },
+        timestamp: new Date().toISOString(),
+        place: false
+      });
+    }
+    // Persist the simulated locations into component state so other handlers (zoom/moveend)
+    // will use the same dataset and not overwrite the simulated markers.
+    try {
+      setLocations(generated);
+      devSimulationActiveRef.current = true;
+    } catch (e) {
+      // ignore state update errors in dev
+    }
+    // If the map isn't ready, queue the simulated locations so they'll be flushed on load
+    try {
+      if (!mapRef.current) {
+        pendingLocationsRef.current = generated;
+      }
+    } catch (e) {}
+
+    // Force immediate update and potentially switch to cluster mode
+    if (process.env.NODE_ENV !== 'production') console.debug('[simulateLocationLoad] calling updateMapMarkers with', generated.length);
+    updateMapMarkers(generated, true);
+  };
+
+  // Expose a clearSimulation helper in dev to revert to normal runtime updates
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      window.clearSimulation = () => {
+        try {
+          devSimulationActiveRef.current = false;
+          // Optionally clear simulated markers and trigger a refresh from real data
+          setLocations([]);
+          updateMapMarkers([], true);
+          // Re-fetch runtime data to repopulate actual members
+          if (mapRef.current) {
+            try { const c = mapRef.current.getCenter(); generateRuntimeData({ lng: c.lng, lat: c.lat }); } catch (e) {}
+          }
+        } catch (e) {
+          console.warn('clearSimulation failed', e);
+        }
+      };
+    }
+    return () => { try { if (window.clearSimulation) delete window.clearSimulation; } catch (e) {} };
+  }, []);
+
+  // Expose simulation helper in dev for quick manual testing
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      try { window.simulateLocationLoad = simulateLocationLoad; } catch (e) {}
+    }
+    return () => { try { if (window.simulateLocationLoad) delete window.simulateLocationLoad; } catch (e) {} };
+  }, [userLocation]);
+
+  // Load last-known locations cache from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('lastKnownLocations');
+      if (raw) lastKnownLocationsRef.current = JSON.parse(raw) || {};
+    } catch (e) {
+      lastKnownLocationsRef.current = {};
+    }
+  }, []);
+
+  // Dev helper: simulate the 'Warriors' group overlap (3 nearby members)
+  const simulateWarriorsOverlap = (center = null) => {
+    // Determine center from userLocation, map center, fallback to defaultCenter
+    let baseLat = defaultCenter[1];
+    let baseLng = defaultCenter[0];
+    if (userLocation) {
+      baseLat = userLocation.latitude; baseLng = userLocation.longitude;
+    } else if (mapRef.current) {
+      try { const c = mapRef.current.getCenter(); baseLat = c.lat; baseLng = c.lng; } catch (e) {}
+    }
+    if (center && center.latitude && center.longitude) {
+      baseLat = center.latitude; baseLng = center.longitude;
+    }
+
+    // Create 3 mock members clustered within ~5 meters
+    const mockMembers = [
+      { user_id: 'warrior_1', username: 'Alex', first_name: 'Alex', coordinates: { latitude: baseLat + 0.00001, longitude: baseLng + 0.00001 }, timestamp: new Date().toISOString(), place: false },
+      { user_id: 'warrior_2', username: 'Bri', first_name: 'Bri', coordinates: { latitude: baseLat - 0.00001, longitude: baseLng - 0.000012 }, timestamp: new Date().toISOString(), place: false },
+      { user_id: 'warrior_3', username: 'Cam', first_name: 'Cam', coordinates: { latitude: baseLat + 0.000012, longitude: baseLng - 0.000009 }, timestamp: new Date().toISOString(), place: false }
+    ];
+
+    // Merge with existing locations to ensure marker rendering includes them
+    const merged = [...locations.filter(l => !mockMembers.find(m => m.user_id === l.user_id)), ...mockMembers];
+    setLocations(merged);
+    // Force immediate update
+    updateMapMarkers(merged, true);
+    showNotification('Simulated Warriors overlap (3 members)', 'info');
+  };
+
+  // Expose simulateWarriorsOverlap in dev
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      try { window.simulateWarriorsOverlap = simulateWarriorsOverlap; } catch (e) {}
+    }
+    return () => { try { if (window.simulateWarriorsOverlap) delete window.simulateWarriorsOverlap; } catch (e) {} };
+  }, [locations, userLocation]);
   const watchIdRef = useRef(null);
   const locationDataRef = useRef(null);
+  const locationsRef = useRef([]);
+  const placesRef = useRef([]);
+  const devSimulationActiveRef = useRef(false);
   const centerMarkerRef = useRef(null);
   const hoverRingRef = useRef(null);
   const selectionMouseMoveRef = useRef(null);
@@ -172,6 +475,14 @@ const LocationTracking = () => {
   useEffect(() => {
     placeSelectionModeRef.current = placeSelectionMode;
   }, [placeSelectionMode]);
+
+  // Keep refs in sync with state for map event handlers
+  useEffect(() => { locationsRef.current = locations; }, [locations]);
+  useEffect(() => { placesRef.current = places; }, [places]);
+  // Persist screenThreshold so tuning remains between sessions
+  useEffect(() => {
+    try { localStorage.setItem('screenThreshold', String(screenThreshold)); } catch (e) {}
+  }, [screenThreshold]);
   
   // Show drop notification
   const showNotification = (message, severity = 'info') => {
@@ -244,6 +555,16 @@ const LocationTracking = () => {
 
       setLocations(enrichedLocations);
 
+      // Update last-known locations cache for members that provided coordinates
+      try {
+        enrichedLocations.forEach(loc => {
+          if (loc && loc.coordinates && loc.user_id) {
+            lastKnownLocationsRef.current[loc.user_id] = { ...loc.coordinates, timestamp: loc.timestamp || Date.now() };
+          }
+        });
+        try { localStorage.setItem('lastKnownLocations', JSON.stringify(lastKnownLocationsRef.current)); } catch (e) {}
+      } catch (e) {}
+
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
       if (userLocation) {
@@ -264,6 +585,27 @@ const LocationTracking = () => {
       if (showPlaces) {
         allLocations = [...allLocations, ...places];
       }
+
+      // Ensure every group member has an entry on the map — use last-known or default center as placeholder
+      try {
+        const byId = Object.fromEntries(allLocations.map(l => [String(l.user_id), l]));
+        (members || []).forEach(m => {
+          if (!byId[String(m.user_id)]) {
+            const last = lastKnownLocationsRef.current[m.user_id] || null;
+            const coords = last ? { latitude: last.latitude, longitude: last.longitude } : { latitude: defaultCenter[1], longitude: defaultCenter[0] };
+            const placeholder = {
+              user_id: m.user_id,
+              username: m.username,
+              first_name: m.first_name,
+              coordinates: coords,
+              timestamp: last && last.timestamp ? last.timestamp : null,
+              battery_level: null,
+              location_missing: true
+            };
+            allLocations.push(placeholder);
+          }
+        });
+      } catch (e) {}
 
       updateMapMarkers(allLocations);
 
@@ -371,6 +713,16 @@ const LocationTracking = () => {
 
       setLocations(enrichedLocations);
 
+      // Update last-known locations cache
+      try {
+        enrichedLocations.forEach(loc => {
+          if (loc && loc.coordinates && loc.user_id) {
+            lastKnownLocationsRef.current[loc.user_id] = { ...loc.coordinates, timestamp: loc.timestamp || Date.now() };
+          }
+        });
+        try { localStorage.setItem('lastKnownLocations', JSON.stringify(lastKnownLocationsRef.current)); } catch (e) {}
+      } catch (e) {}
+
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
       if (userLocation) {
@@ -393,6 +745,26 @@ const LocationTracking = () => {
       }
 
       if (!placeSelectionMode) {
+        try {
+          const byId = Object.fromEntries(allLocations.map(l => [String(l.user_id), l]));
+          (members || []).forEach(m => {
+            if (!byId[String(m.user_id)]) {
+              const last = lastKnownLocationsRef.current[m.user_id] || null;
+              const coords = last ? { latitude: last.latitude, longitude: last.longitude } : { latitude: defaultCenter[1], longitude: defaultCenter[0] };
+              const placeholder = {
+                user_id: m.user_id,
+                username: m.username,
+                first_name: m.first_name,
+                coordinates: coords,
+                timestamp: last && last.timestamp ? last.timestamp : null,
+                battery_level: null,
+                location_missing: true
+              };
+              allLocations.push(placeholder);
+            }
+          });
+        } catch (e) {}
+
         updateMapMarkers(allLocations);
       }
 
@@ -516,6 +888,17 @@ const LocationTracking = () => {
   useEffect(() => {
     // console.log('LocationTracking component mounted, initializing map');
     initializeMap();
+  }, []);
+
+  // Safety: ensure place selection/create-place UI is not active by default on initial load
+  useEffect(() => {
+    // Prevent accidental create-place overlay/dialog appearing on initial load
+    try {
+      if (placeSelectionMode) setPlaceSelectionMode(false);
+    } catch (e) {}
+    try {
+      if (openCreatePlaceDialog) setOpenCreatePlaceDialog(false);
+    } catch (e) {}
   }, []);
 
   // Fetch group details on component mount
@@ -862,11 +1245,11 @@ const LocationTracking = () => {
         }
         
         // Add markers for all members (or flush any pending queued locations)
-        if (pendingLocationsRef.current) {
+            if (pendingLocationsRef.current) {
           // console.debug('Flushing pending locations to map', pendingLocationsRef.current);
           if (!placeSelectionMode) {
             const allLocations = showPlaces ? [...pendingLocationsRef.current, ...places] : pendingLocationsRef.current;
-            updateMapMarkers(allLocations);
+            updateMapMarkers(allLocations, true);
           }
           pendingLocationsRef.current = null;
         } else if (locations.length > 0) {
@@ -884,6 +1267,7 @@ const LocationTracking = () => {
         // When the map stops moving, regenerate runtime data (members + places + user pos)
         const onMoveEnd = () => {
           try {
+            if (devSimulationActiveRef.current) return; // don't override simulated dataset
             const center = map.getCenter();
             generateRuntimeData({ lng: center.lng, lat: center.lat });
           } catch (e) {
@@ -901,17 +1285,27 @@ const LocationTracking = () => {
             try {
               const features = map.queryRenderedFeatures(point);
               if (features && features.length > 0) {
-                const f = features[0];
-                const props = f.properties || {};
-                const name = props.name || props['name_en'] || props.text || props.place_name || null;
-                const address = props.address || props['addr'] || null;
-                poi = { name, address, raw: f };
+                // Prefer features that are clearly POI/place labels by checking layer id
+                const candidate = features.find(f => {
+                  const lid = (f.layer && (f.layer.id || f.layer['source-layer'])) || '';
+                  if (typeof lid === 'string' && /poi|place|poi-label|place_label/i.test(lid)) return true;
+                  // Fallback: require strong properties for POI (maki, category, wikidata)
+                  const p = f.properties || {};
+                  if (p.maki || p.wikidata || p.category) return true;
+                  return false;
+                });
+                if (candidate) {
+                  const props = candidate.properties || {};
+                  const name = props.name || props['name_en'] || props.text || props.place_name || null;
+                  const address = props.address || props['addr'] || null;
+                  poi = { name, address, raw: candidate };
+                }
               }
             } catch (featErr) {
               // ignore feature query errors
             }
 
-            // If we clicked a POI/feature, open the create dialog immediately (even if not in selection mode)
+            // If we clicked a POI/feature or we're explicitly in selection mode, open the create dialog
             if (poi) {
               createPlaceAtLocation(lngLat.lat, lngLat.lng, poi);
               // If we were in selection mode, exit it so the UI resets
@@ -947,8 +1341,18 @@ const LocationTracking = () => {
         } else {
           // Geographic anchor mode - enable events so pins move with map viewport
           map.on('moveend', onMoveEnd);
+          // When zoom changes, re-render markers using current data so aggregation adapts to zoom
           map.on('zoomend', () => {
-            fetchMemberLocationsAndUpdateMarkers();
+            try {
+              if (devSimulationActiveRef.current) return; // don't override simulated dataset
+              const currentLocations = locationsRef.current || [];
+              const currentPlaces = placesRef.current || [];
+              const allLocations = showPlaces ? [...currentLocations, ...currentPlaces] : [...currentLocations];
+              // Force immediate re-render so clusters/aggregation update with zoom
+              updateMapMarkers(allLocations, true);
+            } catch (e) {
+              console.warn('Error updating markers on zoomend', e);
+            }
           });
         }
 
@@ -975,7 +1379,7 @@ const LocationTracking = () => {
                 battery_level: 85
               }] : [];
               const allLocations = [...currentUserLoc, ...locations, ...fetchedPlaces];
-              updateMapMarkers(allLocations);
+                  updateMapMarkers(allLocations, true);
             }
           }).catch(error => {
             console.warn('Failed to load places on map load:', error);
@@ -1338,10 +1742,31 @@ const LocationTracking = () => {
   };
   
   // Handle marker click to open location dialog
-  const handleMarkerClick = useCallback((location) => {
+  // Handle marker click to open location dialog or aggregated member list
+  const handleMarkerClick = (location) => {
+    if (location && location.aggregated) {
+      // Build member list for this bucket using user_ids (fallback to locations/members data)
+      const ids = location.user_ids || [];
+      const bucketMembers = ids.map(id => {
+        const member = members.find(m => String(m.user_id) === String(id));
+        const loc = locations.find(l => String(l.user_id) === String(id));
+        return {
+          user_id: id,
+          username: member ? member.username : (loc ? loc.username : id),
+          first_name: member ? member.first_name : (loc ? loc.first_name : null),
+          profile_image_url: member ? member.profile_image_url : null,
+          coordinates: loc ? loc.coordinates : null,
+          timestamp: loc ? loc.timestamp : null
+        };
+      });
+      setAggregatedBucketMembers(bucketMembers);
+      setOpenAggregatedDialog(true);
+      return;
+    }
+
     setSelectedLocation(location);
     setOpenLocationDialog(true);
-  }, []);
+  };
   
   // Handle member click in the members list
   const handleMemberClick = useCallback((member) => {
@@ -1362,7 +1787,7 @@ const LocationTracking = () => {
     centerElement.style.width = '24px';
     centerElement.style.height = '24px';
     centerElement.style.borderRadius = '50%';
-    centerElement.style.backgroundColor = '#2196f3';
+  centerElement.style.backgroundColor = PLACE_PIN_COLOR;
     centerElement.style.border = '3px solid white';
     centerElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
     centerElement.style.position = 'relative';
@@ -1411,8 +1836,8 @@ const LocationTracking = () => {
     ring.style.width = '28px';
     ring.style.height = '28px';
     ring.style.borderRadius = '50%';
-    ring.style.border = '2px solid rgba(33,150,243,0.6)';
-    ring.style.background = 'rgba(33,150,243,0.08)';
+  ring.style.border = `2px solid ${PLACE_PIN_COLOR}99`;
+  ring.style.background = `${PLACE_PIN_COLOR}16`;
     ring.style.pointerEvents = 'none';
     ring.style.transform = 'translate(-50%, -50%)';
     ring.style.zIndex = 2000;
@@ -1543,7 +1968,7 @@ const LocationTracking = () => {
         };
 
         setPlaces(prevPlaces => [...prevPlaces, newPlace]);
-        updateMapMarkers([...locations, newPlace]);
+  updateMapMarkers([...locations, newPlace], true);
         setShowPlaces(true);
         setOpenCreatePlaceDialog(false);
         showNotification(`Place "${placeData.name}" created successfully!`, 'success');
@@ -1704,30 +2129,177 @@ const LocationTracking = () => {
     }
   }, [draggingPlaceId, locations, places, showPlaces]);
 
-  // Update map markers for all members
-  const updateMapMarkers = (locationData) => {
+  // Internal (immediate) marker update implementation
+  const doUpdateMapMarkers = (locationData) => {
     // If the map isn't initialized yet, queue the locations for later
     if (!mapRef.current || !mapboxgl) {
       pendingLocationsRef.current = locationData;
       return;
     }
 
+    // If we have too many locations, enable cluster-layer rendering to improve perf
+    if (process.env.NODE_ENV !== 'production') console.debug('[doUpdateMapMarkers] incoming locationData length:', Array.isArray(locationData) ? locationData.length : 0);
+    try {
+      const shouldCluster = Array.isArray(locationData) && locationData.length >= clusterThreshold;
+      if (shouldCluster && !clusterModeRef.current) {
+        // Switch to cluster mode: remove existing DOM markers and use GeoJSON source + layers
+        if (process.env.NODE_ENV !== 'production') console.debug('[doUpdateMapMarkers] switching to cluster mode - clearing', Object.keys(markersRef.current).length, 'markers');
+        Object.keys(markersRef.current).forEach(k => {
+          try { markersRef.current[k]?.remove(); } catch (e) {}
+          delete markersRef.current[k];
+        });
+        createClusterLayers(locationData);
+        clusterModeRef.current = true;
+        return;
+      } else if (!shouldCluster && clusterModeRef.current) {
+        // Turn off cluster mode and remove the layers so we can use DOM markers again
+        removeClusterLayers();
+        clusterModeRef.current = false;
+        // continue to fall through and render markers normally
+      }
+      if (clusterModeRef.current) {
+        // Update the cluster source data
+        try {
+          const src = mapRef.current.getSource(clusterSourceIdRef.current);
+          if (src) {
+            const features = locationData.map(loc => ({
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [loc.coordinates.longitude, loc.coordinates.latitude] },
+              properties: { user_id: loc.user_id, username: loc.username, place: !!loc.place }
+            }));
+            if (process.env.NODE_ENV !== 'production') console.debug('[doUpdateMapMarkers] updating cluster source with', features.length, 'features');
+            src.setData({ type: 'FeatureCollection', features });
+          }
+        } catch (e) {
+          console.warn('Failed to update cluster source data', e);
+        }
+        return;
+      }
+    } catch (e) {
+      // ignore cluster errors and continue with marker rendering
+      console.warn('Cluster switching error', e);
+    }
+
     const newMarkerKeys = new Set();
 
-    // Update existing markers or create new ones
-    locationData.forEach((location, idx) => {
+    // Prefer grouping markers by screen-space overlap so aggregation triggers when markers visually touch
+    const buckets = {};
+    const tryScreenGrouping = () => {
+      if (!mapRef.current || !mapRef.current.project) return false;
+      try {
+  const threshold = screenThreshold; // use persisted/tunable value
+        const projected = [];
+        for (let i = 0; i < locationData.length; i++) {
+          const loc = locationData[i];
+          if (!loc || !loc.coordinates) continue;
+          const p = mapRef.current.project([loc.coordinates.longitude, loc.coordinates.latitude]);
+          projected.push({ loc, x: p.x, y: p.y });
+        }
+
+        const clusters = [];
+        projected.forEach(item => {
+          let assigned = false;
+          for (let c of clusters) {
+            const dx = item.x - c.cx;
+            const dy = item.y - c.cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist <= threshold) {
+              c.items.push(item.loc);
+              const n = c.items.length;
+              c.cx = (c.cx * (n - 1) + item.x) / n;
+              c.cy = (c.cy * (n - 1) + item.y) / n;
+              assigned = true;
+              break;
+            }
+          }
+          if (!assigned) {
+            clusters.push({ cx: item.x, cy: item.y, items: [item.loc] });
+          }
+        });
+
+        clusters.forEach(c => {
+          if (!c.items || c.items.length === 0) return;
+          if (c.items.length === 1) {
+            const single = c.items[0];
+            const key = `${single.coordinates.latitude}_${single.coordinates.longitude}_${single.user_id}`;
+            buckets[key] = { coords: single.coordinates, items: [single] };
+          } else {
+            let sumLat = 0, sumLng = 0;
+            c.items.forEach(it => { sumLat += it.coordinates.latitude; sumLng += it.coordinates.longitude; });
+            const avg = { latitude: sumLat / c.items.length, longitude: sumLng / c.items.length };
+            const key = `agg_${Math.round(avg.latitude * 1e6)}_${Math.round(avg.longitude * 1e6)}_${c.items.length}`;
+            buckets[key] = { coords: avg, items: c.items.slice() };
+          }
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    const usedScreen = tryScreenGrouping();
+    if (!usedScreen) {
+      // Fallback to geographic bucket precision when projection not available
+      const bucketCoords = (lat, lng, precision = bucketPrecision) => {
+        const factor = Math.pow(10, precision);
+        const rLat = Math.round(lat * factor) / factor;
+        const rLng = Math.round(lng * factor) / factor;
+        return `${rLat}_${rLng}`;
+      };
+
+      const computePrecisionFromZoom = (zoom) => {
+        if (typeof zoom !== 'number' || isNaN(zoom)) return bucketPrecision;
+        if (zoom < 8) return Math.max(2, bucketPrecision - 2);
+        if (zoom < 11) return Math.max(3, bucketPrecision - 1);
+        if (zoom < 13) return bucketPrecision;
+        if (zoom < 15) return Math.min(6, bucketPrecision + 1);
+        return Math.min(7, bucketPrecision + 2);
+      };
+
+      let adaptivePrecision = bucketPrecision;
+      try {
+        if (mapRef.current && mapRef.current.getZoom) {
+          const z = mapRef.current.getZoom();
+          adaptivePrecision = computePrecisionFromZoom(z);
+        }
+      } catch (e) {}
+
+      locationData.forEach(loc => {
+        if (!loc || !loc.coordinates) return;
+        const key = bucketCoords(loc.coordinates.latitude, loc.coordinates.longitude, adaptivePrecision);
+        buckets[key] = buckets[key] || { coords: loc.coordinates, items: [] };
+        buckets[key].items.push(loc);
+      });
+    }
+
+    // Convert buckets back to a list of renderable items (either single loc or aggregate)
+    const renderList = Object.keys(buckets).map(k => {
+      const b = buckets[k];
+      if (b.items.length === 1) return b.items[0];
+      return {
+        aggregated: true,
+        count: b.items.length,
+        user_ids: b.items.map(i => i.user_id),
+        username: `${b.items.length} people`,
+        coordinates: b.coords,
+        timestamp: new Date().toISOString()
+      };
+    });
+
+  // Update existing markers or create new ones
+  renderList.forEach((location, idx) => {
       if (!location.coordinates) {
         return;
       }
       
-      const { latitude, longitude } = location.coordinates;
-      const markerKey = location.place ? `place-${location.raw._id}` : location.user_id;
+  const { latitude, longitude } = location.coordinates;
+  const markerKey = location.aggregated ? `agg-${Math.round(latitude*1e6)}-${Math.round(longitude*1e6)}-${location.count}` : (location.place ? `place-${location.raw._id}` : location.user_id);
 
       newMarkerKeys.add(markerKey);
 
-      let marker = markersRef.current[markerKey];
+  let marker = markersRef.current[markerKey];
 
-      const shouldBeDraggable = location.place && location.raw && location.raw._id === draggingPlaceId;
+  const shouldBeDraggable = location.place && location.raw && location.raw._id === draggingPlaceId;
 
       // For places, always recreate markers to ensure proper positioning
       if (marker && location.place) {
@@ -1735,19 +2307,54 @@ const LocationTracking = () => {
         marker = null;
       }
 
-      if (marker && (!shouldBeDraggable || marker.getLngLat().lng !== longitude || marker.getLngLat().lat !== latitude)) {
-        // Update position for non-draggable markers, or re-create if it should be draggable
-        if (!shouldBeDraggable) {
-          marker.setLngLat([longitude, latitude]);
-        } else {
-          // Re-create draggable markers to ensure proper draggable state
+      if (marker) {
+        // If it should be draggable but existing marker isn't, recreate
+        const existingIsDraggable = marker.getElement && marker.getElement().draggable;
+        if (shouldBeDraggable && !existingIsDraggable) {
           marker.remove();
           marker = null;
         }
       }
 
+      if (marker && !shouldBeDraggable) {
+        // Reuse the existing marker element: update position and visual state instead of recreating
+        try {
+          marker.setLngLat([longitude, latitude]);
+          const el = marker.getElement && marker.getElement();
+          if (el) {
+            const circle = el.querySelector('div');
+            if (circle) {
+              const desiredColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
+              if (circle.style.backgroundColor !== desiredColor) circle.style.backgroundColor = desiredColor;
+              // If this is a placeholder for a missing live location, render subtly
+              if (location.location_missing) {
+                const firstInitial = location.username ? location.username.charAt(0).toUpperCase() : '?';
+                circle.style.opacity = '0.6';
+                circle.style.borderStyle = 'dashed';
+                if (circle.textContent !== firstInitial) circle.textContent = firstInitial;
+              } else {
+                const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
+                if (circle.textContent !== firstInitial) circle.textContent = firstInitial;
+              }
+            }
+            // update title
+            const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
+            const lastUpdate = location.timestamp ? new Date(location.timestamp).toLocaleString() : null;
+            if (location.location_missing) {
+              el.title = lastUpdate ? `${displayName}\nLast known: ${lastUpdate}` : `${displayName}\nLocation not shared`;
+            } else {
+              el.title = `${displayName}\nLast updated: ${lastUpdate}`;
+            }
+          }
+        } catch (e) {
+          // fallback to recreating marker if reuse fails
+          try { marker.remove(); } catch (err) {}
+          marker = null;
+        }
+      }
+
       if (!marker) {
-        // Create new marker - simple anchored pin
+        // Create new marker - simple anchored pin or aggregated badge
         const markerEl = document.createElement('div');
         markerEl.style.display = 'flex';
         markerEl.style.flexDirection = 'column';
@@ -1759,7 +2366,7 @@ const LocationTracking = () => {
         circleEl.style.width = '24px';
         circleEl.style.height = '24px';
         circleEl.style.borderRadius = '50%';
-        circleEl.style.backgroundColor = location.place ? 'green' : 'orange';
+        circleEl.style.backgroundColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
         circleEl.style.border = '2px solid white';
         circleEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         circleEl.style.display = 'flex';
@@ -1768,25 +2375,53 @@ const LocationTracking = () => {
         circleEl.style.color = 'white';
         circleEl.style.fontSize = '12px';
         circleEl.style.fontWeight = 'bold';
+        if (location.location_missing) {
+          circleEl.style.opacity = '0.6';
+          circleEl.style.borderStyle = 'dashed';
+        }
 
-        // Add initial
-        const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
-        circleEl.textContent = firstInitial;
+        // Add content: either first initial or aggregated count
+        if (location.aggregated) {
+          circleEl.textContent = String(location.count);
+          // auto-size the circle based on count length
+          const len = String(location.count).length;
+          const size = len <= 2 ? 28 : (len === 3 ? 34 : 40);
+          circleEl.style.width = `${size}px`;
+          circleEl.style.height = `${size}px`;
+          circleEl.style.borderRadius = '50%';
+          circleEl.style.fontSize = len <= 2 ? '12px' : (len === 3 ? '11px' : '10px');
+        } else {
+          // For placeholders where member hasn't shared location, make them visually subtle
+          if (location.location_missing) {
+            const firstInitial = location.username ? location.username.charAt(0).toUpperCase() : '?';
+            circleEl.textContent = firstInitial;
+          } else {
+            const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
+            circleEl.textContent = firstInitial;
+          }
+        }
 
         // Spike part
         const spikeEl = document.createElement('div');
-        spikeEl.style.width = '12px';
-        spikeEl.style.height = '8px';
-        spikeEl.style.backgroundColor = location.place ? 'green' : 'orange';
-        spikeEl.style.clipPath = 'polygon(50% 100%, 0% 0%, 100% 0%)';
+  spikeEl.style.width = '12px';
+  spikeEl.style.height = '8px';
+  spikeEl.style.backgroundColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
+  spikeEl.style.clipPath = 'polygon(50% 100%, 0% 0%, 100% 0%)';
+  if (location.location_missing) spikeEl.style.opacity = '0.6';
 
         markerEl.appendChild(circleEl);
         markerEl.appendChild(spikeEl);
 
         // Add hover details
         const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
-        const lastUpdate = new Date(location.timestamp).toLocaleString();
-        markerEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
+        const lastUpdate = location.timestamp ? new Date(location.timestamp).toLocaleString() : null;
+        if (location.location_missing && !lastUpdate) {
+          markerEl.title = `${displayName}\nLocation not shared`;
+        } else if (location.location_missing && lastUpdate) {
+          markerEl.title = `${displayName}\nLast known: ${lastUpdate}`;
+        } else {
+          markerEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
+        }
 
         // Create and add the marker
         marker = new mapboxgl.Marker(markerEl, {
@@ -1848,6 +2483,7 @@ const LocationTracking = () => {
     });
 
     // Remove markers that are no longer in the data
+    if (process.env.NODE_ENV !== 'production') console.debug('[doUpdateMapMarkers] existing markers before cleanup:', Object.keys(markersRef.current).length, 'newMarkerKeys:', newMarkerKeys.size);
     Object.keys(markersRef.current).forEach(markerKey => {
       if (!newMarkerKeys.has(markerKey)) {
         const marker = markersRef.current[markerKey];
@@ -1857,6 +2493,28 @@ const LocationTracking = () => {
         delete markersRef.current[markerKey];
       }
     });
+    if (process.env.NODE_ENV !== 'production') console.debug('[doUpdateMapMarkers] markers after cleanup:', Object.keys(markersRef.current).length);
+  };
+
+  // Public wrapper: debounced update to reduce DOM thrash. Call with immediate=true to force instant update.
+  const updateMapMarkers = (locationData, immediate = false) => {
+    try {
+      if (updateMarkerDebounceRef.current) {
+        clearTimeout(updateMarkerDebounceRef.current);
+        updateMarkerDebounceRef.current = null;
+      }
+    } catch (e) {}
+
+    if (immediate) {
+      doUpdateMapMarkers(locationData);
+      return;
+    }
+
+    // Debounce rapid calls (150ms)
+    updateMarkerDebounceRef.current = setTimeout(() => {
+      doUpdateMapMarkers(locationData);
+      updateMarkerDebounceRef.current = null;
+    }, 150);
   };
   
   // Update map markers including current user location
@@ -1881,7 +2539,7 @@ const LocationTracking = () => {
     
     // Update markers with combined locations (but hide during place selection mode)
     if (!placeSelectionMode) {
-      updateMapMarkers(allLocations);
+      updateMapMarkers(allLocations, true);
     }
   };
   
@@ -2570,9 +3228,83 @@ const LocationTracking = () => {
               <Typography>{Math.round(controlsOpacity * 100)}%</Typography>
             </Box>
           </Box>
+          <Box sx={{ mb: 3 }}>
+            <Typography gutterBottom>Aggregation Bucket Precision</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Number of decimal digits to round coordinates for aggregation. Higher = tighter grouping.
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Slider
+                value={bucketPrecision}
+                min={2}
+                max={6}
+                step={1}
+                onChange={(e, newValue) => setBucketPrecision(newValue)}
+                valueLabelDisplay="auto"
+                sx={{ mr: 2, flexGrow: 1 }}
+              />
+              <Typography>{bucketPrecision} digits</Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <Typography gutterBottom>Cluster Threshold</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              When the number of rendered points exceeds this value, the map switches to clustered rendering.
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Slider
+                value={clusterThreshold}
+                min={50}
+                max={1000}
+                step={10}
+                onChange={(e, newValue) => setClusterThreshold(newValue)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={value => `${value} pts`}
+                sx={{ mr: 2, flexGrow: 1 }}
+              />
+              <Typography>{clusterThreshold} pts</Typography>
+            </Box>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenSettingsDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Aggregated Members Dialog (for buckets with multiple members) */}
+      <Dialog
+        open={openAggregatedDialog}
+        onClose={() => setOpenAggregatedDialog(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Group at this location</DialogTitle>
+        <DialogContent>
+          <List>
+            {aggregatedBucketMembers.map(m => (
+              <ListItem key={m.user_id} disablePadding>
+                <ListItemButton onClick={() => {
+                  // Close aggregated dialog and open individual location dialog if coordinates exist
+                  setOpenAggregatedDialog(false);
+                  if (m.coordinates) {
+                    setSelectedLocation(m);
+                    setOpenLocationDialog(true);
+                  } else {
+                    showNotification(`${m.username} has no shared location`, 'info');
+                  }
+                }}>
+                  <ListItemAvatar>
+                    <Avatar src={m.profile_image_url}>{m.username ? m.username.charAt(0).toUpperCase() : '?'}</Avatar>
+                  </ListItemAvatar>
+                  <ListItemText primary={m.username} secondary={m.coordinates ? 'Location shared' : 'No location'} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAggregatedDialog(false)}>Close</Button>
         </DialogActions>
       </Dialog>
       
@@ -2872,6 +3604,20 @@ const LocationTracking = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dev-only quick test panel */}
+      {process.env.NODE_ENV !== 'production' && (
+        <Box sx={{ position: 'absolute', left: 16, bottom: 16, zIndex: 12 }}>
+          <Paper elevation={6} sx={{ p: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Button size="small" onClick={() => { try { window.simulateLocationLoad && window.simulateLocationLoad(200); } catch (e) {} }}>
+              Sim: 200
+            </Button>
+            <Button size="small" onClick={() => { try { window.simulateWarriorsOverlap && window.simulateWarriorsOverlap(); } catch (e) {} }}>
+              Sim: Warriors
+            </Button>
+          </Paper>
+        </Box>
+      )}
     </Box>
   );
 };
