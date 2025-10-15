@@ -129,14 +129,16 @@ class GroupService {
           };
         })),
         
-        // Add invitations to the transformed group
+        // Add invitations to the transformed group (include invite_count per email)
         invitations: (group.invitations || []).map(invitation => ({
           id: invitation._id,
           email: invitation.email,
           invited_by: invitation.invited_by,
           invited_at: invitation.invited_at,
           status: invitation.status,
-          expires_at: invitation.expires_at
+          expires_at: invitation.expires_at,
+          // Count how many invitations in this group exist for this email (all statuses)
+          invite_count: (group.invitations || []).filter(inv => inv.email === invitation.email).length
         }))
       };
       
@@ -563,9 +565,102 @@ class GroupService {
       
       console.log('Invitation email sent:', emailResult);
 
-      return invitation;
+      // Compute how many times this email has been invited in this group
+      const inviteCount = group.invitations.filter(inv => inv.email === email).length;
+
+      // Return a plain object representation including invite_count for API responses
+      return {
+        id: savedInvitation._id,
+        email: savedInvitation.email,
+        invited_by: savedInvitation.invited_by,
+        invited_at: savedInvitation.invited_at,
+        status: savedInvitation.status,
+        expires_at: savedInvitation.expires_at,
+        invite_count: inviteCount
+      };
     } catch (error) {
       console.error('Error sending invitation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resend an existing invitation email
+   * @param {string} groupId
+   * @param {string} invitationId
+   * @param {string} requesterId
+   */
+  async resendInvitation(groupId, invitationId, requesterId) {
+    try {
+      const group = await Group.findById(groupId);
+      if (!group) throw new Error('Group not found');
+
+      // Authorization: only admins or members_can_invite may resend
+      if (!group.isAdmin(requesterId) && !(group.settings.members_can_invite && group.isMember(requesterId))) {
+        throw new Error('Permission denied');
+      }
+
+      const invitation = group.invitations.find(inv => inv._id.toString() === invitationId);
+      if (!invitation) throw new Error('Invitation not found');
+      if (invitation.status !== 'pending') throw new Error('Only pending invitations may be resent');
+
+      // Update invited_at timestamp to now and extend expiry window
+      invitation.invited_at = new Date();
+      invitation.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      // Save group
+      await group.save();
+
+      // Rebuild invitation link using current index
+      const index = group.invitations.findIndex(inv => inv._id.toString() === invitationId);
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const invitationLink = `${baseUrl}/invitations/${group._id}/${index}`;
+
+      // Determine inviter name for email
+      let inviterName = 'A user';
+      try {
+        if (requesterId && requesterId.includes('-')) {
+          const sequelize = require('../config/database');
+          const users = await sequelize.query(
+            `SELECT username, first_name, last_name, email FROM users WHERE user_id = :userId`,
+            { replacements: { userId: requesterId }, type: sequelize.QueryTypes.SELECT }
+          );
+          if (users && users.length > 0) {
+            const user = users[0];
+            inviterName = user.first_name && user.last_name ? `${user.first_name} ${user.last_name}`.trim() : (user.username || user.email.split('@')[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching inviter details in resendInvitation:', err);
+      }
+
+      // Send email and capture result (preview URL when using Ethereal)
+      let emailResult = null;
+      try {
+        emailResult = await emailService.sendInvitationEmail(invitation.email, {
+          groupName: group.group_name,
+          inviterName,
+          invitationLink
+        });
+      } catch (err) {
+        console.error('Error sending invitation email in resendInvitation:', err);
+        // continue - we still return update info but bubble up error to caller if needed
+      }
+
+      // Compute invite_count for this invitation's email within the group
+      const inviteCount = group.invitations.filter(inv => inv.email === invitation.email).length;
+
+      return {
+        id: invitation._id,
+        email: invitation.email,
+        invited_at: invitation.invited_at,
+        expires_at: invitation.expires_at,
+        status: invitation.status,
+        invite_count: inviteCount,
+        emailPreviewUrl: emailResult && emailResult.previewUrl ? emailResult.previewUrl : null
+      };
+    } catch (error) {
+      console.error('Error in resendInvitation:', error);
       throw error;
     }
   }
@@ -588,7 +683,18 @@ class GroupService {
         throw new Error('Permission denied');
       }
 
-      return group.invitations.filter(inv => inv.status === 'pending');
+      // Return pending invitations with invite_count included for each email
+      return (group.invitations || [])
+        .filter(inv => inv.status === 'pending')
+        .map(inv => ({
+          id: inv._id,
+          email: inv.email,
+          invited_by: inv.invited_by,
+          invited_at: inv.invited_at,
+          status: inv.status,
+          expires_at: inv.expires_at,
+          invite_count: (group.invitations || []).filter(i => i.email === inv.email).length
+        }));
     } catch (error) {
       throw error;
     }

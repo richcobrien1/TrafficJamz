@@ -624,6 +624,33 @@ router.post('/:group_id/invitations',
   }
 );
 
+// Resend an existing invitation email
+router.post('/:group_id/invitations/:invitation_id/resend',
+  passport.authenticate('jwt', { session: false }),
+  checkMongoDBConnection,
+  [
+    param('group_id').isLength({ min: 1 }).withMessage('Group ID is required'),
+    param('invitation_id').isLength({ min: 1 }).withMessage('Invitation ID is required')
+  ],
+  validate,
+  async (req, res) => {
+    try {
+  const { group_id, invitation_id } = req.params;
+  const result = await groupService.resendInvitation(group_id, invitation_id, req.user.user_id);
+      // If email preview URL is available (Ethereal in dev), log it for easy verification
+      if (result && result.emailPreviewUrl) {
+        console.log(`Invitation resend preview URL for invitation ${invitation_id}:`, result.emailPreviewUrl);
+      }
+
+      // Include the preview URL at top-level for client-side verification when available
+      res.json({ success: true, message: 'Invitation resent', invitation: result, previewUrl: result && result.emailPreviewUrl ? result.emailPreviewUrl : null });
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      res.status(400).json({ success: false, message: error.message || 'Failed to resend invitation' });
+    }
+  }
+);
+
 /**
  * @route DELETE /api/groups/:group_id/members/:member_id
  * @desc Remove member from group
