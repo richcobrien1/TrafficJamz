@@ -651,6 +651,43 @@ router.post('/:group_id/invitations/:invitation_id/resend',
   }
 );
 
+// Cancel (delete) a pending invitation
+router.delete('/:group_id/invitations/:invitation_id',
+  passport.authenticate('jwt', { session: false }),
+  checkMongoDBConnection,
+  [
+    param('group_id').isLength({ min: 1 }).withMessage('Group ID is required'),
+    param('invitation_id').isLength({ min: 1 }).withMessage('Invitation ID is required')
+  ],
+  validate,
+  async (req, res) => {
+    try {
+      const { group_id, invitation_id } = req.params;
+      // Wrap service call in a timeout similar to other routes
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database operation timed out')), 10000)
+      );
+
+      const cancelPromise = groupService.cancelInvitation(group_id, invitation_id, req.user.user_id);
+      await Promise.race([cancelPromise, timeoutPromise]);
+
+      res.json({ success: true, message: 'Invitation cancelled' });
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+      if (error.message === 'Database operation timed out') {
+        return res.status(504).json({ success: false, message: 'Database operation timed out', error: 'TIMEOUT' });
+      }
+      if (error.name === 'CastError') {
+        return res.status(400).json({ success: false, message: 'Invalid ID format', error: 'INVALID_ID' });
+      }
+      if (error.message && error.message.includes('not found')) {
+        return res.status(404).json({ success: false, message: error.message, error: 'NOT_FOUND' });
+      }
+      res.status(400).json({ success: false, message: error.message || 'Failed to cancel invitation', error: 'CANCEL_INVITATION_FAILED' });
+    }
+  }
+);
+
 /**
  * @route DELETE /api/groups/:group_id/members/:member_id
  * @desc Remove member from group
@@ -661,7 +698,8 @@ router.delete('/:group_id/members/:member_id',
   checkMongoDBConnection, // Add MongoDB connection check
   [
     param('group_id').isMongoId().withMessage('Invalid group ID'),
-    param('member_id').isMongoId().withMessage('Invalid member ID'),
+    // Accept any non-empty member_id (UUID or Mongo _id). Service will validate existence/permissions.
+    param('member_id').isLength({ min: 1 }).withMessage('Invalid member ID'),
     validate
   ],
   async (req, res) => {
