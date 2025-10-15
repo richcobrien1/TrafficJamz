@@ -53,7 +53,6 @@ import {
   Navigation as NavigationIcon,
   LocationOn as LocationIcon,
   LocationOff as LocationOffIcon,
-  Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
   Settings as SettingsIcon,
   ExpandLess as ExpandLessIcon,
@@ -154,6 +153,8 @@ const LocationTracking = () => {
   const [createPlaceName, setCreatePlaceName] = useState('New Place');
   const [createPlaceCoords, setCreatePlaceCoords] = useState(null);
   const [isCreatingPlace, setIsCreatingPlace] = useState(false);
+  const [createPlaceAddress, setCreatePlaceAddress] = useState('');
+  const [createPlaceFeature, setCreatePlaceFeature] = useState(null);
   
   // Refs
   const mapContainerRef = useRef(null);
@@ -890,12 +891,40 @@ const LocationTracking = () => {
           }
         };
 
-        // Map click to add place at clicked location only when in placeSelectionMode
+        // Map click: allow creating a place from a POI feature even when not in selection mode
         map.on('click', (e) => {
           try {
-            if (!placeSelectionModeRef.current) return; // only create places when explicitly selecting
-            const { lngLat } = e;
-            createPlaceAtLocation(lngLat.lat, lngLat.lng);
+            const { lngLat, point } = e;
+
+            // Try to pick a rendered feature (POI) at the click point and use it to prefill the place name/address
+            let poi = null;
+            try {
+              const features = map.queryRenderedFeatures(point);
+              if (features && features.length > 0) {
+                const f = features[0];
+                const props = f.properties || {};
+                const name = props.name || props['name_en'] || props.text || props.place_name || null;
+                const address = props.address || props['addr'] || null;
+                poi = { name, address, raw: f };
+              }
+            } catch (featErr) {
+              // ignore feature query errors
+            }
+
+            // If we clicked a POI/feature, open the create dialog immediately (even if not in selection mode)
+            if (poi) {
+              createPlaceAtLocation(lngLat.lat, lngLat.lng, poi);
+              // If we were in selection mode, exit it so the UI resets
+              if (placeSelectionModeRef.current) setPlaceSelectionMode(false);
+              return;
+            }
+
+            // Otherwise only create places when explicitly selecting
+            if (!placeSelectionModeRef.current) return;
+
+            createPlaceAtLocation(lngLat.lat, lngLat.lng, null);
+            // After creating, exit selection mode so UI resets (hover ring/cursor)
+            setPlaceSelectionMode(false);
           } catch (err) {
             console.error('Failed to create place at clicked location', err);
           }
@@ -1403,6 +1432,17 @@ const LocationTracking = () => {
         const canvasContainer = mapRef.current.getContainer();
         if (canvasContainer.contains(hoverRingRef.current)) canvasContainer.removeChild(hoverRingRef.current);
       }
+      // Reset cursor on the map canvas if we've changed it
+      try {
+        if (mapRef.current && mapRef.current.getCanvas) {
+          const canvas = mapRef.current.getCanvas();
+          if (canvas) canvas.style.cursor = '';
+        }
+      } catch (err) {
+        // ignore
+      }
+      // Remove any mousemove handler we attached
+      try { window.removeEventListener('mousemove', selectionMouseMoveRef.current); } catch (e) {}
     } catch (err) {
       // ignore
     }
@@ -1467,10 +1507,13 @@ const LocationTracking = () => {
   };
   
   // Create a place at the specified location
-  const createPlaceAtLocation = async (lat, lng) => {
+  const createPlaceAtLocation = async (lat, lng, poi = null) => {
     // Open the create-place dialog with given coordinates
     setCreatePlaceCoords({ latitude: lat, longitude: lng });
-    setCreatePlaceName('New Place');
+    setCreatePlaceFeature(poi ? poi.raw : null);
+    const suggestedName = poi && (poi.name || poi.address) ? (poi.name || poi.address) : 'New Place';
+    setCreatePlaceName(suggestedName);
+    setCreatePlaceAddress(poi && poi.address ? poi.address : '');
     setOpenCreatePlaceDialog(true);
   };
 
@@ -2049,14 +2092,6 @@ const LocationTracking = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title="Refresh Locations">
-            <IconButton 
-              color="inherit"
-              onClick={fetchMemberLocationsAndUpdateMarkers}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
 
           <Tooltip title="Settings">
             <IconButton 
@@ -2173,7 +2208,7 @@ const LocationTracking = () => {
       </Tooltip>
       
       {/* Place Selection Button */}
-      <Tooltip title="Select Location for Place">
+          <Tooltip title="Select Location for Place">
         <IconButton
           sx={{
             position: 'absolute',
@@ -2189,7 +2224,21 @@ const LocationTracking = () => {
               bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
           }}
-          onClick={togglePlaceSelectionMode}
+          onClick={() => {
+            try {
+              if (overlayCreateMode && mapRef.current) {
+                const c = mapRef.current.getCenter();
+                createPlaceAtLocation(c.lat, c.lng, null);
+                // ensure selection mode is off
+                setPlaceSelectionMode(false);
+              } else {
+                togglePlaceSelectionMode();
+              }
+            } catch (err) {
+              console.warn('Could not create place at center:', err);
+              togglePlaceSelectionMode();
+            }
+          }}
         >
           <PlaceIcon />
         </IconButton>
@@ -2530,7 +2579,12 @@ const LocationTracking = () => {
       {/* Location Details Dialog */}
       <Dialog 
         open={openLocationDialog} 
-        onClose={() => setOpenLocationDialog(false)}
+        onClose={(event, reason) => {
+          // Allow closing when clicking the backdrop or pressing Escape
+          if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
+            setOpenLocationDialog(false);
+          }
+        }}
         maxWidth="sm"
         fullWidth
       >
@@ -2542,8 +2596,18 @@ const LocationTracking = () => {
                   {selectedLocation.place ? `📍 ${selectedLocation.username || 'Place'}` : `${selectedLocation.username || 'Unknown'}`}
                 </Typography>
               </Box>
-              <IconButton aria-label="close" onClick={() => setOpenLocationDialog(false)}>
-                <CloseIcon />
+              <IconButton
+                aria-label="close"
+                onClick={() => setOpenLocationDialog(false)}
+                size="small"
+                sx={{
+                  bgcolor: 'action.hover',
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%'
+                }}
+              >
+                <CloseIcon fontSize="small" />
               </IconButton>
             </DialogTitle>
             <DialogContent>
@@ -2708,6 +2772,20 @@ const LocationTracking = () => {
                   {isDeleting ? 'DELETING...' : 'DELETE'}
                 </Button>
               )}
+
+              {selectedLocation.place && selectedLocation.raw && (
+                <Button
+                  color="primary"
+                  onClick={() => {
+                    if (selectedLocation && selectedLocation.raw && selectedLocation.raw._id) {
+                      renamePlace(selectedLocation.raw._id, renameText);
+                    }
+                  }}
+                  disabled={isRenaming || !renameText || renameText.trim() === ''}
+                >
+                  {isRenaming ? 'RENAMING...' : 'RENAME'}
+                </Button>
+              )}
               {selectedLocation.coordinates && (
                 <Button 
                   color="primary"
@@ -2742,6 +2820,56 @@ const LocationTracking = () => {
         <DialogActions>
           <Button onClick={cancelDeletePlace} disabled={isDeleting}>Cancel</Button>
           <Button color="error" onClick={() => deletePlace(deleteTargetId)} disabled={isDeleting}>{isDeleting ? 'DELETING...' : 'Delete'}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Place Dialog */}
+      <Dialog
+        open={openCreatePlaceDialog}
+        onClose={() => {
+          setOpenCreatePlaceDialog(false);
+          setCreatePlaceCoords(null);
+          setCreatePlaceFeature(null);
+          setCreatePlaceAddress('');
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create Place</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Place name"
+              value={createPlaceName}
+              onChange={(e) => setCreatePlaceName(e.target.value)}
+              fullWidth
+              autoFocus
+            />
+            <TextField
+              label="Address / Notes"
+              value={createPlaceAddress}
+              onChange={(e) => setCreatePlaceAddress(e.target.value)}
+              fullWidth
+            />
+            {createPlaceCoords && (
+              <Typography variant="caption" color="text.secondary">{`Lat: ${createPlaceCoords.latitude.toFixed(6)}, Lng: ${createPlaceCoords.longitude.toFixed(6)}`}</Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenCreatePlaceDialog(false);
+            setCreatePlaceCoords(null);
+            setCreatePlaceFeature(null);
+            setCreatePlaceAddress('');
+          }}>Cancel</Button>
+          <Button
+            onClick={createPlaceConfirmed}
+            disabled={isCreatingPlace || !createPlaceName || createPlaceName.trim() === ''}
+            variant="contained"
+          >
+            {isCreatingPlace ? 'CREATING...' : 'Create'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
