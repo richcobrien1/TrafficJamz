@@ -2723,7 +2723,8 @@ const LocationTracking = () => {
           bgcolor: 'rgba(0,0,0,0.7)',
           color: 'text.primary',
           transition: 'all 0.3s ease',
-          top: showControls ? 0 : -64,
+          // When the members list is open, hide the top AppBar so it doesn't overlap the drawer
+          top: showMembersList ? -64 : (showControls ? 0 : -64),
           zIndex: 10
         }}
       >
@@ -2980,7 +2981,8 @@ const LocationTracking = () => {
             boxShadow: 3,
             height: 'calc(100% - 64px)',
             top: 64,
-            zIndex: 5
+            // Raise the drawer above map controls and app bar so it clearly overlays the map
+            zIndex: 1400
           },
         }}
       >

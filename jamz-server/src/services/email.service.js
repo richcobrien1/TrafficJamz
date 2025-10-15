@@ -125,4 +125,5 @@ const emailService = new EmailService();
   }
 })();
 
-module.exports = new EmailService();
+// Export the initialized instance (not a new one) so callers receive the same service
+module.exports = emailService;
