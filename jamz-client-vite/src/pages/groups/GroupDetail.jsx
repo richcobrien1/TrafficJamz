@@ -13,6 +13,7 @@ import {
   ListItemText,
   ListItemAvatar,
   Avatar,
+  Badge,
   Divider,
   IconButton,
   AppBar,
@@ -23,6 +24,9 @@ import {
   DialogActions,
   TextField,
   Alert,
+  Tooltip,
+  Snackbar,
+  Link,
   Tabs,
   Tab,
   Chip,
@@ -40,6 +44,7 @@ import {
   ExitToApp as LeaveIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -72,8 +77,14 @@ const GroupDetail = () => {
   const [showAudioSession, setShowAudioSession] = useState(false);  // In your GroupDetails component
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState({});
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
+  const [snackbarLink, setSnackbarLink] = useState(null);
+
+  // Poll interval id ref-like state not necessary; use effect cleanup
 
   // Add useEffect to initialize form fields when group data is loaded
   useEffect(() => {
@@ -88,6 +99,12 @@ const GroupDetail = () => {
   useEffect(() => {
     fetchGroupDetails();
     fetchInvitations();
+    // poll invitations every 20s so the pending pill and list refresh automatically
+    const poll = setInterval(() => {
+      fetchInvitations();
+    }, 20000);
+
+    return () => clearInterval(poll);
   }, [groupId]);
   
   const fetchGroupDetails = async () => {
@@ -118,6 +135,14 @@ const GroupDetail = () => {
     } finally {
       setInvitationsLoading(false);
     }
+  };
+
+  const inviteCountForEmail = (email) => {
+    if (!email || !invitations) return 0;
+    // Prefer server-provided invite_count on any invitation matching this email
+    const serverCount = invitations.find(i => i.email && i.email.toLowerCase() === email.toLowerCase() && i.invite_count);
+    if (serverCount && serverCount.invite_count) return serverCount.invite_count;
+    return invitations.filter(i => i.email && i.email.toLowerCase() === email.toLowerCase()).length;
   };
   
   const handleTabChange = (event, newValue) => {
@@ -481,11 +506,17 @@ const GroupDetail = () => {
                                 ) : 'Owner'
                               }
                             >
-                              <ListItemAvatar>
-                                <Avatar src={member.profile_image_url}>
-                                  {member.first_name?.[0]}
-                                </Avatar>
-                              </ListItemAvatar>
+                                <ListItemAvatar>
+                                  <Badge
+                                    badgeContent={inviteCountForEmail(member.email) || null}
+                                    color="primary"
+                                    overlap="circular"
+                                  >
+                                    <Avatar src={member.profile_image_url}>
+                                      {member.first_name?.[0]}
+                                    </Avatar>
+                                  </Badge>
+                                </ListItemAvatar>
                               <ListItemText 
                                 disableTypography
                                 primary={
@@ -524,12 +555,20 @@ const GroupDetail = () => {
                   <Typography variant="h6">
                     Pending Invitations ({invitations?.length || 0})
                   </Typography>
-                  <Button 
-                    variant="outlined" 
-                    startIcon={<PersonAddIcon />}
+                  {/* Circular blue action button to match Group-add style */}
+                  <Button
                     onClick={() => setOpenInviteDialog(true)}
+                    sx={{
+                      minWidth: 48,
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      bgcolor: 'primary.main',
+                      color: 'common.white',
+                      '&:hover': { bgcolor: 'primary.dark' }
+                    }}
                   >
-                    Send New Invitation
+                    <PersonAddIcon />
                   </Button>
                 </Box>
                 
@@ -540,13 +579,30 @@ const GroupDetail = () => {
                     </Box>
                   ) : invitations && invitations.length > 0 ? (
                     <List>
-                      {invitations.map((invitation, index) => (
-                        <React.Fragment key={invitation._id || index}>
+                      {invitations.map((invitation, index) => {
+                        const invId = invitation.id || invitation._id || index;
+                        return (
+                        <React.Fragment key={invId}>
                           <ListItem>
                             <ListItemAvatar>
-                              <Avatar>
-                                <PersonIcon />
-                              </Avatar>
+                              {/* show badge with count of how many times this email appears in invitations */}
+                              <Badge
+                                badgeContent={
+                                  // Prefer server-provided invite_count, fallback to local count
+                                  (invitation.invite_count && invitation.invite_count > 0)
+                                    ? invitation.invite_count
+                                    : (invitations.filter(i => i.email === invitation.email).length || null)
+                                }
+                                color="primary"
+                                overlap="circular"
+                                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                              >
+                                <Tooltip title={`Invited ${invitation.invite_count && invitation.invite_count > 0 ? invitation.invite_count : invitations.filter(i => i.email === invitation.email).length} times`}>
+                                  <Avatar>
+                                    <PersonIcon />
+                                  </Avatar>
+                                </Tooltip>
+                              </Badge>
                             </ListItemAvatar>
                             <ListItemText 
                               primary={invitation.email}
@@ -561,16 +617,58 @@ const GroupDetail = () => {
                                 </Box>
                               }
                             />
-                            <Chip 
-                              label={invitation.status} 
-                              size="small" 
-                              color={invitation.status === 'pending' ? 'warning' : invitation.status === 'accepted' ? 'success' : 'error'}
-                              sx={{ ml: 2 }}
-                            />
+                            {/* Replace status chip with resend (refresh) action for pending invitations */}
+                            {invitation.status === 'pending' ? (
+                              <Box sx={{ ml: 2 }}>
+                                <IconButton
+                                  aria-label="resend-invitation"
+                                  size="small"
+                                  onClick={async () => {
+                                    try {
+                                      setResendLoading(l => ({ ...l, [invId]: true }));
+                                      const resp = await api.post(`/groups/${groupId}/invitations/${invId}/resend`);
+                                      // refresh invitations after successful resend
+                                      await fetchInvitations();
+                                      const preview = resp?.data?.previewUrl || resp?.data?.invitation?.emailPreviewUrl || null;
+                                      if (preview) {
+                                        setSnackbarMsg('Invitation resent — preview:');
+                                        setSnackbarLink(preview);
+                                        setSnackbarOpen(true);
+                                      } else {
+                                        setSnackbarMsg('Invitation resent');
+                                        setSnackbarLink(null);
+                                        setSnackbarOpen(true);
+                                      }
+                                    } catch (err) {
+                                      console.error('Error resending invitation:', err);
+                                      setSnackbarMsg('Failed to resend invitation');
+                                      setSnackbarLink(null);
+                                      setSnackbarOpen(true);
+                                    } finally {
+                                      setResendLoading(l => ({ ...l, [invId]: false }));
+                                    }
+                                  }}
+                                >
+                                  {resendLoading[invId] ? (
+                                    <CircularProgress size={18} />
+                                  ) : (
+                                    <RefreshIcon fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </Box>
+                            ) : (
+                              <Chip 
+                                label={invitation.status} 
+                                size="small" 
+                                color={invitation.status === 'accepted' ? 'success' : 'error'}
+                                sx={{ ml: 2 }}
+                              />
+                            )}
                           </ListItem>
                           {index < invitations.length - 1 && <Divider />}
                         </React.Fragment>
-                      ))}
+                      );
+                      })}
                     </List>
                   ) : (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -701,6 +799,19 @@ const GroupDetail = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={10000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMsg}
+        action={
+          snackbarLink ? (
+            <Link href={snackbarLink} target="_blank" rel="noopener" color="inherit" sx={{ textDecoration: 'underline', ml: 1 }}>
+              Open preview
+            </Link>
+          ) : null
+        }
+      />
     </Box>
   );
 };
