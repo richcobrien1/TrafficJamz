@@ -73,6 +73,9 @@ const GroupDetail = () => {
   const [editError, setEditError] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [openCancelInviteDialog, setOpenCancelInviteDialog] = useState(false);
+  const [cancelInviteLoading, setCancelInviteLoading] = useState(false);
+  const [inviteToCancel, setInviteToCancel] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [showAudioSession, setShowAudioSession] = useState(false);  // In your GroupDetails component
   const [invitations, setInvitations] = useState([]);
@@ -273,10 +276,15 @@ const GroupDetail = () => {
   };
   
   
-  const handleLeaveGroup = async (user_id) => {
+  const handleLeaveGroup = async (user_id, navigateAway = true) => {
     try {
-  await api.delete(`/groups/${groupId}/members/${user_id}`);
-      navigate('/');
+      await api.delete(`/groups/${groupId}/members/${user_id}`);
+      if (navigateAway) {
+        navigate('/');
+      } else {
+        // Refresh group details so the members list updates in-place
+        await fetchGroupDetails();
+      }
     } catch (error) {
       console.error('Error leaving group:', error);
     }
@@ -500,7 +508,7 @@ const GroupDetail = () => {
                             <ListItem
                               secondaryAction={
                                 isOwner && member.user_id !== user?.user_id && member.role !== 'owner' ? (
-                                  <IconButton edge="end" aria-label="remove" onClick={() => { handleLeaveGroup(member.user_id); }}>
+                                  <IconButton edge="end" aria-label="remove" onClick={() => { handleLeaveGroup(member.user_id, false); }}>
                                     <DeleteIcon />
                                   </IconButton>
                                 ) : 'Owner'
@@ -619,7 +627,7 @@ const GroupDetail = () => {
                             />
                             {/* Replace status chip with resend (refresh) action for pending invitations */}
                             {invitation.status === 'pending' ? (
-                              <Box sx={{ ml: 2 }}>
+                              <Box sx={{ ml: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
                                 <IconButton
                                   aria-label="resend-invitation"
                                   size="small"
@@ -654,6 +662,18 @@ const GroupDetail = () => {
                                   ) : (
                                     <RefreshIcon fontSize="small" />
                                   )}
+                                </IconButton>
+
+                                {/* Delete / Cancel invitation button */}
+                                <IconButton
+                                  aria-label="cancel-invitation"
+                                  size="small"
+                                  onClick={() => {
+                                    setInviteToCancel({ id: invId, email: invitation.email });
+                                    setOpenCancelInviteDialog(true);
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </Box>
                             ) : (
@@ -796,6 +816,50 @@ const GroupDetail = () => {
             disabled={deleteLoading}
           >
             {deleteLoading ? <CircularProgress size={24} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Cancel Invitation Dialog */}
+      <Dialog open={openCancelInviteDialog} onClose={() => { setOpenCancelInviteDialog(false); setInviteToCancel(null); }}>
+        <DialogTitle>Cancel Invitation</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to cancel the invitation to {inviteToCancel?.email}?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setOpenCancelInviteDialog(false); setInviteToCancel(null); }}>No</Button>
+          <Button 
+            onClick={async () => {
+              if (!inviteToCancel) return;
+              try {
+                setCancelInviteLoading(true);
+                const resp = await api.delete(`/groups/${groupId}/invitations/${inviteToCancel.id}`);
+                if (resp?.data?.success) {
+                  setSnackbarMsg('Invitation cancelled');
+                  setSnackbarLink(null);
+                  setSnackbarOpen(true);
+                  // Refresh list
+                  await fetchInvitations();
+                } else {
+                  setSnackbarMsg('Failed to cancel invitation');
+                  setSnackbarOpen(true);
+                }
+              } catch (err) {
+                console.error('Error cancelling invitation:', err);
+                setSnackbarMsg(err.response?.data?.message || 'Failed to cancel invitation');
+                setSnackbarOpen(true);
+              } finally {
+                setCancelInviteLoading(false);
+                setOpenCancelInviteDialog(false);
+                setInviteToCancel(null);
+              }
+            }}
+            variant="contained"
+            color="error"
+            disabled={cancelInviteLoading}
+          >
+            {cancelInviteLoading ? <CircularProgress size={20} /> : 'Yes, Cancel'}
           </Button>
         </DialogActions>
       </Dialog>
