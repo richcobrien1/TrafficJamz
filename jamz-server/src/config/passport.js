@@ -17,9 +17,11 @@ const jwtOptions = {
 passport.use(
   new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
     try {
+      console.log('passport: received jwtPayload:', jwtPayload);
       // Simply pass the JWT payload as the user
       return done(null, { user_id: jwtPayload.sub, email: jwtPayload.email });
     } catch (error) {
+      console.error('passport: jwt strategy error:', error && error.message ? error.message : error);
       return done(error, false);
     }
   })

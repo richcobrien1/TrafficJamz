@@ -44,4 +44,19 @@ router.put('/places/:placeId', passport.authenticate('jwt', { session: false }),
   }
 });
 
+// Delete a place
+router.delete('/places/:placeId', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const { placeId } = req.params;
+    const requestingUserId = req.user && req.user.user_id;
+    await placeService.deletePlace(placeId, requestingUserId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete place error:', error);
+    if (error.message === 'Forbidden') return res.status(403).json({ success: false, message: error.message });
+    if (error.message === 'Place not found') return res.status(404).json({ success: false, message: error.message });
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

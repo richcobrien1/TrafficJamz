@@ -27,6 +27,7 @@ import {
   Alert,
   AlertTitle,
   List,
+  TextField,
   ListItem,
   ListItemButton,
   ListItemText,
@@ -130,6 +131,12 @@ const LocationTracking = () => {
   const [satelliteMode, setSatelliteMode] = useState(false);
   const [showPlaces, setShowPlaces] = useState(true);
   const [placeSelectionMode, setPlaceSelectionMode] = useState(false);
+  const [overlayCreateMode, setOverlayCreateMode] = useState(() => {
+    try {
+      const v = localStorage.getItem('overlayCreateMode');
+      return v === 'true';
+    } catch (e) { return false; }
+  }); // when true, show center HUD dot for place creation
   const [draggingPlaceId, setDraggingPlaceId] = useState(null);
   const [useBestReading, setUseBestReading] = useState(false);
   const [gpsReadingsBuffer, setGpsReadingsBuffer] = useState([]);
@@ -138,15 +145,32 @@ const LocationTracking = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('info');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameText, setRenameText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [openCreatePlaceDialog, setOpenCreatePlaceDialog] = useState(false);
+  const [createPlaceName, setCreatePlaceName] = useState('New Place');
+  const [createPlaceCoords, setCreatePlaceCoords] = useState(null);
+  const [isCreatingPlace, setIsCreatingPlace] = useState(false);
   
   // Refs
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const placeSelectionModeRef = useRef(false);
   const markersRef = useRef({});
   const pendingLocationsRef = useRef(null);
   const watchIdRef = useRef(null);
   const locationDataRef = useRef(null);
   const centerMarkerRef = useRef(null);
+  const hoverRingRef = useRef(null);
+  const selectionMouseMoveRef = useRef(null);
+
+  // Keep a ref in sync so map event handlers can read the latest selection mode
+  useEffect(() => {
+    placeSelectionModeRef.current = placeSelectionMode;
+  }, [placeSelectionMode]);
   
   // Show drop notification
   const showNotification = (message, severity = 'info') => {
@@ -462,6 +486,9 @@ const LocationTracking = () => {
 
       // Add mock users to enriched locations for testing
       enrichedLocations = [...enrichedLocations, ...mockUsers];
+
+      // Return the normalized/enriched locations array
+      return enrichedLocations;
     } catch (error) {
       console.error('Error fetching member locations:', error);
       return [];
@@ -501,6 +528,15 @@ const LocationTracking = () => {
       showNotification('Getting your location...', 'info');
     }
   }, [isGettingLocation]);
+
+  // Initialize rename input when dialog opens for a place
+  useEffect(() => {
+    if (openLocationDialog && selectedLocation && selectedLocation.place) {
+      setRenameText(selectedLocation.username || '');
+    } else {
+      setRenameText('');
+    }
+  }, [openLocationDialog, selectedLocation]);
 
   useEffect(() => {
     if (locationInfo) {
@@ -585,18 +621,19 @@ const LocationTracking = () => {
   
   // Handle place selection mode changes
   useEffect(() => {
-    if (placeSelectionMode && mapRef.current) {
+    // Only show the center HUD marker when both selection mode and overlay mode are active
+    if (placeSelectionMode && overlayCreateMode && mapRef.current) {
       createCenterMarker();
     } else {
-      // Always try to remove center marker when not in place selection mode
+      // Always try to remove center marker when overlay is off or not in selection mode
       removeCenterMarker();
     }
-    
+
     // Cleanup on unmount
     return () => {
       removeCenterMarker();
     };
-  }, [placeSelectionMode]);
+  }, [placeSelectionMode, overlayCreateMode]);
 
   // Fetch nearby places using Mapbox Geocoding API (POI & address)
   const fetchPlacesAround = async (lng, lat, limit = 6) => {
@@ -853,9 +890,10 @@ const LocationTracking = () => {
           }
         };
 
-        // Map click to add place at clicked location
+        // Map click to add place at clicked location only when in placeSelectionMode
         map.on('click', (e) => {
           try {
+            if (!placeSelectionModeRef.current) return; // only create places when explicitly selecting
             const { lngLat } = e;
             createPlaceAtLocation(lngLat.lat, lngLat.lng);
           } catch (err) {
@@ -1335,108 +1373,230 @@ const LocationTracking = () => {
       centerMarkerRef.current = null;
     }
   };
+
+  // Create a faint hover ring that follows the cursor for place selection (non-overlay mode)
+  const createHoverRing = () => {
+    if (hoverRingRef.current || !mapRef.current) return;
+    const ring = document.createElement('div');
+    ring.style.position = 'absolute';
+    ring.style.width = '28px';
+    ring.style.height = '28px';
+    ring.style.borderRadius = '50%';
+    ring.style.border = '2px solid rgba(33,150,243,0.6)';
+    ring.style.background = 'rgba(33,150,243,0.08)';
+    ring.style.pointerEvents = 'none';
+    ring.style.transform = 'translate(-50%, -50%)';
+    ring.style.zIndex = 2000;
+    // attach to map container
+    try {
+      const canvasContainer = mapRef.current.getContainer();
+      canvasContainer.appendChild(ring);
+      hoverRingRef.current = ring;
+    } catch (err) {
+      console.warn('Could not create hover ring:', err);
+    }
+  };
+
+  const removeHoverRing = () => {
+    try {
+      if (hoverRingRef.current && mapRef.current) {
+        const canvasContainer = mapRef.current.getContainer();
+        if (canvasContainer.contains(hoverRingRef.current)) canvasContainer.removeChild(hoverRingRef.current);
+      }
+    } catch (err) {
+      // ignore
+    }
+    hoverRingRef.current = null;
+    selectionMouseMoveRef.current = null;
+  };
   
   // Toggle place selection mode
   const togglePlaceSelectionMode = () => {
     const newMode = !placeSelectionMode;
     setPlaceSelectionMode(newMode);
-    
-    if (newMode) {
-      // Enter place selection mode - create center marker at current map center
-      createCenterMarker();
-      // Don't force centering on user location - let user select any location on map
-    } else {
-      // Exit place selection mode - record the place
-      if (mapRef.current && centerMarkerRef.current) {
-        const center = mapRef.current.getCenter();
-        createPlaceAtLocation(center.lat, center.lng);
+
+    // Toggle map cursor and HUD overlay behavior
+    try {
+      if (mapRef.current) {
+        const canvas = mapRef.current.getCanvas();
+        if (newMode) {
+          // Entering selection mode
+          showNotification('Place selection mode: click a map point to create a place (Esc to cancel)', 'info');
+          if (overlayCreateMode) {
+            // Show the centered HUD dot
+            createCenterMarker();
+            // Default cursor while HUD is shown
+            canvas.style.cursor = '';
+          } else {
+            // No HUD: let user click any map point — show pointer to indicate actionable click
+            createHoverRing();
+            canvas.style.cursor = 'pointer';
+
+            // Add mousemove handler to update ring position
+            selectionMouseMoveRef.current = (e) => {
+              try {
+                const rect = mapRef.current.getContainer().getBoundingClientRect();
+                if (hoverRingRef.current) {
+                  hoverRingRef.current.style.left = `${e.clientX - rect.left}px`;
+                  hoverRingRef.current.style.top = `${e.clientY - rect.top}px`;
+                }
+              } catch (err) {
+                // ignore
+              }
+            };
+            window.addEventListener('mousemove', selectionMouseMoveRef.current);
+          }
+        } else {
+          // Exiting selection mode
+          if (overlayCreateMode && mapRef.current && centerMarkerRef.current) {
+            const center = mapRef.current.getCenter();
+            createPlaceAtLocation(center.lat, center.lng);
+          }
+
+          // Remove any hud marker and hover ring and restore cursor
+          removeCenterMarker();
+          removeHoverRing();
+          try { window.removeEventListener('mousemove', selectionMouseMoveRef.current); } catch (e) {}
+          canvas.style.cursor = '';
+          showNotification('Exited place selection mode', 'info');
+        }
       }
-      removeCenterMarker();
+    } catch (err) {
+      console.warn('Error toggling place selection mode UI:', err);
     }
   };
   
   // Create a place at the specified location
   const createPlaceAtLocation = async (lat, lng) => {
+    // Open the create-place dialog with given coordinates
+    setCreatePlaceCoords({ latitude: lat, longitude: lng });
+    setCreatePlaceName('New Place');
+    setOpenCreatePlaceDialog(true);
+  };
+
+  const createPlaceConfirmed = async () => {
+    if (!createPlaceCoords) return;
+    setIsCreatingPlace(true);
     try {
-      // Prompt for place name
-      const placeName = prompt('Enter a name for this place:', 'New Place');
-      if (!placeName || placeName.trim() === '') {
-        return; // User cancelled or entered empty name
-      }
-      
       const placeData = {
-        name: placeName.trim(),
-        latitude: lat,
-        longitude: lng
+        name: (createPlaceName || 'New Place').trim(),
+        latitude: createPlaceCoords.latitude,
+        longitude: createPlaceCoords.longitude
       };
-      
+
       const response = await api.post(`/groups/${groupId}/places`, placeData);
-      
-      if (response.data.success) {
-        console.log('Place created successfully:', response.data.place);
-        
-        // Immediately add the new place to the map
+      if (response.data && response.data.success) {
         const newPlace = {
           user_id: `place_${response.data.place._id}`,
           username: response.data.place.name,
-          coordinates: { 
-            latitude: response.data.place.coordinates.latitude, 
-            longitude: response.data.place.coordinates.longitude 
+          coordinates: {
+            latitude: response.data.place.coordinates.latitude,
+            longitude: response.data.place.coordinates.longitude
           },
           timestamp: response.data.place.createdAt,
           battery_level: null,
           place: true,
           raw: response.data.place
         };
-        
-        // Add to places state and update markers
+
         setPlaces(prevPlaces => [...prevPlaces, newPlace]);
         updateMapMarkers([...locations, newPlace]);
-        
-        // Enable places display
         setShowPlaces(true);
-        
-        // Show success message
-        alert(`Place "${placeName}" created successfully!`);
+        setOpenCreatePlaceDialog(false);
+        showNotification(`Place "${placeData.name}" created successfully!`, 'success');
       } else {
-        throw new Error(response.data.message || 'Failed to create place');
+        throw new Error(response.data && response.data.message ? response.data.message : 'Failed to create place');
       }
-      
     } catch (error) {
       console.error('Error creating place:', error);
-      alert('Failed to create place. Please try again.');
+      showNotification('Failed to create place. Please try again.', 'error');
+    } finally {
+      setIsCreatingPlace(false);
+      setCreatePlaceCoords(null);
     }
   };
   
-  // Delete a place
+  // Initiate delete flow (show confirmation)
+  const confirmDeletePlace = (placeId) => {
+    setDeleteTargetId(placeId);
+    setOpenDeleteConfirm(true);
+  };
+
+  const cancelDeletePlace = () => {
+    setOpenDeleteConfirm(false);
+    setDeleteTargetId(null);
+  };
+
   const deletePlace = async (placeId) => {
+    setIsDeleting(true);
     try {
-      if (!confirm('Are you sure you want to delete this place?')) {
-        return;
-      }
-      
-      const response = await api.delete(`/groups/${groupId}/places/${placeId}`);
-      
-      if (response.data.success) {
+      // backend route expects /places/:placeId (no group prefix)
+      const response = await api.delete(`/places/${placeId}`);
+
+      // handle a few possible success shapes (data.success, 200/204, or message)
+      const success = (response && (
+        (response.data && response.data.success === true) ||
+        response.status === 200 ||
+        response.status === 204 ||
+        (response.data && typeof response.data.message === 'string' && response.data.message.toLowerCase().includes('success'))
+      ));
+
+      if (success) {
         console.log('Place deleted successfully:', placeId);
-        
+
         // Remove the place from local state
         setPlaces(prevPlaces => 
           prevPlaces.filter(place => !(place.raw && place.raw._id === placeId))
         );
-        
-        // Close the dialog
+
+        // Close dialogs
         setOpenLocationDialog(false);
-        
+        setOpenDeleteConfirm(false);
+
         // Show success message
-        alert('Place deleted successfully!');
+        showNotification('Place deleted successfully!', 'success');
       } else {
-        throw new Error(response.data.message || 'Failed to delete place');
+        throw new Error(response.data && response.data.message ? response.data.message : 'Failed to delete place');
       }
-      
     } catch (error) {
       console.error('Error deleting place:', error);
-      alert('Failed to delete place. Please try again.');
+      showNotification('Failed to delete place. Please try again.', 'error');
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
+    }
+  };
+
+  // Rename a place
+  const renamePlace = async (placeId, newName) => {
+    if (!newName || newName.trim() === '') return;
+    setIsRenaming(true);
+    try {
+      const response = await api.put(`/places/${placeId}`, { name: newName.trim() });
+
+      // Accept common success shapes
+      const success = response && (response.data && response.data.success === true || response.status === 200);
+      if (success) {
+        // Update local places and selectedLocation
+        setPlaces(prevPlaces => prevPlaces.map(place =>
+          place.raw && place.raw._id === placeId ? { ...place, username: newName.trim(), raw: { ...place.raw, name: newName.trim() } } : place
+        ));
+
+        if (selectedLocation && selectedLocation.place && selectedLocation.raw && selectedLocation.raw._id === placeId) {
+          setSelectedLocation(prev => ({ ...prev, username: newName.trim(), raw: { ...prev.raw, name: newName.trim() } }));
+        }
+
+        showNotification('Place renamed', 'success');
+        setIsRenaming(false);
+        setIsRenaming(false);
+        setRenameText('');
+      } else {
+        throw new Error(response.data && response.data.message ? response.data.message : 'Failed to rename place');
+      }
+    } catch (error) {
+      console.error('Error renaming place:', error);
+      showNotification('Failed to rename place. Please try again.', 'error');
+      setIsRenaming(false);
     }
   };
   
@@ -1471,6 +1631,27 @@ const LocationTracking = () => {
       }
     };
   }, [draggingPlaceId]);
+
+  // Listen for Escape key to cancel place selection mode
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape' && placeSelectionMode) {
+        setPlaceSelectionMode(false);
+        try {
+          if (mapRef.current) {
+            const canvas = mapRef.current.getCanvas();
+            canvas.style.cursor = '';
+          }
+        } catch (err) {}
+        removeCenterMarker();
+        removeHoverRing();
+        try { window.removeEventListener('mousemove', selectionMouseMoveRef.current); } catch (err) {}
+        showNotification('Place selection canceled', 'info');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [placeSelectionMode]);
 
   // Update markers when dragging mode changes
   useEffect(() => {
@@ -1603,7 +1784,7 @@ const LocationTracking = () => {
                 }
               } catch (error) {
                 console.error('Error updating place coordinates:', error);
-                alert('Failed to update place location. Please try again.');
+                        showNotification('Failed to update place location. Please try again.', 'error');
                 exitPlaceDraggingMode();
               }
             }
@@ -1914,6 +2095,7 @@ const LocationTracking = () => {
             top: showControls ? 72 : 16,
             right: 16,
             zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
             color: 'purple',
             boxShadow: 2,
@@ -1936,6 +2118,7 @@ const LocationTracking = () => {
             top: showControls ? 72 : 16,
             right: 76,
             zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
             color: 'purple',
             boxShadow: 2,
@@ -1958,6 +2141,7 @@ const LocationTracking = () => {
             top: showControls ? 72 : 16,
             right: 136,
             zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
             color: 'purple',
             boxShadow: 2,
@@ -1996,6 +2180,7 @@ const LocationTracking = () => {
             top: showControls ? 72 : 16,
             right: 196,
             zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
             color: 'purple',
             boxShadow: 2,
@@ -2299,6 +2484,26 @@ const LocationTracking = () => {
               label="Show Proximity Alerts"
             />
           </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={overlayCreateMode} 
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setOverlayCreateMode(val);
+                    try { localStorage.setItem('overlayCreateMode', val ? 'true' : 'false'); } catch (err) {}
+                  }}
+                  color="primary"
+                />
+              }
+              label="Use HUD Overlay for Place Create"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 3 }}>
+              When enabled, entering Place Selection will show a centered HUD marker. When disabled, click any map point to create a place.
+            </Typography>
+          </Box>
           
           <Box sx={{ mb: 3 }}>
             <Typography gutterBottom>UI Overlay Opacity</Typography>
@@ -2331,8 +2536,15 @@ const LocationTracking = () => {
       >
         {selectedLocation && (
           <>
-            <DialogTitle>
-              {selectedLocation.place ? `📍 ${selectedLocation.username || 'Place'}` : `${selectedLocation.username || 'Unknown'}`}
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6">
+                  {selectedLocation.place ? `📍 ${selectedLocation.username || 'Place'}` : `${selectedLocation.username || 'Unknown'}`}
+                </Typography>
+              </Box>
+              <IconButton aria-label="close" onClick={() => setOpenLocationDialog(false)}>
+                <CloseIcon />
+              </IconButton>
             </DialogTitle>
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
@@ -2347,13 +2559,55 @@ const LocationTracking = () => {
                 >
                   {selectedLocation.place ? '📍' : (selectedLocation.username ? selectedLocation.username.charAt(0).toUpperCase() : '?')}
                 </Avatar>
-                <Typography variant="h6">
-                  {selectedLocation.place ? (selectedLocation.username || 'Unknown Place') : (selectedLocation.username || 'Unknown')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedLocation.place ? 'Saved Location' : 
-                   (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
-                </Typography>
+                {selectedLocation.place ? (
+                  <>
+                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 0.5 }}>
+                      <TextField
+                        autoFocus
+                        variant="standard"
+                        value={renameText}
+                        onChange={(e) => setRenameText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (selectedLocation && selectedLocation.raw && selectedLocation.raw._id) {
+                              renamePlace(selectedLocation.raw._id, renameText);
+                            }
+                          }
+                        }}
+                        InputProps={{
+                          disableUnderline: true,
+                          sx: {
+                            fontSize: '1.25rem',
+                            fontWeight: 500,
+                            fontFamily: 'inherit'
+                          },
+                          inputProps: {
+                            style: { textAlign: 'center' }
+                          }
+                        }}
+                        onFocus={(e) => {
+                          // Auto-select the input contents for quick rename
+                          try { e.target.select(); } catch (err) { /* ignore */ }
+                        }}
+                        sx={{ width: '80%', maxWidth: 420 }}
+                        disabled={isRenaming}
+                        aria-label="Edit place name"
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedLocation.place ? 'Saved Location' : 
+                       (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="h6">{selectedLocation.username || 'Unknown'}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedLocation.place ? 'Saved Location' : 
+                       (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
+                    </Typography>
+                  </>
+                )}
               </Box>
               
               {/* Location details */}
@@ -2442,13 +2696,16 @@ const LocationTracking = () => {
               </Box>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setOpenLocationDialog(false)}>Close</Button>
+              {!selectedLocation.place && (
+                <Button onClick={() => setOpenLocationDialog(false)}>Close</Button>
+              )}
               {selectedLocation.place && selectedLocation.raw && (
                 <Button 
                   color="error"
-                  onClick={() => deletePlace(selectedLocation.raw._id)}
+                  onClick={() => confirmDeletePlace(selectedLocation.raw._id)}
+                  disabled={isDeleting}
                 >
-                  DELETE
+                  {isDeleting ? 'DELETING...' : 'DELETE'}
                 </Button>
               )}
               {selectedLocation.coordinates && (
@@ -2471,6 +2728,21 @@ const LocationTracking = () => {
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={openDeleteConfirm}
+        onClose={cancelDeletePlace}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this place? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeletePlace} disabled={isDeleting}>Cancel</Button>
+          <Button color="error" onClick={() => deletePlace(deleteTargetId)} disabled={isDeleting}>{isDeleting ? 'DELETING...' : 'Delete'}</Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

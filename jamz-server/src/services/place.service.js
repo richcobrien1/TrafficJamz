@@ -57,6 +57,19 @@ class PlaceService {
     await place.save();
     return place;
   }
+
+  async deletePlace(placeId, requestingUserId) {
+    const place = await Place.findById(placeId).exec();
+    if (!place) throw new Error('Place not found');
+
+    // Only creator can delete
+    if (place.created_by && requestingUserId && place.created_by.toString() !== requestingUserId.toString()) {
+      throw new Error('Forbidden');
+    }
+
+    await Place.deleteOne({ _id: placeId }).exec();
+    return true;
+  }
 }
 
 module.exports = new PlaceService();
