@@ -65,8 +65,10 @@ app.use((req, res, next) => {
 // ===== CORS Configuration =====
 // Dynamic CORS configuration using environment variables
 const allowedOrigins = [
-  process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev
-  process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod
+  process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev (http)
+  process.env.CORS_ORIGIN_DEV_HTTPS || 'https://localhost:5175',// TrafficJamz frontend dev (https)
+  process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod (http)
+  process.env.CORS_ORIGIN_PROD_HTTPS || 'https://localhost:8080', // TrafficJamz frontend prod (https)
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us',       // Android apps
@@ -77,6 +79,18 @@ const allowedOrigins = [
   'http://192.178.58.146:5174',      // Previous additional port for mobile testing
   'http://192.178.58.146:5175'       // Previous network access port for mobile testing
 ];
+
+// Also allow HTTPS variants of the common dev IPs to avoid mixed-content issues
+const devIpHttpsVariants = [
+  'https://192.176.58.146:5173',
+  'https://192.176.58.146:5174',
+  'https://192.176.58.146:5175',
+  'https://192.178.58.146:5173',
+  'https://192.178.58.146:5174',
+  'https://192.178.58.146:5175'
+];
+
+devIpHttpsVariants.forEach(o => allowedOrigins.push(o));
 
 // Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
 function isLocalhostOrigin(origin) {
@@ -98,6 +112,24 @@ function isLocalhostOrigin(origin) {
 const corsOptionsDelegate = function (req, callback) {
   const origin = req.header('Origin');
 
+  // DEVELOPMENT DEBUGGING HELPERS
+  // When running locally we sometimes see mobile browsers present unexpected
+  // origins (or fail TLS validation) which manifests as opaque "Network Error"
+  // in the client. To speed up debugging, allow all origins when NODE_ENV is
+  // explicitly 'development'. This is temporary and should not be used in
+  // staging/production environments.
+  if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development') console.log('⚠️ Development CORS: allowing all origins for debugging');
+    return callback(null, {
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['Content-Length', 'Authorization'],
+      optionsSuccessStatus: 204
+    });
+  }
+
   // If there's no Origin header, treat it as a same-origin/internal request
   // (for example: curl from container, or proxy that strips Origin). Allow it.
   if (!origin) {
@@ -113,6 +145,9 @@ const corsOptionsDelegate = function (req, callback) {
 
   // Accept explicit allowed origins or localhost variants
   if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ CORS allow for origin:', origin);
+    }
     return callback(null, {
       origin: origin,
       credentials: true,
@@ -123,7 +158,9 @@ const corsOptionsDelegate = function (req, callback) {
     });
   }
 
-  console.log('🔒 Blocked CORS for origin:', origin);
+  // Verbose logging for blocked origins to aid debugging in dev
+  console.warn('🔒 Blocked CORS for origin:', origin);
+  console.warn('   Allowed origins snapshot (truncated):', allowedOrigins.slice(0, 10));
   callback(new Error('Not allowed by CORS'));
 };
 

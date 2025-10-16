@@ -154,19 +154,26 @@ const AudioSession = () => {
 
         console.log('Session ID validated, proceeding with initialization');
 
-        // NOTE: Always try to auto-initialize microphone on desktop
-        // If it fails, show error instead of requiring user gesture
-        console.log('🎤 Setting up auto-init timeout...');
-        setTimeout(() => {
-          console.log('🎤 Auto-init timeout triggered, calling initializeMicrophone...');
-          initializeMicrophone().then(() => {
-            console.log('🎤 Auto-init succeeded');
-          }).catch(error => {
-            console.log('🎤 Auto-init failed:', error.message, error.name);
-            // On desktop, don't require user gesture - show error instead
-            setAudioError(`Microphone access failed: ${error.message}. Please check your browser permissions and refresh the page.`);
-          });
-        }, 1000); // Small delay to ensure component is ready
+        // Only auto-initialize the microphone on non-iOS devices.
+        // iOS Safari requires a user gesture; forcing auto-init there causes
+        // the getUserMedia prompt to be blocked. For iOS we instead present
+        // a visible button the user must tap to enable the microphone.
+        if (!isIOS) {
+          console.log('🎤 Non-iOS detected — setting up auto-init timeout...');
+          setRequiresUserGesture(false);
+          setTimeout(() => {
+            console.log('🎤 Auto-init timeout triggered, calling initializeMicrophone...');
+            initializeMicrophone().then(() => {
+              console.log('🎤 Auto-init succeeded');
+            }).catch(error => {
+              console.log('🎤 Auto-init failed:', error.message, error.name);
+              setAudioError(`Microphone access failed: ${error.message}. Please check your browser permissions and refresh the page.`);
+            });
+          }, 1000); // Small delay to ensure component is ready
+        } else {
+          console.log('🎤 iOS detected — skipping auto-init. Showing enable-microphone button.');
+          setRequiresUserGesture(true);
+        }
       } catch (error) {
         console.error('Error in component initialization:', error);
         if (isMounted) {
@@ -601,13 +608,11 @@ const AudioSession = () => {
     // Try to GET existing session
     try {
       console.log('Checking for existing audio session for group:', sessionId);
-      const response = await api.get(`/audio/sessions/group/${sessionId}`, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
+      // Avoid sending custom headers here (Cache-Control/Pragma/Expires)
+      // since they trigger CORS preflight checks on some client origins
+      // (and iOS/remote devices will fail if backend doesn't allow these).
+      // Use a cache-busting query param if needed instead.
+      const response = await api.get(`/audio/sessions/group/${sessionId}`);
       console.log('GET session response status:', response.status);
       console.log('GET session response data:', response.data);
       
@@ -1284,19 +1289,27 @@ const AudioSession = () => {
   };
   
   // Render component
-  // console.log('AudioSession render called', {
-  //   loading,
-  //   error,
-  //   audioError,
-  //   session: !!session,
-  //   isJoined,
-  //   micInitialized,
-  //   micInitializing,
-  //   localStream: !!localStream,
-  //   localStreamTracks: localStream ? localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })) : null,
-  //   connected,
-  //   connecting
-  // });
+  // Lightweight render-time log to aid debugging in desktop browsers (keeps console output concise)
+  try {
+    // Only log in non-production to avoid noisy output in production builds
+    if (import.meta.env && import.meta.env.MODE !== 'production') {
+      console.log('AudioSession render', {
+        loading,
+        error: !!error,
+        audioError: !!audioError,
+        session: !!session,
+        isJoined,
+        micInitialized,
+        requiresUserGesture,
+        micInitializing,
+        localStream: !!localStream,
+        connected,
+        connecting
+      });
+    }
+  } catch (e) {
+    // Swallow any render-time logging errors to avoid breaking render
+  }
 
   // Defensive checks for required dependencies
   if (typeof Container === 'undefined' || typeof Typography === 'undefined') {
