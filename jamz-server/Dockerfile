@@ -21,21 +21,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG DISABLE_MEDIASOUP=false
 ENV DISABLE_MEDIASOUP=${DISABLE_MEDIASOUP}
 
-# Copy root-level configs
+# Copy package and source files for build
 COPY package.json package-lock.json ./
+COPY src ./src
+COPY scripts ./scripts
+COPY sql ./sql
 
-# Copy only the backend workspace for build
-COPY backend/ ./backend/
-
-# Install workspace dependencies scoped to backend
-RUN npm install --global npm@latest && npm install --workspace=backend
+# Install dependencies (regular install inside jamz-server)
+RUN npm install --global npm@latest && npm ci --production=false || npm install
 
 # Rebuild native modules (e.g., mediasoup) unless explicitly disabled
 RUN if [ "$DISABLE_MEDIASOUP" = "true" ]; then \
       echo "DISABLE_MEDIASOUP is true - skipping mediasoup rebuild"; \
     else \
       echo "Running mediasoup rebuild..."; \
-      npm --workspace=backend rebuild mediasoup; \
+      npm rebuild mediasoup; \
     fi
 
 # ⛏️ Production Stage
@@ -55,12 +55,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
   && dpkg-reconfigure -f noninteractive tzdata
 
-# Copy built backend only
-COPY --from=builder /app/backend ./backend
+# Copy built app from builder
+COPY --from=builder /app /app
 
-# Install Python CLI support (if needed by backend)
+# Install Python CLI support (if needed by the app)
 RUN python3 -m pip install --break-system-packages --no-cache-dir invoke
 
 EXPOSE 5000
 
-CMD ["node", "backend/src/index.js"]
+# Start the server (jamz-server uses src/index.js)
+CMD ["node", "src/index.js"]
