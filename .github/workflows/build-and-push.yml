@@ -29,6 +29,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Verbose docker build (print logs)
+        run: |
+          cd jamz-server
+          docker build --progress=plain -f Dockerfile -t temp-jamz-server:ci .
+        shell: bash
+
       - name: Build and push jamz-server image
         uses: docker/build-push-action@v4
         with:
