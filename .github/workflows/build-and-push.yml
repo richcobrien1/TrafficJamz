@@ -31,9 +31,18 @@ jobs:
 
       - name: Verbose docker build (print logs)
         run: |
+          mkdir -p build_logs
+          echo "Starting verbose docker build (logs -> build_logs/jamz_build.log)"
           cd jamz-server
-          docker build --progress=plain -f Dockerfile -t temp-jamz-server:ci .
+          # capture stdout/stderr to a file for artifact upload; don't fail the step so we always upload logs
+          docker build --progress=plain -f Dockerfile -t temp-jamz-server:ci . > ../build_logs/jamz_build.log 2>&1 || true
         shell: bash
+
+      - name: Upload build logs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build_logs/jamz_build.log
 
       - name: Build and push jamz-server image
         uses: docker/build-push-action@v4
