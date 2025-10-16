@@ -491,6 +491,8 @@ class GroupService {
         email,
         invited_by: inviterId,
         invited_at: new Date(),
+        // initialize sent_count to 1 for first send
+        sent_count: 1,
         status: 'pending',
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
       };
@@ -566,10 +568,14 @@ class GroupService {
       console.log('Invitation email sent:', emailResult);
 
       // Compute how many times this email has been invited in this group
-      const inviteCount = group.invitations.filter(inv => inv.email === email).length;
+      // Prefer the aggregated sent_count for this email if present
+      const inviteCount = group.invitations
+        .filter(inv => inv.email === email)
+        .reduce((sum, inv) => sum + (inv.sent_count || 1), 0);
 
       // Return a plain object representation including invite_count for API responses
-      return {
+      // Include the invitationLink and any email preview URL in dev for easy testing
+      const responsePayload = {
         id: savedInvitation._id,
         email: savedInvitation.email,
         invited_by: savedInvitation.invited_by,
@@ -578,6 +584,15 @@ class GroupService {
         expires_at: savedInvitation.expires_at,
         invite_count: inviteCount
       };
+
+      if (process.env.NODE_ENV !== 'production') {
+        responsePayload.invitationLink = invitationLink;
+        if (emailResult && emailResult.previewUrl) {
+          responsePayload.emailPreviewUrl = emailResult.previewUrl;
+        }
+      }
+
+      return responsePayload;
     } catch (error) {
       console.error('Error sending invitation:', error);
       throw error;
@@ -604,9 +619,10 @@ class GroupService {
       if (!invitation) throw new Error('Invitation not found');
       if (invitation.status !== 'pending') throw new Error('Only pending invitations may be resent');
 
-      // Update invited_at timestamp to now and extend expiry window
-      invitation.invited_at = new Date();
-      invitation.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Update invited_at timestamp to now, extend expiry and increment sent_count
+  invitation.invited_at = new Date();
+  invitation.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  invitation.sent_count = (invitation.sent_count || 0) + 1;
 
       // Save group
       await group.save();
@@ -648,7 +664,10 @@ class GroupService {
       }
 
       // Compute invite_count for this invitation's email within the group
-      const inviteCount = group.invitations.filter(inv => inv.email === invitation.email).length;
+      // Compute invite_count from sent_count across invitations for this email
+      const inviteCount = group.invitations
+        .filter(inv => inv.email === invitation.email)
+        .reduce((sum, inv) => sum + (inv.sent_count || 1), 0);
 
       return {
         id: invitation._id,
@@ -693,7 +712,10 @@ class GroupService {
           invited_at: inv.invited_at,
           status: inv.status,
           expires_at: inv.expires_at,
-          invite_count: (group.invitations || []).filter(i => i.email === inv.email).length
+          // Sum sent_count across invitations for this email; fall back to count of docs
+          invite_count: (group.invitations || [])
+            .filter(i => i.email === inv.email)
+            .reduce((sum, i) => sum + (i.sent_count || 1), 0)
         }));
     } catch (error) {
       throw error;

@@ -2,6 +2,7 @@
   "name": "audio-group-app-backend",
   "version": "1.0.0",
   "description": "Backend services for group audio communication and location tracking app",
+  "type": "commonjs",
   "main": "src/index.js",
   "directories": {
     "test": "tests"
