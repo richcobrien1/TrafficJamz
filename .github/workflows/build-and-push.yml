@@ -35,7 +35,7 @@ jobs:
           echo "Starting verbose docker build (logs -> build_logs/jamz_build.log)"
           cd jamz-server
           # capture stdout/stderr to a file for artifact upload; don't fail the step so we always upload logs
-          docker build --progress=plain -f Dockerfile -t temp-jamz-server:ci . > ../build_logs/jamz_build.log 2>&1 || true
+          docker build --progress=plain -f Dockerfile --build-arg DISABLE_MEDIASOUP=true -t temp-jamz-server:ci . > ../build_logs/jamz_build.log 2>&1 || true
         shell: bash
 
       - name: Upload build logs artifact
@@ -48,6 +48,8 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./jamz-server
+          build-args: |
+            DISABLE_MEDIASOUP=true
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
