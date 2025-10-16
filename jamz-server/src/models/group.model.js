@@ -131,6 +131,13 @@ const GroupSchema = new Schema({
       type: String,
       required: true
     },
+    // Track how many times this invitation has been sent/resent so the UI can
+    // display an accurate counter without relying on duplicate invitation
+    // documents. Initialized to 1 on create and incremented on resend.
+    sent_count: {
+      type: Number,
+      default: 1
+    },
     invited_at: {
       type: Date,
       default: Date.now
