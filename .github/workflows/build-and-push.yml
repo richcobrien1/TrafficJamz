@@ -2,8 +2,9 @@ name: Build and publish backend image
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, wip/save-local-changes ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-and-push:
