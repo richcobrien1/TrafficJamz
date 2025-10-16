@@ -16,7 +16,12 @@
 import axios from 'axios';
 
 // 🔗 Create axios instance with base API URL
-const rawBase = import.meta.env.VITE_API_BASE || 'http://192.178.58.146:5000/api';
+// Default to a relative '/api' so the browser calls the current origin
+// and the Vite dev server (or production server) can proxy to the backend.
+// If you need to point directly at a backend during mobile testing, set
+// VITE_BACKEND_URL (e.g. http://192.168.1.10:5000) and the client will
+// use that as the absolute backend base.
+const rawBase = import.meta.env.VITE_API_BASE || '/api';
 
 // Detect if running in Capacitor/mobile context
 const isMobile = () => {
@@ -49,20 +54,25 @@ const isMobile = () => {
 
 // For mobile apps, use the full backend URL instead of relative path
 const getBaseURL = () => {
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-  const isCapacitor = window.location.protocol === 'capacitor:';
-  
-  // If running on localhost, use localhost backend
-  if (isLocalhost && !isCapacitor) {
-    return rawBase.startsWith('/') ? 'http://localhost:5000' + rawBase : rawBase;
+  // Safer default: in browser contexts prefer a relative '/api' so the
+  // dev server or production host can proxy/forward to the backend and
+  // avoid mixed-content or CORS issues. Only use an explicit backend URL
+  // when running in a native environment (Capacitor) or when explicitly
+  // forced via VITE_BACKEND_FORCE=true.
+  const explicitBackend = import.meta.env.VITE_BACKEND_URL;
+  const forceBackend = import.meta.env.VITE_BACKEND_FORCE === 'true';
+  const isCapacitor = window.location && window.location.protocol === 'capacitor:';
+  const isBrowserHttp = window.location && (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+
+  if (explicitBackend && (isCapacitor || forceBackend || !isBrowserHttp)) {
+    // Ensure we don't double the '/api' portion
+    if (rawBase.startsWith('/')) {
+      return explicitBackend.replace(/\/$/,'') + rawBase;
+    }
+    return explicitBackend.replace(/\/$/,'') + '/' + rawBase.replace(/^\//, '');
   }
-  
-  // For network access (mobile, different machines), use network IP
-  if (!isLocalhost || isCapacitor) {
-    return rawBase.startsWith('/') ? 'http://192.178.58.146:5000' + rawBase : 'http://192.178.58.146:5000/api';
-  }
-  
+
+  // Default: use relative path so browser calls the same origin
   return rawBase;
 };
 
@@ -88,6 +98,21 @@ const api = axios.create({
 // Normalize request URL to avoid double '/api' when callers include it
 api.interceptors.request.use((config) => {
   try {
+    // If the caller provided an absolute URL (starts with http/https),
+    // axios will normally use it as-is. However, in some runtimes there
+    // have been cases where baseURL was mistakenly concatenated with an
+    // absolute url (resulting in 'http://host/http://host/...'). To be
+    // defensive, if we detect an absolute URL, clear the baseURL for
+    // this request so axios sends the absolute URL unchanged.
+    if (config && config.url && /^https?:\/\//i.test(config.url)) {
+      // Clear any default baseURL for this request
+      config.baseURL = '';
+      if (import.meta.env.MODE === 'development') {
+        console.log('api.request interceptor: detected absolute URL, sending as-is:', config.url);
+      }
+      return config;
+    }
+
     if (!config || !config.url) return config;
 
     const baseHasApi = (api.defaults.baseURL || '').replace(/\/$/, '').endsWith('/api');

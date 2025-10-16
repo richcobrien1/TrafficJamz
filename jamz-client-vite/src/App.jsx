@@ -42,6 +42,8 @@ const LocationTracking = lazy(() => import('./pages/location/LocationTracking'))
 const Profile = lazy(() => import('./pages/profile/Profile'));
 const SubscriptionPlans = lazy(() => import('./pages/misc/SubscriptionPlans'));
 const NotFound = lazy(() => import('./pages/misc/NotFound'));
+// Dev-only debug page
+const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
 
 // Root redirect component that checks auth status
 const RootRedirect = () => {
@@ -114,6 +116,10 @@ function App() {
                     <MapboxMap />
                   </ProtectedRoute>
                 } />
+                {/* Dev-only debug console (no auth required) */}
+                {import.meta.env.DEV && (
+                  <Route path="/dev/debug" element={<DevDebug />} />
+                )}
                 <Route path="/location-tracking/:groupId" element={
                   <ProtectedRoute>
                     <LocationTracking />
