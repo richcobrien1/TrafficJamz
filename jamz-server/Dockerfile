@@ -6,8 +6,16 @@ FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
-# Install Python (required by mediasoup postinstall)
-RUN apt-get update && apt-get install -y python3-pip
+# Install build tools and Python (required by mediasoup and native modules)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  build-essential \
+  python3 \
+  python3-pip \
+  pkg-config \
+  libssl-dev \
+  git \
+  ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy root-level configs
 COPY package.json package-lock.json ./
