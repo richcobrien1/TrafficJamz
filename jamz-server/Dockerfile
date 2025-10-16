@@ -17,6 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+# Allow skipping mediasoup native rebuild via build-arg for faster CI iterations
+ARG DISABLE_MEDIASOUP=false
+ENV DISABLE_MEDIASOUP=${DISABLE_MEDIASOUP}
+
 # Copy root-level configs
 COPY package.json package-lock.json ./
 
@@ -26,8 +30,13 @@ COPY backend/ ./backend/
 # Install workspace dependencies scoped to backend
 RUN npm install --global npm@latest && npm install --workspace=backend
 
-# Rebuild native modules (e.g., mediasoup)
-RUN npm --workspace=backend rebuild mediasoup
+# Rebuild native modules (e.g., mediasoup) unless explicitly disabled
+RUN if [ "$DISABLE_MEDIASOUP" = "true" ]; then \
+      echo "DISABLE_MEDIASOUP is true - skipping mediasoup rebuild"; \
+    else \
+      echo "Running mediasoup rebuild..."; \
+      npm --workspace=backend rebuild mediasoup; \
+    fi
 
 # ⛏️ Production Stage
 FROM node:20-bullseye
