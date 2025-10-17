@@ -281,16 +281,23 @@ class UserService {
         throw new Error('User not found');
       }
 
-      // Update allowed fields
+      // Update allowed fields (expand to cover full profile and settings)
       const allowedFields = [
-        'first_name', 'last_name', 'profile_image_url', 'phone_number'
+        'first_name', 'last_name', 'profile_image_url', 'phone_number',
+        'date_of_birth', 'preferences', 'mfa_enabled', 'mfa_methods'
       ];
 
       for (const field of allowedFields) {
         if (updateData[field] !== undefined) {
-          // Convert empty strings to null for phone_number to avoid validation issues
+          // Defensive conversions
           if (field === 'phone_number' && updateData[field] === '') {
             user[field] = null;
+          } else if (field === 'preferences' && typeof updateData[field] === 'object') {
+            // Deep merge preferences
+            user.preferences = {
+              ...user.preferences,
+              ...updateData.preferences
+            };
           } else {
             user[field] = updateData[field];
           }
@@ -298,6 +305,22 @@ class UserService {
       }
 
       await user.save();
+
+      // After saving the canonical user profile in Postgres, sync a snapshot into any
+      // Mongo group member records that reference this user_id so group invite flows and
+      // stored member snapshots remain consistent.
+      try {
+        const Group = require('../models/group.model');
+        // Update group member snapshots where user_id matches
+        await Group.updateMany(
+          { 'group_members.user_id': user.user_id },
+          { $set: { 'group_members.$[elem].profile': user.toJSON() } },
+          { arrayFilters: [{ 'elem.user_id': user.user_id }], multi: true }
+        );
+      } catch (e) {
+        // Non-fatal: log and continue
+        console.warn('Failed to sync user profile to group member snapshots:', e && e.message);
+      }
 
       // Remove sensitive data
       const userJson = user.toJSON();

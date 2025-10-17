@@ -74,9 +74,13 @@ jobs:
     # deploy the image pushed by the build-and-push job to a target cluster
     needs: build-and-push
     runs-on: ubuntu-latest
-    # only run if the repo has a KUBE_CONFIG_DATA secret configured
-    if: ${{ secrets.KUBE_CONFIG_DATA != '' }}
     steps:
+      - name: Skip deploy when KUBE_CONFIG_DATA is not set
+        run: |
+          if [ -z "${{ secrets.KUBE_CONFIG_DATA }}" ]; then
+            echo "KUBE_CONFIG_DATA secret not set; skipping deploy-to-k8s job.";
+            exit 0;
+          fi
       - name: Checkout repository
         uses: actions/checkout@v4
 
