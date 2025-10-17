@@ -65,7 +65,7 @@ class EmailService {
         text: `
           Hello,
 
-          ${inviterName} has invited you to join the group "${groupName}" on TrafficJamz.
+          ${inviterDisplay} has invited you to join the group "${groupName}" on TrafficJamz.
 
           To accept this invitation, please click on the following link:
           ${invitationLink}
@@ -78,10 +78,10 @@ class EmailService {
           The TrafficJamz Team 🎧
         `,
         html: `
-          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #ff0055, #ff9900); color: #000; padding: 2em; border-radius: 12px;">
+          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #FF0037FF, #FFAE00FF); color: #000; padding: 2em; border-radius: 12px;">
             <h1 style="text-align: center; font-size: 2em; margin-bottom: 0.5em;">🎶 You've Been Invited to TrafficJamz!</h1>
             <div style="text-align: center; margin-bottom: 1.5em;">
-              <img src="https://www.v2u.us/Jamz-sking.png" alt="TrafficJamz in action" style="max-width: 100%; border-radius: 8px;" />
+              <img src="https://www.v2u.us/Jamz-sking.png" alt="TrafficJamz in action" style="display: block; margin: 0 auto; width: 100%; max-width: 480px; border-radius: 8px;" />
             </div>
               <p style="font-size: 1.1em; line-height: 1.6;">
                 <strong>${inviterDisplay}</strong> has invited you to join the group <strong>"${groupName}"</strong> on <strong>TrafficJamz</strong>—the real-time audio and location-sharing app for connected crews.
