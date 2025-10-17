@@ -66,6 +66,10 @@ const GroupSchema = new Schema({
       type: String,
       required: true
     },
+    // joined_at tracks when the member joined the group
+    joined_at: {
+      type: Date
+    },
     first_name: {
       type: String,
       validate: {
@@ -117,6 +121,11 @@ const GroupSchema = new Schema({
         message: 'Phone number is required for active members'
       }
     },
+    // Store a snapshot of the user's full profile at the time they were added
+    profile: {
+      type: Schema.Types.Mixed,
+      default: {}
+    }
     // Rest of the schema remains the same
   }],
   invitations: [{
@@ -184,7 +193,8 @@ GroupSchema.methods.addMember = function(user_id, role = 'member') {
       user_id: user_id,
       role,
       joined_at: new Date(),
-      status: 'active'
+      status: 'active',
+      profile: {}
     });
   }
   return this;

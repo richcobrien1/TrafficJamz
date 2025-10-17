@@ -67,6 +67,13 @@ router.put('/profile',
     body('last_name').optional(),
     body('profile_image_url').optional().isURL().withMessage('Must be a valid URL'),
     body('phone_number').optional(),
+    body('date_of_birth').optional().isISO8601().withMessage('date_of_birth must be a valid date'),
+    body('preferences').optional().custom(value => {
+      if (typeof value !== 'object') {
+        throw new Error('preferences must be a JSON object');
+      }
+      return true;
+    }),
     validate
   ],
   async (req, res) => {
@@ -75,7 +82,9 @@ router.put('/profile',
         first_name: req.body.first_name,
         last_name: req.body.last_name,
         profile_image_url: req.body.profile_image_url,
-        phone_number: req.body.phone_number
+        phone_number: req.body.phone_number,
+        date_of_birth: req.body.date_of_birth,
+        preferences: req.body.preferences
       };
 
       const user = await userService.updateUser(req.user.user_id, updateData);
