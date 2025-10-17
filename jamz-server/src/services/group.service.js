@@ -511,7 +511,9 @@ class GroupService {
       const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
       
       // Get inviter details - Fix for hybrid PostgreSQL/MongoDB system
-      let inviterName = 'A user'; // Default fallback
+  let inviterName = 'A user'; // Default fallback
+  let inviterFullName = null;
+  let inviterHandle = null;
 
       try {
         // Check if inviterId is a valid UUID (registered user) 
@@ -544,11 +546,11 @@ class GroupService {
             console.log('Found user data:', user);
             
             // Use PostgreSQL user data
-            inviterName = user.first_name && user.last_name ? 
-              `${user.first_name} ${user.last_name}`.trim() : 
-              (user.username || user.email.split('@')[0]);
+            inviterFullName = (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}`.trim() : null;
+            inviterHandle = (user.username || user.email) ? (user.username || user.email.split('@')[0]) : null;
+            inviterName = inviterFullName || inviterHandle || inviterName;
             
-            console.log(`Set inviterName to: ${inviterName}`);
+            console.log(`Set inviterName to: ${inviterName}`, { inviterFullName, inviterHandle });
           } else {
             console.log(`No user found with ID: ${inviterId}`);
           }
@@ -562,6 +564,8 @@ class GroupService {
       const emailResult = await emailService.sendInvitationEmail(email, {
         groupName: group.group_name,
         inviterName: inviterName,
+        inviterFullName,
+        inviterHandle,
         invitationLink
       });
       
@@ -633,7 +637,9 @@ class GroupService {
       const invitationLink = `${baseUrl}/invitations/${group._id}/${index}`;
 
       // Determine inviter name for email
-      let inviterName = 'A user';
+  let inviterName = 'A user';
+  let inviterFullName = null;
+  let inviterHandle = null;
       try {
         if (requesterId && requesterId.includes('-')) {
           const sequelize = require('../config/database');
@@ -643,7 +649,9 @@ class GroupService {
           );
           if (users && users.length > 0) {
             const user = users[0];
-            inviterName = user.first_name && user.last_name ? `${user.first_name} ${user.last_name}`.trim() : (user.username || user.email.split('@')[0]);
+            inviterFullName = (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}`.trim() : null;
+            inviterHandle = (user.username || user.email) ? (user.username || user.email.split('@')[0]) : null;
+            inviterName = inviterFullName || inviterHandle || inviterName;
           }
         }
       } catch (err) {
@@ -656,6 +664,8 @@ class GroupService {
         emailResult = await emailService.sendInvitationEmail(invitation.email, {
           groupName: group.group_name,
           inviterName,
+          inviterFullName,
+          inviterHandle,
           invitationLink
         });
       } catch (err) {
