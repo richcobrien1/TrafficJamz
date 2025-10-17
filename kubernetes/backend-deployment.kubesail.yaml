@@ -41,6 +41,8 @@ spec:
           envFrom:
             - secretRef:
                 name: jamz-secrets
+            - configMapRef:
+                name: trafficjamz-frontend-config
 ---
 apiVersion: v1
 kind: Service
