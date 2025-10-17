@@ -28,7 +28,8 @@ COPY scripts ./scripts
 COPY sql ./sql
 
 # Install dependencies (regular install inside jamz-server)
-RUN npm install --global npm@latest && npm ci --production=false || npm install
+# Use `npm install` here to avoid failing when package-lock.json is out of sync during CI iteration.
+RUN npm install --global npm@latest && npm install
 
 # Rebuild native modules (e.g., mediasoup) unless explicitly disabled
 RUN if [ "$DISABLE_MEDIASOUP" = "true" ]; then \
@@ -59,7 +60,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /app /app
 
 # Install Python CLI support (if needed by the app)
-RUN python3 -m pip install --break-system-packages --no-cache-dir invoke
+# '--break-system-packages' isn't available on the pip shipped in the base image;
+# use a compatible install invocation.
+RUN python3 -m pip install --no-cache-dir invoke
 
 EXPOSE 5000
 
