@@ -108,6 +108,8 @@ router.post('/send-test-invite', async (req, res) => {
     const sendResult = await emailService.sendInvitationEmail(email, {
       groupName: 'TrafficJamz (Test)',
       inviterName: 'Debug Tester',
+      inviterFullName: 'Debug Tester',
+      inviterHandle: 'debug-tester',
       invitationLink
     });
     return res.json({ success: true, sendResult, invitationLink });
