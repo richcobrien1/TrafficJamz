@@ -44,6 +44,20 @@ jobs:
           name: build-logs
           path: build_logs/jamz_build.log
 
+      - name: Debug buildx (capture verbose buildx logs)
+        run: |
+          mkdir -p build_logs
+          echo "Starting debug buildx (logs -> build_logs/buildx_build.log)"
+          # run a verbose buildx build for linux/amd64 only and capture output; don't fail the step so logs are uploaded
+          docker buildx build --progress=plain --build-arg DISABLE_MEDIASOUP=true --platform linux/amd64 -f jamz-server/Dockerfile -t temp-jamz-debug:${{ github.sha }} jamz-server > build_logs/buildx_build.log 2>&1 || true
+        shell: bash
+
+      - name: Upload buildx logs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildx-logs
+          path: build_logs/buildx_build.log
+
       - name: Build and push jamz-server image
         uses: docker/build-push-action@v4
         with:
@@ -51,7 +65,72 @@ jobs:
           build-args: |
             DISABLE_MEDIASOUP=true
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:latest
             ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
+
+  deploy-to-k8s:
+    # deploy the image pushed by the build-and-push job to a target cluster
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # only run if the repo has a KUBE_CONFIG_DATA secret configured
+    if: ${{ secrets.KUBE_CONFIG_DATA != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Create kubeconfig from secret
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          echo "Writing kubeconfig from secret"
+          echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+          echo "Wrote kubeconfig to $PWD/kubeconfig"
+
+      - name: Verify pushed image exists in GHCR
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
+          GH_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "Checking image: $IMAGE"
+          # Query GitHub Packages registry for the package (note: requires GITHUB_TOKEN)
+          # We check that the manifest for the image tag exists by querying the registry v2 API.
+          TOKEN=${{ secrets.GITHUB_TOKEN }}
+          REPO=${GH_OWNER}/TrafficJamz
+          # Convert image path to registry API path
+          IMAGE_NAME="trafficjamz-jamz-server"
+          TAG=${{ github.sha }}
+          URL="https://ghcr.io/v2/${GH_OWNER}/${IMAGE_NAME}/manifests/${TAG}"
+          echo "HEAD $URL"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/vnd.oci.image.manifest.v1+json" -u "x-access-token:${TOKEN}" "$URL")
+          echo "Manifest HTTP status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Image $IMAGE not found in GHCR (status $HTTP_STATUS). Aborting deploy."
+            exit 1
+          fi
+
+      - name: Apply manifest (create if necessary)
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        run: |
+          # apply the base manifest (will create resources if missing)
+          kubectl apply -f kubernetes/backend-deployment.kubesail.yaml || true
+
+      - name: Patch deployment to use new image and wait for rollout
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        run: |
+          echo "Setting image for deployment/jamz-backend to $IMAGE"
+          kubectl set image deployment/jamz-backend jamz-backend=$IMAGE --record
+          kubectl rollout status deployment/jamz-backend --timeout=180s || kubectl rollout status deployment/jamz-backend
+          echo "Service info:"
+          kubectl get svc jamz-backend -o wide
+

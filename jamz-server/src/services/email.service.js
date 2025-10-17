@@ -70,20 +70,27 @@ class EmailService {
           If you did not request this invitation, please ignore this email.
 
           Best regards,
-          The TrafficJamz Team
+          The TrafficJamz Team 🎧
         `,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>You've been invited to join a group!</h2>
-            <p><strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on TrafficJamz.</p>
-            <p>To accept this invitation, please click on the button below:</p>
-            <p style="text-align: center; margin: 30px 0;">
-              <a href="${invitationLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a>
+          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #ff0055, #ff9900); color: #fff; padding: 2em; border-radius: 12px;">
+            <h1 style="text-align: center; font-size: 2em; margin-bottom: 0.5em;">🎶 You've Been Invited to Jam!</h1>
+            <div style="text-align: center; margin-bottom: 1.5em;">
+              <img src="https://www.v2u.us/Jamz-sking.png" alt="TrafficJamz in action" style="max-width: 100%; border-radius: 8px;" />
+            </div>
+            <p style="font-size: 1.1em; line-height: 1.6;">
+              <strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on <strong>TrafficJamz</strong>—the real-time audio and location-sharing app for connected crews.
             </p>
-            <p>This invitation will expire in 7 days.</p>
-            <p>If you did not request this invitation, please ignore this email.</p>
+            <p style="font-size: 1.1em; line-height: 1.6;">
+              Whether you're skiing, cruising, or holiday traveling, Jamz lets you hear, speak, and track your group in real time. It's audio, location, and vibes—all in one.
+            </p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${invitationLink}" style="background-color: #000; color: #ff9900; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">🎧 Accept Invitation</a>
+            </p>
+            <p style="font-size: 1em;">This invitation will expire in 7 days.</p>
+            <p style="font-size: 1em;">If you did not request this invitation, please ignore this email.</p>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-            <p style="color: #777; font-size: 12px;">Best regards,<br>The TrafficJamz Team</p>
+            <p style="color: #eee; font-size: 12px; text-align: center;">Best regards,<br>The TrafficJamz Team</p>
           </div>
         `
       };

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trafficjamz-frontend-config
+data:
+  # Replace this value with your deployed frontend domain (include protocol)
+  # Example: https://app.trafficjamz.com or https://trafficjamz.vercel.app
+  FRONTEND_URL: "https://trafficjamz.vercel.app"

@@ -17,7 +17,11 @@ spec:
     spec:
       containers:
         - name: trafficjamz-backend
-          image: trafficjamz-backend:latest
+          # CI publishes the jamz-server image to GitHub Container Registry (GHCR) as:
+          #   ghcr.io/<owner>/trafficjamz-jamz-server:latest
+          # Replace <owner> with your GH username or org. For local testing you can
+          # also build the image locally and set imagePullPolicy to Never.
+          image: ghcr.io/richcobrien1/trafficjamz-jamz-server:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
