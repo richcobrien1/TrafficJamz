@@ -48,8 +48,13 @@ class EmailService {
       await this.init();
       console.log('Sending invitation email to:', to);
   
-      const { groupName, inviterName, invitationLink } = invitationData;
-      console.log('Invitation data:', { groupName, inviterName, invitationLink });
+      const { groupName, inviterName, inviterFullName, inviterHandle, invitationLink } = invitationData;
+      // Build a friendly inviter display: prefer full name with handle in parentheses,
+      // fall back to inviterName (legacy callers) or handle or a generic fallback.
+      const inviterDisplay = inviterFullName
+        ? (inviterHandle ? `${inviterFullName} (${inviterHandle})` : inviterFullName)
+        : (inviterName || inviterHandle || 'A user');
+      console.log('Invitation data:', { groupName, inviterDisplay, invitationLink });
 
       const mailOptions = {
         from: this.testAccount 
@@ -78,9 +83,9 @@ class EmailService {
             <div style="text-align: center; margin-bottom: 1.5em;">
               <img src="https://www.v2u.us/Jamz-sking.png" alt="TrafficJamz in action" style="max-width: 100%; border-radius: 8px;" />
             </div>
-            <p style="font-size: 1.1em; line-height: 1.6;">
-              <strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on <strong>TrafficJamz</strong>—the real-time audio and location-sharing app for connected crews.
-            </p>
+              <p style="font-size: 1.1em; line-height: 1.6;">
+                <strong>${inviterDisplay}</strong> has invited you to join the group <strong>"${groupName}"</strong> on <strong>TrafficJamz</strong>—the real-time audio and location-sharing app for connected crews.
+              </p>
             <p style="font-size: 1.1em; line-height: 1.6;">
               Whether you're skiing, cruising, or holiday traveling, Jamz lets you hear, speak, and track your group in real time. It's audio, location, and vibes—all in one.
             </p>
