@@ -43,7 +43,10 @@ const emailService = require('../src/services/email.service');
     };
 
     console.log('Test: sending invitation email to', to);
-    const result = await emailService.sendInvitationEmail(to, invitationData);
+  // Provide both full name and handle for clearer recipient-facing formatting
+  invitationData.inviterFullName = invitationData.inviterFullName || 'Local Tester';
+  invitationData.inviterHandle = invitationData.inviterHandle || 'local-tester';
+  const result = await emailService.sendInvitationEmail(to, invitationData);
     console.log('Test send result:', result);
     process.exit(0);
   } catch (err) {
