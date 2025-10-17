@@ -73,8 +73,8 @@ class EmailService {
           The TrafficJamz Team 🎧
         `,
         html: `
-          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #ff0055, #ff9900); color: #fff; padding: 2em; border-radius: 12px;">
-            <h1 style="text-align: center; font-size: 2em; margin-bottom: 0.5em;">🎶 You've Been Invited to Jam!</h1>
+          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #ff0055, #ff9900); color: #000; padding: 2em; border-radius: 12px;">
+            <h1 style="text-align: center; font-size: 2em; margin-bottom: 0.5em;">🎶 You've Been Invited to TrafficJamz!</h1>
             <div style="text-align: center; margin-bottom: 1.5em;">
               <img src="https://www.v2u.us/Jamz-sking.png" alt="TrafficJamz in action" style="max-width: 100%; border-radius: 8px;" />
             </div>
@@ -90,7 +90,7 @@ class EmailService {
             <p style="font-size: 1em;">This invitation will expire in 7 days.</p>
             <p style="font-size: 1em;">If you did not request this invitation, please ignore this email.</p>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-            <p style="color: #eee; font-size: 12px; text-align: center;">Best regards,<br>The TrafficJamz Team</p>
+            <p style="color: #000; font-size: 12px; text-align: center;">Best regards,<br>The TrafficJamz Team</p>
           </div>
         `
       };
