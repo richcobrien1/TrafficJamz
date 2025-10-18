@@ -9,8 +9,8 @@ WORKDIR /app
 # Install build tools and Python (required by mediasoup and native modules)
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
-  python3 \
-  python3-pip \
+#  python3 \
+#  python3-pip \
   pkg-config \
   libssl-dev \
   git \
@@ -50,11 +50,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
   tzdata \
-  python3 \
-  python3-pip \
-  && update-ca-certificates \
-  && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
-  && dpkg-reconfigure -f noninteractive tzdata
+#  python3 \
+#  python3-pip \
+#  && update-ca-certificates \
+#  && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
+#  && dpkg-reconfigure -f noninteractive tzdata
 
 # Copy built app from builder
 COPY --from=builder /app /app
@@ -64,9 +64,9 @@ COPY --from=builder /app /app
 # use a compatible install invocation.
 # RUN python3 -m pip install --no-cache-dir invoke
 
-RUN python3 -m venv /opt/venv \
-  && /opt/venv/bin/pip install --no-cache-dir invoke \
-  && ln -s /opt/venv/bin/invoke /usr/local/bin/invoke
+# RUN python3 -m venv /opt/venv \
+#  && /opt/venv/bin/pip install --no-cache-dir invoke \
+#  && ln -s /opt/venv/bin/invoke /usr/local/bin/invoke
 
 EXPOSE 5000
 
