@@ -67,7 +67,7 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev (http)
   process.env.CORS_ORIGIN_DEV_HTTPS || 'https://localhost:5175',// TrafficJamz frontend dev (https)
-  process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod (http)
+  process.env.CORS_ORIGIN_PROD || 'https://jamz.v2u.us',     // TrafficJamz frontend prod (http)
   process.env.CORS_ORIGIN_PROD_HTTPS || 'https://localhost:8080', // TrafficJamz frontend prod (https)
   'https://trafficjam.v2u.us',       // Production client
   'capacitor://trafficjam.v2u.us',   // iOS apps
