@@ -1,9 +1,5 @@
-import app from '../server/app'; // adjust path to your Express app
+const app = require('../src/index'); // or wherever your Express app is defined
 
-export default function handler(req, res) {
+module.exports = (req, res) => {
   app(req, res);
-}
-
-// api/index.js
-const app = require('../src/index'); // import your Express app
-module.exports = app;
+};
