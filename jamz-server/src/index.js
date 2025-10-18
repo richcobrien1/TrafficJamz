@@ -9,15 +9,14 @@ const passport = require('passport');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-const http = require('http'); // Added for WebSocket support
-const socketIo = require('socket.io'); // You'll need to install this package
+const http = require('http'); // For WebSocket support
+const socketIo = require('socket.io'); // Install this package
 
 // Load environment variables
 dotenv.config();
 
 // Runtime toggle for audio signaling — can be changed without restarting the process
 let audioSignalingEnabled = process.env.DISABLE_AUDIO_SIGNALING !== 'true';
-
 
 // Import the enhanced MongoDB connection module
 const { connectMongoDB, isMongoDBConnected, mongoose } = require('./config/mongodb');
@@ -39,7 +38,7 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Create HTTP server for WebSocket support
 const server = http.createServer(app);
 
-// Set trust proxy (already correctly placed)
+// Set trust proxy (needed for secure cookies behind Vercel/Proxies)
 app.set('trust proxy', 1);
 
 // Import passport configuration
@@ -51,151 +50,121 @@ const sequelize = require('./config/database');
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
 
-// ===== ADD HEADER LOGGER HERE =====
-app.use((req, res, next) => {
-  console.log("\n=== INCOMING REQUEST HEADERS ===");
-  console.log("Method:", req.method);
-  console.log("URL:", req.url);
-  console.log("Headers:", JSON.stringify(req.headers, null, 2));
-  console.log("Body:", req.body); // Optional: Log request body
-  next();
-});
+// ===== HEADER LOGGER (dev only) =====
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log("\n=== INCOMING REQUEST ===");
+    console.log("Method:", req.method);
+    console.log("URL:", req.url);
+    console.log("Headers:", JSON.stringify(req.headers, null, 2));
+    console.log("Body:", req.body);
+    next();
+  });
+}
 // ===== END HEADER LOGGER =====
 
 // ===== CORS Configuration =====
-// Dynamic CORS configuration using environment variables
 const allowedOrigins = [
-  process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev (http)
-  process.env.CORS_ORIGIN_DEV_HTTPS || 'https://localhost:5175',// TrafficJamz frontend dev (https)
-  process.env.CORS_ORIGIN_PROD || 'https://jamz.v2u.us',     // TrafficJamz frontend prod (http)
-  process.env.CORS_ORIGIN_PROD_HTTPS || 'https://jamz.v2u.us', // TrafficJamz frontend prod (https)
-  'https://jamz.v2u.us',       // Production client
-  'capacitor://jamz.v2u.us',   // iOS apps
-  'ionic://jamz.v2u.us',       // Android apps
-  'http://192.176.58.146:5173',      // User's network IP for mobile testing
-  'http://192.176.58.146:5174',      // Additional port for mobile testing
-  'http://192.176.58.146:5175',      // Network access port for mobile testing
-  'http://192.178.58.146:5173',      // Previous network IP for mobile testing
-  'http://192.178.58.146:5174',      // Previous additional port for mobile testing
-  'http://192.178.58.146:5175'       // Previous network access port for mobile testing
-];
-
-// Also allow HTTPS variants of the common dev IPs to avoid mixed-content issues
-const devIpHttpsVariants = [
+  process.env.CORS_ORIGIN_DEV || 'http://localhost:5173',
+  process.env.CORS_ORIGIN_DEV_HTTPS || 'https://localhost:5173',
+  process.env.CORS_ORIGIN_PROD || 'https://jamz.v2u.us',
+  'https://jamz.v2u.us',
+  'capacitor://localhost',
+  'ionic://localhost',
+  'http://192.176.58.146:5173',
+  'http://192.176.58.146:5174',
+  'http://192.176.58.146:5175',
   'https://192.176.58.146:5173',
   'https://192.176.58.146:5174',
-  'https://192.176.58.146:5175',
-  'https://192.178.58.146:5173',
-  'https://192.178.58.146:5174',
-  'https://192.178.58.146:5175'
+  'https://192.176.58.146:5175'
 ];
 
-devIpHttpsVariants.forEach(o => allowedOrigins.push(o));
+// Deduplicate
+const uniqueOrigins = [...new Set(allowedOrigins)];
 
-// Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
+// Helper: allow localhost and LAN IPs
 function isLocalhostOrigin(origin) {
   if (!origin) return false;
   try {
     const u = new URL(origin);
-    // Allow localhost and 127.0.0.1
-    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
-      return true;
-    }
-    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16.x.x-172.31.x.x)
+    if (['localhost', '127.0.0.1'].includes(u.hostname)) return true;
     const ipRegex = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/;
     return ipRegex.test(u.hostname);
-  } catch (e) {
+  } catch {
     return false;
   }
 }
 
-const corsOptionsDelegate = function (req, callback) {
+const baseCorsConfig = {
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Length', 'Set-Cookie'],
+  optionsSuccessStatus: 204
+};
+
+const corsOptionsDelegate = (req, callback) => {
   const origin = req.header('Origin');
 
-  // DEVELOPMENT DEBUGGING HELPERS
-  // When running locally we sometimes see mobile browsers present unexpected
-  // origins (or fail TLS validation) which manifests as opaque "Network Error"
-  // in the client. To speed up debugging, allow all origins when NODE_ENV is
-  // explicitly 'development'. This is temporary and should not be used in
-  // staging/production environments.
   if (process.env.NODE_ENV === 'development') {
-    if (process.env.NODE_ENV === 'development') console.log('⚠️ Development CORS: allowing all origins for debugging');
-    return callback(null, {
-      origin: true,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      exposedHeaders: ['Content-Length', 'Authorization'],
-      optionsSuccessStatus: 204
-    });
+    console.log('⚠️ Development CORS: allowing all origins');
+    return callback(null, { ...baseCorsConfig, origin: true });
   }
 
-  // If there's no Origin header, treat it as a same-origin/internal request
-  // (for example: curl from container, or proxy that strips Origin). Allow it.
-  if (!origin) {
-    return callback(null, {
-      origin: true,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      exposedHeaders: ['Content-Length', 'Authorization'],
-      optionsSuccessStatus: 204
-    });
-  }
-
-  // Accept explicit allowed origins or localhost variants
-  if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
-    if (process.env.NODE_ENV === 'development') {
+  if (!origin || uniqueOrigins.includes(origin) || isLocalhostOrigin(origin)) {
+    if (process.env.NODE_ENV !== 'production') {
       console.log('✅ CORS allow for origin:', origin);
     }
-    return callback(null, {
-      origin: origin,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      exposedHeaders: ['Content-Length', 'Authorization'],
-      optionsSuccessStatus: 204
-    });
+    return callback(null, { ...baseCorsConfig, origin });
   }
 
-  // Verbose logging for blocked origins to aid debugging in dev
   console.warn('🔒 Blocked CORS for origin:', origin);
-  console.warn('   Allowed origins snapshot (truncated):', allowedOrigins.slice(0, 10));
   callback(new Error('Not allowed by CORS'));
 };
 
-app.use(cors(corsOptionsDelegate));         // Applies to all requests
-app.options('*', cors(corsOptionsDelegate)); // Handles preflight consistently
+app.use(cors(corsOptionsDelegate));
+app.options('*', cors(corsOptionsDelegate));
 
-// THEN apply Helmet after CORS
-// Enhanced security with Helmet - modified to be more permissive with CORS
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "wss:", "https:", "*"],
-      mediaSrc: ["'self'", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      // Add this to be more permissive
-      imgSrc: ["'self'", "data:", "blob:"],
-    }
-  },
-  // Disable crossOriginResourcePolicy for CORS to work properly
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  // Disable crossOriginEmbedderPolicy for CORS to work properly
-  crossOriginEmbedderPolicy: false
-}));
+// ===== Helmet Configuration =====
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: ["'self'", "wss:", "https:"],
+        mediaSrc: ["'self'", "blob:"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:"]
+      }
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false
+  })
+);
 
-// Enhanced Rate limiting configuration
-const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  standardHeaders: true, // Return rate limit info in headers
-  legacyHeaders: false, // Disable X-RateLimit-* headers
-  skipSuccessfulRequests: true, // Only count failed requests
+// ===== Rate Limiting =====
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
   message: 'Too many requests from this IP'
 });
-app.use('/api/', limiter);
+app.use('/api/', apiLimiter);
+
+// Optional: stricter limiter for login
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  message: 'Too many login attempts, please try again later'
+});
+app.use('/auth/login', loginLimiter);
+
+// ===== END OF FIRST 200 LINES =====
+
+
+
 
 // Initialize Passport
 app.use(passport.initialize());
