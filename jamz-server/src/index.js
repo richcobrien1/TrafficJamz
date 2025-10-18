@@ -69,9 +69,9 @@ const allowedOrigins = [
   process.env.CORS_ORIGIN_DEV_HTTPS || 'https://localhost:5175',// TrafficJamz frontend dev (https)
   process.env.CORS_ORIGIN_PROD || 'https://jamz.v2u.us',     // TrafficJamz frontend prod (http)
   process.env.CORS_ORIGIN_PROD_HTTPS || 'https://jamz.v2u.us', // TrafficJamz frontend prod (https)
-  'https://trafficjam.v2u.us',       // Production client
-  'capacitor://trafficjam.v2u.us',   // iOS apps
-  'ionic://trafficjam.v2u.us',       // Android apps
+  'https://jamz.v2u.us',       // Production client
+  'capacitor://jamz.v2u.us',   // iOS apps
+  'ionic://jamz.v2u.us',       // Android apps
   'http://192.176.58.146:5173',      // User's network IP for mobile testing
   'http://192.176.58.146:5174',      // Additional port for mobile testing
   'http://192.176.58.146:5175',      // Network access port for mobile testing
