@@ -886,4 +886,13 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+// Only start a local server if not running in Vercel
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+// Export the Express app for Vercel
 module.exports = app;
