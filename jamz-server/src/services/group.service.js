@@ -497,55 +497,6 @@ class GroupService {
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
       };
 
-      // Attach a snapshot of the inviter's profile to the invitation so downstream
-      // processes (emails, logs) can reliably display the inviter's name even if
-      // Postgres lookups later don't contain first/last. Try Postgres first, then
-      // fall back to the group's member snapshot.
-      try {
-        let inviterProfile = null;
-        const inviterIdStr = inviterId ? inviterId.toString() : '';
-        if (inviterIdStr && inviterIdStr.includes('-')) {
-          const Sequelize = require('sequelize');
-          const sequelize = require('../config/database');
-          const users = await sequelize.query(
-            `SELECT username, first_name, last_name, email, profile_image_url, preferences FROM users WHERE user_id = :userId`,
-            { replacements: { userId: inviterIdStr }, type: Sequelize.QueryTypes.SELECT }
-          );
-          if (users && users.length > 0) {
-            const u = users[0];
-            inviterProfile = {
-              username: u.username || null,
-              email: u.email || null,
-              first_name: u.first_name || null,
-              last_name: u.last_name || null,
-              full_name: [u.first_name, u.last_name].filter(Boolean).join(' ') || null,
-              profile_image_url: u.profile_image_url || null,
-              preferences: u.preferences || null,
-              source: 'postgres'
-            };
-          }
-        }
-
-        // Fallback to group member snapshot
-        if (!inviterProfile && group && Array.isArray(group.group_members)) {
-          const member = group.group_members.find(m => m.user_id === inviterId || m.user_id === (inviterId && inviterId.toString()));
-          if (member) {
-            inviterProfile = Object.assign({}, member.profile || {}, {
-              first_name: member.first_name || (member.profile && member.profile.first_name) || null,
-              last_name: member.last_name || (member.profile && member.profile.last_name) || null,
-              email: member.email || (member.profile && member.profile.email) || null,
-              source: 'group_member'
-            });
-          }
-        }
-
-        if (inviterProfile) {
-          invitation.inviter_profile = inviterProfile;
-        }
-      } catch (e) {
-        console.warn('Failed to attach inviter_profile to invitation:', e && e.message);
-      }
-
       // Add to group
       group.invitations.push(invitation);
 
@@ -563,8 +514,6 @@ class GroupService {
   let inviterName = 'A user'; // Default fallback
   let inviterFullName = null;
   let inviterHandle = null;
-  let inviterFirstName = null;
-  let inviterLastName = null;
 
       try {
         // Coerce inviterId to string for safe checks
@@ -603,10 +552,8 @@ class GroupService {
             const pgParts = [user.first_name, user.last_name].filter(Boolean);
             inviterFullName = pgParts.length ? pgParts.join(' ').trim() : null;
             inviterHandle = (user.username || user.email) ? (user.username || (user.email && user.email.split('@')[0])) : null;
-            inviterFirstName = user.first_name || null;
-            inviterLastName = user.last_name || null;
             inviterName = inviterFullName || inviterHandle || inviterName;
-            console.log(`Set inviterName to: ${inviterName}`, { inviterFullName, inviterHandle, inviterFirstName, inviterLastName });
+            console.log(`Set inviterName to: ${inviterName}`, { inviterFullName, inviterHandle });
           } else {
             console.log(`No user found with ID: ${inviterId}`);
           }
@@ -625,19 +572,17 @@ class GroupService {
           const member = group.group_members.find(m => m.user_id === inviterId || m.user_id === (inviterId && inviterId.toString()));
           console.log('Group members count:', (group.group_members || []).length);
           console.log('Attempting to derive inviter from group member record. Found member:', member ? JSON.stringify({ user_id: member.user_id, first_name: member.first_name, last_name: member.last_name, profile: member.profile && { first_name: member.profile.first_name, last_name: member.profile.last_name }, email: member.email }, null, 2) : 'none');
-            if (member) {
+          if (member) {
             // Prefer top-level fields, then nested profile fields
-              const memberFirst = member.first_name || (member.profile && member.profile.first_name) || null;
-              const memberLast = member.last_name || (member.profile && member.profile.last_name) || null;
-              inviterFirstName = memberFirst;
-              inviterLastName = memberLast;
-              const parts = [memberFirst, memberLast].filter(Boolean);
-              if (parts.length) {
-                inviterFullName = parts.join(' ').trim();
-                inviterName = inviterFullName;
-                inviterSource = 'group_member';
-                console.log('Derived inviterFullName from group member record:', inviterFullName);
-              }
+            const memberFirst = member.first_name || (member.profile && member.profile.first_name) || null;
+            const memberLast = member.last_name || (member.profile && member.profile.last_name) || null;
+            const parts = [memberFirst, memberLast].filter(Boolean);
+            if (parts.length) {
+              inviterFullName = parts.join(' ').trim();
+              inviterName = inviterFullName;
+              inviterSource = 'group_member';
+              console.log('Derived inviterFullName from group member record:', inviterFullName);
+            }
           }
         } catch (e) {
           console.error('Error deriving inviterFullName from group members:', e);
@@ -665,8 +610,6 @@ class GroupService {
         inviterName: inviterName,
         inviterFullName,
         inviterHandle,
-        inviterFirstName,
-        inviterLastName,
         invitationLink
       });
       
@@ -741,8 +684,6 @@ class GroupService {
   let inviterName = 'A user';
   let inviterFullName = null;
   let inviterHandle = null;
-  let inviterFirstName = null;
-  let inviterLastName = null;
       try {
         if (requesterId && requesterId.includes('-')) {
           const sequelize = require('../config/database');
@@ -752,10 +693,8 @@ class GroupService {
           );
           if (users && users.length > 0) {
             const user = users[0];
-            inviterFullName = (user.first_name || user.last_name) ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : null;
+            inviterFullName = (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}`.trim() : null;
             inviterHandle = (user.username || user.email) ? (user.username || user.email.split('@')[0]) : null;
-            inviterFirstName = user.first_name || null;
-            inviterLastName = user.last_name || null;
             inviterName = inviterFullName || inviterHandle || inviterName;
           }
 
@@ -766,9 +705,6 @@ class GroupService {
           if (member) {
             const memberFirst = member.first_name || (member.profile && member.profile.first_name) || null;
             const memberLast = member.last_name || (member.profile && member.profile.last_name) || null;
-            // populate first/last name fields for the email payload
-            inviterFirstName = inviterFirstName || memberFirst;
-            inviterLastName = inviterLastName || memberLast;
             const parts = [memberFirst, memberLast].filter(Boolean);
             if (parts.length) {
               inviterFullName = parts.join(' ').trim();
@@ -793,8 +729,6 @@ class GroupService {
           inviterName,
           inviterFullName,
           inviterHandle,
-          inviterFirstName,
-          inviterLastName,
           invitationLink
         });
       } catch (err) {
