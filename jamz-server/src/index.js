@@ -173,6 +173,10 @@ app.use(passport.initialize());
 const debugRoutes = require('./routes/debug.routes');
 app.use('/api/debug', debugRoutes);
 
+app.get('/ping', (_, res) => {
+  res.status(200).json({ ok: true });
+});
+
 // Debugging only, Add this near the top of your index.js file
 const path = require('path');
 console.log('Current directory:', __dirname);
