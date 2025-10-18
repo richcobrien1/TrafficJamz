@@ -62,7 +62,11 @@ COPY --from=builder /app /app
 # Install Python CLI support (if needed by the app)
 # '--break-system-packages' isn't available on the pip shipped in the base image;
 # use a compatible install invocation.
-RUN python3 -m pip install --no-cache-dir invoke
+# RUN python3 -m pip install --no-cache-dir invoke
+
+RUN python3 -m venv /opt/venv \
+  && /opt/venv/bin/pip install --no-cache-dir invoke \
+  && ln -s /opt/venv/bin/invoke /usr/local/bin/invoke
 
 EXPOSE 5000
 
