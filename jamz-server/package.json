@@ -13,9 +13,6 @@
     "test": "jest",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,json}\"",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
   },
   "keywords": [
     "audio",
