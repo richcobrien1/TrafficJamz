@@ -809,7 +809,7 @@ function setupServer() {
   });
 
   // Set port
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT || 10000;
 
   // Start server using the HTTP server instance instead of app directly
   if (process.env.NODE_ENV !== 'test') {
