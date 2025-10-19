@@ -68,6 +68,7 @@ const allowedOrigins = [
   process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev
   process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod
   'https://trafficjam.v2u.us',       // Production client
+  'https://jamz.v2u.us',             // Vercel Frontend
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us',       // Android apps
   'http://192.176.58.146:5173',      // User's network IP for mobile testing
