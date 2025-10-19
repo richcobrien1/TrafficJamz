@@ -100,8 +100,7 @@ function isLocalhostOrigin(origin) {
 const corsOptionsDelegate = function (req, callback) {
   const origin = req.header('Origin');
 
-  // If there's no Origin header, treat it as a same-origin/internal request
-  // (for example: curl from container, or proxy that strips Origin). Allow it.
+  // No Origin header (curl, server-to-server) → allow
   if (!origin) {
     return callback(null, {
       origin: true,
@@ -113,7 +112,7 @@ const corsOptionsDelegate = function (req, callback) {
     });
   }
 
-  // Accept explicit allowed origins or localhost variants
+  // Allowed origins or localhost variants
   if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
     return callback(null, {
       origin: origin,
@@ -125,8 +124,9 @@ const corsOptionsDelegate = function (req, callback) {
     });
   }
 
+  // Not allowed → reject gracefully (no 500)
   console.log('🔒 Blocked CORS for origin:', origin);
-  callback(new Error('Not allowed by CORS'));
+  return callback(null, { origin: false });
 };
 
 app.use(cors(corsOptionsDelegate));         // Applies to all requests
