@@ -1,5 +1,5 @@
 # Dockerfile for TrafficJamz Backend
-# Hardened for Node 22 with robust Python setup and native module rebuild support
+# Hardened for Node 22 with PEP 668 compliance and native module rebuild support
 
 # ⛏️ Build Stage
 FROM node:22 AS builder
@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
   && ln -s /usr/bin/python3 /usr/bin/python || true \
-  && python3 -m pip install --upgrade pip setuptools wheel \
+  && python3 -m pip install --break-system-packages --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/*
 
 # Allow skipping mediasoup native rebuild via build-arg for faster CI iterations
@@ -63,8 +63,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
   && dpkg-reconfigure -f noninteractive tzdata \
   && ln -s /usr/bin/python3 /usr/bin/python || true \
-  && python3 -m pip install --upgrade pip setuptools wheel \
-  && python3 -m pip install --no-cache-dir invoke \
+  && python3 -m pip install --break-system-packages --upgrade pip setuptools wheel \
+  && python3 -m pip install --break-system-packages --no-cache-dir invoke \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy built app from builder
