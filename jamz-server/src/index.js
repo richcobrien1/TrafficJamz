@@ -67,7 +67,6 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev
   process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod
-  'https://trafficjam.v2u.us',       // Production client
   'https://jamz.v2u.us',             // Vercel Frontend
   'https://trafficjamz.onrender.com', // Render Backend
   'capacitor://trafficjam.v2u.us',   // iOS apps
@@ -80,6 +79,27 @@ const allowedOrigins = [
   'http://192.178.58.146:5175',       // Previous network access port for mobile testing
   'https://192.178.58.146:5175'       // Previous network access port for mobile testing
 ];
+
+// Middleware to console log 🔎 Express (REST API) logging Origin header for every HTTP request
+app.use((req, res, next) => {
+  console.log("🌐 Incoming request:", {
+    method: req.method,
+    url: req.originalUrl,
+    origin: req.headers.origin,
+  });
+  next();
+});
+
+// Middleware to console log 🔎 Socket.IO handshake logging
+io.use((socket, next) => {
+  console.log("🔌 Socket.IO handshake:", {
+    id: socket.id,
+    origin: socket.handshake.headers.origin,
+    referer: socket.handshake.headers.referer,
+    auth: socket.handshake.auth,
+  });
+  next();
+});
 
 // Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
 function isLocalhostOrigin(origin) {
