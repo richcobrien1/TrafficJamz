@@ -1,20 +1,25 @@
 # Dockerfile for TrafficJamz Backend
-# This Dockerfile builds the backend service using Node.js and prepares it for production deployment.
+# Hardened for Node 22 with robust Python setup and native module rebuild support
 
 # ⛏️ Build Stage
-FROM node:20-bullseye AS builder
+FROM node:22 AS builder
 
 WORKDIR /app
 
 # Install build tools and Python (required by mediasoup and native modules)
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
-#  python3 \
-#  python3-pip \
+  python3 \
+  python3-pip \
+  python3-venv \
   pkg-config \
   libssl-dev \
   git \
   ca-certificates \
+  curl \
+  && ln -s /usr/bin/python3 /usr/bin/python || true \
+  && python3 -m ensurepip --upgrade \
+  && python3 -m pip install --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/*
 
 # Allow skipping mediasoup native rebuild via build-arg for faster CI iterations
@@ -38,28 +43,34 @@ RUN if [ "$DISABLE_MEDIASOUP" = "true" ]; then \
       npm rebuild mediasoup; \
     fi
 
+# 🧼 Optional: Remove dev tools to reduce final image size
+RUN rm -rf ~/.npm /tmp/*
+
 # ⛏️ Production Stage
-FROM node:20-bullseye
+FROM node:22
 
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
+# Minimal runtime dependencies + Python CLI support
 RUN apt-get update && apt-get install -y --no-install-recommends \
+  python3 \
+  python3-pip \
+  python3-venv \
   ca-certificates \
   curl \
   tzdata \
-#  python3 \
-#  python3-pip \
-  && update-ca-certificates \
   && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
-  && dpkg-reconfigure -f noninteractive tzdata
+  && dpkg-reconfigure -f noninteractive tzdata \
+  && ln -s /usr/bin/python3 /usr/bin/python || true \
+  && python3 -m ensurepip --upgrade \
+  && python3 -m pip install --upgrade pip setuptools wheel \
+  && python3 -m pip install --no-cache-dir invoke \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy built app from builder
 COPY --from=builder /app /app
-
-# Install Python CLI support (if needed by the app)
-#RUN python3 -m pip install --no-cache-dir invoke
 
 # Expose the port Render will route to
 EXPOSE 10000
