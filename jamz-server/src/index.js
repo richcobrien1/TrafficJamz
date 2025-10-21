@@ -190,45 +190,47 @@ const invitationsRoutes = require('./routes/invitations.routes');
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
   cors: {
-    origin: function (origin, callback) {
-      console.log('🔍 Socket.IO CORS check for origin:', origin);
-      // Allow requests with no origin (like mobile apps or curl requests)
+    origin: (origin, callback) => {
+      console.log("🔍 Socket.IO CORS check for origin:", origin);
+
       if (!origin) {
-        console.log('✅ Allowing request with no origin');
+        console.log("✅ Allowing request with no origin");
         return callback(null, true);
       }
 
-      // Check against allowed origins
       if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
-        console.log('✅ Allowing origin:', origin);
+        console.log("✅ Allowing origin:", origin);
         return callback(null, true);
       }
 
-      console.log('🔒 Blocked Socket.IO CORS for origin:', origin);
-      return callback(new Error('Not allowed by CORS'));
+      console.log("🔒 Blocked Socket.IO CORS for origin:", origin);
+      return callback(null, false); // reject gracefully
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   },
-  // For audio streaming, increase ping timeout
   pingTimeout: 60000,
-  // Add polling configuration
   allowEIO3: true,
-  transports: ['polling', 'websocket']
+  transports: ["polling", "websocket"],
 });
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('✅ New client connected:', socket.id, 'from:', socket.handshake.address, 'origin:', socket.handshake.headers.origin);
-  // Per-socket state for simple rate limiting
+app.get("/health/socketio", (req, res) => res.send("socketio-ok"));
+
+io.on("connection", (socket) => {
+  console.log("✅ New client connected:", socket.id,
+              "from:", socket.handshake.address,
+              "origin:", socket.handshake.headers.origin);
+
+  socket.emit("hello", { ok: true });
+
   socket._rateState = {
     lastCandidatesTs: 0,
     candidateCountWindow: 0,
     lastMusicSyncTs: 0,
-    musicSyncCountWindow: 0
+    musicSyncCountWindow: 0,
   };
-  
+
   // Join a group room
   socket.on('join-group', (groupId) => {
     socket.join(`group-${groupId}`);
