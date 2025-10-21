@@ -2,7 +2,7 @@
 # This Dockerfile builds the backend service using Node.js and prepares it for production deployment.
 
 # ⛏️ Build Stage
-FROM node:20-bullseye AS builder
+FROM node:24.10.0-slim AS builder
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ RUN if [ "$DISABLE_MEDIASOUP" = "true" ]; then \
     fi
 
 # ⛏️ Production Stage
-FROM node:20-bullseye
+FROM node:24.10.0-slim
 
 WORKDIR /app
 
