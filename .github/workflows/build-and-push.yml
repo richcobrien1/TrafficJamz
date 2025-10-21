@@ -63,7 +63,7 @@ jobs:
         with:
           context: ./jamz-server
           build-args: |
-            DISABLE_MEDIASOUP=true
+            DISABLE_MEDIASOUP=false
           push: true
           platforms: linux/amd64
           tags: |
