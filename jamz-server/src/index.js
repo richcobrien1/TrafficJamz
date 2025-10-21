@@ -90,17 +90,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware to console log 🔎 Socket.IO handshake logging
-io.use((socket, next) => {
-  console.log("🔌 Socket.IO handshake:", {
-    id: socket.id,
-    origin: socket.handshake.headers.origin,
-    referer: socket.handshake.headers.referer,
-    auth: socket.handshake.auth,
-  });
-  next();
-});
-
 // Helper: permissive localhost matcher (accepts http(s)://localhost(:port)? and local network IPs)
 function isLocalhostOrigin(origin) {
   if (!origin) return false;
@@ -237,6 +226,17 @@ const io = socketIo(server, {
 });
 
 app.get("/health/socketio", (req, res) => res.send("socketio-ok"));
+
+// Middleware to console log 🔎 Socket.IO handshake logging
+io.use((socket, next) => {
+  console.log("🔌 Socket.IO handshake:", {
+    id: socket.id,
+    origin: socket.handshake.headers.origin,
+    referer: socket.handshake.headers.referer,
+    auth: socket.handshake.auth,
+  });
+  next();
+});
 
 io.on("connection", (socket) => {
   console.log("✅ New client connected:", socket.id,
