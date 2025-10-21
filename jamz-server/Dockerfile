@@ -18,7 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
   && ln -s /usr/bin/python3 /usr/bin/python || true \
-  && python3 -m ensurepip --upgrade \
   && python3 -m pip install --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/*
 
@@ -64,7 +63,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
   && dpkg-reconfigure -f noninteractive tzdata \
   && ln -s /usr/bin/python3 /usr/bin/python || true \
-  && python3 -m ensurepip --upgrade \
   && python3 -m pip install --upgrade pip setuptools wheel \
   && python3 -m pip install --no-cache-dir invoke \
   && rm -rf /var/lib/apt/lists/*
