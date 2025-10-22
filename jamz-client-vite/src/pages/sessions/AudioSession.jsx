@@ -799,7 +799,7 @@ const AudioSession = () => {
     });
 
     const socket = io(socketUrl, {
-      transports: ['polling'], // Use only polling transport for mobile compatibility
+      transports: ['websocket'], // Use only polling transport for mobile compatibility
       timeout: 10000, // Increase timeout to 10 seconds
       forceNew: true, // Force new connection
       reconnection: true,
