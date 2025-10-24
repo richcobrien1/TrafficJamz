@@ -790,27 +790,33 @@ const AudioSession = () => {
     console.log('🎥 WebRTC initialization complete');
   };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
-    // For mobile compatibility, connect to the current origin (Vite dev server)
-    // and let the Vite proxy handle forwarding to the backend
-    const socketUrl = window.location.origin;
+    // Determine the socket URL based on environment
+    // In development: use Vite dev server origin (proxies to backend)
+    // In production: use VITE_BACKEND_URL if set, otherwise current origin
+    const isDevelopment = import.meta.env.MODE === 'development';
+    const socketUrl = isDevelopment 
+      ? window.location.origin  // Dev: use Vite proxy
+      : (import.meta.env.VITE_BACKEND_URL || window.location.origin); // Prod: use backend URL
 
     console.log('🔌 Setting up Socket.IO signaling connection...');
-    console.log('🔌 Using Vite proxy via origin:', socketUrl);
-    console.log('🔌 Vite will proxy /socket.io to backend');
+    console.log('🔌 Mode:', import.meta.env.MODE);
+    console.log('🔌 Socket URL:', socketUrl);
     console.log('🔌 Environment variables:', {
       VITE_WS_URL: import.meta.env.VITE_WS_URL,
       VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
+      VITE_API_BASE: import.meta.env.VITE_API_BASE,
       window_location: window.location.origin,
-      computed_socketUrl: socketUrl
+      computed_socketUrl: socketUrl,
+      isDevelopment
     });
 
     const socket = io(socketUrl, {
-      transports: ['websocket'], // Use only polling transport for mobile compatibility
+      transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
       timeout: 10000, // Increase timeout to 10 seconds
       forceNew: true, // Force new connection
       reconnection: true,
-      reconnectionAttempts: 3, // Reduce reconnection attempts
-      reconnectionDelay: 2000, // Increase delay
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
       // Explicitly set the path
       path: '/socket.io'
     });
