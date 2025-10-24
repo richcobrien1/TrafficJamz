@@ -182,14 +182,9 @@ const AudioSession = () => {
       }
 
       try {
-        console.log('Calling fetchSessionDetails...');
-        const newSessionId = await fetchSessionDetails(groupId); // pass the groupId you already have
-        console.log('Received sessionId from backend:', newSessionId);
-
-        // Replace the route param sessionId with the real one
-        setSessionId(newSessionId);
-
-        // Now you can safely call join/transport with this ID
+        console.log('Calling fetchSessionDetails with sessionId:', sessionId);
+        await fetchSessionDetails();
+        console.log('Session details fetched successfully');
       } catch (error) {
         console.error('Error in fetchSessionDetails:', error);
         if (isMounted) {
