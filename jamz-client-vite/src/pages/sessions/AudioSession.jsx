@@ -119,6 +119,7 @@ const AudioSession = () => {
   const [webrtcReady, setWebrtcReady] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [peerReady, setPeerReady] = useState(false); // Track if remote peer is ready
   
   // Device state
   const [audioDevices, setAudioDevices] = useState({ inputs: [], outputs: [] });
@@ -242,8 +243,28 @@ const AudioSession = () => {
   useEffect(() => {
     if (localStream) {
       setupAudioLevelMonitoring(localStream);
+      
+      // If we have a peer connection but no tracks, add them now
+      if (rtcConnectionRef.current) {
+        const senders = rtcConnectionRef.current.getSenders();
+        console.log('🎵 Current peer connection has', senders.length, 'senders');
+        
+        if (senders.length === 0) {
+          console.log('🎵 Adding tracks to existing peer connection...');
+          localStream.getTracks().forEach(track => {
+            console.log('🎵 Adding track:', track.kind, track.id);
+            rtcConnectionRef.current.addTrack(track, localStream);
+          });
+          
+          // If signaling is connected and peer is ready, create offer now
+          if (signalingRef.current && peerReady) {
+            console.log('🎵 Tracks added - creating offer...');
+            createAndSendOffer(signalingRef.current);
+          }
+        }
+      }
     }
-  }, [localStream]);
+  }, [localStream, peerReady]);
   
   // Socket connection for music events
   useEffect(() => {
@@ -783,6 +804,12 @@ const AudioSession = () => {
     await setupPeerConnection(signaling);
 
     console.log('🎥 WebRTC initialization complete');
+    
+    // If we have a local stream and a peer is ready, create an offer
+    if (localStreamRef.current && peerReady) {
+      console.log('🎥 Local stream available and peer ready, creating offer...');
+      await createAndSendOffer(signaling);
+    }
   };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
     // Determine the socket URL based on environment
@@ -880,10 +907,22 @@ const AudioSession = () => {
 
     socket.on('webrtc-ready', (data) => {
       console.log('📨 Received webrtc-ready from another participant:', data);
+      setPeerReady(true);
+      
       // Another participant is ready, initiate connection if we're not already connected
-      if (rtcConnectionRef.current && rtcConnectionRef.current.connectionState === 'new') {
-        console.log('🚀 Creating and sending offer...');
-        createAndSendOffer(socket);
+      // Only create offer if we have a peer connection AND local stream
+      if (rtcConnectionRef.current && localStreamRef.current) {
+        const connectionState = rtcConnectionRef.current.connectionState;
+        console.log('🔍 Connection state:', connectionState);
+        
+        if (connectionState === 'new' || connectionState === 'closed') {
+          console.log('🚀 Creating and sending offer...');
+          createAndSendOffer(socket);
+        } else {
+          console.log('⏭️ Connection already in progress or established:', connectionState);
+        }
+      } else {
+        console.log('⏸️ Waiting for local stream before creating offer');
       }
     });
 
@@ -973,12 +1012,16 @@ const AudioSession = () => {
     console.log('🔗 RTCPeerConnection created');
 
     // Add local stream to peer connection when available
-    if (localStream) {
+    const streamToAdd = localStreamRef.current || localStream;
+    if (streamToAdd) {
       console.log('🔗 Adding local stream to peer connection');
-      localStream.getTracks().forEach(track => {
-        console.log('🔗 Adding track:', track.kind, track.id);
-        peerConnection.addTrack(track, localStream);
+      streamToAdd.getTracks().forEach(track => {
+        console.log('🔗 Adding track:', track.kind, track.id, 'enabled:', track.enabled, 'readyState:', track.readyState);
+        peerConnection.addTrack(track, streamToAdd);
       });
+    } else {
+      console.warn('⚠️ No local stream available yet - peer connection created without tracks');
+      console.warn('⚠️ Tracks will need to be added manually when stream becomes available');
     }
 
     // Handle ICE candidates
@@ -1017,7 +1060,19 @@ const AudioSession = () => {
 
     // Handle remote stream
     peerConnection.ontrack = (event) => {
-      console.log('🎵 Received remote track:', event.track.kind, event.track.id);
+      console.log('🎵 ========== REMOTE TRACK RECEIVED ==========');
+      console.log('🎵 Track kind:', event.track.kind);
+      console.log('🎵 Track id:', event.track.id);
+      console.log('🎵 Track enabled:', event.track.enabled);
+      console.log('🎵 Track readyState:', event.track.readyState);
+      console.log('🎵 Track muted:', event.track.muted);
+      console.log('🎵 Number of streams:', event.streams.length);
+      if (event.streams.length > 0) {
+        console.log('🎵 Stream id:', event.streams[0].id);
+        console.log('🎵 Stream tracks:', event.streams[0].getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled, readyState: t.readyState })));
+      }
+      console.log('🎵 ==========================================');
+      
       if (event.track.kind === 'audio') {
         console.log('🎵 Setting up remote audio stream');
         handleRemoteAudioStream(event.streams[0]);
@@ -1100,8 +1155,16 @@ const AudioSession = () => {
       }
 
       console.log('📤 Creating offer...');
+      console.log('📤 Peer connection state:', {
+        connectionState: peerConnection.connectionState,
+        iceConnectionState: peerConnection.iceConnectionState,
+        signalingState: peerConnection.signalingState,
+        senders: peerConnection.getSenders().length
+      });
+      
       const offer = await peerConnection.createOffer();
-      console.log('📤 Created offer, setting local description...');
+      console.log('📤 Created offer:', offer.type);
+      console.log('📤 Setting local description...');
       await peerConnection.setLocalDescription(offer);
 
       console.log('📤 Sending offer via signaling...');
@@ -1109,9 +1172,10 @@ const AudioSession = () => {
         offer: peerConnection.localDescription,
         sessionId: sessionId
       });
-      console.log('📤 Offer sent');
+      console.log('📤 Offer sent successfully');
     } catch (error) {
       console.error('❌ Error creating/sending offer:', error);
+      console.error('❌ Error stack:', error.stack);
     }
   };
 
