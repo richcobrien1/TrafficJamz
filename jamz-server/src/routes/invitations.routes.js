@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const groupService = require('../services/group.service');
 const Group = require('../models/group.model'); // Add this import
 const { body, param, validationResult } = require('express-validator');
