@@ -16,75 +16,33 @@
 import axios from 'axios';
 
 // 🔗 Create axios instance with base API URL
-// Default to a relative '/api' so the browser calls the current origin
-// and the Vite dev server (or production server) can proxy to the backend.
-// If you need to point directly at a backend during mobile testing, set
-// VITE_BACKEND_URL (e.g. http://192.168.1.10:5000) and the client will
-// use that as the absolute backend base.
-const rawBase = import.meta.env.VITE_API_BASE || '/api';
+// Simplified approach: Use VITE_API_BASE directly without complex detection
+// In production (Vercel): VITE_API_BASE points to full backend URL
+// In development: VITE_API_BASE is relative '/api' for Vite proxy
+// In Capacitor: VITE_API_BASE should be set to full backend URL in native builds
 
-// Detect if running in Capacitor/mobile context
-const isMobile = () => {
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-  const userAgent = navigator.userAgent;
+const getBaseURL = () => {
+  // Check if running in Capacitor native app
+  const isCapacitor = window.location && window.location.protocol === 'capacitor:';
   
-  // Check for Capacitor protocol
-  const isCapacitor = protocol === 'capacitor:';
+  // Use VITE_API_BASE from environment, or fallback to '/api' for development
+  const apiBase = import.meta.env.VITE_API_BASE || '/api';
   
-  // Check for mobile user agent
-  const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-  
-  // Check if running on non-localhost (network IP)
-  const isNetworkHost = hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.startsWith('192.168.') && !hostname.startsWith('10.') && !hostname.startsWith('172.');
-  
-  const result = isCapacitor || (protocol === 'http:' && isNetworkHost) || (protocol === 'https:' && isNetworkHost);
-  
-  console.log('📱 Mobile detection:', {
-    protocol,
-    hostname,
+  // Debug logging
+  console.log('� API Configuration:', {
+    protocol: window.location?.protocol,
+    hostname: window.location?.hostname,
     isCapacitor,
-    isMobileUA,
-    isNetworkHost,
-    result
+    VITE_API_BASE: import.meta.env.VITE_API_BASE,
+    VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
+    computed_baseURL: apiBase,
+    mode: import.meta.env.MODE
   });
   
-  return result;
-};
-
-// For mobile apps, use the full backend URL instead of relative path
-const getBaseURL = () => {
-  // Safer default: in browser contexts prefer a relative '/api' so the
-  // dev server or production host can proxy/forward to the backend and
-  // avoid mixed-content or CORS issues. Only use an explicit backend URL
-  // when running in a native environment (Capacitor) or when explicitly
-  // forced via VITE_BACKEND_FORCE=true.
-  const explicitBackend = import.meta.env.VITE_BACKEND_URL;
-  const forceBackend = import.meta.env.VITE_BACKEND_FORCE === 'true';
-  const isCapacitor = window.location && window.location.protocol === 'capacitor:';
-  const isBrowserHttp = window.location && (window.location.protocol === 'http:' || window.location.protocol === 'https:');
-
-  if (explicitBackend && (isCapacitor || forceBackend || !isBrowserHttp)) {
-    // Ensure we don't double the '/api' portion
-    if (rawBase.startsWith('/')) {
-      return explicitBackend.replace(/\/$/,'') + rawBase;
-    }
-    return explicitBackend.replace(/\/$/,'') + '/' + rawBase.replace(/^\//, '');
-  }
-
-  // Default: use relative path so browser calls the same origin
-  return rawBase;
+  return apiBase;
 };
 
 const normalizedBase = getBaseURL();
-
-// Debug logging
-console.log('🔧 API Configuration:');
-console.log('  VITE_API_BASE:', import.meta.env.VITE_API_BASE);
-console.log('  rawBase:', rawBase);
-console.log('  isMobile:', isMobile());
-console.log('  normalizedBase:', normalizedBase);
-console.log('  All env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
 
 // Normalize baseURL: remove trailing slash
 const finalBase = normalizedBase.endsWith('/') ? normalizedBase.slice(0, -1) : normalizedBase;
@@ -92,56 +50,28 @@ const finalBase = normalizedBase.endsWith('/') ? normalizedBase.slice(0, -1) : n
 console.log('  finalBase:', finalBase);
 
 const api = axios.create({
-  baseURL: finalBase, // must be defined in .env
+  baseURL: finalBase,
+  timeout: 30000, // 30 second timeout for mobile networks
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
-// Normalize request URL to avoid double '/api' when callers include it
+// Simplified request interceptor - remove complex URL normalization
 api.interceptors.request.use((config) => {
   try {
-    // If the caller provided an absolute URL (starts with http/https),
-    // axios will normally use it as-is. However, in some runtimes there
-    // have been cases where baseURL was mistakenly concatenated with an
-    // absolute url (resulting in 'http://host/http://host/...'). To be
-    // defensive, if we detect an absolute URL, clear the baseURL for
-    // this request so axios sends the absolute URL unchanged.
-    if (config && config.url && /^https?:\/\//i.test(config.url)) {
-      // Clear any default baseURL for this request
-      config.baseURL = '';
-      if (import.meta.env.MODE === 'development') {
-        console.log('api.request interceptor: detected absolute URL, sending as-is:', config.url);
-      }
-      return config;
+    // Log the request for debugging
+    if (import.meta.env.MODE === 'development') {
+      console.log('📤 API Request:', {
+        method: config.method,
+        baseURL: config.baseURL,
+        url: config.url,
+        fullURL: config.baseURL + config.url
+      });
     }
-
-    if (!config || !config.url) return config;
-
-    const baseHasApi = (api.defaults.baseURL || '').replace(/\/$/, '').endsWith('/api');
-
-    // If baseURL ends with '/api' and caller also prefixed '/api', strip the extra '/api'
-    if (baseHasApi) {
-      // Remove leading double-slashes and normalize
-      config.url = config.url.replace(/^\/+/, '/');
-
-      // Collapse sequences like '/api/api' -> '/api' and '/api/api/auth' -> '/api/auth'
-      config.url = config.url.replace(/\/api(\/api)+/g, '/api');
-
-      // If caller included '/api' at the start, strip the redundant leading '/api'
-      if (config.url.startsWith('/api/')) {
-        config.url = config.url.replace(/^\/api/, '');
-        if (!config.url.startsWith('/')) config.url = '/' + config.url;
-      } else if (config.url === '/api') {
-        // convert '/api' -> '/'
-        config.url = '/';
-      }
-    } else {
-      // Ensure no accidental double slashes when baseURL doesn't end with '/'
-      // Also collapse repeated slashes in the caller URL
-      config.url = config.url.replace(/\/+/g, '/');
-    }
-
     return config;
   } catch (err) {
-    // If normalization fails, proceed with original config
+    console.error('Request interceptor error:', err);
     return config;
   }
 });

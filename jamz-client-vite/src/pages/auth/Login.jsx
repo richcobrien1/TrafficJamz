@@ -67,13 +67,35 @@ const Login = () => {
       setError('');
       setLoading(true);
       
+      console.log('🔐 Login attempt for:', email);
+      
       // Call the login function from AuthContext
       await login(email, password);
       
+      console.log('✅ Login successful');
+      
       // Navigation will be handled by useEffect when isAuthenticated becomes true
     } catch (error) {
-      console.error('Login error:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to login. Please check your credentials.');
+      console.error('❌ Login error:', error);
+      
+      // Better error messaging for network issues
+      let errorMessage = 'Failed to login. Please check your credentials.';
+      
+      if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error: Unable to connect to server. Please check your internet connection and try again.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Invalid email or password. Please try again.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Login service not found. Please contact support.';
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       setLoading(false);
     }
   };
