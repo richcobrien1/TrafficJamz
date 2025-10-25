@@ -104,16 +104,17 @@ jobs:
           GH_OWNER: ${{ github.repository_owner }}
         run: |
           echo "Checking image: $IMAGE"
-          # Query GitHub Packages registry for the package (note: requires GITHUB_TOKEN)
-          # We check that the manifest for the image tag exists by querying the registry v2 API.
-          TOKEN=${{ secrets.GITHUB_TOKEN }}
-          REPO=${GH_OWNER}/TrafficJamz
-          # Convert image path to registry API path
+          # Query GitHub Packages registry for the package
+          # Since the package is public, we can check without authentication
           IMAGE_NAME="trafficjamz-jamz-server"
           TAG=${{ github.sha }}
           URL="https://ghcr.io/v2/${GH_OWNER}/${IMAGE_NAME}/manifests/${TAG}"
           echo "HEAD $URL"
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/vnd.oci.image.manifest.v1+json" -u "x-access-token:${TOKEN}" "$URL")
+          # Try with authentication first
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "$URL")
           echo "Manifest HTTP status: $HTTP_STATUS"
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "Image $IMAGE not found in GHCR (status $HTTP_STATUS). Aborting deploy."
