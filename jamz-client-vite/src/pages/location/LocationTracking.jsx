@@ -2498,6 +2498,16 @@ const LocationTracking = () => {
                 circle.style.opacity = '0.6';
                 circle.style.borderStyle = 'dashed';
                 if (circle.textContent !== firstInitial) circle.textContent = firstInitial;
+              } else if (location.aggregated) {
+                // For aggregated markers, show the count
+                const count = String(location.count);
+                if (circle.textContent !== count) circle.textContent = count;
+                // Auto-size the circle based on count length
+                const len = count.length;
+                const size = len <= 2 ? 28 : (len === 3 ? 34 : 40);
+                circle.style.width = `${size}px`;
+                circle.style.height = `${size}px`;
+                circle.style.fontSize = len <= 2 ? '12px' : (len === 3 ? '11px' : '10px');
               } else {
                 const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
                 if (circle.textContent !== firstInitial) circle.textContent = firstInitial;
