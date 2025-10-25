@@ -899,23 +899,47 @@ const LocationTracking = () => {
     console.log('🌐 Connecting to Socket.IO for location tracking...', socketUrl);
 
     const socket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      timeout: 10000,
+      transports: ['polling', 'websocket'], // Try polling first (more reliable on Render free tier)
+      timeout: 20000,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      path: '/socket.io'
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      path: '/socket.io',
+      forceNew: false,
+      autoConnect: true
     });
 
     socket.on('connect', () => {
       console.log('✅ Socket.IO connected for location tracking');
+      console.log('✅ Transport used:', socket.io.engine.transport.name);
       socket.emit('join-group', { groupId });
       showNotification('Connected to real-time location tracking', 'success');
     });
 
     socket.on('connect_error', (error) => {
       console.error('❌ Socket.IO connection error:', error);
-      showNotification('Location tracking connection error', 'warning');
+      console.log('Will retry connection...');
+      // Don't show error notification on every retry, it's normal
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Socket.IO disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        // Server disconnected, try to reconnect
+        socket.connect();
+      }
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 Socket.IO reconnected after', attemptNumber, 'attempts');
+      socket.emit('join-group', { groupId });
+      showNotification('Reconnected to location tracking', 'success');
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.error('❌ Socket.IO reconnection failed');
+      showNotification('Unable to connect to real-time tracking. Locations will update via polling.', 'info');
     });
 
     // Listen for location updates from other members
