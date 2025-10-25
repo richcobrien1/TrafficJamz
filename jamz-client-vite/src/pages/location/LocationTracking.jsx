@@ -465,7 +465,6 @@ const LocationTracking = () => {
     }
     return () => { try { if (window.simulateWarriorsOverlap) delete window.simulateWarriorsOverlap; } catch (e) {} };
   }, [locations, userLocation]);
-  const watchIdRef = useRef(null);
   const locationDataRef = useRef(null);
   const locationsRef = useRef([]);
   const placesRef = useRef([]);
