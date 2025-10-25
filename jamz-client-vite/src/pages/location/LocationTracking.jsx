@@ -11,6 +11,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api, { MAPBOX_TOKEN } from '../../services/api';
 import mapboxgl from 'mapbox-gl';
+import io from 'socket.io-client';
 import { 
   Container, 
   Badge,
@@ -177,6 +178,8 @@ const LocationTracking = () => {
   const markersRef = useRef({});
   const lastKnownLocationsRef = useRef({});
   const pendingLocationsRef = useRef(null);
+  const socketRef = useRef(null);
+  const watchIdRef = useRef(null); // For watchPosition
   const updateMarkerDebounceRef = useRef(null);
   const clusterModeRef = useRef(false);
   const clusterSourceIdRef = useRef('tj_members_source');
@@ -883,6 +886,146 @@ const LocationTracking = () => {
     // The fetchMemberLocations function now handles including current user location
     // No need to duplicate the logic here
   };
+
+  // WebSocket connection for real-time location updates
+  useEffect(() => {
+    if (!groupId) return;
+
+    // Determine socket URL based on environment
+    const isDevelopment = import.meta.env.MODE === 'development';
+    const socketUrl = isDevelopment 
+      ? window.location.origin  // Dev: use Vite proxy
+      : (import.meta.env.VITE_BACKEND_URL || window.location.origin);
+
+    console.log('🌐 Connecting to Socket.IO for location tracking...', socketUrl);
+
+    const socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      path: '/socket.io'
+    });
+
+    socket.on('connect', () => {
+      console.log('✅ Socket.IO connected for location tracking');
+      socket.emit('join-group', { groupId });
+      showNotification('Connected to real-time location tracking', 'success');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('❌ Socket.IO connection error:', error);
+      showNotification('Location tracking connection error', 'warning');
+    });
+
+    // Listen for location updates from other members
+    socket.on('member-location', (data) => {
+      console.log('📍 Received location update from member:', data.userId);
+      
+      // Update locations state with the new member location
+      setLocations(prev => {
+        const updated = prev.filter(loc => loc.user_id !== data.userId);
+        const member = members.find(m => m.user_id === data.userId);
+        
+        const newLocation = {
+          user_id: data.userId,
+          username: member?.username || 'Unknown',
+          first_name: member?.first_name || null,
+          coordinates: data.location,
+          timestamp: data.timestamp,
+          battery_level: data.location.battery_level || null
+        };
+        
+        return [...updated, newLocation];
+      });
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      console.log('🔌 Disconnecting Socket.IO for location tracking');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [groupId, members]);
+
+  // Continuous location tracking with watchPosition
+  useEffect(() => {
+    if (!sharingLocation || !groupId) {
+      // Stop watching if location sharing is disabled
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+        console.log('⏹️ Stopped continuous location tracking');
+      }
+      return;
+    }
+
+    console.log('🎯 Starting continuous location tracking with watchPosition...');
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude, accuracy, altitude, heading, speed } = position.coords;
+        
+        const locationData = {
+          latitude,
+          longitude,
+          accuracy,
+          altitude: altitude || 0,
+          heading: heading || 0,
+          speed: speed || 0
+        };
+
+        console.log('📍 Location update:', locationData);
+
+        // Update local user location state
+        setUserLocation(locationData);
+        
+        // Store in localStorage
+        try {
+          localStorage.setItem('lastUserLocation', JSON.stringify(locationData));
+        } catch (e) {}
+
+        // Broadcast via WebSocket
+        if (socketRef.current && socketRef.current.connected) {
+          socketRef.current.emit('location-update', {
+            groupId,
+            userId: user?.id,
+            location: locationData
+          });
+          console.log('📡 Broadcasted location update via WebSocket');
+        }
+
+        // Also save to backend via API
+        api.post('/location/update', {
+          coordinates: locationData,
+          device_id: navigator.userAgent,
+          battery_level: 85 // TODO: Get actual battery level if available
+        }).catch(err => {
+          console.warn('Failed to save location to API:', err);
+        });
+      },
+      (error) => {
+        console.error('❌ Geolocation error:', error);
+        showNotification(`Location error: ${error.message}`, 'error');
+      },
+      {
+        enableHighAccuracy: highAccuracyMode,
+        maximumAge: 5000,
+        timeout: 10000
+      }
+    );
+
+    watchIdRef.current = watchId;
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        console.log('⏹️ Stopped watchPosition on cleanup');
+      }
+    };
+  }, [sharingLocation, groupId, user, highAccuracyMode]);
 
   // Initialize map when component mounts
   useEffect(() => {
