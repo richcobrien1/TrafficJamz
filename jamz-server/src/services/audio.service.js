@@ -41,11 +41,6 @@ class AudioService {
    * @returns {Promise<Object>} - Newly created audio session
    */
   async createAudioSession(groupId, sessionData, creatorId) {
-    // Check if MediaSoup is disabled
-    if (process.env.DISABLE_MEDIASOUP === 'true') {
-      throw new Error('Audio sessions are disabled (MediaSoup not initialized)');
-    }
-
     try {
       // Check if group exists
       const group = await Group.findById(groupId);
@@ -64,36 +59,63 @@ class AudioService {
         throw new Error('An active audio session already exists for this group');
       }
 
-      // Create mediasoup router
-      const router = await mediasoupConfig.createRouter();
+      // Check if MediaSoup is available
+      const mediasoupEnabled = process.env.DISABLE_MEDIASOUP !== 'true';
+      let router = null;
+      let router_id = null;
+      let rtpCapabilities = null;
 
-      // Create new audio session
+      if (mediasoupEnabled) {
+        try {
+          // Create mediasoup router
+          router = await mediasoupConfig.createRouter();
+          router_id = router.id;
+          rtpCapabilities = router.rtpCapabilities;
+        } catch (error) {
+          console.warn('MediaSoup router creation failed, falling back to peer-to-peer mode:', error.message);
+        }
+      }
+
+      // Create new audio session (works with or without MediaSoup)
       const audioSession = new AudioSession({
         group_id: groupId,
         creator_id: creatorId,
         session_type: sessionData.session_type || 'voice_only',
         recording_enabled: sessionData.recording_enabled || false,
-        router_id: router.id,
+        router_id: router_id,
         participants: [{
           user_id: creatorId,
           joined_at: new Date(),
           device_type: sessionData.device_type || 'web'
-        }]
+        }],
+        mode: router ? 'mediasoup' : 'p2p' // Track which mode we're using
       });
 
       await audioSession.save();
 
-      // Store router in memory
-      this.rooms.set(audioSession.id.toString(), {
-        router,
-        transports: new Map(),
-        producers: new Map(),
-        consumers: new Map()
-      });
+      // Store router in memory if available
+      if (router) {
+        this.rooms.set(audioSession.id.toString(), {
+          router,
+          transports: new Map(),
+          producers: new Map(),
+          consumers: new Map()
+        });
+      } else {
+        // For P2P mode, create a minimal room entry
+        this.rooms.set(audioSession.id.toString(), {
+          router: null,
+          transports: new Map(),
+          producers: new Map(),
+          consumers: new Map(),
+          mode: 'p2p'
+        });
+      }
 
       return {
         session: audioSession,
-        rtpCapabilities: router.rtpCapabilities
+        rtpCapabilities: rtpCapabilities,
+        mode: router ? 'mediasoup' : 'p2p'
       };
     } catch (error) {
       throw error;
