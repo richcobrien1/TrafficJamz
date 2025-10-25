@@ -970,6 +970,9 @@ class GroupService {
           group.group_members[existingMemberIndex].email = email;
         }
       } else {
+        // Generate a temporary user ID for new invitees
+        const tempUserId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
         // Check if a registered user with this email exists
         let actualUserId = tempUserId;
         try {
@@ -978,7 +981,7 @@ class GroupService {
             actualUserId = registeredUser.user_id;
             console.log('Found registered user, using real user_id:', actualUserId);
           } else {
-            console.log('No registered user found, using temp user_id');
+            console.log('No registered user found, using temp user_id:', tempUserId);
           }
         } catch (userError) {
           console.error('Error checking for registered user:', userError);
