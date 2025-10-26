@@ -688,7 +688,10 @@ const GroupDetail = () => {
                                     overlap="circular"
                                   >
                                     <Avatar 
-                                      src={member.profile_image_url}
+                                      src={
+                                        member.profile_image_url || 
+                                        `https://ui-avatars.com/api/?name=${encodeURIComponent(`${member.first_name || ''} ${member.last_name || ''}`.trim())}&background=random&color=fff&size=128`
+                                      }
                                       alt={`${member.first_name} ${member.last_name}`}
                                       imgProps={{ crossOrigin: 'anonymous' }}
                                     >
