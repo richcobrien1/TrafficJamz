@@ -418,7 +418,11 @@ const GroupDetail = () => {
                     gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
                     gap: 2,
                     mt: 0,
-                    width: '100%'
+                    width: '100%',
+                    '& > *': {
+                      minWidth: 0,
+                      overflow: 'hidden'
+                    }
                   }}
                 >
                   <Paper 
@@ -427,8 +431,11 @@ const GroupDetail = () => {
                       display: 'flex', 
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'flex-start',
                       cursor: 'pointer',
                       minHeight: 200,
+                      width: '100%',
+                      boxSizing: 'border-box',
                       transition: 'box-shadow 0.3s ease',
                       '&:hover': {
                         boxShadow: 6
@@ -442,13 +449,14 @@ const GroupDetail = () => {
                     <Typography 
                       variant="h6" 
                       gutterBottom 
+                      noWrap={false}
                       sx={{ 
-                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
                         overflowWrap: 'break-word',
                         hyphens: 'auto',
                         textAlign: 'center',
                         fontSize: { xs: '1rem', sm: '1.25rem' },
-                        whiteSpace: 'normal'
+                        maxWidth: '100%'
                       }}
                     >
                       Join Audio Session
@@ -456,13 +464,14 @@ const GroupDetail = () => {
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
-                      align="center" 
+                      align="center"
+                      noWrap={false}
                       sx={{ 
-                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
                         overflowWrap: 'break-word',
                         hyphens: 'auto',
                         fontSize: { xs: '0.813rem', sm: '0.875rem' },
-                        whiteSpace: 'normal'
+                        maxWidth: '100%'
                       }}
                     >
                       Start or join a real-time audio conversation with group members
@@ -475,8 +484,11 @@ const GroupDetail = () => {
                       display: 'flex', 
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'flex-start',
                       cursor: 'pointer',
                       minHeight: 200,
+                      width: '100%',
+                      boxSizing: 'border-box',
                       transition: 'box-shadow 0.3s ease',
                       '&:hover': {
                         boxShadow: 6
@@ -489,14 +501,15 @@ const GroupDetail = () => {
                     </Avatar>
                     <Typography 
                       variant="h6" 
-                      gutterBottom 
+                      gutterBottom
+                      noWrap={false}
                       sx={{ 
-                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
                         overflowWrap: 'break-word',
                         hyphens: 'auto',
                         textAlign: 'center',
                         fontSize: { xs: '1rem', sm: '1.25rem' },
-                        whiteSpace: 'normal'
+                        maxWidth: '100%'
                       }}
                     >
                       Location Tracking Now
@@ -504,13 +517,14 @@ const GroupDetail = () => {
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
-                      align="center" 
+                      align="center"
+                      noWrap={false}
                       sx={{ 
-                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
                         overflowWrap: 'break-word',
                         hyphens: 'auto',
                         fontSize: { xs: '0.813rem', sm: '0.875rem' },
-                        whiteSpace: 'normal'
+                        maxWidth: '100%'
                       }}
                     >
                       View the location of your group members on the map
