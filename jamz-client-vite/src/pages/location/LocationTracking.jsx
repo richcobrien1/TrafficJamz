@@ -85,19 +85,29 @@ const LocationTracking = () => {
   const { user } = useAuth();
   const { groupId } = useParams();
   const navigate = useNavigate();
+  
+  // Debug: Check user on every render
+  console.log('🔄 Component render - user from useAuth:', user);
 
   // Fallback to extract user info from JWT token if useAuth() returns undefined
   const currentUser = useMemo(() => {
-    if (user) {
+    console.log('🔍 useMemo executing - user:', user);
+    
+    if (user && user.id) {
       console.log('✅ Using user from useAuth:', user);
       return user;
     }
+    
+    console.log('⚠️ user missing or user.id undefined, attempting JWT decode');
     
     try {
       const token = localStorage.getItem('token');
       console.log('🔑 Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'null');
       
-      if (!token) return null;
+      if (!token) {
+        console.log('❌ No token in localStorage');
+        return null;
+      }
       
       // Decode JWT (basic decode, not verification)
       const base64Url = token.split('.')[1];
@@ -1090,7 +1100,7 @@ const LocationTracking = () => {
         if (socketRef.current && socketRef.current.connected) {
           socketRef.current.emit('location-update', {
             groupId,
-            userId: user?.id,
+            userId: currentUser?.id,
             location: locationData
           });
           console.log('📡 Broadcasted location update via WebSocket');
@@ -1603,9 +1613,9 @@ const LocationTracking = () => {
               setPlaces(fetchedPlaces);
               // Add places to current markers
               const currentUserLoc = userLocation ? [{
-                user_id: user?.id || 'current-user',
-                username: user?.username || 'CurrentUser',
-                first_name: user?.first_name || null,
+                user_id: currentUser?.id || 'current-user',
+                username: currentUser?.username || 'CurrentUser',
+                first_name: currentUser?.first_name || null,
                 coordinates: userLocation,
                 timestamp: new Date().toISOString(),
                 battery_level: 85
