@@ -375,4 +375,31 @@ router.post('/sessions/:sessionId/music/control',
   }
 );
 
+/**
+ * @route GET /api/audio-session/:groupId/status
+ * @desc Check if an audio session is active for a group
+ * @access Private
+ */
+router.get('/-session/:groupId/status',
+  passport.authenticate('jwt', { session: false }),
+  [
+    param('groupId').isMongoId().withMessage('Valid group ID is required'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const result = await audioService.getActiveAudioSession(req.params.groupId);
+      // If we found a session, it's active
+      res.json({ 
+        success: true, 
+        active: result && result.session ? true : false,
+        sessionId: result?.session?._id || null
+      });
+    } catch (error) {
+      // No active session found
+      res.json({ success: true, active: false });
+    }
+  }
+);
+
 module.exports = router;

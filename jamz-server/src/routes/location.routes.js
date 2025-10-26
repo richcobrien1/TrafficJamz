@@ -252,4 +252,38 @@ router.delete('/proximity-alerts/:alertId',
   }
 );
 
+/**
+ * @route GET /api/location-tracking/:groupId/active
+ * @desc Check if any group members are actively sharing location
+ * @access Private
+ */
+router.get('-tracking/:groupId/active',
+  passport.authenticate('jwt', { session: false }),
+  [
+    param('groupId').isMongoId().withMessage('Valid group ID is required'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const locations = await locationService.getGroupMembersLocations(req.params.groupId, req.user.user_id);
+      
+      // Check if any locations were updated in the last 5 minutes (consider active)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const activeLocations = locations.filter(loc => 
+        loc.last_updated && new Date(loc.last_updated) > fiveMinutesAgo
+      );
+      
+      res.json({ 
+        success: true, 
+        active: activeLocations.length > 0,
+        activeCount: activeLocations.length,
+        totalMembers: locations.length
+      });
+    } catch (error) {
+      // Return inactive if there's an error
+      res.json({ success: true, active: false });
+    }
+  }
+);
+
 module.exports = router;
