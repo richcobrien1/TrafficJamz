@@ -417,10 +417,11 @@ const GroupDetail = () => {
                   spacing={2}
                   sx={{ 
                     mt: 0,
-                    width: '100%'
+                    width: '100%',
+                    mx: 0
                   }}
                 >
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} sx={{ maxWidth: { md: '50%' } }}>
                     <Paper 
                       sx={{ 
                         p: { xs: 2, sm: 3 },
@@ -429,6 +430,10 @@ const GroupDetail = () => {
                         alignItems: 'center',
                         cursor: 'pointer',
                         height: '100%',
+                        width: '100%',
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
                         transition: 'box-shadow 0.3s ease',
                         '&:hover': {
                           boxShadow: 6
@@ -436,7 +441,7 @@ const GroupDetail = () => {
                       }}
                       onClick={() => navigate(`/audio-session/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2, flexShrink: 0 }}>
                         <MicIcon fontSize="large" />
                       </Avatar>
                       <Typography 
@@ -445,9 +450,12 @@ const GroupDetail = () => {
                         sx={{ 
                           wordWrap: 'break-word',
                           overflowWrap: 'break-word',
+                          hyphens: 'auto',
                           textAlign: 'center',
                           width: '100%',
-                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                          maxWidth: '100%',
+                          fontSize: { xs: '1rem', sm: '1.25rem' },
+                          whiteSpace: 'normal'
                         }}
                       >
                         Join Audio Session
@@ -459,8 +467,11 @@ const GroupDetail = () => {
                         sx={{ 
                           wordWrap: 'break-word',
                           overflowWrap: 'break-word',
+                          hyphens: 'auto',
                           width: '100%',
-                          fontSize: { xs: '0.813rem', sm: '0.875rem' }
+                          maxWidth: '100%',
+                          fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                          whiteSpace: 'normal'
                         }}
                       >
                         Start or join a real-time audio conversation with group members
@@ -468,7 +479,7 @@ const GroupDetail = () => {
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} sx={{ maxWidth: { md: '50%' } }}>
                     <Paper 
                       sx={{ 
                         p: { xs: 2, sm: 3 },
@@ -477,6 +488,10 @@ const GroupDetail = () => {
                         alignItems: 'center',
                         cursor: 'pointer',
                         height: '100%',
+                        width: '100%',
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
                         transition: 'box-shadow 0.3s ease',
                         '&:hover': {
                           boxShadow: 6
@@ -484,7 +499,7 @@ const GroupDetail = () => {
                       }}
                       onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'secondary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2 }}>
+                      <Avatar sx={{ bgcolor: 'secondary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2, flexShrink: 0 }}>
                         <LocationIcon fontSize="large" />
                       </Avatar>
                       <Typography 
@@ -493,9 +508,12 @@ const GroupDetail = () => {
                         sx={{ 
                           wordWrap: 'break-word',
                           overflowWrap: 'break-word',
+                          hyphens: 'auto',
                           textAlign: 'center',
                           width: '100%',
-                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                          maxWidth: '100%',
+                          fontSize: { xs: '1rem', sm: '1.25rem' },
+                          whiteSpace: 'normal'
                         }}
                       >
                         Location Tracking Now
@@ -507,8 +525,11 @@ const GroupDetail = () => {
                         sx={{ 
                           wordWrap: 'break-word',
                           overflowWrap: 'break-word',
+                          hyphens: 'auto',
                           width: '100%',
-                          fontSize: { xs: '0.813rem', sm: '0.875rem' }
+                          maxWidth: '100%',
+                          fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                          whiteSpace: 'normal'
                         }}
                       >
                         View the location of your group members on the map
