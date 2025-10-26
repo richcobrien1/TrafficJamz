@@ -72,6 +72,8 @@ jobs:
 
   deploy-to-k8s:
     # deploy the image pushed by the build-and-push job to a target cluster
+    # DISABLED - Not currently using Kubernetes
+    if: false
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
