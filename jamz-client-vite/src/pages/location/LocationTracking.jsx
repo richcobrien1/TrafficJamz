@@ -3018,8 +3018,8 @@ const LocationTracking = () => {
         sx={{ 
           opacity: controlsOpacity,
           backdropFilter: 'blur(2px)',
-          bgcolor: sharingLocation ? 'rgba(76, 175, 80, 0.95)' : 'rgba(0,0,0,0.7)',
-          color: sharingLocation ? '#000' : 'text.primary',
+          bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0,0,0,0.7)', // Pink/magenta when active
+          color: sharingLocation ? '#fff' : 'text.primary',
           transition: 'all 0.3s ease',
           // When the members list is open, hide the top AppBar so it doesn't overlap the drawer
           top: showMembersList ? -64 : (showControls ? 0 : -64),
@@ -3031,7 +3031,7 @@ const LocationTracking = () => {
             edge="start" 
             sx={{ 
               mr: 2,
-              color: sharingLocation ? '#000' : 'inherit'
+              color: sharingLocation ? '#fff' : 'inherit'
             }}
             onClick={() => navigate(`/groups/${groupId}`)}
           >
@@ -3043,7 +3043,7 @@ const LocationTracking = () => {
             component="div" 
             sx={{ 
               flexGrow: 1,
-              color: sharingLocation ? '#000' : 'inherit',
+              color: sharingLocation ? '#fff' : 'inherit',
               fontWeight: sharingLocation ? 600 : 400
             }}
           >
@@ -3054,10 +3054,10 @@ const LocationTracking = () => {
             <IconButton 
               onClick={toggleLocationSharing}
               sx={{
-                color: sharingLocation ? '#000' : 'inherit',
-                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
+                color: sharingLocation ? '#fff' : 'inherit',
+                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
-                  bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
                 }
               }}
             >
@@ -3069,7 +3069,7 @@ const LocationTracking = () => {
           <Tooltip title="Settings">
             <IconButton 
               sx={{
-                color: sharingLocation ? '#000' : 'inherit'
+                color: sharingLocation ? '#fff' : 'inherit'
               }}
               onClick={() => setOpenSettingsDialog(true)}
             >
@@ -3080,7 +3080,7 @@ const LocationTracking = () => {
           <Tooltip title={satelliteMode ? "Switch to Streets View" : "Switch to Satellite View"}>
             <IconButton 
               sx={{
-                color: sharingLocation ? '#000' : (satelliteMode ? 'primary.main' : 'inherit')
+                color: sharingLocation ? '#fff' : (satelliteMode ? 'primary.main' : 'inherit')
               }}
               onClick={() => toggleSatelliteMode(!satelliteMode)}
             >
@@ -3091,7 +3091,7 @@ const LocationTracking = () => {
           <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
             <IconButton 
               sx={{
-                color: sharingLocation ? '#000' : (showPlaces ? 'secondary.main' : 'inherit')
+                color: sharingLocation ? '#fff' : (showPlaces ? 'secondary.main' : 'inherit')
               }}
               onClick={() => setShowPlaces(!showPlaces)}
             >
