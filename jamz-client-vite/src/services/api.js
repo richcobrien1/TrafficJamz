@@ -25,14 +25,18 @@ const getBaseURL = () => {
   // Check if running in Capacitor native app
   const isCapacitor = window.location && window.location.protocol === 'capacitor:';
   
-  // Use VITE_API_BASE from environment, or fallback to '/api' for development
-  const apiBase = import.meta.env.VITE_API_BASE || '/api';
+  // For local development (localhost), always use '/api' to leverage Vite proxy
+  // For production or Capacitor, use VITE_API_BASE from environment
+  const isLocalDev = window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1';
+  
+  const apiBase = isLocalDev ? '/api' : (import.meta.env.VITE_API_BASE || '/api');
   
   // Debug logging
-  console.log('� API Configuration:', {
+  console.log('🔗 API Configuration:', {
     protocol: window.location?.protocol,
     hostname: window.location?.hostname,
     isCapacitor,
+    isLocalDev,
     VITE_API_BASE: import.meta.env.VITE_API_BASE,
     VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
     computed_baseURL: apiBase,
