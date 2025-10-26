@@ -27,9 +27,6 @@
  *    SMS_ENABLED=false for local development without sending
  */
 
-const twilio = require('twilio');
-const { Vonage } = require('@vonage/server-sdk');
-
 class SMSService {
   constructor() {
     this.enabled = process.env.SMS_ENABLED === 'true';
@@ -50,6 +47,7 @@ class SMSService {
   }
 
   initTwilio() {
+    const twilio = require('twilio');
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     this.phoneNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -65,6 +63,7 @@ class SMSService {
   }
 
   initVonage() {
+    const { Vonage } = require('@vonage/server-sdk');
     const apiKey = process.env.VONAGE_API_KEY;
     const apiSecret = process.env.VONAGE_API_SECRET;
     this.brandName = process.env.VONAGE_BRAND_NAME || 'TrafficJamz';

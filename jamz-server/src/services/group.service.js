@@ -332,6 +332,12 @@ class GroupService {
         members = members.filter(member => member.role === filters.role);
       }
       
+      // Generate avatar URLs for each member
+      members = members.map(member => ({
+        ...member.toObject(),
+        avatarUrl: generateMemberAvatar(member.email, member.first_name)
+      }));
+      
       return members;
     } catch (error) {
       throw error;
