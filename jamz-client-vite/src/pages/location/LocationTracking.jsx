@@ -619,18 +619,21 @@ const LocationTracking = () => {
 
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
+      console.log('🗺️ [fetchWithRateLimitProtection] Building allLocations. userLocation:', userLocation ? 'SET' : 'NULL');
       if (userLocation) {
         const currentUserLocation = {
-          user_id: user?.id || 'current-user',
-          username: user?.username || 'CurrentUser',
-          first_name: user?.first_name || null,
+          user_id: currentUser?.id || 'current-user',
+          username: currentUser?.username || 'CurrentUser',
+          first_name: currentUser?.first_name || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
         };
-        // Filter out any existing current user location from API data to avoid duplicates
-        const filteredEnrichedLocations = enrichedLocations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
-        allLocations = [currentUserLocation, ...filteredEnrichedLocations];
+        console.log('✅ [fetchWithRateLimitProtection] Adding current user to allLocations');
+        // No need to filter again - we already filtered enrichedLocations above
+        allLocations = [currentUserLocation, ...enrichedLocations];
+      } else {
+        console.log('⚠️ [fetchWithRateLimitProtection] userLocation is null');
       }
 
       // Add places if they should be shown
