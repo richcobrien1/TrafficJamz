@@ -607,6 +607,8 @@ const LocationTracking = () => {
 
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
+        console.log('🔍 [Line 610] Proximity check - enrichedLocations:', enrichedLocations.map(l => ({ user_id: l.user_id, username: l.username })));
+        console.log('🔍 [Line 610] Current user:', { id: user?.id, username: user?.username });
         checkProximityAlerts(enrichedLocations);
       }
     } catch (error) {
@@ -760,6 +762,8 @@ const LocationTracking = () => {
 
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
+        console.log('🔍 [Line 763] Proximity check - enrichedLocations:', enrichedLocations.map(l => ({ user_id: l.user_id, username: l.username })));
+        console.log('🔍 [Line 763] Current user:', { id: user?.id, username: user?.username });
         checkProximityAlerts(enrichedLocations);
       }
       
@@ -2709,7 +2713,10 @@ const LocationTracking = () => {
     if (!userLocation) return;
     
     locationData.forEach(location => {
-      if (location.user_id === (user?.id || 'current-user') || !location.coordinates) return;
+      // Skip current user by both user_id and username to prevent false alerts
+      if (location.user_id === (user?.id || 'current-user') || 
+          location.username === user?.username || 
+          !location.coordinates) return;
       
       const distance = calculateDistance(
         userLocation.latitude,
