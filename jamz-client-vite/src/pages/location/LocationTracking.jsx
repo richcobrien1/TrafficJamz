@@ -6,7 +6,7 @@
 // Map moveend/zoomend events are ENABLED to maintain this behavior
 // =============================
 
-import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api, { MAPBOX_TOKEN } from '../../services/api';
@@ -87,11 +87,16 @@ const LocationTracking = () => {
   const navigate = useNavigate();
 
   // Fallback to extract user info from JWT token if useAuth() returns undefined
-  const getCurrentUser = () => {
-    if (user) return user;
+  const currentUser = useMemo(() => {
+    if (user) {
+      console.log('✅ Using user from useAuth:', user);
+      return user;
+    }
     
     try {
       const token = localStorage.getItem('token');
+      console.log('🔑 Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'null');
+      
       if (!token) return null;
       
       // Decode JWT (basic decode, not verification)
@@ -102,20 +107,23 @@ const LocationTracking = () => {
       }).join(''));
       
       const payload = JSON.parse(jsonPayload);
-      return {
+      console.log('📦 JWT payload:', payload);
+      
+      const extractedUser = {
         id: payload.sub || payload.user_id || payload.id,
         username: payload.username,
         email: payload.email,
         first_name: payload.first_name,
         last_name: payload.last_name
       };
+      
+      console.log('✅ Extracted user from JWT:', extractedUser);
+      return extractedUser;
     } catch (e) {
-      console.error('Failed to decode JWT token:', e);
+      console.error('❌ Failed to decode JWT token:', e);
       return null;
     }
-  };
-
-  const currentUser = getCurrentUser();
+  }, [user]);
 
   // Default coordinates - try to use last known location from localStorage, fallback to Denver, CO
   const getDefaultCenter = () => {
