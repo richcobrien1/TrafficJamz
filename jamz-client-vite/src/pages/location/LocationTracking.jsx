@@ -530,30 +530,24 @@ const LocationTracking = () => {
       }
       
       // Enrich location data with usernames from members
-      const enrichedLocations = locationData.map(location => {
-        const member = members.find(m => m.user_id === location.user_id);
-        
-        // Special handling for current user - always use their real username
-        if (location.user_id === user?.id) {
-          return {
-            ...location,
-            username: user?.username || 'CurrentUser',
-            first_name: user?.first_name || null
-          };
-        }
+      // Filter out current user's location since we handle it separately
+      const enrichedLocations = locationData
+        .filter(location => location.user_id !== user?.id)
+        .map(location => {
+          const member = members.find(m => m.user_id === location.user_id);
 
-        // Only include users that have proper member data
-        if (member) {
-          return {
-            ...location,
-            username: member.username,
-            first_name: member.first_name
-          };
-        }
+          // Only include users that have proper member data
+          if (member) {
+            return {
+              ...location,
+              username: member.username,
+              first_name: member.first_name
+            };
+          }
 
-        // Skip users without member data (return null to filter out later)
-        return null;
-      }).filter(location => location !== null); // Remove null entries
+          // Skip users without member data (return null to filter out later)
+          return null;
+        }).filter(location => location !== null); // Remove null entries
 
       setLocations(enrichedLocations);
 
@@ -688,30 +682,24 @@ const LocationTracking = () => {
       const locationData = response.data.locations;
       
       // Enrich location data with usernames from members
-      let enrichedLocations = locationData.map(location => {
-        const member = (membersData || members).find(m => m.user_id === location.user_id);
-        
-        // Special handling for current user - always use their real username
-        if (location.user_id === user?.id) {
-          return {
-            ...location,
-            username: user?.username || 'CurrentUser',
-            first_name: user?.first_name || null
-          };
-        }
+      // Filter out current user's location since we handle it separately
+      let enrichedLocations = locationData
+        .filter(location => location.user_id !== user?.id)
+        .map(location => {
+          const member = (membersData || members).find(m => m.user_id === location.user_id);
 
-        // Only include users that have proper member data
-        if (member) {
-          return {
-            ...location,
-            username: member.username,
-            first_name: member.first_name
-          };
-        }
+          // Only include users that have proper member data
+          if (member) {
+            return {
+              ...location,
+              username: member.username,
+              first_name: member.first_name
+            };
+          }
 
-        // Skip users without member data (return null to filter out later)
-        return null;
-      }).filter(location => location !== null); // Remove null entries
+          // Skip users without member data (return null to filter out later)
+          return null;
+        }).filter(location => location !== null); // Remove null entries
 
       setLocations(enrichedLocations);
 
