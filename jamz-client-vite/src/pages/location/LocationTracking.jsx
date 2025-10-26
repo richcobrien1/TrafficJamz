@@ -946,6 +946,12 @@ const LocationTracking = () => {
     socket.on('member-location', (data) => {
       console.log('📍 Received location update from member:', data.userId);
       
+      // Skip if this is our own location update (we handle it separately)
+      if (data.userId === user?.id) {
+        console.log('⏭️ Skipping own location update from WebSocket');
+        return;
+      }
+      
       // Update locations state with the new member location
       setLocations(prev => {
         const updated = prev.filter(loc => loc.user_id !== data.userId);
