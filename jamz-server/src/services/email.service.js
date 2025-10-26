@@ -186,15 +186,15 @@ class EmailService {
 
       const info = await this.transporter.sendMail(mailOptions);
     
-      console.log('Email sent successfully with messageId:', info.messageId);
-      // Log additional transporter/send response details for troubleshooting (useful for SMTP providers)
-      try {
-        console.log('Email send info accepted:', info.accepted);
-        console.log('Email send info rejected:', info.rejected);
-        console.log('Email send response:', info.response);
-      } catch (e) {
-        // non-fatal if structure differs between transports
-      }
+      console.log('✅ EMAIL SENT SUCCESSFULLY');
+      console.log('To:', to);
+      console.log('Subject:', mailOptions.subject);
+      console.log('Message ID:', info.messageId);
+      console.log('Accepted:', info.accepted);
+      console.log('Rejected:', info.rejected);
+      console.log('Response:', info.response);
+      console.log('SMTP Host:', process.env.SMTP_HOST);
+      console.log('SMTP User:', process.env.SMTP_USER);
     
       // For Ethereal emails, provide the preview URL
       if (this.testAccount) {
