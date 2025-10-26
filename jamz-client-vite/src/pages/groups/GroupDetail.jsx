@@ -412,58 +412,112 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Grid container spacing={3} sx={{ width: '100%' }}>
-                  <Grid item xs={12} sm={6} sx={{ display: 'flex' }}>
+                <Grid 
+                  container 
+                  spacing={2} 
+                  sx={{ 
+                    width: '100%',
+                    margin: 0,
+                    '& .MuiGrid-item': {
+                      paddingLeft: { xs: 0, sm: 2 }
+                    }
+                  }}
+                >
+                  <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
                     <Paper 
                       sx={{ 
-                        p: 3, 
+                        p: { xs: 2, sm: 3 },
                         display: 'flex', 
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
                         minWidth: 0,
+                        width: '100%',
                         flex: 1,
+                        transition: 'box-shadow 0.3s ease',
                         '&:hover': {
                           boxShadow: 6
                         }
                       }}
                       onClick={() => navigate(`/audio-session/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'primary.main', width: 60, height: 60, mb: 2 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2 }}>
                         <MicIcon fontSize="large" />
                       </Avatar>
-                      <Typography variant="h6" gutterBottom sx={{ wordBreak: 'break-word', textAlign: 'center' }}>
+                      <Typography 
+                        variant="h6" 
+                        gutterBottom 
+                        sx={{ 
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          textAlign: 'center',
+                          width: '100%',
+                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }}
+                      >
                         Join Audio Session
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" align="center" sx={{ wordBreak: 'break-word' }}>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        align="center" 
+                        sx={{ 
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          width: '100%',
+                          fontSize: { xs: '0.813rem', sm: '0.875rem' }
+                        }}
+                      >
                         Start or join a real-time audio conversation with group members
                       </Typography>
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} sm={6} sx={{ display: 'flex' }}>
+                  <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
                     <Paper 
                       sx={{ 
-                        p: 3, 
+                        p: { xs: 2, sm: 3 },
                         display: 'flex', 
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
                         minWidth: 0,
+                        width: '100%',
                         flex: 1,
+                        transition: 'box-shadow 0.3s ease',
                         '&:hover': {
                           boxShadow: 6
                         }
                       }}
                       onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'secondary.main', width: 60, height: 60, mb: 2 }}>
+                      <Avatar sx={{ bgcolor: 'secondary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2 }}>
                         <LocationIcon fontSize="large" />
                       </Avatar>
-                      <Typography variant="h6" gutterBottom sx={{ wordBreak: 'break-word', textAlign: 'center' }}>
+                      <Typography 
+                        variant="h6" 
+                        gutterBottom 
+                        sx={{ 
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          textAlign: 'center',
+                          width: '100%',
+                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }}
+                      >
                         Location Tracking Now
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" align="center" sx={{ wordBreak: 'break-word' }}>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        align="center" 
+                        sx={{ 
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          width: '100%',
+                          fontSize: { xs: '0.813rem', sm: '0.875rem' }
+                        }}
+                      >
                         View the location of your group members on the map
                       </Typography>
                     </Paper>
