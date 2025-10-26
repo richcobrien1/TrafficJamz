@@ -194,7 +194,6 @@ class SMSService {
       });
     });
   }
-  }
 
   /**
    * Format phone number to E.164 (best effort)
