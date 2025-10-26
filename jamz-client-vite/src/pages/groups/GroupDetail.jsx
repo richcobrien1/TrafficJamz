@@ -70,6 +70,8 @@ const GroupDetail = () => {
   const [editName, setEditName] = useState('');
   const [editMode, setEditMode] = useState(false); // Add this line
   const [editDescription, setEditDescription] = useState('');
+  const [selectedEditAvatar, setSelectedEditAvatar] = useState('');
+  const [editAvatarOptions, setEditAvatarOptions] = useState([]);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -103,6 +105,24 @@ const GroupDetail = () => {
       setAvatarUrl(group.avatar_url || '');
     }
   }, [group]);
+  
+  const generateEditAvatarOptions = (groupName) => {
+    if (!groupName.trim()) {
+      setEditAvatarOptions([]);
+      return;
+    }
+    
+    // Generate 8 different avatar styles based on group name
+    const styles = ['adventurer', 'avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'personas', 'shapes'];
+    const options = styles.map(style => 
+      `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(groupName)}&size=200`
+    );
+    setEditAvatarOptions(options);
+    // Keep current avatar selected if it exists, otherwise select first option
+    if (!selectedEditAvatar && options.length > 0) {
+      setSelectedEditAvatar(group?.avatar_url || options[0]);
+    }
+  };
   
   useEffect(() => {
     fetchGroupDetails();
@@ -271,11 +291,14 @@ const GroupDetail = () => {
         // TODO other fields...
       });
       
+      // Determine avatar URL to send (use selected or keep existing)
+      const avatarToSend = selectedEditAvatar || avatarUrl;
+      
   const response = await api.put(`/groups/${groupId}`, {
         group_name: editName,
         group_description: editDescription,
         privacy_level: privacyLevel,
-        avatar_url: avatarUrl
+        avatar_url: avatarToSend
       });
       
       console.log('Update response:', response.data);
@@ -292,6 +315,8 @@ const GroupDetail = () => {
       }));
       setEditMode(false);
       setOpenEditDialog(false); // Close the dialog after successful save
+      setEditAvatarOptions([]);
+      setSelectedEditAvatar('');
       setError('');
     } catch (error) {
       console.error('Error updating group:', error);
@@ -908,7 +933,10 @@ const GroupDetail = () => {
             fullWidth
             variant="outlined"
             value={editName}
-            onChange={(e) => setEditName(e.target.value)}
+            onChange={(e) => {
+              setEditName(e.target.value);
+              generateEditAvatarOptions(e.target.value);
+            }}
             required
           />
           <TextField
@@ -923,6 +951,29 @@ const GroupDetail = () => {
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
           />
+          {editAvatarOptions.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Select a Group Avatar
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                {editAvatarOptions.map((url, index) => (
+                  <Avatar
+                    key={index}
+                    src={url}
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      cursor: 'pointer',
+                      border: selectedEditAvatar === url ? '3px solid #1976d2' : '2px solid transparent',
+                      '&:hover': { opacity: 0.7 }
+                    }}
+                    onClick={() => setSelectedEditAvatar(url)}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
