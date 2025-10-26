@@ -2,6 +2,18 @@ const Group = require('../models/group.model');
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
 const emailService = require('./email.service');
+const crypto = require('crypto');
+
+/**
+ * Generate Gravatar URL from email
+ * @param {string} email - User email
+ * @returns {string} - Gravatar URL
+ */
+function getGravatarUrl(email) {
+  if (!email) return null;
+  const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex');
+  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
+}
 
 /**
  * Group service for handling group-related operations
@@ -113,6 +125,9 @@ class GroupService {
           }
           
           // Use member data from MongoDB if available, otherwise use PostgreSQL data
+          const email = member.email || userData?.email || '';
+          const profileImageUrl = userData?.profile_image_url || member.profile_image_url;
+          
           return {
             id: member._id,
             user_id: member.user_id,
@@ -123,8 +138,9 @@ class GroupService {
             first_name: member.first_name || userData?.first_name || '',
             last_name: member.last_name || userData?.last_name || '',
             username: userData?.username || member.first_name || 'Unknown User',
-            email: member.email || userData?.email || '',
-            profile_image_url: userData?.profile_image_url || '',
+            email: email,
+            // Use profile image if available, otherwise fallback to Gravatar
+            profile_image_url: profileImageUrl || getGravatarUrl(email),
             phone_number: member.phone_number || userData?.phone_number || ''
           };
         })),
