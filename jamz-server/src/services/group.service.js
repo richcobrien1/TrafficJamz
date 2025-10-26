@@ -464,7 +464,7 @@ class GroupService {
    * @param {string} inviterId - User ID making the invitation
    * @returns {Promise<Object>} - Invitation data
    */
-  async inviteToGroup(groupId, email, inviterId) {
+  async inviteToGroup(groupId, email, inviterId, options = {}) {
     try {
       const group = await Group.findById(groupId);
       if (!group) {
@@ -604,16 +604,18 @@ class GroupService {
         invitationLink
       });
 
-      // Send invitation email
-      const emailResult = await emailService.sendInvitationEmail(email, {
-        groupName: group.group_name,
-        inviterName: inviterName,
-        inviterFullName,
-        inviterHandle,
-        invitationLink
-      });
-      
-      console.log('Invitation email sent:', emailResult);
+      // Send invitation email (optional - can be skipped for async sending)
+      if (options?.sendEmail !== false) {
+        const emailResult = await emailService.sendInvitationEmail(email, {
+          groupName: group.group_name,
+          inviterName: inviterName,
+          inviterFullName,
+          inviterHandle,
+          invitationLink
+        });
+        
+        console.log('Invitation email sent:', emailResult);
+      }
 
       // Compute how many times this email has been invited in this group
       // Prefer the aggregated sent_count for this email if present
@@ -652,8 +654,9 @@ class GroupService {
    * @param {string} groupId
    * @param {string} invitationId
    * @param {string} requesterId
+   * @param {Object} options - Optional settings (e.g., sendEmail: false to skip email)
    */
-  async resendInvitation(groupId, invitationId, requesterId) {
+  async resendInvitation(groupId, invitationId, requesterId, options = {}) {
     try {
       const group = await Group.findById(groupId);
       if (!group) throw new Error('Group not found');
@@ -722,18 +725,21 @@ class GroupService {
       }
 
       // Send email and capture result (preview URL when using Ethereal)
+      // Optional - can be skipped for async sending
       let emailResult = null;
-      try {
-        emailResult = await emailService.sendInvitationEmail(invitation.email, {
-          groupName: group.group_name,
-          inviterName,
-          inviterFullName,
-          inviterHandle,
-          invitationLink
-        });
-      } catch (err) {
-        console.error('Error sending invitation email in resendInvitation:', err);
-        // continue - we still return update info but bubble up error to caller if needed
+      if (options?.sendEmail !== false) {
+        try {
+          emailResult = await emailService.sendInvitationEmail(invitation.email, {
+            groupName: group.group_name,
+            inviterName,
+            inviterFullName,
+            inviterHandle,
+            invitationLink
+          });
+        } catch (err) {
+          console.error('Error sending invitation email in resendInvitation:', err);
+          // continue - we still return update info but bubble up error to caller if needed
+        }
       }
 
       // Compute invite_count for this invitation's email within the group
@@ -1231,6 +1237,71 @@ class GroupService {
     } catch (error) {
       console.error('Error in acceptInvitation:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Send invitation email asynchronously (non-blocking)
+   * @param {string} groupId
+   * @param {string} invitationId
+   */
+  async sendInvitationEmailAsync(groupId, invitationId) {
+    try {
+      const group = await Group.findById(groupId);
+      if (!group) {
+        console.error('Group not found for async email:', groupId);
+        return;
+      }
+
+      const invitation = group.invitations.id(invitationId);
+      if (!invitation) {
+        console.error('Invitation not found for async email:', invitationId);
+        return;
+      }
+
+      // Get invitation index
+      const index = group.invitations.findIndex(inv => inv._id.toString() === invitationId);
+      
+      // Generate invitation link
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const invitationLink = `${baseUrl}/invitations/${group._id}/${index}`;
+
+      // Get inviter details
+      let inviterName = 'A user';
+      let inviterFullName = null;
+      let inviterHandle = null;
+
+      try {
+        const inviterIdStr = invitation.invited_by ? invitation.invited_by.toString() : '';
+        if (inviterIdStr.includes('-')) {
+          const sequelize = require('../config/database');
+          const [results] = await sequelize.query(
+            'SELECT username, full_name FROM users WHERE user_id = :userId',
+            { replacements: { userId: inviterIdStr } }
+          );
+          if (results && results.length > 0) {
+            inviterHandle = results[0].username;
+            inviterFullName = results[0].full_name;
+            inviterName = inviterFullName || inviterHandle;
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching inviter details for async email:', err);
+      }
+
+      // Send email
+      await emailService.sendInvitationEmail(invitation.email, {
+        groupName: group.group_name,
+        inviterName,
+        inviterFullName,
+        inviterHandle,
+        invitationLink
+      });
+
+      console.log('Async invitation email sent successfully to:', invitation.email);
+    } catch (error) {
+      console.error('Error in sendInvitationEmailAsync:', error);
+      // Don't throw - this is fire-and-forget
     }
   }
 }
