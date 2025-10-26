@@ -195,11 +195,17 @@ const GroupDetail = () => {
   const fetchInvitations = async () => {
     try {
       setInvitationsLoading(true);
+      console.log('Fetching invitations for group:', groupId);
       const response = await api.get(`/groups/${groupId}/invitations`);
-      setInvitations(response.data.invitations || []);
+      console.log('Invitations response:', response.data);
+      const invitationsList = response.data.invitations || [];
+      console.log('Setting invitations:', invitationsList.length, 'items');
+      setInvitations(invitationsList);
     } catch (error) {
       console.error('Error fetching invitations:', error);
-      // Don't set error state for invitations, just log it
+      console.error('Error details:', error.response?.data || error.message);
+      // Set empty array on error so UI shows "No pending invitations"
+      setInvitations([]);
     } finally {
       setInvitationsLoading(false);
     }
