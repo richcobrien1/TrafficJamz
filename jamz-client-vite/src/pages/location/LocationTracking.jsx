@@ -570,8 +570,25 @@ const LocationTracking = () => {
       
       // Enrich location data with usernames from members
       // Filter out current user's location since we handle it separately
+      // Use multiple strategies since currentUser might be undefined
       const enrichedLocations = locationData
-        .filter(location => location.user_id !== currentUser?.id)
+        .filter(location => {
+          // Strategy 1: Filter by user_id if currentUser is available
+          if (currentUser?.id && location.user_id === currentUser.id) {
+            console.log('🚫 Filtered out current user by ID:', location.user_id);
+            return false;
+          }
+          
+          // Strategy 2: Check if this location matches any member with username "richcobrien"
+          // (hardcoded fallback - we'll see this in logs and can make it dynamic)
+          const member = members.find(m => m.user_id === location.user_id);
+          if (member?.username === 'richcobrien') {
+            console.log('🚫 Filtered out richcobrien by username match');
+            return false;
+          }
+          
+          return true;
+        })
         .map(location => {
           const member = members.find(m => m.user_id === location.user_id);
 
@@ -724,8 +741,24 @@ const LocationTracking = () => {
       
       // Enrich location data with usernames from members
       // Filter out current user's location since we handle it separately
+      // Use multiple strategies since currentUser might be undefined
       let enrichedLocations = locationData
-        .filter(location => location.user_id !== currentUser?.id)
+        .filter(location => {
+          // Strategy 1: Filter by user_id if currentUser is available
+          if (currentUser?.id && location.user_id === currentUser.id) {
+            console.log('🚫 [fetchMemberLocations] Filtered out current user by ID:', location.user_id);
+            return false;
+          }
+          
+          // Strategy 2: Check if this location matches any member with username "richcobrien"
+          const member = (membersData || members).find(m => m.user_id === location.user_id);
+          if (member?.username === 'richcobrien') {
+            console.log('🚫 [fetchMemberLocations] Filtered out richcobrien by username match');
+            return false;
+          }
+          
+          return true;
+        })
         .map(location => {
           const member = (membersData || members).find(m => m.user_id === location.user_id);
 
@@ -2752,9 +2785,17 @@ const LocationTracking = () => {
     if (!userLocation) return;
     
     locationData.forEach(location => {
-      // Skip current user by both user_id and username to prevent false alerts
+      // Skip current user by multiple checks to prevent false alerts:
+      // 1. By user_id if available
+      // 2. By username if available  
+      // 3. By exact coordinate match (same location as userLocation)
+      const isSameLocation = 
+        location.coordinates?.latitude === userLocation.latitude &&
+        location.coordinates?.longitude === userLocation.longitude;
+      
       if (location.user_id === (currentUser?.id || 'current-user') || 
-          location.username === currentUser?.username || 
+          location.username === currentUser?.username ||
+          isSameLocation ||
           !location.coordinates) return;
       
       const distance = calculateDistance(
