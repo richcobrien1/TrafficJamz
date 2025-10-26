@@ -5,14 +5,23 @@ const emailService = require('./email.service');
 const crypto = require('crypto');
 
 /**
- * Generate Gravatar URL from email
+ * Generate default avatar URL based on user data
  * @param {string} email - User email
- * @returns {string} - Gravatar URL
+ * @param {string} firstName - User first name (optional)
+ * @returns {string} - Avatar URL
  */
-function getGravatarUrl(email) {
-  if (!email) return null;
-  const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex');
-  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
+function getDefaultAvatar(email, firstName) {
+  if (!email && !firstName) return null;
+  
+  // Use UI Avatars service to generate initials-based avatars
+  // Falls back to gender-neutral person icon
+  const hash = crypto.createHash('md5').update((email || firstName || '').toLowerCase().trim()).digest('hex');
+  const colorIndex = parseInt(hash.substring(0, 2), 16) % 10;
+  
+  // Neutral avatar colors
+  const colors = ['7C3AED', '2563EB', '059669', 'DC2626', 'EA580C', 'CA8A04', '0891B2', '9333EA', 'DB2777', '65A30D'];
+  
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName || 'User')}&background=${colors[colorIndex]}&color=fff&size=200&bold=true`;
 }
 
 /**
@@ -126,6 +135,7 @@ class GroupService {
           
           // Use member data from MongoDB if available, otherwise use PostgreSQL data
           const email = member.email || userData?.email || '';
+          const firstName = member.first_name || userData?.first_name || '';
           const profileImageUrl = userData?.profile_image_url || member.profile_image_url;
           
           return {
@@ -135,12 +145,12 @@ class GroupService {
             status: member.status,
             joined_at: member.joined_at,
             // Prioritize MongoDB data for these fields
-            first_name: member.first_name || userData?.first_name || '',
+            first_name: firstName,
             last_name: member.last_name || userData?.last_name || '',
-            username: userData?.username || member.first_name || 'Unknown User',
+            username: userData?.username || firstName || 'Unknown User',
             email: email,
-            // Use profile image if available, otherwise fallback to Gravatar
-            profile_image_url: profileImageUrl || getGravatarUrl(email),
+            // Use profile image if available, otherwise fallback to default avatar
+            profile_image_url: profileImageUrl || getDefaultAvatar(email, firstName),
             phone_number: member.phone_number || userData?.phone_number || ''
           };
         })),
