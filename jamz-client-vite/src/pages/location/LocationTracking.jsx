@@ -86,6 +86,37 @@ const LocationTracking = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
 
+  // Fallback to extract user info from JWT token if useAuth() returns undefined
+  const getCurrentUser = () => {
+    if (user) return user;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      
+      // Decode JWT (basic decode, not verification)
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(jsonPayload);
+      return {
+        id: payload.sub || payload.user_id || payload.id,
+        username: payload.username,
+        email: payload.email,
+        first_name: payload.first_name,
+        last_name: payload.last_name
+      };
+    } catch (e) {
+      console.error('Failed to decode JWT token:', e);
+      return null;
+    }
+  };
+
+  const currentUser = getCurrentUser();
+
   // Default coordinates - try to use last known location from localStorage, fallback to Denver, CO
   const getDefaultCenter = () => {
     try {
@@ -532,7 +563,7 @@ const LocationTracking = () => {
       // Enrich location data with usernames from members
       // Filter out current user's location since we handle it separately
       const enrichedLocations = locationData
-        .filter(location => location.user_id !== user?.id)
+        .filter(location => location.user_id !== currentUser?.id)
         .map(location => {
           const member = members.find(m => m.user_id === location.user_id);
 
@@ -608,7 +639,7 @@ const LocationTracking = () => {
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
         console.log('🔍 [Line 610] Proximity check - enrichedLocations:', enrichedLocations.map(l => ({ user_id: l.user_id, username: l.username })));
-        console.log('🔍 [Line 610] Current user:', { id: user?.id, username: user?.username });
+        console.log('🔍 [Line 610] Current user:', { id: currentUser?.id, username: currentUser?.username });
         checkProximityAlerts(enrichedLocations);
       }
     } catch (error) {
@@ -686,7 +717,7 @@ const LocationTracking = () => {
       // Enrich location data with usernames from members
       // Filter out current user's location since we handle it separately
       let enrichedLocations = locationData
-        .filter(location => location.user_id !== user?.id)
+        .filter(location => location.user_id !== currentUser?.id)
         .map(location => {
           const member = (membersData || members).find(m => m.user_id === location.user_id);
 
@@ -763,7 +794,7 @@ const LocationTracking = () => {
       // Check for proximity alerts
       if (showProximityAlerts && userLocation) {
         console.log('🔍 [Line 763] Proximity check - enrichedLocations:', enrichedLocations.map(l => ({ user_id: l.user_id, username: l.username })));
-        console.log('🔍 [Line 763] Current user:', { id: user?.id, username: user?.username });
+        console.log('🔍 [Line 763] Current user:', { id: currentUser?.id, username: currentUser?.username });
         checkProximityAlerts(enrichedLocations);
       }
       
@@ -939,7 +970,7 @@ const LocationTracking = () => {
       console.log('📍 Received location update from member:', data.userId);
       
       // Skip if this is our own location update (we handle it separately)
-      if (data.userId === user?.id) {
+      if (data.userId === currentUser?.id) {
         console.log('⏭️ Skipping own location update from WebSocket');
         return;
       }
@@ -2714,8 +2745,8 @@ const LocationTracking = () => {
     
     locationData.forEach(location => {
       // Skip current user by both user_id and username to prevent false alerts
-      if (location.user_id === (user?.id || 'current-user') || 
-          location.username === user?.username || 
+      if (location.user_id === (currentUser?.id || 'current-user') || 
+          location.username === currentUser?.username || 
           !location.coordinates) return;
       
       const distance = calculateDistance(
