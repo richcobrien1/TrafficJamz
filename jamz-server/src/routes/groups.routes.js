@@ -566,20 +566,22 @@ router.post('/:group_id/invitations',
     try {
       const { email, text } = req.body;
       
-      // Set a timeout for the database operation
+      // Set a timeout for the database operation only
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Database operation timed out')), 10000)
       );
       
       // Execute the invitation creation with a timeout
-      const invitationPromise = groupService.inviteToGroup(req.params.group_id, email, req.user.user_id);
+      // Pass sendEmail: false to skip blocking email send
+      const invitationPromise = groupService.inviteToGroup(req.params.group_id, email, req.user.user_id, { sendEmail: false });
       const invitation = await Promise.race([invitationPromise, timeoutPromise]);
       
+      // Send response immediately
       res.status(201).json({ 
         success: true, 
         message: 'Invitation sent successfully',
         invitation: {
-          id: invitation._id,
+          id: invitation._id || invitation.id,
           email: invitation.email,
           invited_by: invitation.invited_by,
           invited_at: invitation.invited_at,
@@ -587,6 +589,12 @@ router.post('/:group_id/invitations',
           expires_at: invitation.expires_at
         }
       });
+      
+      // Send email asynchronously after response (fire and forget)
+      groupService.sendInvitationEmailAsync(req.params.group_id, invitation._id || invitation.id).catch(err => {
+        console.error('Background email send failed:', err);
+      });
+      
     } catch (error) {
       console.error('Error sending invitation:', error);
       
@@ -635,15 +643,23 @@ router.post('/:group_id/invitations/:invitation_id/resend',
   validate,
   async (req, res) => {
     try {
-  const { group_id, invitation_id } = req.params;
-  const result = await groupService.resendInvitation(group_id, invitation_id, req.user.user_id);
-      // If email preview URL is available (Ethereal in dev), log it for easy verification
-      if (result && result.emailPreviewUrl) {
-        console.log(`Invitation resend preview URL for invitation ${invitation_id}:`, result.emailPreviewUrl);
-      }
-
-      // Include the preview URL at top-level for client-side verification when available
-      res.json({ success: true, message: 'Invitation resent', invitation: result, previewUrl: result && result.emailPreviewUrl ? result.emailPreviewUrl : null });
+      const { group_id, invitation_id } = req.params;
+      
+      // Update invitation in database (fast operation)
+      const result = await groupService.resendInvitation(group_id, invitation_id, req.user.user_id, { sendEmail: false });
+      
+      // Send response immediately
+      res.json({ 
+        success: true, 
+        message: 'Invitation resent', 
+        invitation: result
+      });
+      
+      // Send email asynchronously after response (fire and forget)
+      groupService.sendInvitationEmailAsync(group_id, invitation_id).catch(err => {
+        console.error('Background email resend failed:', err);
+      });
+      
     } catch (error) {
       console.error('Error resending invitation:', error);
       res.status(400).json({ success: false, message: error.message || 'Failed to resend invitation' });
