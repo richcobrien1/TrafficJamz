@@ -62,6 +62,7 @@ const GroupDetail = () => {
   const [tabValue, setTabValue] = useState(0);
   const [openInviteDialog, setOpenInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
   const [inviteTextMsg, setInviteTextMsg] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
@@ -244,7 +245,8 @@ const GroupDetail = () => {
       console.log('Sending invitation to:', inviteEmail);
       const response = await api.post(`/groups/${groupId}/invitations`, {
         email: inviteEmail,
-        text: inviteTextMsg
+        phoneNumber: invitePhone || undefined,
+        text: inviteTextMsg || undefined
       }, {
         timeout: 60000 // 60 second timeout for email sending
       });
@@ -253,6 +255,7 @@ const GroupDetail = () => {
       
       // Reset form fields after successful invitation
       setInviteEmail('');
+      setInvitePhone('');
       setInviteTextMsg('');
       setOpenInviteDialog(false);
       
@@ -901,16 +904,28 @@ const GroupDetail = () => {
             required
           />
           <TextField
-            autoFocus
             margin="dense"
-            id="text message"
-            label="Mobile Phone"
-            type="phone"
+            id="phone"
+            label="Mobile Phone (Optional)"
+            type="tel"
             fullWidth
+            variant="outlined"
+            value={invitePhone}
+            onChange={(e) => setInvitePhone(e.target.value)}
+            helperText="For SMS notifications (e.g., +12025551234)"
+          />
+          <TextField
+            margin="dense"
+            id="message"
+            label="Custom Message (Optional)"
+            type="text"
+            fullWidth
+            multiline
+            rows={2}
             variant="outlined"
             value={inviteTextMsg}
             onChange={(e) => setInviteTextMsg(e.target.value)}
-            required
+            helperText="Personalize the invitation message"
           />
         </DialogContent>
         <DialogActions>

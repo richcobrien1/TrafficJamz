@@ -2,6 +2,7 @@ const Group = require('../models/group.model');
 const User = require('../models/user.model');
 const mongoose = require('mongoose');
 const emailService = require('./email.service');
+const smsService = require('./sms.service');
 const crypto = require('crypto');
 
 /**
@@ -641,6 +642,29 @@ class GroupService {
         });
         
         console.log('Invitation email sent:', emailResult);
+      }
+
+      // Send SMS if phone number provided
+      if (options?.phoneNumber) {
+        try {
+          const formattedPhone = smsService.formatPhoneNumber(options.phoneNumber);
+          
+          if (smsService.isValidPhoneNumber(formattedPhone)) {
+            const smsResult = await smsService.sendGroupInvitation(formattedPhone, {
+              groupName: group.group_name,
+              inviterName: inviterName,
+              invitationLink,
+              customMessage: options?.customMessage
+            });
+            
+            console.log('Invitation SMS sent:', smsResult);
+          } else {
+            console.warn('Invalid phone number format, skipping SMS:', options.phoneNumber);
+          }
+        } catch (smsError) {
+          console.error('Failed to send SMS invitation:', smsError.message);
+          // Don't fail the whole invitation if SMS fails
+        }
       }
 
       // Compute how many times this email has been invited in this group

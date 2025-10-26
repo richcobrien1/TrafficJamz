@@ -559,12 +559,13 @@ router.post('/:group_id/invitations',
   [
     param('group_id').isLength({ min: 1 }).withMessage('Group ID is required'),
     body('email').isEmail().withMessage('Valid email is required'),
-    body('text').optional().isString().withMessage('Text message must be a string')
+    body('text').optional().isString().withMessage('Text message must be a string'),
+    body('phoneNumber').optional().isString().withMessage('Phone number must be a string')
   ],
   validate,
   async (req, res) => {
     try {
-      const { email, text } = req.body;
+      const { email, text, phoneNumber } = req.body;
       
       // Set a timeout for the database operation only
       const timeoutPromise = new Promise((_, reject) => 
@@ -572,8 +573,12 @@ router.post('/:group_id/invitations',
       );
       
       // Execute the invitation creation with a timeout
-      // Pass sendEmail: false to skip blocking email send
-      const invitationPromise = groupService.inviteToGroup(req.params.group_id, email, req.user.user_id, { sendEmail: false });
+      // Pass sendEmail: false to skip blocking email send, include phone number and custom message
+      const invitationPromise = groupService.inviteToGroup(req.params.group_id, email, req.user.user_id, { 
+        sendEmail: false,
+        phoneNumber,
+        customMessage: text
+      });
       const invitation = await Promise.race([invitationPromise, timeoutPromise]);
       
       // Send response immediately
