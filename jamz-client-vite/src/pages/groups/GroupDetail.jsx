@@ -222,6 +222,10 @@ const GroupDetail = () => {
   
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    // Fetch invitations when switching to the invitations tab
+    if (newValue === 1) {
+      fetchInvitations();
+    }
   };
   
   const handleMenuOpen = (event) => {
