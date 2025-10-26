@@ -78,23 +78,35 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Skip deploy when KUBE_CONFIG_DATA is not set
+      - name: Check if K8s deployment is enabled
+        id: check-deploy
         run: |
-          if [ -z "${{ secrets.KUBE_CONFIG_DATA }}" ]; then
-            echo "KUBE_CONFIG_DATA secret not set; skipping deploy-to-k8s job.";
-            exit 0;
+          # Set output based on whether KUBE_CONFIG_DATA secret exists
+          # We check this by seeing if it's non-empty when assigned to an env var
+          if [ -n "$KUBE_CONFIG" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+            echo "✅ K8s deployment enabled (KUBE_CONFIG_DATA is set)"
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+            echo "⏭️ K8s deployment skipped (KUBE_CONFIG_DATA not set)"
           fi
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_DATA || '' }}
+
       - name: Checkout repository
+        if: steps.check-deploy.outputs.enabled == 'true'
         uses: actions/checkout@v4
 
       - name: Set up kubectl
+        if: steps.check-deploy.outputs.enabled == 'true'
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
 
       - name: Create kubeconfig from secret
+        if: steps.check-deploy.outputs.enabled == 'true'
         env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA || '' }}
         run: |
           echo "Writing kubeconfig from secret"
           echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
@@ -102,6 +114,7 @@ jobs:
           echo "Wrote kubeconfig to $PWD/kubeconfig"
 
       - name: Log in to GHCR for image verification
+        if: steps.check-deploy.outputs.enabled == 'true'
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -109,6 +122,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify pushed image exists in GHCR
+        if: steps.check-deploy.outputs.enabled == 'true'
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
         run: |
@@ -122,6 +136,7 @@ jobs:
           fi
 
       - name: Apply manifest (create if necessary)
+        if: steps.check-deploy.outputs.enabled == 'true'
         env:
           KUBECONFIG: ${{ github.workspace }}/kubeconfig
         run: |
@@ -129,6 +144,7 @@ jobs:
           kubectl apply -f kubernetes/backend-deployment.kubesail.yaml || true
 
       - name: Patch deployment to use new image and wait for rollout
+        if: steps.check-deploy.outputs.enabled == 'true'
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
           KUBECONFIG: ${{ github.workspace }}/kubeconfig
