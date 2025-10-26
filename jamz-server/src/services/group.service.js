@@ -639,15 +639,22 @@ class GroupService {
 
       // Send invitation email (optional - can be skipped for async sending)
       if (options?.sendEmail !== false) {
-        const emailResult = await emailService.sendInvitationEmail(email, {
-          groupName: group.group_name,
-          inviterName: inviterName,
-          inviterFullName,
-          inviterHandle,
-          invitationLink
-        });
-        
-        console.log('Invitation email sent:', emailResult);
+        try {
+          console.log('📧 Attempting to send invitation email to:', email);
+          const emailResult = await emailService.sendInvitationEmail(email, {
+            groupName: group.group_name,
+            inviterName: inviterName,
+            inviterFullName,
+            inviterHandle,
+            invitationLink
+          });
+          
+          console.log('✅ Invitation email sent successfully:', emailResult);
+        } catch (emailError) {
+          console.error('❌ FAILED to send invitation email:', emailError.message);
+          console.error('Email error details:', emailError);
+          // Don't throw - allow invitation to be created even if email fails
+        }
       }
 
       // Send SMS if phone number provided
