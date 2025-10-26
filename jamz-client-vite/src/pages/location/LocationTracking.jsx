@@ -1308,21 +1308,8 @@ const LocationTracking = () => {
       const seen = new Set();
       (enrichedMembersData || []).forEach(m => { seen.add(String(m.user_id)); merged.push(m); });
       
-      // Add current user if available
-      if (userLocation) {
-        const currentUserLoc = {
-          user_id: user?.id || 'current-user',
-          username: user?.username || 'CurrentUser',
-          first_name: user?.first_name || null,
-          coordinates: userLocation,
-          timestamp: new Date().toISOString(),
-          battery_level: 85
-        };
-        if (!seen.has(String(currentUserLoc.user_id))) {
-          merged.push(currentUserLoc);
-          seen.add(String(currentUserLoc.user_id));
-        }
-      }
+      // Don't add current user to locations state - it's handled separately
+      // in updateMapMarkersWithUserLocation to avoid duplicates
 
       // (placeResults || []).forEach(p => { if (!seen.has(p.user_id)) merged.push(p); });
 
