@@ -540,7 +540,7 @@ class GroupService {
       const savedInvitation = group.invitations[group.invitations.length - 1];
 
       // Generate invitation link with group ID and invitation index
-      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const baseUrl = process.env.FRONTEND_URL || 'https://jamz.v2u.us';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${group.invitations.length - 1}`;
       
       // Get inviter details - Fix for hybrid PostgreSQL/MongoDB system
@@ -743,7 +743,7 @@ class GroupService {
 
       // Rebuild invitation link using current index
       const index = group.invitations.findIndex(inv => inv._id.toString() === invitationId);
-      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const baseUrl = process.env.FRONTEND_URL || 'https://jamz.v2u.us';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${index}`;
 
       // Determine inviter name for email
@@ -1330,7 +1330,7 @@ class GroupService {
       const index = group.invitations.findIndex(inv => inv._id.toString() === invitationId);
       
       // Generate invitation link
-      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const baseUrl = process.env.FRONTEND_URL || 'https://jamz.v2u.us';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${index}`;
       console.log('📧 Invitation link:', invitationLink);
 
