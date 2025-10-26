@@ -219,6 +219,8 @@ const GroupDetail = () => {
       const response = await api.post(`/groups/${groupId}/invitations`, {
         email: inviteEmail,
         text: inviteTextMsg
+      }, {
+        timeout: 60000 // 60 second timeout for email sending
       });
       
       console.log('Invitation response:', response.data);
@@ -240,10 +242,17 @@ const GroupDetail = () => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
-      const errorMsg = error.response?.data?.error 
-        || error.response?.data?.message 
-        || error.message 
-        || 'Failed to send invitation. Please try again.';
+      let errorMsg = 'Failed to send invitation. Please try again.';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMsg = 'Request timed out. The invitation may still be processing. Please check the Invited tab in a moment.';
+      } else if (error.response?.data?.error) {
+        errorMsg = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
       
       setInviteError(errorMsg);
     } finally {
@@ -754,7 +763,9 @@ const GroupDetail = () => {
                                   onClick={async () => {
                                     try {
                                       setResendLoading(l => ({ ...l, [invId]: true }));
-                                      const resp = await api.post(`/groups/${groupId}/invitations/${invId}/resend`);
+                                      const resp = await api.post(`/groups/${groupId}/invitations/${invId}/resend`, {}, {
+                                        timeout: 60000 // 60 second timeout for email sending
+                                      });
                                       // refresh invitations after successful resend
                                       await fetchInvitations();
                                       const preview = resp?.data?.previewUrl || resp?.data?.invitation?.emailPreviewUrl || null;
@@ -769,7 +780,13 @@ const GroupDetail = () => {
                                       }
                                     } catch (err) {
                                       console.error('Error resending invitation:', err);
-                                      setSnackbarMsg('Failed to resend invitation');
+                                      
+                                      let errorMsg = 'Failed to resend invitation';
+                                      if (err.code === 'ECONNABORTED') {
+                                        errorMsg = 'Request timed out. The invitation may still be processing.';
+                                      }
+                                      
+                                      setSnackbarMsg(errorMsg);
                                       setSnackbarLink(null);
                                       setSnackbarOpen(true);
                                     } finally {
