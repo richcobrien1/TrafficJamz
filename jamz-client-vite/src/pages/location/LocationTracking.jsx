@@ -791,16 +791,15 @@ const LocationTracking = () => {
       let allLocations = enrichedLocations;
       if (userLocation) {
         const currentUserLocation = {
-          user_id: user?.id || 'current-user',
-          username: user?.username || 'CurrentUser',
-          first_name: user?.first_name || null,
+          user_id: currentUser?.id || 'current-user',
+          username: currentUser?.username || 'CurrentUser',
+          first_name: currentUser?.first_name || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
         };
-        // Filter out any existing current user location from API data to avoid duplicates
-        const filteredEnrichedLocations = enrichedLocations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
-        allLocations = [currentUserLocation, ...filteredEnrichedLocations];
+        // No need to filter again - we already filtered enrichedLocations above
+        allLocations = [currentUserLocation, ...enrichedLocations];
       }
 
       // Add places if they should be shown
@@ -2754,9 +2753,9 @@ const LocationTracking = () => {
   const updateMapMarkersWithUserLocation = (userLocationData) => {
     // Create current user location object
     const currentUserLocation = {
-      user_id: user?.id || 'current-user',
-      username: user?.username || 'CurrentUser',
-      first_name: user?.first_name || null,
+      user_id: currentUser?.id || 'current-user',
+      username: currentUser?.username || 'CurrentUser',
+      first_name: currentUser?.first_name || null,
       coordinates: userLocationData,
       timestamp: new Date().toISOString(),
       battery_level: 85 // Default battery level
@@ -2765,8 +2764,8 @@ const LocationTracking = () => {
     // Filter out any existing current user location from API data to avoid duplicates
     // Check both user_id AND username to catch duplicates from WebSocket broadcasts
     const filteredLocations = locations.filter(loc => 
-      loc.user_id !== (user?.id || 'current-user') && 
-      loc.username !== user?.username
+      loc.user_id !== (currentUser?.id || 'current-user') && 
+      loc.username !== currentUser?.username
     );
     
     // Combine current user location with existing member locations and places if shown
