@@ -414,7 +414,7 @@ const GroupDetail = () => {
                 </Paper>
                 
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} sm={6}>
                     <Paper 
                       sx={{ 
                         p: 3,
@@ -441,7 +441,7 @@ const GroupDetail = () => {
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} sm={6}>
                     <Paper 
                       sx={{ 
                         p: 3,
