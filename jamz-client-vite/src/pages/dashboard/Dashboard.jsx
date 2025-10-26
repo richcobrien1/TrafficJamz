@@ -54,6 +54,8 @@ const Dashboard = () => {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
+  const [avatarOptions, setAvatarOptions] = useState([]);
   const [createGroupLoading, setCreateGroupLoading] = useState(false);
   const [createGroupError, setCreateGroupError] = useState('');
   const [notifications, setNotifications] = useState([]);
@@ -95,6 +97,21 @@ const Dashboard = () => {
     navigate('/auth/login');
   };
 
+  const generateAvatarOptions = (groupName) => {
+    if (!groupName.trim()) {
+      setAvatarOptions([]);
+      return;
+    }
+    
+    // Generate 8 different avatar styles based on group name
+    const styles = ['adventurer', 'avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'personas', 'shapes'];
+    const options = styles.map(style => 
+      `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(groupName)}&size=200`
+    );
+    setAvatarOptions(options);
+    setSelectedAvatar(options[0]); // Select first one by default
+  };
+  
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) {
       setCreateGroupError('Group name is required');
@@ -107,13 +124,16 @@ const Dashboard = () => {
 
   const response = await api.post('/groups', {
         group_name: newGroupName,
-        group_description: newGroupDescription
+        group_description: newGroupDescription,
+        avatar_url: selectedAvatar
       });
 
       setGroups((prev) => [...prev, response.data.group]);
       setOpenCreateDialog(false);
       setNewGroupName('');
       setNewGroupDescription('');
+      setSelectedAvatar('');
+      setAvatarOptions([]);
     } catch (error) {
       setCreateGroupError(error.response?.data?.message || 'Failed to create group. Please try again.');
     } finally {
@@ -321,7 +341,10 @@ const Dashboard = () => {
             fullWidth
             variant="outlined"
             value={newGroupName}
-            onChange={(e) => setNewGroupName(e.target.value)}
+            onChange={(e) => {
+              setNewGroupName(e.target.value);
+              generateAvatarOptions(e.target.value);
+            }}
             required
             aria-required="true"
           />
@@ -337,6 +360,29 @@ const Dashboard = () => {
             value={newGroupDescription}
             onChange={(e) => setNewGroupDescription(e.target.value)}
           />
+          {avatarOptions.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Select a Group Avatar
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                {avatarOptions.map((url, index) => (
+                  <Avatar
+                    key={index}
+                    src={url}
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      cursor: 'pointer',
+                      border: selectedAvatar === url ? '3px solid #1976d2' : '2px solid transparent',
+                      '&:hover': { opacity: 0.7 }
+                    }}
+                    onClick={() => setSelectedAvatar(url)}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
