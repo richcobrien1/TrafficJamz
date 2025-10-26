@@ -414,16 +414,13 @@ const GroupDetail = () => {
                 
                 <Grid 
                   container 
-                  spacing={2} 
+                  spacing={2}
                   sx={{ 
-                    width: '100%',
-                    margin: 0,
-                    '& .MuiGrid-item': {
-                      paddingLeft: { xs: 0, sm: 2 }
-                    }
+                    mt: 0,
+                    width: '100%'
                   }}
                 >
-                  <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+                  <Grid item xs={12} md={6}>
                     <Paper 
                       sx={{ 
                         p: { xs: 2, sm: 3 },
@@ -431,9 +428,7 @@ const GroupDetail = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
-                        minWidth: 0,
-                        width: '100%',
-                        flex: 1,
+                        height: '100%',
                         transition: 'box-shadow 0.3s ease',
                         '&:hover': {
                           boxShadow: 6
@@ -473,7 +468,7 @@ const GroupDetail = () => {
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+                  <Grid item xs={12} md={6}>
                     <Paper 
                       sx={{ 
                         p: { xs: 2, sm: 3 },
@@ -481,9 +476,7 @@ const GroupDetail = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
-                        minWidth: 0,
-                        width: '100%',
-                        flex: 1,
+                        height: '100%',
                         transition: 'box-shadow 0.3s ease',
                         '&:hover': {
                           boxShadow: 6
