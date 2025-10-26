@@ -196,4 +196,23 @@ router.post('/logout', passport.authenticate('jwt', { session: false }), async (
   }
 });
 
+/**
+ * @route GET /api/auth/check-user/:email
+ * @desc Check if user exists (diagnostic endpoint)
+ * @access Public
+ */
+router.get('/check-user/:email', async (req, res) => {
+  try {
+    const user = await userService.getUserByEmail(req.params.email);
+    res.json({ 
+      success: true, 
+      exists: !!user,
+      username: user?.username,
+      user_id: user?.user_id
+    });
+  } catch (error) {
+    res.json({ success: true, exists: false, error: error.message });
+  }
+});
+
 module.exports = router;
