@@ -153,7 +153,7 @@ const LocationTracking = () => {
   const [defaultCenter] = useState(getDefaultCenter);
     
   // State variables
-  const [sharingLocation, setSharingLocation] = useState(false);
+  const [sharingLocation, setSharingLocation] = useState(true); // Default ON - location sharing enabled by default
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
   const [retryDelay, setRetryDelay] = useState(15);
