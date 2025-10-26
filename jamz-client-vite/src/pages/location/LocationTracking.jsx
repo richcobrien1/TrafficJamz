@@ -2380,11 +2380,24 @@ const LocationTracking = () => {
 
   // Update markers when dragging mode changes
   useEffect(() => {
-    if (mapRef.current && (locations.length > 0 || (showPlaces && places.length > 0))) {
-      const allLocations = showPlaces ? [...locations, ...places] : locations;
+    if (mapRef.current && (locations.length > 0 || (showPlaces && places.length > 0) || userLocation)) {
+      // Include current user location
+      const currentUserLoc = userLocation ? [{
+        user_id: currentUser?.id || 'current-user',
+        username: currentUser?.username || 'CurrentUser',
+        first_name: currentUser?.first_name || null,
+        coordinates: userLocation,
+        timestamp: new Date().toISOString(),
+        battery_level: 85
+      }] : [];
+      
+      const allLocations = showPlaces 
+        ? [...currentUserLoc, ...locations, ...places] 
+        : [...currentUserLoc, ...locations];
+      console.log('📍 [draggingPlaceId-useEffect-L2382] Updating markers on drag change:', allLocations.length);
       updateMapMarkers(allLocations);
     }
-  }, [draggingPlaceId, locations, places, showPlaces]);
+  }, [draggingPlaceId, locations, places, showPlaces, userLocation, currentUser]);
 
   // Internal (immediate) marker update implementation
   const doUpdateMapMarkers = (locationData) => {
