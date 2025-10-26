@@ -379,9 +379,9 @@ const GroupDetail = () => {
             </Tabs>
           </Box>
           
-          <Container component="main" sx={{ flexGrow: 1, py: 4, maxWidth: '100%' }}>
+          <Container component="main" sx={{ flexGrow: 1, py: 4, maxWidth: 'none !important', px: 2 }}>
             {tabValue === 0 ? (
-              <Box>
+              <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
                 <Paper sx={{ p: 3, mb: 3 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Avatar 
@@ -413,8 +413,8 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                <Grid container spacing={2} sx={{ mx: 0, width: '100%' }}>
+                  <Grid item xs={12} sm={6} sx={{ px: 1 }}>
                     <Paper 
                       sx={{ 
                         p: 3,
@@ -423,6 +423,7 @@ const GroupDetail = () => {
                         alignItems: 'center',
                         cursor: 'pointer',
                         minHeight: 200,
+                        height: '100%',
                         '&:hover': {
                           boxShadow: 6
                         }
@@ -441,7 +442,7 @@ const GroupDetail = () => {
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} sx={{ px: 1 }}>
                     <Paper 
                       sx={{ 
                         p: 3,
@@ -450,6 +451,7 @@ const GroupDetail = () => {
                         alignItems: 'center',
                         cursor: 'pointer',
                         minHeight: 200,
+                        height: '100%',
                         '&:hover': {
                           boxShadow: 6
                         }
