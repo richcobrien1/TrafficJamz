@@ -558,11 +558,16 @@ class GroupService {
             console.log(`No user found with ID: ${inviterId}`);
           }
 
-      // Debug: log raw Postgres users result for troubleshooting
-      try {
-        console.log('Postgres users result (sanitized):', JSON.stringify(users && users.map(u => ({ username: u.username, first_name: u.first_name, last_name: u.last_name, email: u.email })), null, 2));
-      } catch (e) {
-        console.error('Error serializing Postgres users result for logs:', e);
+          // Debug: log raw Postgres users result for troubleshooting
+          try {
+            console.log('Postgres users result (sanitized):', JSON.stringify(users && users.map(u => ({ username: u.username, first_name: u.first_name, last_name: u.last_name, email: u.email })), null, 2));
+          } catch (e) {
+            console.error('Error serializing Postgres users result for logs:', e);
+          }
+        }
+      } catch (error) {
+        console.error('Detailed error finding inviter:', error);
+        // Continue with default inviterName
       }
 
       // Fallback: if we couldn't get a full name from Postgres, try to derive it from the group's member record
@@ -589,11 +594,6 @@ class GroupService {
         }
       }
       if (!inviterSource) inviterSource = inviterFullName ? 'postgres' : (inviterHandle ? 'handle' : 'unknown');
-        }
-      } catch (error) {
-        console.error('Detailed error finding inviter:', error);
-        // Continue with default inviterName
-      }
 
       // Final debug: show what inviter fields we'll send to the email service
       console.log('Prepare to send invitation email with inviter data:', {
