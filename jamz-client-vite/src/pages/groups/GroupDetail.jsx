@@ -690,10 +690,9 @@ const GroupDetail = () => {
                                     <Avatar 
                                       src={
                                         member.profile_image_url || 
-                                        `https://ui-avatars.com/api/?name=${encodeURIComponent(`${member.first_name || ''} ${member.last_name || ''}`.trim())}&background=random&color=fff&size=128`
+                                        `https://ui-avatars.com/api/?name=${encodeURIComponent(`${member.first_name || ''} ${member.last_name || ''}`.trim())}&background=random&size=128`
                                       }
                                       alt={`${member.first_name} ${member.last_name}`}
-                                      imgProps={{ crossOrigin: 'anonymous' }}
                                     >
                                       {member.first_name?.[0]}
                                     </Avatar>
