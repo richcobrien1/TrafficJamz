@@ -475,8 +475,8 @@ const GroupDetail = () => {
                         View the location of your group members on the map
                       </Typography>
                     </Paper>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
             ) : tabValue === 1 ? (
               <Box>
