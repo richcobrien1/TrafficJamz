@@ -49,6 +49,7 @@ import api from '../../services/api'; // Adjust the path as needed to point to y
 import { useAuth } from '../../contexts/AuthContext';
 
 const GroupDetail = () => {
+  // Force rebuild - ensure equal panel widths
   const { groupId } = useParams();
   const [group, setGroup] = useState(null);
   const [groupName, setGroupName] = useState('');
