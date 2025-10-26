@@ -2734,6 +2734,9 @@ const LocationTracking = () => {
 
   // Public wrapper: debounced update to reduce DOM thrash. Call with immediate=true to force instant update.
   const updateMapMarkers = (locationData, immediate = false) => {
+    console.log('🎯 updateMapMarkers called with', locationData?.length || 0, 'locations, immediate:', immediate);
+    console.trace('Call stack:');
+    
     try {
       if (updateMarkerDebounceRef.current) {
         clearTimeout(updateMarkerDebounceRef.current);
