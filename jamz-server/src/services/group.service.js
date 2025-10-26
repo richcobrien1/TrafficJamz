@@ -1310,17 +1310,21 @@ class GroupService {
    */
   async sendInvitationEmailAsync(groupId, invitationId) {
     try {
+      console.log('🔄 sendInvitationEmailAsync called:', { groupId, invitationId });
+      
       const group = await Group.findById(groupId);
       if (!group) {
-        console.error('Group not found for async email:', groupId);
+        console.error('❌ Group not found for async email:', groupId);
         return;
       }
+      console.log('✅ Group found:', group.group_name);
 
       const invitation = group.invitations.id(invitationId);
       if (!invitation) {
-        console.error('Invitation not found for async email:', invitationId);
+        console.error('❌ Invitation not found for async email:', invitationId);
         return;
       }
+      console.log('✅ Invitation found for email:', invitation.email);
 
       // Get invitation index
       const index = group.invitations.findIndex(inv => inv._id.toString() === invitationId);
@@ -1328,6 +1332,7 @@ class GroupService {
       // Generate invitation link
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const invitationLink = `${baseUrl}/invitations/${group._id}/${index}`;
+      console.log('📧 Invitation link:', invitationLink);
 
       // Get inviter details
       let inviterName = 'A user';
@@ -1349,8 +1354,11 @@ class GroupService {
           }
         }
       } catch (err) {
-        console.error('Error fetching inviter details for async email:', err);
+        console.error('⚠️ Error fetching inviter details for async email:', err);
       }
+
+      console.log('👤 Inviter name:', inviterName);
+      console.log('📨 About to send email to:', invitation.email);
 
       // Send email
       await emailService.sendInvitationEmail(invitation.email, {
@@ -1361,9 +1369,10 @@ class GroupService {
         invitationLink
       });
 
-      console.log('Async invitation email sent successfully to:', invitation.email);
+      console.log('✅✅✅ Async invitation email sent successfully to:', invitation.email);
     } catch (error) {
-      console.error('Error in sendInvitationEmailAsync:', error);
+      console.error('❌❌❌ Error in sendInvitationEmailAsync:', error);
+      console.error('Error stack:', error.stack);
       // Don't throw - this is fire-and-forget
     }
   }
