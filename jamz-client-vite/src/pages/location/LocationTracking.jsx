@@ -1226,11 +1226,11 @@ const LocationTracking = () => {
           
           // Update markers to include places (but hide member locations during place selection mode)
           if (!placeSelectionMode) {
-            console.log('📍 Updating map with allLocations (members + user + places):', allLocations.length);
+            console.log('📍 [updatePlacesOnMap-L1230] Updating map with allLocations (members + user + places):', allLocations.length);
             updateMapMarkers(allLocations);
           } else {
             // During place selection mode, only show places
-            console.log('⚠️ PLACE SELECTION MODE - showing only places:', fetchedPlaces.length);
+            console.log('⚠️ [updatePlacesOnMap-L1234] PLACE SELECTION MODE - showing only places:', fetchedPlaces.length);
             updateMapMarkers(fetchedPlaces);
           }
         } catch (error) {
@@ -1249,7 +1249,7 @@ const LocationTracking = () => {
             battery_level: 85
           }] : [];
           const allLocations = [...currentUserLoc, ...locations];
-          console.log('📍 Updating map without places (members + user):', allLocations.length);
+          console.log('📍 [updatePlacesOnMap-L1253] Updating map without places (members + user):', allLocations.length);
           updateMapMarkers(allLocations);
         }
       }
@@ -1587,9 +1587,23 @@ const LocationTracking = () => {
           map.on('zoomend', () => {
             try {
               if (devSimulationActiveRef.current) return; // don't override simulated dataset
+              
+              // Add current user to locations
+              const currentUserLoc = userLocation ? [{
+                user_id: currentUser?.id || 'current-user',
+                username: currentUser?.username || 'CurrentUser',
+                first_name: currentUser?.first_name || null,
+                coordinates: userLocation,
+                timestamp: new Date().toISOString(),
+                battery_level: 85
+              }] : [];
+              
               const currentLocations = locationsRef.current || [];
               const currentPlaces = placesRef.current || [];
-              const allLocations = showPlaces ? [...currentLocations, ...currentPlaces] : [...currentLocations];
+              const allLocations = showPlaces 
+                ? [...currentUserLoc, ...currentLocations, ...currentPlaces] 
+                : [...currentUserLoc, ...currentLocations];
+              console.log('🔍 [zoomend-L1594] Updating markers after zoom:', allLocations.length);
               // Force immediate re-render so clusters/aggregation update with zoom
               updateMapMarkers(allLocations, true);
             } catch (e) {
@@ -1621,6 +1635,7 @@ const LocationTracking = () => {
                 battery_level: 85
               }] : [];
               const allLocations = [...currentUserLoc, ...locations, ...fetchedPlaces];
+              console.log('🏛️ [mapInit-L1624] Loading places on map init:', allLocations.length);
                   updateMapMarkers(allLocations, true);
             }
           }).catch(error => {
