@@ -674,7 +674,11 @@ const GroupDetail = () => {
                                     color="primary"
                                     overlap="circular"
                                   >
-                                    <Avatar src={member.profile_image_url}>
+                                    <Avatar 
+                                      src={member.profile_image_url}
+                                      alt={`${member.first_name} ${member.last_name}`}
+                                      imgProps={{ crossOrigin: 'anonymous' }}
+                                    >
                                       {member.first_name?.[0]}
                                     </Avatar>
                                   </Badge>
