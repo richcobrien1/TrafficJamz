@@ -1203,9 +1203,9 @@ const LocationTracking = () => {
           
           // Include current user location if available
           const currentUserLoc = userLocation ? [{
-            user_id: user?.id || 'current-user',
-            username: user?.username || 'CurrentUser',
-            first_name: user?.first_name || null,
+            user_id: currentUser?.id || 'current-user',
+            username: currentUser?.username || 'CurrentUser',
+            first_name: currentUser?.first_name || null,
             coordinates: userLocation,
             timestamp: new Date().toISOString(),
             battery_level: 85
@@ -1216,9 +1216,11 @@ const LocationTracking = () => {
           
           // Update markers to include places (but hide member locations during place selection mode)
           if (!placeSelectionMode) {
+            console.log('📍 Updating map with allLocations (members + user + places):', allLocations.length);
             updateMapMarkers(allLocations);
           } else {
             // During place selection mode, only show places
+            console.log('⚠️ PLACE SELECTION MODE - showing only places:', fetchedPlaces.length);
             updateMapMarkers(fetchedPlaces);
           }
         } catch (error) {
@@ -1229,14 +1231,15 @@ const LocationTracking = () => {
         if (!placeSelectionMode) {
           // Include current user location
           const currentUserLoc = userLocation ? [{
-            user_id: user?.id || 'current-user',
-            username: user?.username || 'CurrentUser',
-            first_name: user?.first_name || null,
+            user_id: currentUser?.id || 'current-user',
+            username: currentUser?.username || 'CurrentUser',
+            first_name: currentUser?.first_name || null,
             coordinates: userLocation,
             timestamp: new Date().toISOString(),
             battery_level: 85
           }] : [];
           const allLocations = [...currentUserLoc, ...locations];
+          console.log('📍 Updating map without places (members + user):', allLocations.length);
           updateMapMarkers(allLocations);
         }
       }
