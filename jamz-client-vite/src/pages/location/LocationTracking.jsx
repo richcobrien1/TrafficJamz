@@ -789,6 +789,7 @@ const LocationTracking = () => {
 
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
+      console.log('🗺️ [fetchMemberLocations] Building allLocations. userLocation:', userLocation ? 'SET' : 'NULL', 'enrichedLocations count:', enrichedLocations.length);
       if (userLocation) {
         const currentUserLocation = {
           user_id: currentUser?.id || 'current-user',
@@ -798,8 +799,11 @@ const LocationTracking = () => {
           timestamp: new Date().toISOString(),
           battery_level: 85
         };
+        console.log('✅ Adding current user to allLocations:', { user_id: currentUserLocation.user_id, username: currentUserLocation.username });
         // No need to filter again - we already filtered enrichedLocations above
         allLocations = [currentUserLocation, ...enrichedLocations];
+      } else {
+        console.log('⚠️ userLocation is null, not adding current user to map');
       }
 
       // Add places if they should be shown
