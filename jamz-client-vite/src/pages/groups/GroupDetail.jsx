@@ -412,131 +412,111 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Grid 
-                  container 
-                  spacing={2}
+                <Box 
                   sx={{ 
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 2,
                     mt: 0,
-                    width: '100%',
-                    mx: 0
+                    width: '100%'
                   }}
                 >
-                  <Grid item xs={12} md={6} sx={{ maxWidth: { md: '50%' } }}>
-                    <Paper 
+                  <Paper 
+                    sx={{ 
+                      p: { xs: 2, sm: 3 },
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      minHeight: 200,
+                      transition: 'box-shadow 0.3s ease',
+                      '&:hover': {
+                        boxShadow: 6
+                      }
+                    }}
+                    onClick={() => navigate(`/audio-session/${groupId}`)}
+                  >
+                    <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2, flexShrink: 0 }}>
+                      <MicIcon fontSize="large" />
+                    </Avatar>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom 
                       sx={{ 
-                        p: { xs: 2, sm: 3 },
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        height: '100%',
-                        width: '100%',
-                        maxWidth: '100%',
-                        overflow: 'hidden',
-                        boxSizing: 'border-box',
-                        transition: 'box-shadow 0.3s ease',
-                        '&:hover': {
-                          boxShadow: 6
-                        }
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        hyphens: 'auto',
+                        textAlign: 'center',
+                        fontSize: { xs: '1rem', sm: '1.25rem' },
+                        whiteSpace: 'normal'
                       }}
-                      onClick={() => navigate(`/audio-session/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'primary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2, flexShrink: 0 }}>
-                        <MicIcon fontSize="large" />
-                      </Avatar>
-                      <Typography 
-                        variant="h6" 
-                        gutterBottom 
-                        sx={{ 
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto',
-                          textAlign: 'center',
-                          width: '100%',
-                          maxWidth: '100%',
-                          fontSize: { xs: '1rem', sm: '1.25rem' },
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        Join Audio Session
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary" 
-                        align="center" 
-                        sx={{ 
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto',
-                          width: '100%',
-                          maxWidth: '100%',
-                          fontSize: { xs: '0.813rem', sm: '0.875rem' },
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        Start or join a real-time audio conversation with group members
-                      </Typography>
-                    </Paper>
-                  </Grid>
+                      Join Audio Session
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      align="center" 
+                      sx={{ 
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        hyphens: 'auto',
+                        fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                        whiteSpace: 'normal'
+                      }}
+                    >
+                      Start or join a real-time audio conversation with group members
+                    </Typography>
+                  </Paper>
 
-                  <Grid item xs={12} md={6} sx={{ maxWidth: { md: '50%' } }}>
-                    <Paper 
+                  <Paper 
+                    sx={{ 
+                      p: { xs: 2, sm: 3 },
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      minHeight: 200,
+                      transition: 'box-shadow 0.3s ease',
+                      '&:hover': {
+                        boxShadow: 6
+                      }
+                    }}
+                    onClick={() => navigate(`/location-tracking/${groupId}`)}
+                  >
+                    <Avatar sx={{ bgcolor: 'secondary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2, flexShrink: 0 }}>
+                      <LocationIcon fontSize="large" />
+                    </Avatar>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom 
                       sx={{ 
-                        p: { xs: 2, sm: 3 },
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        height: '100%',
-                        width: '100%',
-                        maxWidth: '100%',
-                        overflow: 'hidden',
-                        boxSizing: 'border-box',
-                        transition: 'box-shadow 0.3s ease',
-                        '&:hover': {
-                          boxShadow: 6
-                        }
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        hyphens: 'auto',
+                        textAlign: 'center',
+                        fontSize: { xs: '1rem', sm: '1.25rem' },
+                        whiteSpace: 'normal'
                       }}
-                      onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'secondary.main', width: { xs: 50, sm: 60 }, height: { xs: 50, sm: 60 }, mb: 2, flexShrink: 0 }}>
-                        <LocationIcon fontSize="large" />
-                      </Avatar>
-                      <Typography 
-                        variant="h6" 
-                        gutterBottom 
-                        sx={{ 
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto',
-                          textAlign: 'center',
-                          width: '100%',
-                          maxWidth: '100%',
-                          fontSize: { xs: '1rem', sm: '1.25rem' },
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        Location Tracking Now
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary" 
-                        align="center" 
-                        sx={{ 
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto',
-                          width: '100%',
-                          maxWidth: '100%',
-                          fontSize: { xs: '0.813rem', sm: '0.875rem' },
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        View the location of your group members on the map
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                      Location Tracking Now
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      align="center" 
+                      sx={{ 
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
+                        hyphens: 'auto',
+                        fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                        whiteSpace: 'normal'
+                      }}
+                    >
+                      View the location of your group members on the map
+                    </Typography>
+                  </Paper>
+                </Box>
               </Box>
             ) : tabValue === 1 ? (
               <Box>
