@@ -82,6 +82,8 @@ const GroupDetail = () => {
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState({});
+  const [audioSessionActive, setAudioSessionActive] = useState(false); // Audio session state
+  const [locationTrackingActive, setLocationTrackingActive] = useState(false); // Location tracking state
   const { user } = useAuth();
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -103,13 +105,39 @@ const GroupDetail = () => {
   useEffect(() => {
     fetchGroupDetails();
     fetchInvitations();
+    checkServiceStatus();
+    
+    // Poll for service status every 10 seconds
+    const statusPoll = setInterval(() => {
+      checkServiceStatus();
+    }, 10000);
+    
     // poll invitations every 20s so the pending pill and list refresh automatically
-    const poll = setInterval(() => {
+    const invitePoll = setInterval(() => {
       fetchInvitations();
     }, 20000);
 
-    return () => clearInterval(poll);
+    return () => {
+      clearInterval(statusPoll);
+      clearInterval(invitePoll);
+    };
   }, [groupId]);
+
+  // Check if audio session or location tracking is active
+  const checkServiceStatus = async () => {
+    try {
+      // Check audio session status
+      const audioResponse = await api.get(`/audio-session/${groupId}/status`);
+      setAudioSessionActive(audioResponse.data?.active || false);
+      
+      // Check location tracking status (check if any members are sharing location)
+      const locationResponse = await api.get(`/location-tracking/${groupId}/active`);
+      setLocationTrackingActive(locationResponse.data?.active || false);
+    } catch (error) {
+      // Services may not have status endpoints yet, fail silently
+      console.debug('Service status check:', error.message);
+    }
+  };
   
   const fetchGroupDetails = async () => {
     try {
@@ -431,13 +459,29 @@ const GroupDetail = () => {
                         cursor: 'pointer',
                         minHeight: 200,
                         height: '100%',
+                        border: audioSessionActive ? '3px solid' : '1px solid',
+                        borderColor: audioSessionActive ? 'primary.main' : 'divider',
+                        boxShadow: audioSessionActive ? 4 : 1,
+                        bgcolor: audioSessionActive ? 'action.selected' : 'background.paper',
+                        transition: 'all 0.3s ease-in-out',
                         '&:hover': {
                           boxShadow: 6
                         }
                       }}
                       onClick={() => navigate(`/audio-session/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'primary.main', width: 60, height: 60, mb: 2 }}>
+                      <Avatar sx={{ 
+                        bgcolor: audioSessionActive ? 'primary.main' : 'primary.light', 
+                        width: 60, 
+                        height: 60, 
+                        mb: 2,
+                        animation: audioSessionActive ? 'pulse 2s infinite' : 'none',
+                        '@keyframes pulse': {
+                          '0%': { boxShadow: '0 0 0 0 rgba(25, 118, 210, 0.7)' },
+                          '70%': { boxShadow: '0 0 0 10px rgba(25, 118, 210, 0)' },
+                          '100%': { boxShadow: '0 0 0 0 rgba(25, 118, 210, 0)' }
+                        }
+                      }}>
                         <MicIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
@@ -446,6 +490,14 @@ const GroupDetail = () => {
                       <Typography variant="body2" color="text.secondary" align="center">
                         Start or join a real-time audio conversation with group members
                       </Typography>
+                      {audioSessionActive && (
+                        <Chip 
+                          label="ACTIVE" 
+                          color="primary" 
+                          size="small" 
+                          sx={{ mt: 1, fontWeight: 'bold' }}
+                        />
+                      )}
                     </Paper>
                   </Box>
 
@@ -459,13 +511,29 @@ const GroupDetail = () => {
                         cursor: 'pointer',
                         minHeight: 200,
                         height: '100%',
+                        border: locationTrackingActive ? '3px solid' : '1px solid',
+                        borderColor: locationTrackingActive ? 'secondary.main' : 'divider',
+                        boxShadow: locationTrackingActive ? 4 : 1,
+                        bgcolor: locationTrackingActive ? 'action.selected' : 'background.paper',
+                        transition: 'all 0.3s ease-in-out',
                         '&:hover': {
                           boxShadow: 6
                         }
                       }}
                       onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
-                      <Avatar sx={{ bgcolor: 'secondary.main', width: 60, height: 60, mb: 2 }}>
+                      <Avatar sx={{ 
+                        bgcolor: locationTrackingActive ? 'secondary.main' : 'secondary.light',
+                        width: 60, 
+                        height: 60, 
+                        mb: 2,
+                        animation: locationTrackingActive ? 'pulse 2s infinite' : 'none',
+                        '@keyframes pulse': {
+                          '0%': { boxShadow: '0 0 0 0 rgba(220, 0, 78, 0.7)' },
+                          '70%': { boxShadow: '0 0 0 10px rgba(220, 0, 78, 0)' },
+                          '100%': { boxShadow: '0 0 0 0 rgba(220, 0, 78, 0)' }
+                        }
+                      }}>
                         <LocationIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
@@ -474,6 +542,14 @@ const GroupDetail = () => {
                       <Typography variant="body2" color="text.secondary" align="center">
                         View the location of your group members on the map
                       </Typography>
+                      {locationTrackingActive && (
+                        <Chip 
+                          label="ACTIVE" 
+                          color="secondary" 
+                          size="small" 
+                          sx={{ mt: 1, fontWeight: 'bold' }}
+                        />
+                      )}
                     </Paper>
                   </Box>
                 </Box>
