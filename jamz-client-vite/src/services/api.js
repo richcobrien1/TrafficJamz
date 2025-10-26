@@ -25,11 +25,23 @@ const getBaseURL = () => {
   // Check if running in Capacitor native app
   const isCapacitor = window.location && window.location.protocol === 'capacitor:';
   
-  // For local development (localhost), always use '/api' to leverage Vite proxy
-  // For production or Capacitor, use VITE_API_BASE from environment
-  const isLocalDev = window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1';
+  // For local development (localhost:5173, localhost:5174, etc), use '/api' for Vite proxy
+  // For production, ALWAYS use VITE_API_BASE from .env
+  const isLocalDev = window.location?.hostname === 'localhost' || 
+                     window.location?.hostname === '127.0.0.1';
   
-  const apiBase = isLocalDev ? '/api' : (import.meta.env.VITE_API_BASE || '/api');
+  // Priority: 
+  // 1. If VITE_API_BASE is explicitly set, use it (production)
+  // 2. If localhost, use '/api' for Vite proxy (local dev)
+  // 3. Fallback to '/api'
+  let apiBase;
+  if (import.meta.env.VITE_API_BASE && !isLocalDev) {
+    apiBase = import.meta.env.VITE_API_BASE;
+  } else if (isLocalDev) {
+    apiBase = '/api';
+  } else {
+    apiBase = import.meta.env.VITE_API_BASE || '/api';
+  }
   
   // Debug logging
   console.log('🔗 API Configuration:', {
@@ -38,7 +50,6 @@ const getBaseURL = () => {
     isCapacitor,
     isLocalDev,
     VITE_API_BASE: import.meta.env.VITE_API_BASE,
-    VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
     computed_baseURL: apiBase,
     mode: import.meta.env.MODE
   });
