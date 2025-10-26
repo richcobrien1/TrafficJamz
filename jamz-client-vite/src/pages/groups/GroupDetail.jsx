@@ -84,6 +84,8 @@ const GroupDetail = () => {
   const [resendLoading, setResendLoading] = useState({});
   const [audioSessionActive, setAudioSessionActive] = useState(false); // Audio session state
   const [locationTrackingActive, setLocationTrackingActive] = useState(false); // Location tracking state
+  const [serviceStatusError, setServiceStatusError] = useState(false); // Track if status check is failing
+  const [pollInterval, setPollInterval] = useState(10000); // Dynamic poll interval (10s default)
   const { user } = useAuth();
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -107,10 +109,10 @@ const GroupDetail = () => {
     fetchInvitations();
     checkServiceStatus();
     
-    // Poll for service status every 10 seconds
+    // Dynamic poll interval based on connection status
     const statusPoll = setInterval(() => {
       checkServiceStatus();
-    }, 10000);
+    }, pollInterval);
     
     // poll invitations every 20s so the pending pill and list refresh automatically
     const invitePoll = setInterval(() => {
@@ -121,7 +123,7 @@ const GroupDetail = () => {
       clearInterval(statusPoll);
       clearInterval(invitePoll);
     };
-  }, [groupId]);
+  }, [groupId, pollInterval]);
 
   // Check if audio session or location tracking is active
   const checkServiceStatus = async () => {
@@ -133,9 +135,23 @@ const GroupDetail = () => {
       // Check location tracking status (check if any members are sharing location)
       const locationResponse = await api.get(`/location-tracking/${groupId}/active`);
       setLocationTrackingActive(locationResponse.data?.active || false);
+      
+      // Success - reset to fast polling and clear error
+      setServiceStatusError(false);
+      setPollInterval(10000); // 10 seconds
+      
     } catch (error) {
-      // Services may not have status endpoints yet, fail silently
-      console.debug('Service status check:', error.message);
+      console.debug('Service status check error:', error.message);
+      setServiceStatusError(true);
+      
+      // Exponential backoff: if 404 (not found) use 10s, if network error use 2min
+      if (error.response?.status === 404) {
+        // Endpoint doesn't exist yet, check every 10s
+        setPollInterval(10000);
+      } else {
+        // Network or server error, slow down to 2 minutes
+        setPollInterval(120000);
+      }
     }
   };
   
@@ -499,10 +515,13 @@ const GroupDetail = () => {
                         <MicIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
-                        Join Audio Session
+                        {audioSessionActive ? 'Audio Session Active' : 'Start Audio Session'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" align="center">
-                        Start or join a real-time audio conversation with group members
+                        {audioSessionActive 
+                          ? 'Click to join the active audio conversation'
+                          : 'Start or join a real-time audio conversation with group members'
+                        }
                       </Typography>
                       {audioSessionActive && (
                         <Chip 
@@ -551,10 +570,13 @@ const GroupDetail = () => {
                         <LocationIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
-                        Location Tracking Now
+                        {locationTrackingActive ? 'Location Tracking Active' : 'Start Location Tracking'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" align="center">
-                        View the location of your group members on the map
+                        {locationTrackingActive
+                          ? 'Members are sharing their location - click to view'
+                          : 'View the location of your group members on the map'
+                        }
                       </Typography>
                       {locationTrackingActive && (
                         <Chip 
