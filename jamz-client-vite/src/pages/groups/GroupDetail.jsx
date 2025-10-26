@@ -413,8 +413,15 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Grid container spacing={2} sx={{ mx: 0, width: '100%' }}>
-                  <Grid item xs={12} sm={6} sx={{ px: 1 }}>
+                <Box 
+                  sx={{ 
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2,
+                    width: '100%'
+                  }}
+                >
+                  <Box sx={{ flex: '0 0 calc(50% - 8px)', minWidth: 0 }}>
                     <Paper 
                       sx={{ 
                         p: 3,
@@ -440,9 +447,9 @@ const GroupDetail = () => {
                         Start or join a real-time audio conversation with group members
                       </Typography>
                     </Paper>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} sm={6} sx={{ px: 1 }}>
+                  <Box sx={{ flex: '0 0 calc(50% - 8px)', minWidth: 0 }}>
                     <Paper 
                       sx={{ 
                         p: 3,
