@@ -792,6 +792,7 @@ class GroupService {
       let emailResult = null;
       if (options?.sendEmail !== false) {
         try {
+          console.log('📧 Attempting to send invitation email to:', invitation.email);
           emailResult = await emailService.sendInvitationEmail(invitation.email, {
             groupName: group.group_name,
             inviterName,
@@ -799,9 +800,21 @@ class GroupService {
             inviterHandle,
             invitationLink
           });
+          console.log('✅ Email sent successfully to:', invitation.email);
+          if (emailResult && emailResult.previewUrl) {
+            console.log('📧 Ethereal preview URL:', emailResult.previewUrl);
+          }
         } catch (err) {
-          console.error('Error sending invitation email in resendInvitation:', err);
-          // continue - we still return update info but bubble up error to caller if needed
+          console.error('❌ Error sending invitation email in resendInvitation:', err);
+          console.error('❌ Error details:', {
+            message: err.message,
+            code: err.code,
+            command: err.command,
+            response: err.response,
+            responseCode: err.responseCode
+          });
+          // Re-throw so the caller knows it failed
+          throw new Error(`Failed to send email: ${err.message}`);
         }
       }
 
