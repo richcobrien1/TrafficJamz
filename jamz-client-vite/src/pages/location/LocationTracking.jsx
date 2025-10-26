@@ -2706,7 +2706,11 @@ const LocationTracking = () => {
     };
     
     // Filter out any existing current user location from API data to avoid duplicates
-    const filteredLocations = locations.filter(loc => loc.user_id !== (user?.id || 'current-user'));
+    // Check both user_id AND username to catch duplicates from WebSocket broadcasts
+    const filteredLocations = locations.filter(loc => 
+      loc.user_id !== (user?.id || 'current-user') && 
+      loc.username !== user?.username
+    );
     
     // Combine current user location with existing member locations and places if shown
     const allLocations = showPlaces 
