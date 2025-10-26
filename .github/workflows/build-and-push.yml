@@ -74,6 +74,9 @@ jobs:
     # deploy the image pushed by the build-and-push job to a target cluster
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Skip deploy when KUBE_CONFIG_DATA is not set
         run: |
@@ -98,26 +101,23 @@ jobs:
           export KUBECONFIG=$PWD/kubeconfig
           echo "Wrote kubeconfig to $PWD/kubeconfig"
 
+      - name: Log in to GHCR for image verification
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Verify pushed image exists in GHCR
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
-          GH_OWNER: ${{ github.repository_owner }}
         run: |
           echo "Checking image: $IMAGE"
-          # Query GitHub Packages registry for the package
-          # Since the package is public, we can check without authentication
-          IMAGE_NAME="trafficjamz-jamz-server"
-          TAG=${{ github.sha }}
-          URL="https://ghcr.io/v2/${GH_OWNER}/${IMAGE_NAME}/manifests/${TAG}"
-          echo "HEAD $URL"
-          # Try with authentication first
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "$URL")
-          echo "Manifest HTTP status: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "Image $IMAGE not found in GHCR (status $HTTP_STATUS). Aborting deploy."
+          # Use docker manifest inspect which respects docker login credentials
+          if docker manifest inspect $IMAGE > /dev/null 2>&1; then
+            echo "✅ Image $IMAGE found in GHCR"
+          else
+            echo "❌ Image $IMAGE not found in GHCR. Aborting deploy."
             exit 1
           fi
 
