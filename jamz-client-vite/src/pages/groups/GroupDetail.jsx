@@ -199,10 +199,13 @@ const GroupDetail = () => {
       setInviteLoading(true);
       setInviteError('');
       
-  await api.post(`/groups/${groupId}/invitations`, {
+      console.log('Sending invitation to:', inviteEmail);
+      const response = await api.post(`/groups/${groupId}/invitations`, {
         email: inviteEmail,
         text: inviteTextMsg
       });
+      
+      console.log('Invitation response:', response.data);
       
       // Reset form fields after successful invitation
       setInviteEmail('');
@@ -212,10 +215,21 @@ const GroupDetail = () => {
       // Refresh the invitations list
       fetchInvitations();
       
-      // Show success message or update UI
+      // Show success message
+      setSnackbarMsg('Invitation sent successfully!');
+      setSnackbarOpen(true);
+      
     } catch (error) {
       console.error('Error inviting member:', error);
-      setInviteError(error.response?.data?.message || 'Failed to send invitation to: ' + inviteEmail + '. Please try again.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      const errorMsg = error.response?.data?.error 
+        || error.response?.data?.message 
+        || error.message 
+        || 'Failed to send invitation. Please try again.';
+      
+      setInviteError(errorMsg);
     } finally {
       setInviteLoading(false);
     }
