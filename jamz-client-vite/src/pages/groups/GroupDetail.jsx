@@ -152,8 +152,12 @@ const GroupDetail = () => {
   // Auto-start audio session when viewing group
   useEffect(() => {
     console.log('🔍 Audio useEffect fired - groupId:', groupId, 'user:', user);
+    console.log('🔍 user?.user:', user?.user);
+    console.log('🔍 user?.user?.id:', user?.user?.id);
+    console.log('🔍 user?.user?.user_id:', user?.user?.user_id);
+    console.log('🔍 user?.id:', user?.id);
     
-    const userId = user?.user?.id || user?.id;
+    const userId = user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
       console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'userId:', userId);
       return;
@@ -201,7 +205,7 @@ const GroupDetail = () => {
   useEffect(() => {
     console.log('🔍 Location useEffect fired - groupId:', groupId, 'user:', user);
     
-    const userId = user?.user?.id || user?.id;
+    const userId = user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
       console.log('⏸️ Location auto-start skipped - groupId:', groupId, 'userId:', userId);
       // Stop watching if no group or user
