@@ -150,8 +150,8 @@ const GroupDetail = () => {
   const checkServiceStatus = async () => {
     try {
       // Check audio session status
-      const audioResponse = await api.get(`/audio-session/${groupId}/status`);
-      setAudioSessionActive(audioResponse.data?.active || false);
+      const audioResponse = await api.get(`/audio/sessions/group/${groupId}`);
+      setAudioSessionActive(audioResponse.data?.session?.status === 'active' || false);
       
       // Check location tracking status (check if any members are sharing location)
       const locationResponse = await api.get(`/location-tracking/${groupId}/active`);
@@ -539,30 +539,35 @@ const GroupDetail = () => {
                         border: audioSessionActive ? '3px solid' : '1px solid',
                         borderColor: audioSessionActive ? 'primary.main' : 'divider',
                         boxShadow: audioSessionActive ? 4 : 1,
-                        bgcolor: audioSessionActive ? 'action.selected' : 'background.paper',
+                        bgcolor: audioSessionActive ? 'primary.main' : 'background.paper',
+                        color: audioSessionActive ? '#fff' : 'inherit',
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
                           boxShadow: 6
+                        },
+                        '& .MuiTypography-root': {
+                          color: audioSessionActive ? '#fff' : 'inherit'
                         }
                       }}
                       onClick={() => navigate(`/audio-session/${groupId}`)}
                     >
                       <Avatar sx={{ 
-                        bgcolor: audioSessionActive ? 'primary.main' : 'primary.light', 
+                        bgcolor: audioSessionActive ? 'rgba(255, 255, 255, 0.2)' : 'primary.light', 
+                        color: audioSessionActive ? '#fff' : 'inherit',
                         width: 60, 
                         height: 60, 
                         mb: 2,
                         animation: audioSessionActive ? 'pulse 2s infinite' : 'none',
                         '@keyframes pulse': {
-                          '0%': { boxShadow: '0 0 0 0 rgba(25, 118, 210, 0.7)' },
-                          '70%': { boxShadow: '0 0 0 10px rgba(25, 118, 210, 0)' },
-                          '100%': { boxShadow: '0 0 0 0 rgba(25, 118, 210, 0)' }
+                          '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
+                          '70%': { boxShadow: '0 0 0 10px rgba(255, 255, 255, 0)' },
+                          '100%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' }
                         }
                       }}>
                         <MicIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
-                        {audioSessionActive ? 'Audio Session Active' : 'Start Audio Session'}
+                        {audioSessionActive ? 'Audio Active' : 'Audio'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" align="center">
                         {audioSessionActive 
@@ -594,30 +599,35 @@ const GroupDetail = () => {
                         border: locationTrackingActive ? '3px solid' : '1px solid',
                         borderColor: locationTrackingActive ? 'secondary.main' : 'divider',
                         boxShadow: locationTrackingActive ? 4 : 1,
-                        bgcolor: locationTrackingActive ? 'action.selected' : 'background.paper',
+                        bgcolor: locationTrackingActive ? 'secondary.main' : 'background.paper',
+                        color: locationTrackingActive ? '#fff' : 'inherit',
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
                           boxShadow: 6
+                        },
+                        '& .MuiTypography-root': {
+                          color: locationTrackingActive ? '#fff' : 'inherit'
                         }
                       }}
                       onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
                       <Avatar sx={{ 
-                        bgcolor: locationTrackingActive ? 'secondary.main' : 'secondary.light',
+                        bgcolor: locationTrackingActive ? 'rgba(255, 255, 255, 0.2)' : 'secondary.light',
+                        color: locationTrackingActive ? '#fff' : 'inherit',
                         width: 60, 
                         height: 60, 
                         mb: 2,
                         animation: locationTrackingActive ? 'pulse 2s infinite' : 'none',
                         '@keyframes pulse': {
-                          '0%': { boxShadow: '0 0 0 0 rgba(220, 0, 78, 0.7)' },
-                          '70%': { boxShadow: '0 0 0 10px rgba(220, 0, 78, 0)' },
-                          '100%': { boxShadow: '0 0 0 0 rgba(220, 0, 78, 0)' }
+                          '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
+                          '70%': { boxShadow: '0 0 0 10px rgba(255, 255, 255, 0)' },
+                          '100%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' }
                         }
                       }}>
                         <LocationIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
-                        {locationTrackingActive ? 'Location Tracking Active' : 'Start Location Tracking'}
+                        {locationTrackingActive ? 'Locator Active' : 'Locator'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" align="center">
                         {locationTrackingActive
