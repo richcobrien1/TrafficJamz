@@ -213,11 +213,11 @@ const GroupDetail = () => {
   const checkServiceStatus = async () => {
     try {
       // Check audio session status
-      const audioResponse = await api.get(`/audio-session/${groupId}/status`);
+      const audioResponse = await api.get(`/audio/audio-session/${groupId}/status`);
       setAudioSessionActive(audioResponse.data?.active || false);
       
       // Check location tracking status (check if any members are sharing location)
-      const locationResponse = await api.get(`/location-tracking/${groupId}/active`);
+      const locationResponse = await api.get(`/location/location-tracking/${groupId}/active`);
       setLocationTrackingActive(locationResponse.data?.active || false);
       
       // Success - reset to fast polling and clear error
