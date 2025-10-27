@@ -380,7 +380,7 @@ router.post('/sessions/:sessionId/music/control',
  * @desc Check if an audio session is active for a group
  * @access Private
  */
-router.get('/-session/:groupId/status',
+router.get('/audio-session/:groupId/status',
   passport.authenticate('jwt', { session: false }),
   [
     param('groupId').isMongoId().withMessage('Valid group ID is required'),
