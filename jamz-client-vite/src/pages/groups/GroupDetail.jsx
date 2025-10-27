@@ -151,7 +151,10 @@ const GroupDetail = () => {
 
   // Auto-start audio session when viewing group
   useEffect(() => {
+    console.log('🔍 Audio useEffect fired - groupId:', groupId, 'user:', user);
+    
     if (!groupId || !user?.id) {
+      console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'user.id:', user?.id);
       return;
     }
 
@@ -195,7 +198,10 @@ const GroupDetail = () => {
 
   // Auto-start location tracking when viewing group
   useEffect(() => {
+    console.log('🔍 Location useEffect fired - groupId:', groupId, 'user:', user);
+    
     if (!groupId || !user?.id) {
+      console.log('⏸️ Location auto-start skipped - groupId:', groupId, 'user.id:', user?.id);
       // Stop watching if no group or user
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
