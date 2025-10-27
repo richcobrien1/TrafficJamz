@@ -153,8 +153,9 @@ const GroupDetail = () => {
   useEffect(() => {
     console.log('🔍 Audio useEffect fired - groupId:', groupId, 'user:', user);
     
-    if (!groupId || !user?.id) {
-      console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'user.id:', user?.id);
+    const userId = user?.user?.id || user?.id;
+    if (!groupId || !userId) {
+      console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'userId:', userId);
       return;
     }
 
@@ -200,8 +201,9 @@ const GroupDetail = () => {
   useEffect(() => {
     console.log('🔍 Location useEffect fired - groupId:', groupId, 'user:', user);
     
-    if (!groupId || !user?.id) {
-      console.log('⏸️ Location auto-start skipped - groupId:', groupId, 'user.id:', user?.id);
+    const userId = user?.user?.id || user?.id;
+    if (!groupId || !userId) {
+      console.log('⏸️ Location auto-start skipped - groupId:', groupId, 'userId:', userId);
       // Stop watching if no group or user
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -211,7 +213,7 @@ const GroupDetail = () => {
       return;
     }
 
-    console.log('🎯 Auto-starting location tracking for group:', groupId, 'user:', user.id);
+    console.log('🎯 Auto-starting location tracking for group:', groupId, 'userId:', userId);
 
     // Request permission first
     if (!navigator.geolocation) {
