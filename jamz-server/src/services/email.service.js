@@ -15,7 +15,11 @@ class EmailService {
     // Use real SMTP if configured, otherwise use Ethereal for testing
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS &&
         !process.env.SMTP_USER.includes('your-') && !process.env.SMTP_PASS.includes('your-')) {
-      this.transporter = nodemailer.createTransport({
+      
+      // Office 365 specific configuration
+      const isOffice365 = process.env.SMTP_HOST.includes('office365');
+      
+      const transportConfig = {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT || 587,
         secure: process.env.SMTP_SECURE === 'true',
@@ -23,8 +27,23 @@ class EmailService {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         }
-      });
+      };
+
+      // Add Office 365 specific settings
+      if (isOffice365) {
+        transportConfig.requireTLS = true;
+        transportConfig.tls = {
+          ciphers: 'SSLv3',
+          rejectUnauthorized: false
+        };
+        transportConfig.connectionTimeout = 60000;
+        transportConfig.greetingTimeout = 30000;
+        transportConfig.socketTimeout = 60000;
+      }
+
+      this.transporter = nodemailer.createTransport(transportConfig);
       console.log('Email service initialized with real SMTP:', process.env.SMTP_HOST);
+      console.log('Office 365 mode:', isOffice365);
     } else {
       // For development/testing without SMTP config, use Ethereal
       this.testAccount = await nodemailer.createTestAccount();
