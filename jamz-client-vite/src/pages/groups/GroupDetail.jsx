@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -94,6 +94,9 @@ const GroupDetail = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
   const [snackbarLink, setSnackbarLink] = useState(null);
+  
+  // Ref for location tracking watch
+  const watchIdRef = useRef(null);
 
   // Poll interval id ref-like state not necessary; use effect cleanup
 
@@ -145,6 +148,66 @@ const GroupDetail = () => {
       clearInterval(invitePoll);
     };
   }, [groupId, pollInterval]);
+
+  // Auto-start location tracking when viewing group
+  useEffect(() => {
+    if (!groupId || !user?.id) {
+      // Stop watching if no group or user
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+        console.log('⏹️ Stopped location tracking (no group/user)');
+      }
+      return;
+    }
+
+    console.log('🎯 Auto-starting location tracking for group:', groupId);
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude, accuracy, altitude, heading, speed } = position.coords;
+        
+        const locationData = {
+          latitude,
+          longitude,
+          accuracy,
+          altitude: altitude || 0,
+          heading: heading || 0,
+          speed: speed || 0
+        };
+
+        console.log('📍 Location update (GroupDetail):', locationData);
+
+        // Save to backend via API
+        api.post('/location/update', {
+          coordinates: locationData,
+          device_id: navigator.userAgent,
+          battery_level: 85 // TODO: Get actual battery level if available
+        }).then(() => {
+          console.log('✅ Location sent to backend');
+        }).catch(err => {
+          console.warn('Failed to save location to API:', err);
+        });
+      },
+      (error) => {
+        console.error('❌ Geolocation error (GroupDetail):', error);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000
+      }
+    );
+
+    watchIdRef.current = watchId;
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        console.log('⏹️ Stopped location tracking on cleanup');
+      }
+    };
+  }, [groupId, user]);
 
   // Check if audio session or location tracking is active
   const checkServiceStatus = async () => {
