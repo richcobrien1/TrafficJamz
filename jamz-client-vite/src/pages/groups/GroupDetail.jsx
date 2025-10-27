@@ -569,7 +569,7 @@ const GroupDetail = () => {
                       <Typography variant="h6" gutterBottom align="center">
                         {audioSessionActive ? 'Audio Active' : 'Audio'}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" align="center">
+                      <Typography variant="body2" align="center">
                         {audioSessionActive 
                           ? 'Click to join the active audio conversation'
                           : 'Start or join a real-time audio conversation with group members'
@@ -629,7 +629,7 @@ const GroupDetail = () => {
                       <Typography variant="h6" gutterBottom align="center">
                         {locationTrackingActive ? 'Locator Active' : 'Locator'}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" align="center">
+                      <Typography variant="body2" align="center">
                         {locationTrackingActive
                           ? 'Members are sharing their location - click to view'
                           : 'View the location of your group members on the map'
