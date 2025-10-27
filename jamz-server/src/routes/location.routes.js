@@ -257,7 +257,7 @@ router.delete('/proximity-alerts/:alertId',
  * @desc Check if any group members are actively sharing location
  * @access Private
  */
-router.get('-tracking/:groupId/active',
+router.get('/location-tracking/:groupId/active',
   passport.authenticate('jwt', { session: false }),
   [
     param('groupId').isMongoId().withMessage('Valid group ID is required'),
