@@ -149,6 +149,50 @@ const GroupDetail = () => {
     };
   }, [groupId, pollInterval]);
 
+  // Auto-start audio session when viewing group
+  useEffect(() => {
+    if (!groupId || !user?.id) {
+      return;
+    }
+
+    let isActive = true;
+
+    const startAudioSession = async () => {
+      try {
+        console.log('🎤 Auto-starting audio session for group:', groupId);
+        
+        // Check if session already exists
+        const checkResponse = await api.get(`/audio/sessions/group/${groupId}`);
+        if (checkResponse.data?.session) {
+          console.log('✅ Audio session already exists:', checkResponse.data.session.id);
+          return;
+        }
+      } catch (error) {
+        // Session doesn't exist, create it
+        if (error.response?.status === 404) {
+          try {
+            const createResponse = await api.post('/audio/sessions', {
+              group_id: groupId,
+              session_type: 'voice_only',
+              device_type: 'web'
+            });
+            console.log('✅ Audio session created:', createResponse.data.session?.id);
+          } catch (createError) {
+            console.warn('Failed to create audio session:', createError.message);
+          }
+        }
+      }
+    };
+
+    if (isActive) {
+      startAudioSession();
+    }
+
+    return () => {
+      isActive = false;
+    };
+  }, [groupId, user]);
+
   // Auto-start location tracking when viewing group
   useEffect(() => {
     if (!groupId || !user?.id) {
@@ -161,7 +205,13 @@ const GroupDetail = () => {
       return;
     }
 
-    console.log('🎯 Auto-starting location tracking for group:', groupId);
+    console.log('🎯 Auto-starting location tracking for group:', groupId, 'user:', user.id);
+
+    // Request permission first
+    if (!navigator.geolocation) {
+      console.error('❌ Geolocation not supported');
+      return;
+    }
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -186,11 +236,14 @@ const GroupDetail = () => {
         }).then(() => {
           console.log('✅ Location sent to backend');
         }).catch(err => {
-          console.warn('Failed to save location to API:', err);
+          console.warn('⚠️ Failed to save location to API:', err.message);
         });
       },
       (error) => {
-        console.error('❌ Geolocation error (GroupDetail):', error);
+        console.error('❌ Geolocation error (GroupDetail):', error.code, error.message);
+        if (error.code === 1) {
+          console.error('❌ Location permission denied - please allow location access');
+        }
       },
       {
         enableHighAccuracy: true,
@@ -200,6 +253,7 @@ const GroupDetail = () => {
     );
 
     watchIdRef.current = watchId;
+    console.log('✅ Location watch started with ID:', watchId);
 
     return () => {
       if (watchId !== null) {
@@ -214,11 +268,15 @@ const GroupDetail = () => {
     try {
       // Check audio session status
       const audioResponse = await api.get(`/audio/audio-session/${groupId}/status`);
+      console.log('🎤 Audio status response:', audioResponse.data);
       setAudioSessionActive(audioResponse.data?.active || false);
       
       // Check location tracking status (check if any members are sharing location)
       const locationResponse = await api.get(`/location/location-tracking/${groupId}/active`);
+      console.log('📍 Location status response:', locationResponse.data);
       setLocationTrackingActive(locationResponse.data?.active || false);
+      
+      console.log('Panel states - Audio:', audioResponse.data?.active, 'Location:', locationResponse.data?.active);
       
       // Success - reset to fast polling and clear error
       setServiceStatusError(false);
