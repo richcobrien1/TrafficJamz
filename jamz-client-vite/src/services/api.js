@@ -22,25 +22,39 @@ import axios from 'axios';
 // In Capacitor: VITE_API_BASE should be set to full backend URL in native builds
 
 const getBaseURL = () => {
-  // Check if running in Capacitor native app
-  const isCapacitor = window.location && (window.location.protocol === 'capacitor:' || 
-                                          window.location.protocol === 'ionic:' ||
-                                          window.location.protocol === 'file:');
+  // Check if running in Capacitor native app - multiple detection methods
+  const isCapacitorProtocol = window.location && (
+    window.location.protocol === 'capacitor:' || 
+    window.location.protocol === 'ionic:' ||
+    window.location.protocol === 'file:' ||
+    window.location.protocol === 'http:'  // Android emulator uses http://localhost
+  );
+  
+  // Check for Capacitor global object (more reliable)
+  const hasCapacitorGlobal = typeof window !== 'undefined' && 
+                            window.Capacitor !== undefined;
+  
+  // Android emulator detection
+  const isAndroidEmulator = window.location?.hostname === '10.0.2.2' || 
+                           window.location?.hostname === 'localhost' && hasCapacitorGlobal;
+  
+  const isCapacitor = hasCapacitorGlobal || isCapacitorProtocol || isAndroidEmulator;
   
   // For local development (localhost:5173, localhost:5174, etc), use '/api' for Vite proxy
-  // For production, ALWAYS use VITE_API_BASE from .env
-  const isLocalDev = window.location?.hostname === 'localhost' || 
-                     window.location?.hostname === '127.0.0.1';
+  // But NOT if it's Capacitor running on localhost (Android emulator)
+  const isLocalDev = (window.location?.hostname === 'localhost' || 
+                     window.location?.hostname === '127.0.0.1') && !isCapacitor;
   
   // Priority: 
-  // 1. If Capacitor mobile app, use full backend URL
+  // 1. If Capacitor mobile app, ALWAYS use full backend URL
   // 2. If VITE_API_BASE is explicitly set, use it (production web)
-  // 3. If localhost, use '/api' for Vite proxy (local dev)
+  // 3. If localhost (non-Capacitor), use '/api' for Vite proxy (local dev)
   // 4. Fallback to '/api'
   let apiBase;
   if (isCapacitor) {
-    // Mobile app - use full backend URL
+    // Mobile app - ALWAYS use full backend URL
     apiBase = 'https://trafficjamz.onrender.com/api';
+    console.warn('📱 CAPACITOR DETECTED - Using production backend:', apiBase);
   } else if (import.meta.env.VITE_API_BASE && !isLocalDev) {
     apiBase = import.meta.env.VITE_API_BASE;
   } else if (isLocalDev) {
@@ -49,10 +63,13 @@ const getBaseURL = () => {
     apiBase = import.meta.env.VITE_API_BASE || '/api';
   }
   
-  // Debug logging
+  // Enhanced debug logging
   console.log('🔗 API Configuration:', {
     protocol: window.location?.protocol,
     hostname: window.location?.hostname,
+    hasCapacitorGlobal,
+    isCapacitorProtocol,
+    isAndroidEmulator,
     isCapacitor,
     isLocalDev,
     VITE_API_BASE: import.meta.env.VITE_API_BASE,
