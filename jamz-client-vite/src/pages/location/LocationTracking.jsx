@@ -3098,7 +3098,6 @@ const LocationTracking = () => {
           bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0,0,0,0.7)',
           backdropFilter: 'blur(2px)',
           padding: '16px 4px',
-          borderTopRightRadius: 8,
           display: showMembersList ? 'none' : 'flex',
           flexDirection: 'column',
           alignItems: 'flex-end',
