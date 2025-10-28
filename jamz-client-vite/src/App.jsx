@@ -17,13 +17,14 @@
 //   - Catch-all (*) renders <NotFound />
 //   - Mapbox dev route (/dev/map) is currently unprotected for testing
 
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AppLoader from './components/AppLoader';
 import api from './services/api';
 
 import MapboxMap from './components/MapboxMap';
@@ -59,6 +60,8 @@ const RootRedirect = () => {
 
 function App() {
   const location = useLocation();
+  const [backendReady, setBackendReady] = useState(false);
+  const [wakeupAttempts, setWakeupAttempts] = useState(0);
 
   const theme = createTheme({
     palette: {
@@ -72,30 +75,60 @@ function App() {
     },
   });
 
-  // Keep Render service awake by pinging every 60 seconds
+  // Wake up backend on initial load and keep alive
   useEffect(() => {
-    const keepAlive = async () => {
+    const wakeUpBackend = async () => {
+      try {
+        console.log('🔄 Attempting to wake up backend...');
+        setWakeupAttempts(prev => prev + 1);
+        await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
+        console.log('✅ Backend is ready!');
+        setBackendReady(true);
+      } catch (error) {
+        console.warn('⚠️ Backend wake-up attempt failed, retrying...', error.message);
+        // Retry after 2 seconds if it fails (max 5 attempts)
+        if (wakeupAttempts < 5) {
+          setTimeout(wakeUpBackend, 2000);
+        } else {
+          console.error('❌ Backend failed to wake up after 5 attempts');
+          setBackendReady(true); // Show app anyway, let individual requests fail
+        }
+      }
+    };
+
+    // Initial wake-up
+    wakeUpBackend();
+
+    // Keep-alive ping every 60 seconds after backend is ready
+    const keepAliveInterval = backendReady ? setInterval(async () => {
       try {
         await api.get('/health');
         console.log('⏰ Keep-alive ping sent');
       } catch (error) {
-        // Silently ignore errors - service might be waking up
-        console.debug('Keep-alive ping failed (expected during cold start):', error.message);
+        console.debug('Keep-alive ping failed:', error.message);
       }
+    }, 60000) : null;
+
+    return () => {
+      if (keepAliveInterval) clearInterval(keepAliveInterval);
     };
-
-    // Ping immediately on app load
-    keepAlive();
-
-    // Then ping every 60 seconds
-    const interval = setInterval(keepAlive, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [backendReady, wakeupAttempts]);
 
   // Debug logging
   console.log('🚀 App component rendering');
   console.log('Current location:', location.pathname);
+
+  // Show loading screen while backend wakes up
+  if (!backendReady) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AppLoader 
+          message={wakeupAttempts > 1 ? 'Waking up server, please wait...' : 'Initializing...'}
+        />
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
