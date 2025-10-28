@@ -114,7 +114,19 @@ const InvitationAccept = () => {
   };
 
   const handleContinue = () => {
-    navigate(`/groups/${groupId}`);
+    // Check if user is authenticated before allowing group access
+    if (user) {
+      // Authenticated user - go to group
+      navigate(`/groups/${groupId}`);
+    } else {
+      // Unauthenticated user - redirect to login with group destination
+      navigate('/auth/login', { 
+        state: { 
+          from: `/groups/${groupId}`,
+          message: 'Please login or register to access your group'
+        } 
+      });
+    }
   };
 
   if (status === 'loading' || status === 'accepting') {
@@ -260,13 +272,19 @@ const InvitationAccept = () => {
           You have successfully joined the group <strong>{invitationData?.group?.name}</strong>.
         </Typography>
         
+        {!user && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Please login or register to access your group.
+          </Typography>
+        )}
+        
         <Button 
           variant="contained" 
           color="primary" 
-          onClick={() => navigate(`/groups/${groupId}`)}
+          onClick={handleContinue}
           size="large"
         >
-          Continue to Group
+          {user ? 'Continue to Group' : 'Login / Register'}
         </Button>
       </Box>
     );
