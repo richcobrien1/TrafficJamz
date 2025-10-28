@@ -61,7 +61,8 @@ import {
   People as PeopleIcon,
   Close as CloseIcon,
   Satellite as SatelliteIcon,
-  Place as PlaceIcon
+  Place as PlaceIcon,
+  HideSource as PlaceOffIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -1157,13 +1158,6 @@ const LocationTracking = () => {
   useEffect(() => {
     fetchGroupDetails();
   }, []);
-
-  // Show notifications for location states
-  useEffect(() => {
-    if (isGettingLocation) {
-      showNotification('Getting your location...', 'info');
-    }
-  }, [isGettingLocation]);
 
   // Initialize rename input when dialog opens for a place
   useEffect(() => {
@@ -3080,7 +3074,7 @@ const LocationTracking = () => {
               }}
               onClick={() => setShowPlaces(!showPlaces)}
             >
-              <PlaceIcon />
+              {showPlaces ? <PlaceOffIcon /> : <PlaceIcon />}
             </IconButton>
           </Tooltip>
         </Toolbar>
@@ -3178,9 +3172,15 @@ const LocationTracking = () => {
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
-            color: 'purple',
+            color: isGettingLocation ? 'secondary.main' : 'purple',
             boxShadow: 2,
             cursor: 'pointer',
+            animation: isGettingLocation ? 'pulse 2s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
+              '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
+              '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
+            },
             '&:hover': {
               bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
@@ -3198,8 +3198,6 @@ const LocationTracking = () => {
                 // Already sharing but no location yet - force acquisition
                 startLocationTracking();
               }
-              // Show notification that we're getting location
-              showNotification('Getting your location...', 'info');
             }
           }}
         >
