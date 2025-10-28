@@ -3091,28 +3091,29 @@ const LocationTracking = () => {
         sx={{
           position: 'absolute',
           left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
+          top: 0,
+          bottom: 0,
           zIndex: 10,
-          bgcolor: 'rgba(0, 0, 0, 0.7)',
+          bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0, 0, 0, 0.7)',
           backdropFilter: 'blur(2px)',
-          padding: '16px 8px',
+          padding: '8px 4px',
           borderTopRightRadius: 8,
           borderBottomRightRadius: 8,
           display: showMembersList ? 'none' : 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          transition: 'all 0.3s ease',
         }}
       >
         <Typography
-          variant="h6"
+          variant="body2"
           sx={{
             writingMode: 'vertical-rl',
             textOrientation: 'mixed',
             transform: 'rotate(180deg)',
-            color: sharingLocation ? 'secondary.main' : '#fff',
-            fontWeight: sharingLocation ? 600 : 400,
+            color: '#fff',
+            fontWeight: 400,
             letterSpacing: '0.1em',
           }}
         >
