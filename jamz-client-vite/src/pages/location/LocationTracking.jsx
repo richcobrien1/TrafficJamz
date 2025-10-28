@@ -3324,8 +3324,8 @@ const LocationTracking = () => {
             color: 'text.primary',
             border: 'none',
             boxShadow: 3,
-            height: 'calc(100% - 64px)',
-            top: 64,
+            height: '100%',
+            top: 0,
             // Raise the drawer above map controls and app bar so it clearly overlays the map
             zIndex: 1400
           },
@@ -3352,37 +3352,32 @@ const LocationTracking = () => {
                 memberLocation.coordinates.longitude
               ) : null;
             
+            // Format display name: try first_name + last_name, fallback to first_name, then username/email
+            const displayName = member.first_name && member.last_name 
+              ? `${member.first_name} ${member.last_name}`
+              : member.first_name || member.username || member.email;
+            
             return (
               <React.Fragment key={member.user_id}>
                 {index > 0 && <Divider component="li" />}
                 <ListItem 
                   component="li"
-                  secondaryAction={
-                    <Chip 
-                      label={distance ? formatDistance(distance) : 'Unknown'}
-                      color={distance && distance <= proximityDistance ? "success" : "default"}
-                      size="small"
-                    />
-                  }
                 >
                   <ListItemButton onClick={() => handleMemberClick(member)}>
                     <ListItemAvatar>
-                      <Badge
-                        overlap="circular"
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                        variant="dot"
-                        color={isOnline ? "success" : "error"}
+                      <Avatar 
+                        src={isOnline ? member.profile_image_url : undefined}
+                        alt={displayName}
+                        sx={{
+                          opacity: isOnline ? 1 : 0.4,
+                          bgcolor: isOnline ? undefined : 'rgba(128, 128, 128, 0.3)',
+                        }}
                       >
-                        <Avatar 
-                          src={member.profile_image_url} 
-                          alt={member.username}
-                        >
-                          {member.username.charAt(0).toUpperCase()}
-                        </Avatar>
-                      </Badge>
+                        {displayName.charAt(0).toUpperCase()}
+                      </Avatar>
                     </ListItemAvatar>
                     <ListItemText 
-                      primary={member.username}
+                      primary={displayName}
                       secondary={
                         memberLocation ? 
                           `Last updated: ${new Date(memberLocation.timestamp).toLocaleTimeString()}` : 
