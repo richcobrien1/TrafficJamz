@@ -3061,7 +3061,10 @@ const LocationTracking = () => {
               mr: 2,
               color: sharingLocation ? '#fff' : 'inherit'
             }}
-            onClick={() => navigate(`/groups/${groupId}`)}
+            onClick={() => {
+              console.log('🔙 Back button clicked, navigating to /groups/' + groupId);
+              navigate(`/groups/${groupId}`);
+            }}
           >
             <ArrowBackIcon />
           </IconButton>
