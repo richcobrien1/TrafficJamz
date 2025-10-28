@@ -179,8 +179,15 @@ const GroupDetail = () => {
             console.log('✅ Audio session created successfully');
             setAudioSessionActive(true);
           } catch (createError) {
-            console.log('ℹ️ Audio session not created:', createError.response?.data?.message || createError.message);
-            // Don't set as active if creation failed
+            // If session already exists (400), that's actually good - it means it's active
+            if (createError.response?.status === 400 && 
+                createError.response?.data?.message?.includes('already exists')) {
+              console.log('✅ Audio session already exists (from 400)');
+              setAudioSessionActive(true);
+            } else {
+              console.log('ℹ️ Audio session not created:', createError.response?.data?.message || createError.message);
+              // Don't set as active if creation failed for other reasons
+            }
           }
         }
       }
