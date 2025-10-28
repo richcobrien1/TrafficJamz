@@ -17,13 +17,14 @@
 //   - Catch-all (*) renders <NotFound />
 //   - Mapbox dev route (/dev/map) is currently unprotected for testing
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import api from './services/api';
 
 import MapboxMap from './components/MapboxMap';
 
@@ -70,6 +71,27 @@ function App() {
       },
     },
   });
+
+  // Keep Render service awake by pinging every 60 seconds
+  useEffect(() => {
+    const keepAlive = async () => {
+      try {
+        await api.get('/health');
+        console.log('⏰ Keep-alive ping sent');
+      } catch (error) {
+        // Silently ignore errors - service might be waking up
+        console.debug('Keep-alive ping failed (expected during cold start):', error.message);
+      }
+    };
+
+    // Ping immediately on app load
+    keepAlive();
+
+    // Then ping every 60 seconds
+    const interval = setInterval(keepAlive, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Debug logging
   console.log('🚀 App component rendering');
