@@ -994,7 +994,7 @@ const LocationTracking = () => {
       console.log('✅ Socket.IO connected for location tracking');
       console.log('✅ Transport used:', socket.io.engine.transport.name);
       socket.emit('join-group', { groupId });
-      showNotification('Connected to real-time location tracking', 'success');
+      // Removed: showNotification - just work silently
     });
 
     socket.on('connect_error', (error) => {
@@ -1014,12 +1014,12 @@ const LocationTracking = () => {
     socket.on('reconnect', (attemptNumber) => {
       console.log('🔄 Socket.IO reconnected after', attemptNumber, 'attempts');
       socket.emit('join-group', { groupId });
-      showNotification('Reconnected to location tracking', 'success');
+      // Removed: showNotification - just work silently
     });
 
     socket.on('reconnect_failed', () => {
       console.error('❌ Socket.IO reconnection failed');
-      showNotification('Unable to connect to real-time tracking. Locations will update via polling.', 'info');
+      // Removed: showNotification - polling will handle it silently
     });
 
     // Listen for location updates from other members
