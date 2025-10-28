@@ -3099,7 +3099,6 @@ const LocationTracking = () => {
           backdropFilter: 'blur(2px)',
           padding: '16px 4px',
           borderTopRightRadius: 8,
-          borderBottomRightRadius: 8,
           display: showMembersList ? 'none' : 'flex',
           flexDirection: 'column',
           alignItems: 'flex-end',
