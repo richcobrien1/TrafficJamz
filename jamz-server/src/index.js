@@ -722,6 +722,14 @@ function setupServer() {
     });
   });
 
+  // Health check endpoint with /api prefix for frontend keep-alive
+  app.get('/api/health', async (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date()
+    });
+  });
+
   // Mediasoup debug/status endpoint (lazy-load service)
   app.get('/api/debug/mediasoup', (req, res) => {
     if (process.env.DISABLE_MEDIASOUP === 'true') {
