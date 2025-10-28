@@ -168,6 +168,7 @@ const LocationTracking = () => {
   const [error, setError] = useState('');
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isCentering, setIsCentering] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [locationInfo, setLocationInfo] = useState(null);
   const [geolocationRetries, setGeolocationRetries] = useState(0);
@@ -1965,21 +1966,24 @@ const LocationTracking = () => {
 
     if (!location || !location.latitude || !location.longitude) {
       console.error('Invalid location data:', location);
-      showNotification('Unable to center map - location data unavailable', 'error');
       return;
     }
 
     try {
       console.log('Flying to:', [location.longitude, location.latitude]);
+      setIsCentering(true);
       mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
         zoom: 15,
         essential: true
       });
-      showNotification('Centered on your location', 'success');
+      // Light up for 2 seconds then turn off
+      setTimeout(() => {
+        setIsCentering(false);
+      }, 2000);
     } catch (error) {
       console.error('Error centering map:', error);
-      showNotification('Failed to center map', 'error');
+      setIsCentering(false);
     }
   };
   
@@ -3172,10 +3176,12 @@ const LocationTracking = () => {
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
-            color: isGettingLocation ? 'secondary.main' : 'purple',
+            color: !userLocation ? 'rgba(128, 128, 128, 0.5)' : 
+                   isCentering ? 'success.main' : 
+                   isGettingLocation ? 'secondary.main' : 'purple',
             boxShadow: 2,
             cursor: 'pointer',
-            animation: isGettingLocation ? 'pulse 2s infinite' : 'none',
+            animation: (isGettingLocation || (!userLocation && sharingLocation)) ? 'pulse 2s infinite' : 'none',
             '@keyframes pulse': {
               '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
               '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
