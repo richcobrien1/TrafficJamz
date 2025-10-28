@@ -66,7 +66,7 @@ console.log('  finalBase:', finalBase);
 
 const api = axios.create({
   baseURL: finalBase,
-  timeout: 30000, // 30 second timeout for mobile networks
+  timeout: 90000, // 90 second timeout to handle Render cold starts (free tier sleeps after inactivity)
   headers: {
     'Content-Type': 'application/json'
   }
