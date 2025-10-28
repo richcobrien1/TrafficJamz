@@ -545,7 +545,11 @@ const GroupDetail = () => {
   
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
+      <AppBar position="static" sx={{ 
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
+      }}>
         <Toolbar>
           <IconButton
             edge="start"
@@ -753,7 +757,10 @@ const GroupDetail = () => {
                           color: isLocationWatchActive ? '#fff' : 'inherit'
                         }
                       }}
-                      onClick={() => navigate(`/location-tracking/${groupId}`)}
+                      onClick={() => {
+                        console.log('🗺️ Locator panel clicked, navigating to:', `/location-tracking/${groupId}`);
+                        navigate(`/location-tracking/${groupId}`);
+                      }}
                     >
                       <Avatar sx={{ 
                         bgcolor: isLocationWatchActive ? 'rgba(255, 255, 255, 0.2)' : 'secondary.light',
