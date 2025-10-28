@@ -89,6 +89,7 @@ const GroupDetail = () => {
   const [locationTrackingActive, setLocationTrackingActive] = useState(false); // Location tracking state
   const [serviceStatusError, setServiceStatusError] = useState(false); // Track if status check is failing
   const [pollInterval, setPollInterval] = useState(10000); // Dynamic poll interval (10s default)
+  const [isLocationWatchActive, setIsLocationWatchActive] = useState(false); // Track if location watch is running
   const { user } = useAuth();
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -159,6 +160,7 @@ const GroupDetail = () => {
     const userId = user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
       console.log('⏸️ Location auto-start skipped - groupId:', groupId, 'userId:', userId);
+      setIsLocationWatchActive(false);
       // Stop watching if no group or user
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -173,6 +175,7 @@ const GroupDetail = () => {
     // Request permission first
     if (!navigator.geolocation) {
       console.error('❌ Geolocation not supported');
+      setIsLocationWatchActive(false);
       return;
     }
 
@@ -191,6 +194,9 @@ const GroupDetail = () => {
 
         console.log('📍 Location update (GroupDetail):', locationData);
 
+        // Mark as active since we're receiving location updates
+        setIsLocationWatchActive(true);
+
         // Save to backend via API
         api.post('/location/update', {
           coordinates: locationData,
@@ -204,6 +210,7 @@ const GroupDetail = () => {
       },
       (error) => {
         console.error('❌ Geolocation error (GroupDetail):', error.code, error.message);
+        setIsLocationWatchActive(false);
         if (error.code === 1) {
           console.error('❌ Location permission denied - please allow location access');
         }
@@ -221,6 +228,7 @@ const GroupDetail = () => {
     return () => {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
+        setIsLocationWatchActive(false);
         console.log('⏹️ Stopped location tracking on cleanup');
       }
     };
@@ -680,28 +688,28 @@ const GroupDetail = () => {
                         cursor: 'pointer',
                         minHeight: 200,
                         height: '100%',
-                        border: locationTrackingActive ? '3px solid' : '1px solid',
-                        borderColor: locationTrackingActive ? 'secondary.main' : 'divider',
-                        boxShadow: locationTrackingActive ? 4 : 1,
-                        bgcolor: locationTrackingActive ? 'secondary.main' : 'background.paper',
-                        color: locationTrackingActive ? '#fff' : 'inherit',
+                        border: isLocationWatchActive ? '3px solid' : '1px solid',
+                        borderColor: isLocationWatchActive ? 'secondary.main' : 'divider',
+                        boxShadow: isLocationWatchActive ? 4 : 1,
+                        bgcolor: isLocationWatchActive ? 'secondary.main' : 'background.paper',
+                        color: isLocationWatchActive ? '#fff' : 'inherit',
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
                           boxShadow: 6
                         },
                         '& .MuiTypography-root': {
-                          color: locationTrackingActive ? '#fff' : 'inherit'
+                          color: isLocationWatchActive ? '#fff' : 'inherit'
                         }
                       }}
                       onClick={() => navigate(`/location-tracking/${groupId}`)}
                     >
                       <Avatar sx={{ 
-                        bgcolor: locationTrackingActive ? 'rgba(255, 255, 255, 0.2)' : 'secondary.light',
-                        color: locationTrackingActive ? '#fff' : 'inherit',
+                        bgcolor: isLocationWatchActive ? 'rgba(255, 255, 255, 0.2)' : 'secondary.light',
+                        color: isLocationWatchActive ? '#fff' : 'inherit',
                         width: 60, 
                         height: 60, 
                         mb: 2,
-                        animation: locationTrackingActive ? 'pulse 2s infinite' : 'none',
+                        animation: isLocationWatchActive ? 'pulse 2s infinite' : 'none',
                         '@keyframes pulse': {
                           '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
                           '70%': { boxShadow: '0 0 0 10px rgba(255, 255, 255, 0)' },
@@ -711,15 +719,15 @@ const GroupDetail = () => {
                         <LocationIcon fontSize="large" />
                       </Avatar>
                       <Typography variant="h6" gutterBottom align="center">
-                        {locationTrackingActive ? 'Locator Active' : 'Locator'}
+                        {isLocationWatchActive ? 'Locator Active' : 'Locator'}
                       </Typography>
                       <Typography variant="body2" align="center">
-                        {locationTrackingActive
-                          ? 'Members are sharing their location - click to view'
+                        {isLocationWatchActive
+                          ? 'Location sharing active - click to view map'
                           : 'View the location of your group members on the map'
                         }
                       </Typography>
-                      {locationTrackingActive && (
+                      {isLocationWatchActive && (
                         <Chip 
                           label="ACTIVE" 
                           color="secondary" 
