@@ -753,6 +753,10 @@ const GroupDetail = () => {
                         '&:hover': {
                           boxShadow: 6
                         },
+                        '&:active': {
+                          transform: 'scale(0.98)',
+                          boxShadow: 2
+                        },
                         '& .MuiTypography-root': {
                           color: isLocationWatchActive ? '#fff' : 'inherit'
                         }
@@ -760,6 +764,14 @@ const GroupDetail = () => {
                       onClick={() => {
                         console.log('🗺️ Locator panel clicked, navigating to:', `/location-tracking/${groupId}`);
                         navigate(`/location-tracking/${groupId}`);
+                      }}
+                      onTouchStart={(e) => {
+                        console.log('👆 Locator panel touched');
+                        e.currentTarget.style.transform = 'scale(0.98)';
+                      }}
+                      onTouchEnd={(e) => {
+                        console.log('👆 Locator panel touch ended');
+                        e.currentTarget.style.transform = 'scale(1)';
                       }}
                     >
                       <Avatar sx={{ 
