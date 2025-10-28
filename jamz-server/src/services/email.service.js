@@ -7,12 +7,29 @@ class EmailService {
     this.transporter = null;
     this.initialized = false;
     this.testAccount = null;
+    this.resendClient = null;
+    this.useResend = false;
   }
 
   async init() {
     if (this.initialized) return;
 
-    // Use real SMTP if configured, otherwise use Ethereal for testing
+    // Check if Resend API key is configured (preferred method)
+    if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.includes('your-')) {
+      try {
+        const { Resend } = require('resend');
+        this.resendClient = new Resend(process.env.RESEND_API_KEY);
+        this.useResend = true;
+        this.initialized = true;
+        console.log('✅ Email service initialized with Resend');
+        return;
+      } catch (error) {
+        console.warn('⚠️ Resend package not installed, falling back to SMTP:', error.message);
+        console.warn('💡 To use Resend, run: npm install resend');
+      }
+    }
+
+    // Fallback to SMTP if Resend is not configured
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS &&
         !process.env.SMTP_USER.includes('your-') && !process.env.SMTP_PASS.includes('your-')) {
       
@@ -42,10 +59,10 @@ class EmailService {
       }
 
       this.transporter = nodemailer.createTransport(transportConfig);
-      console.log('Email service initialized with real SMTP:', process.env.SMTP_HOST);
+      console.log('✅ Email service initialized with SMTP:', process.env.SMTP_HOST);
       console.log('Office 365 mode:', isOffice365);
     } else {
-      // For development/testing without SMTP config, use Ethereal
+      // For development/testing without any config, use Ethereal
       this.testAccount = await nodemailer.createTestAccount();
       this.transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -56,7 +73,7 @@ class EmailService {
           pass: this.testAccount.pass
         }
       });
-      console.log('Email service initialized with Ethereal for testing:', this.testAccount.user);
+      console.log('✅ Email service initialized with Ethereal for testing:', this.testAccount.user);
     }
 
     this.initialized = true;
@@ -187,12 +204,36 @@ class EmailService {
           <p style="font-size: 1em;">This invitation will expire in 7 days.</p>
           <p style="font-size: 1em;">If you did not request this invitation, please ignore this email.</p>
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <h3>Raw invitationData (debug)</h3>
-          <pre style="white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 6px;">${rawInvitationHtml}</pre>
           <p style="color: #000; font-size: 12px; text-align: center;">Best regards,<br/>The TrafficJamz Team</p>
         </div>
       `;
 
+      // Use Resend if configured, otherwise fall back to SMTP
+      if (this.useResend && this.resendClient) {
+        console.log('📧 Sending email via Resend...');
+        
+        const resendOptions = {
+          from: process.env.RESEND_FROM_EMAIL || 'TrafficJamz <onboarding@resend.dev>',
+          to: [to],
+          subject: `You've been invited to join ${groupName}`,
+          html: htmlBody,
+          text: textBody
+        };
+
+        const data = await this.resendClient.emails.send(resendOptions);
+        
+        console.log('✅ EMAIL SENT SUCCESSFULLY via Resend');
+        console.log('To:', to);
+        console.log('Subject:', resendOptions.subject);
+        console.log('Email ID:', data.id);
+        
+        return {
+          messageId: data.id,
+          provider: 'resend'
+        };
+      }
+
+      // Fallback to SMTP (nodemailer)
       const mailOptions = {
         from: this.testAccount 
           ? `"TrafficJamz" <${this.testAccount.user}>`
@@ -205,15 +246,13 @@ class EmailService {
 
       const info = await this.transporter.sendMail(mailOptions);
     
-      console.log('✅ EMAIL SENT SUCCESSFULLY');
+      console.log('✅ EMAIL SENT SUCCESSFULLY via SMTP');
       console.log('To:', to);
       console.log('Subject:', mailOptions.subject);
       console.log('Message ID:', info.messageId);
       console.log('Accepted:', info.accepted);
       console.log('Rejected:', info.rejected);
       console.log('Response:', info.response);
-      console.log('SMTP Host:', process.env.SMTP_HOST);
-      console.log('SMTP User:', process.env.SMTP_USER);
     
       // For Ethereal emails, provide the preview URL
       if (this.testAccount) {
@@ -221,12 +260,14 @@ class EmailService {
         console.log('Preview URL:', previewUrl);
         return {
           messageId: info.messageId,
-          previewUrl
+          previewUrl,
+          provider: 'ethereal'
         };
       }
   
       return {
-        messageId: info.messageId
+        messageId: info.messageId,
+        provider: 'smtp'
       };
     } catch (error) {
       console.error('Error sending invitation email:', error);
