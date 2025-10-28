@@ -650,14 +650,19 @@ router.post('/:group_id/invitations/:invitation_id/resend',
     try {
       const { group_id, invitation_id } = req.params;
       
-      // Update invitation and send email (includes preview URL in dev)
-      const result = await groupService.resendInvitation(group_id, invitation_id, req.user.user_id);
+      // Update invitation WITHOUT sending email (send async after response)
+      const result = await groupService.resendInvitation(group_id, invitation_id, req.user.user_id, { sendEmail: false });
       
-      // Send response with preview URL
+      // Send response immediately
       res.json({ 
         success: true, 
-        message: 'Invitation resent', 
+        message: 'Invitation resent successfully', 
         invitation: result
+      });
+      
+      // Send email asynchronously after response (fire and forget)
+      groupService.sendInvitationEmailAsync(group_id, invitation_id).catch(err => {
+        console.error('Background email send failed for resend:', err);
       });
       
     } catch (error) {
