@@ -149,57 +149,8 @@ const GroupDetail = () => {
     };
   }, [groupId, pollInterval]);
 
-  // Auto-start audio session when viewing group
-  useEffect(() => {
-    console.log('🔍 Audio useEffect fired - groupId:', groupId, 'user:', user);
-    console.log('🔍 user?.user:', user?.user);
-    console.log('🔍 user?.user?.id:', user?.user?.id);
-    console.log('🔍 user?.user?.user_id:', user?.user?.user_id);
-    console.log('🔍 user?.id:', user?.id);
-    
-    const userId = user?.user?.user_id || user?.user?.id || user?.id;
-    if (!groupId || !userId) {
-      console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'userId:', userId);
-      return;
-    }
-
-    let isActive = true;
-
-    const startAudioSession = async () => {
-      try {
-        console.log('🎤 Auto-starting audio session for group:', groupId);
-        
-        // Check if session already exists
-        const checkResponse = await api.get(`/audio/sessions/group/${groupId}`);
-        if (checkResponse.data?.session) {
-          console.log('✅ Audio session already exists:', checkResponse.data.session.id);
-          return;
-        }
-      } catch (error) {
-        // Session doesn't exist, create it
-        if (error.response?.status === 404) {
-          try {
-            const createResponse = await api.post('/audio/sessions', {
-              group_id: groupId,
-              session_type: 'voice_only',
-              device_type: 'web'
-            });
-            console.log('✅ Audio session created:', createResponse.data.session?.id);
-          } catch (createError) {
-            console.warn('Failed to create audio session:', createError.message);
-          }
-        }
-      }
-    };
-
-    if (isActive) {
-      startAudioSession();
-    }
-
-    return () => {
-      isActive = false;
-    };
-  }, [groupId, user]);
+  // NOTE: Audio auto-start disabled - audio session requires manual navigation to /audio-session page
+  // The Audio panel will show active when someone actually joins the audio session page
 
   // Auto-start location tracking when viewing group
   useEffect(() => {
