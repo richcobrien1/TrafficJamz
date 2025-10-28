@@ -62,7 +62,7 @@ import {
   Close as CloseIcon,
   Satellite as SatelliteIcon,
   Place as PlaceIcon,
-  HideSource as PlaceOffIcon
+  LocationOff as PlaceOffIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
