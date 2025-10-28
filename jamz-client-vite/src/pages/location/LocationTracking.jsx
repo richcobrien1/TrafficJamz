@@ -2143,7 +2143,6 @@ const LocationTracking = () => {
         const canvas = mapRef.current.getCanvas();
         if (newMode) {
           // Entering selection mode
-          showNotification('Place selection mode: click a map point to create a place (Esc to cancel)', 'info');
           if (overlayCreateMode) {
             // Show the centered HUD dot
             createCenterMarker();
@@ -2180,7 +2179,6 @@ const LocationTracking = () => {
           removeHoverRing();
           try { window.removeEventListener('mousemove', selectionMouseMoveRef.current); } catch (e) {}
           canvas.style.cursor = '';
-          showNotification('Exited place selection mode', 'info');
         }
       }
     } catch (err) {
@@ -3195,9 +3193,15 @@ const LocationTracking = () => {
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: 'rgba(255, 255, 255, 0.2)',
-            color: 'purple',
+            color: placeSelectionMode ? 'secondary.main' : 'purple',
             boxShadow: 2,
             cursor: 'pointer',
+            animation: placeSelectionMode ? 'pulse 2s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
+              '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
+              '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
+            },
             '&:hover': {
               bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
