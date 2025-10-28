@@ -174,7 +174,7 @@ const LocationTracking = () => {
   const [updateInterval, setUpdateInterval] = useState(30);
   const [proximityDistance, setProximityDistance] = useState(100);
   const [controlsOpacity, setControlsOpacity] = useState(0.9);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [showMembersList, setShowMembersList] = useState(false);
   const [showLocationInfo, setShowLocationInfo] = useState(false);
   const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
@@ -3026,7 +3026,7 @@ const LocationTracking = () => {
           zIndex: 10
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ flexWrap: 'wrap', gap: 1 }}>
           <IconButton 
             edge="start" 
             sx={{ 
