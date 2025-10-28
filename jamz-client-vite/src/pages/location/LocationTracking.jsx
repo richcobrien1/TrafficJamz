@@ -1638,6 +1638,21 @@ const LocationTracking = () => {
           });
         }
       });
+      
+      // Re-add markers when map style changes (e.g., satellite toggle)
+      map.on('styledata', () => {
+        // Only re-add markers after initial load is complete
+        if (mapRef.current && mapLoaded) {
+          console.log('Map style changed, re-adding markers');
+          const allLocations = showPlaces ? [...locations, ...places] : locations;
+          if (allLocations.length > 0 && !placeSelectionMode) {
+            // Small delay to ensure style is fully loaded
+            setTimeout(() => {
+              updateMapMarkers(allLocations, true);
+            }, 100);
+          }
+        }
+      });
 
     } catch (error) {
       console.error('Error initializing map:', error);
