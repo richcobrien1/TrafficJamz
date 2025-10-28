@@ -234,6 +234,7 @@ const LocationTracking = () => {
   const updateMarkerDebounceRef = useRef(null);
   const clusterModeRef = useRef(false);
   const clusterSourceIdRef = useRef('tj_members_source');
+  const userLocationRef = useRef(null); // Keep userLocation in sync for event handlers
   const [clusterThreshold, setClusterThreshold] = useState(150); // above this, switch to clustered layer rendering
 
   // Create cluster layers and source for large numbers of markers
@@ -532,6 +533,7 @@ const LocationTracking = () => {
   // Keep refs in sync with state for map event handlers
   useEffect(() => { locationsRef.current = locations; }, [locations]);
   useEffect(() => { placesRef.current = places; }, [places]);
+  useEffect(() => { userLocationRef.current = userLocation; }, [userLocation]);
   // Persist screenThreshold so tuning remains between sessions
   useEffect(() => {
     try { localStorage.setItem('screenThreshold', String(screenThreshold)); } catch (e) {}
@@ -1583,12 +1585,12 @@ const LocationTracking = () => {
             try {
               if (devSimulationActiveRef.current) return; // don't override simulated dataset
               
-              // Add current user to locations
-              const currentUserLoc = userLocation ? [{
+              // Add current user to locations - use ref to get current value
+              const currentUserLoc = userLocationRef.current ? [{
                 user_id: currentUser?.id || 'current-user',
                 username: currentUser?.username || 'CurrentUser',
                 first_name: currentUser?.first_name || null,
-                coordinates: userLocation,
+                coordinates: userLocationRef.current,
                 timestamp: new Date().toISOString(),
                 battery_level: 85
               }] : [];
@@ -1644,7 +1646,23 @@ const LocationTracking = () => {
         // Only re-add markers after initial load is complete
         if (mapRef.current && mapLoaded) {
           console.log('Map style changed, re-adding markers');
-          const allLocations = showPlaces ? [...locations, ...places] : locations;
+          
+          // Include current user location - use refs to get current values
+          const currentUserLoc = userLocationRef.current ? [{
+            user_id: currentUser?.id || 'current-user',
+            username: currentUser?.username || 'CurrentUser',
+            first_name: currentUser?.first_name || null,
+            coordinates: userLocationRef.current,
+            timestamp: new Date().toISOString(),
+            battery_level: 85
+          }] : [];
+          
+          const currentLocations = locationsRef.current || [];
+          const currentPlaces = placesRef.current || [];
+          const allLocations = showPlaces 
+            ? [...currentUserLoc, ...currentLocations, ...currentPlaces] 
+            : [...currentUserLoc, ...currentLocations];
+            
           if (allLocations.length > 0 && !placeSelectionMode) {
             // Small delay to ensure style is fully loaded
             setTimeout(() => {
