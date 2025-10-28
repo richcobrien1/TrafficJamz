@@ -3129,12 +3129,12 @@ const LocationTracking = () => {
             right: 16,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
-            bgcolor: 'rgba(255, 255, 255, 0.8)',
+            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
             color: 'purple',
             boxShadow: 2,
             cursor: 'pointer',
             '&:hover': {
-              bgcolor: 'rgba(255, 255, 255, 0.9)',
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
             }
           }}
           onClick={toggleControls}
@@ -3152,12 +3152,12 @@ const LocationTracking = () => {
             right: 76,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
-            bgcolor: 'rgba(255, 255, 255, 0.8)',
+            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
             color: 'purple',
             boxShadow: 2,
             cursor: 'pointer',
             '&:hover': {
-              bgcolor: 'rgba(255, 255, 255, 0.9)',
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
             }
           }}
           onClick={toggleMembersList}
@@ -3175,7 +3175,7 @@ const LocationTracking = () => {
             right: 136,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
-            bgcolor: 'rgba(255, 255, 255, 0.8)',
+            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
             color: !userLocation ? 'rgba(128, 128, 128, 0.5)' : 
                    isCentering ? 'success.main' : 
                    isGettingLocation ? 'secondary.main' : 'purple',
@@ -3188,7 +3188,7 @@ const LocationTracking = () => {
               '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
             },
             '&:hover': {
-              bgcolor: 'rgba(255, 255, 255, 0.9)',
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
             }
           }}
           onClick={() => {
@@ -3220,7 +3220,7 @@ const LocationTracking = () => {
             right: 196,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
-            bgcolor: 'rgba(255, 255, 255, 0.8)',
+            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
             color: placeSelectionMode ? 'secondary.main' : 'purple',
             boxShadow: 2,
             cursor: 'pointer',
@@ -3231,7 +3231,7 @@ const LocationTracking = () => {
               '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
             },
             '&:hover': {
-              bgcolor: 'rgba(255, 255, 255, 0.9)',
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
             }
           }}
           onClick={() => {
