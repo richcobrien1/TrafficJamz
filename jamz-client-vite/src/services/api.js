@@ -23,7 +23,9 @@ import axios from 'axios';
 
 const getBaseURL = () => {
   // Check if running in Capacitor native app
-  const isCapacitor = window.location && window.location.protocol === 'capacitor:';
+  const isCapacitor = window.location && (window.location.protocol === 'capacitor:' || 
+                                          window.location.protocol === 'ionic:' ||
+                                          window.location.protocol === 'file:');
   
   // For local development (localhost:5173, localhost:5174, etc), use '/api' for Vite proxy
   // For production, ALWAYS use VITE_API_BASE from .env
@@ -31,11 +33,15 @@ const getBaseURL = () => {
                      window.location?.hostname === '127.0.0.1';
   
   // Priority: 
-  // 1. If VITE_API_BASE is explicitly set, use it (production)
-  // 2. If localhost, use '/api' for Vite proxy (local dev)
-  // 3. Fallback to '/api'
+  // 1. If Capacitor mobile app, use full backend URL
+  // 2. If VITE_API_BASE is explicitly set, use it (production web)
+  // 3. If localhost, use '/api' for Vite proxy (local dev)
+  // 4. Fallback to '/api'
   let apiBase;
-  if (import.meta.env.VITE_API_BASE && !isLocalDev) {
+  if (isCapacitor) {
+    // Mobile app - use full backend URL
+    apiBase = 'https://trafficjamz.onrender.com/api';
+  } else if (import.meta.env.VITE_API_BASE && !isLocalDev) {
     apiBase = import.meta.env.VITE_API_BASE;
   } else if (isLocalDev) {
     apiBase = '/api';
