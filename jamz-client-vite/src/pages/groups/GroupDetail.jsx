@@ -150,8 +150,44 @@ const GroupDetail = () => {
     };
   }, [groupId, pollInterval]);
 
-  // NOTE: Audio auto-start disabled - audio session requires manual navigation to /audio-session page
-  // The Audio panel will show active when someone actually joins the audio session page
+  // Auto-start audio session when viewing group
+  useEffect(() => {
+    const userId = user?.user?.user_id || user?.user?.id || user?.id;
+    if (!groupId || !userId) {
+      return;
+    }
+
+    const initAudioSession = async () => {
+      try {
+        // Check if session already exists
+        const checkResponse = await api.get(`/audio/sessions/group/${groupId}`);
+        if (checkResponse.data?.session) {
+          console.log('✅ Audio session already exists');
+          setAudioSessionActive(true);
+          return;
+        }
+      } catch (error) {
+        // 404 means no session exists, try to create one
+        if (error.response?.status === 404) {
+          try {
+            console.log('🎤 Creating audio session for group:', groupId);
+            await api.post('/audio/sessions', {
+              group_id: groupId,
+              session_type: 'voice_only',
+              device_type: 'web'
+            });
+            console.log('✅ Audio session created successfully');
+            setAudioSessionActive(true);
+          } catch (createError) {
+            console.log('ℹ️ Audio session not created:', createError.response?.data?.message || createError.message);
+            // Don't set as active if creation failed
+          }
+        }
+      }
+    };
+
+    initAudioSession();
+  }, [groupId, user]);
 
   // Auto-start location tracking when viewing group
   useEffect(() => {
