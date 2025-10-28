@@ -277,20 +277,16 @@ const GroupDetail = () => {
     };
   }, [groupId, user]);
 
-  // Check if audio session or location tracking is active
+  // Check if location tracking is active (audio is managed by auto-start useEffect)
   const checkServiceStatus = async () => {
     try {
-      // Check audio session status
-      const audioResponse = await api.get(`/audio/audio-session/${groupId}/status`);
-      console.log('🎤 Audio status response:', audioResponse.data);
-      setAudioSessionActive(audioResponse.data?.active || false);
+      // Note: Audio session status is managed by the auto-start useEffect above
+      // Only checking location tracking here since it needs backend DB check
       
       // Check location tracking status (check if any members are sharing location)
       const locationResponse = await api.get(`/location/location-tracking/${groupId}/active`);
       console.log('📍 Location status response:', locationResponse.data);
       setLocationTrackingActive(locationResponse.data?.active || false);
-      
-      console.log('Panel states - Audio:', audioResponse.data?.active, 'Location:', locationResponse.data?.active);
       
       // Success - reset to fast polling and clear error
       setServiceStatusError(false);
