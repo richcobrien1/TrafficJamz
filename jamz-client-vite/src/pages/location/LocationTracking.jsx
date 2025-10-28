@@ -3023,7 +3023,7 @@ const LocationTracking = () => {
           zIndex: 10
         }}
       >
-        <Toolbar sx={{ flexWrap: 'wrap', gap: 1 }}>
+        <Toolbar>
           <IconButton 
             edge="start" 
             sx={{ 
@@ -3034,18 +3034,6 @@ const LocationTracking = () => {
           >
             <ArrowBackIcon />
           </IconButton>
-          
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              flexGrow: 1,
-              color: sharingLocation ? '#fff' : 'inherit',
-              fontWeight: sharingLocation ? 600 : 400
-            }}
-          >
-            {group?.name || 'Location Tracking'}
-          </Typography>
           
           <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
             <IconButton 
@@ -3097,6 +3085,40 @@ const LocationTracking = () => {
           </Tooltip>
         </Toolbar>
       </AppBar>
+      
+      {/* Vertical Group Name Panel */}
+      <Box
+        sx={{
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10,
+          bgcolor: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(2px)',
+          padding: '16px 8px',
+          borderTopRightRadius: 8,
+          borderBottomRightRadius: 8,
+          display: showMembersList ? 'none' : 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            transform: 'rotate(180deg)',
+            color: sharingLocation ? 'secondary.main' : '#fff',
+            fontWeight: sharingLocation ? 600 : 400,
+            letterSpacing: '0.1em',
+          }}
+        >
+          {group?.name || 'Location Tracking'}
+        </Typography>
+      </Box>
       
       {/* Toggle Controls Button */}
       <Tooltip title={showControls ? "Hide Controls" : "Show Controls"}>
