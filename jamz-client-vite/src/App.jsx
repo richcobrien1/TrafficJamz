@@ -60,7 +60,12 @@ const RootRedirect = () => {
 
 function App() {
   const location = useLocation();
-  const [backendReady, setBackendReady] = useState(false);
+  
+  // State for backend wake-up - check sessionStorage first to persist across navigation
+  const [backendReady, setBackendReady] = useState(() => {
+    const cached = sessionStorage.getItem('backendReady');
+    return cached === 'true';
+  });
   const [wakeupAttempts, setWakeupAttempts] = useState(0);
 
   const theme = createTheme({
@@ -84,6 +89,7 @@ function App() {
         await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
         console.log('✅ Backend is ready!');
         setBackendReady(true);
+        sessionStorage.setItem('backendReady', 'true'); // Persist across navigation
       } catch (error) {
         console.warn('⚠️ Backend wake-up attempt failed, retrying...', error.message);
         // Retry after 2 seconds if it fails (max 5 attempts)
@@ -92,6 +98,7 @@ function App() {
         } else {
           console.error('❌ Backend failed to wake up after 5 attempts');
           setBackendReady(true); // Show app anyway, let individual requests fail
+          sessionStorage.setItem('backendReady', 'true'); // Persist even on failure
         }
       }
     };
