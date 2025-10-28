@@ -437,10 +437,7 @@ const AudioSession = () => {
       setupAudioLevelMonitoring(stream);
 
     } catch (error) {
-      console.error('❌ Error accessing microphone:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error accessing microphone:', error.message);
 
       const errorMessage = error.name === 'NotAllowedError'
         ? 'Microphone access denied. Please allow microphone permissions and try again.'
@@ -1174,8 +1171,7 @@ const AudioSession = () => {
       });
       console.log('📤 Offer sent successfully');
     } catch (error) {
-      console.error('❌ Error creating/sending offer:', error);
-      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error creating/sending offer:', error.message);
     }
   };
 
