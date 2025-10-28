@@ -158,7 +158,7 @@ const GroupDetail = () => {
       return;
     }
 
-    const userId = user?.user?.user_id || user?.user?.id || user?.id;
+    const userId = user?.user_id || user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
       console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'userId:', userId);
       return;
@@ -213,7 +213,7 @@ const GroupDetail = () => {
       return;
     }
     
-    const userId = user?.user?.user_id || user?.user?.id || user?.id;
+    const userId = user?.user_id || user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
       console.log('⏸️ Location auto-start skipped - groupId:', groupId, 'userId:', userId);
       setIsLocationWatchActive(false);
