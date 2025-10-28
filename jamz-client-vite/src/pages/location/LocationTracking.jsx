@@ -3051,7 +3051,10 @@ const LocationTracking = () => {
           transition: 'all 0.3s ease',
           // When the members list is open, hide the top AppBar so it doesn't overlap the drawer
           top: showMembersList ? -64 : (showControls ? 0 : -64),
-          zIndex: 10
+          zIndex: 10,
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
         }}
       >
         <Toolbar>
