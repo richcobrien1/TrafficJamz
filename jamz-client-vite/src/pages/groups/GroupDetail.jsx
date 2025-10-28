@@ -90,7 +90,7 @@ const GroupDetail = () => {
   const [serviceStatusError, setServiceStatusError] = useState(false); // Track if status check is failing
   const [pollInterval, setPollInterval] = useState(10000); // Dynamic poll interval (10s default)
   const [isLocationWatchActive, setIsLocationWatchActive] = useState(false); // Track if location watch is running
-  const { user } = useAuth();
+  const { user, loading: userLoading } = useAuth();
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
@@ -152,8 +152,15 @@ const GroupDetail = () => {
 
   // Auto-start audio session when viewing group
   useEffect(() => {
+    // Wait for user to be loaded
+    if (userLoading) {
+      console.log('⏸️ Audio auto-start waiting for user to load...');
+      return;
+    }
+
     const userId = user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
+      console.log('⏸️ Audio auto-start skipped - groupId:', groupId, 'userId:', userId);
       return;
     }
 
@@ -194,11 +201,17 @@ const GroupDetail = () => {
     };
 
     initAudioSession();
-  }, [groupId, user]);
+  }, [groupId, user, userLoading]);
 
   // Auto-start location tracking when viewing group
   useEffect(() => {
-    console.log('🔍 Location useEffect fired - groupId:', groupId, 'user:', user);
+    console.log('🔍 Location useEffect fired - groupId:', groupId, 'user:', user, 'userLoading:', userLoading);
+    
+    // Wait for user to be loaded
+    if (userLoading) {
+      console.log('⏸️ Location auto-start waiting for user to load...');
+      return;
+    }
     
     const userId = user?.user?.user_id || user?.user?.id || user?.id;
     if (!groupId || !userId) {
@@ -275,7 +288,7 @@ const GroupDetail = () => {
         console.log('⏹️ Stopped location tracking on cleanup');
       }
     };
-  }, [groupId, user]);
+  }, [groupId, user, userLoading]);
 
   // Check if location tracking is active (audio is managed by auto-start useEffect)
   const checkServiceStatus = async () => {
