@@ -3091,19 +3091,21 @@ const LocationTracking = () => {
         sx={{
           position: 'absolute',
           left: 0,
-          top: 0,
+          top: showMembersList ? -400 : (showControls ? 64 : 0),
           bottom: 0,
           zIndex: 10,
-          bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0, 0, 0, 0.7)',
+          opacity: controlsOpacity,
+          bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0,0,0,0.7)',
           backdropFilter: 'blur(2px)',
-          padding: '8px 4px',
+          padding: '16px 4px',
           borderTopRightRadius: 8,
           borderBottomRightRadius: 8,
           display: showMembersList ? 'none' : 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: 'flex-end',
+          justifyContent: 'flex-start',
           transition: 'all 0.3s ease',
+          elevation: sharingLocation ? 3 : 0,
         }}
       >
         <Typography
@@ -3112,8 +3114,9 @@ const LocationTracking = () => {
             writingMode: 'vertical-rl',
             textOrientation: 'mixed',
             transform: 'rotate(180deg)',
-            color: '#fff',
-            fontWeight: 400,
+            color: sharingLocation ? '#fff' : 'text.primary',
+            fontWeight: 'bold',
+            fontStyle: 'italic',
             letterSpacing: '0.1em',
           }}
         >
