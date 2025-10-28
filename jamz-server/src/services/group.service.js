@@ -638,10 +638,11 @@ class GroupService {
       });
 
       // Send invitation email (optional - can be skipped for async sending)
+      let emailResult = null;
       if (options?.sendEmail !== false) {
         try {
           console.log('📧 Attempting to send invitation email to:', email);
-          const emailResult = await emailService.sendInvitationEmail(email, {
+          emailResult = await emailService.sendInvitationEmail(email, {
             groupName: group.group_name,
             inviterName: inviterName,
             inviterFullName,
