@@ -730,6 +730,51 @@ function setupServer() {
     });
   });
 
+  // Email test endpoint - helps diagnose SMTP issues
+  app.get('/api/test/email', async (req, res) => {
+    try {
+      const emailService = require('./services/email.service');
+      
+      // Log current SMTP settings (without password)
+      const smtpInfo = {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        user: process.env.SMTP_USER,
+        secure: process.env.SMTP_SECURE,
+        hasPassword: !!process.env.SMTP_PASS
+      };
+      
+      console.log('📧 Testing email with config:', smtpInfo);
+      
+      // Try to send a test email
+      await emailService.sendInvitationEmail('richcobrien@hotmail.com', {
+        groupName: 'Test Group',
+        inviterName: 'System Test',
+        invitationLink: 'https://jamz.v2u.us/test'
+      });
+      
+      res.json({
+        success: true,
+        message: 'Test email sent successfully',
+        smtpConfig: smtpInfo
+      });
+    } catch (error) {
+      console.error('❌ Email test failed:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        command: error.command,
+        smtpConfig: {
+          host: process.env.SMTP_HOST,
+          port: process.env.SMTP_PORT,
+          user: process.env.SMTP_USER,
+          hasPassword: !!process.env.SMTP_PASS
+        }
+      });
+    }
+  });
+
   // Mediasoup debug/status endpoint (lazy-load service)
   app.get('/api/debug/mediasoup', (req, res) => {
     if (process.env.DISABLE_MEDIASOUP === 'true') {
