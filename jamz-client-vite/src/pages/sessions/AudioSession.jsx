@@ -800,14 +800,22 @@ const AudioSession = () => {
       return;
     }
 
-    // Try mediasoup first, fall back to peer-to-peer if it fails
-    try {
-      console.log('🎥 Attempting mediasoup publish...');
-      await startMediasoupPublish(signaling);
-      console.log('✅ Mediasoup publish successful');
-      return;
-    } catch (error) {
-      console.warn('⚠️ Mediasoup publish failed, falling back to peer-to-peer:', error.message);
+    // TEMPORARY: Skip mediasoup, use P2P for immediate audio
+    // TODO: Re-enable mediasoup after moving to AWS
+    const useMediasoup = false;
+
+    if (useMediasoup) {
+      // Try mediasoup first, fall back to peer-to-peer if it fails
+      try {
+        console.log('🎥 Attempting mediasoup publish...');
+        await startMediasoupPublish(signaling);
+        console.log('✅ Mediasoup publish successful');
+        return;
+      } catch (error) {
+        console.warn('⚠️ Mediasoup publish failed, falling back to peer-to-peer:', error.message);
+      }
+    } else {
+      console.log('🎥 Using peer-to-peer mode (mediasoup disabled)');
     }
 
     // Fallback to peer-to-peer WebRTC
