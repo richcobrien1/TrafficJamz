@@ -5,8 +5,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Mediasoup Worker options
+// On Render free tier, we can't use custom UDP ports, so we minimize the range
 const workerOptions = {
-  logLevel: 'warn',
+  logLevel: 'debug', // More verbose for troubleshooting
   logTags: [
     'info',
     'ice',
@@ -20,8 +21,9 @@ const workerOptions = {
     'simulcast',
     'svc'
   ],
-  rtcMinPort: Number(process.env.MEDIASOUP_MIN_PORT) || 10000,
-  rtcMaxPort: Number(process.env.MEDIASOUP_MAX_PORT) || 10100
+  // Use a smaller port range that might work on Render
+  rtcMinPort: Number(process.env.MEDIASOUP_MIN_PORT) || 40000,
+  rtcMaxPort: Number(process.env.MEDIASOUP_MAX_PORT) || 40100
 };
 
 // Mediasoup Router options
@@ -64,22 +66,15 @@ const webRtcTransportOptions = {
       announcedIp: getAnnouncedIp()
     }
   ],
+  // Prioritize TCP on platforms like Render where UDP may be restricted
   enableUdp: true,
   enableTcp: true,
-  preferUdp: true,
+  preferUdp: false, // Changed to false - prefer TCP on Render
+  preferTcp: true,  // Added - explicitly prefer TCP
   initialAvailableOutgoingBitrate: 1000000,
   minimumAvailableOutgoingBitrate: 600000,
   maxSctpMessageSize: 262144,
-  maxIncomingBitrate: 1500000,
-  // Add STUN/TURN servers
-  iceServers: [
-    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
-    {
-      urls: process.env.TURN_SERVER_URL,
-      username: process.env.TURN_SERVER_USERNAME,
-      credential: process.env.TURN_SERVER_CREDENTIAL
-    }
-  ]
+  maxIncomingBitrate: 1500000
 };
 
 // Create mediasoup Workers
