@@ -47,8 +47,11 @@ async function createWebRtcTransport(sessionId, listenIps = [{ ip: '0.0.0.0', an
     listenIps,
     enableUdp: true,
     enableTcp: true,
-    preferUdp: true,
-    initialAvailableOutgoingBitrate: 100000,
+    preferUdp: false,  // Prefer TCP on Render
+    preferTcp: true,
+    initialAvailableOutgoingBitrate: 1000000,
+    minimumAvailableOutgoingBitrate: 600000,
+    maxIncomingBitrate: 1500000
   });
 
   // Store transport
