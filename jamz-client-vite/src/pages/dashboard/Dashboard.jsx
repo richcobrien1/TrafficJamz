@@ -195,38 +195,146 @@ const Dashboard = () => {
       </Menu>
 
       <Drawer anchor="left" open={openDrawer} onClose={() => setOpenDrawer(false)}>
-        <Box sx={{ width: 250 }} role="presentation" onClick={() => setOpenDrawer(false)}>
-          <List>
-            <ListItem>
+        <Box 
+          sx={{ 
+            width: 280,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column'
+          }} 
+          role="presentation"
+        >
+          <List sx={{ pt: 2 }}>
+            {/* User Profile Header */}
+            <ListItem 
+              sx={{ 
+                mb: 1,
+                px: 3,
+                py: 2
+              }}
+            >
               <ListItemAvatar>
-                <Avatar src={currentUser?.profile_image_url}>
+                <Avatar 
+                  src={currentUser?.profile_image_url}
+                  sx={{ 
+                    width: 56, 
+                    height: 56,
+                    border: '2px solid',
+                    borderColor: 'primary.main'
+                  }}
+                >
                   {currentUser?.first_name?.[0] || currentUser?.username?.[0]}
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
-                primary={`${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`}
-                secondary={currentUser?.email}
+                primary={
+                  <Typography variant="subtitle1" fontWeight="600">
+                    {`${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'User'}
+                  </Typography>
+                }
+                secondary={
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {currentUser?.email}
+                  </Typography>
+                }
+                sx={{ ml: 2 }}
               />
             </ListItem>
-            <Divider />
-            <ListItem component="button" onClick={() => navigate('/')}>
+            
+            <Divider sx={{ my: 1 }} />
+            
+            {/* Navigation Items */}
+            <ListItem 
+              button 
+              onClick={() => { setOpenDrawer(false); navigate('/'); }}
+              sx={{ 
+                px: 3,
+                py: 1.5,
+                '&:hover': { 
+                  bgcolor: 'action.hover',
+                  '& .MuiAvatar-root': {
+                    bgcolor: 'primary.main'
+                  }
+                }
+              }}
+            >
               <ListItemAvatar>
-                <Avatar><GroupIcon /></Avatar>
+                <Avatar sx={{ bgcolor: 'action.selected', width: 40, height: 40 }}>
+                  <GroupIcon />
+                </Avatar>
               </ListItemAvatar>
-              <ListItemText primary="Groups" />
+              <ListItemText 
+                primary={
+                  <Typography variant="body1" fontWeight="500">
+                    Groups
+                  </Typography>
+                }
+                sx={{ ml: 1 }}
+              />
             </ListItem>
-            <ListItem component="button" onClick={() => navigate('/profile')}>
+            
+            <ListItem 
+              button 
+              onClick={() => { setOpenDrawer(false); navigate('/profile'); }}
+              sx={{ 
+                px: 3,
+                py: 1.5,
+                '&:hover': { 
+                  bgcolor: 'action.hover',
+                  '& .MuiAvatar-root': {
+                    bgcolor: 'primary.main'
+                  }
+                }
+              }}
+            >
               <ListItemAvatar>
-                <Avatar><AccountCircleIcon /></Avatar>
+                <Avatar sx={{ bgcolor: 'action.selected', width: 40, height: 40 }}>
+                  <AccountCircleIcon />
+                </Avatar>
               </ListItemAvatar>
-              <ListItemText primary="Profile" />
+              <ListItemText 
+                primary={
+                  <Typography variant="body1" fontWeight="500">
+                    Profile
+                  </Typography>
+                }
+                sx={{ ml: 1 }}
+              />
             </ListItem>
-            <Divider />
-            <ListItem component="button" onClick={handleLogout}>
+            
+            <Divider sx={{ my: 1 }} />
+            
+            {/* Logout */}
+            <ListItem 
+              button 
+              onClick={() => { setOpenDrawer(false); handleLogout(); }}
+              sx={{ 
+                px: 3,
+                py: 1.5,
+                '&:hover': { 
+                  bgcolor: 'error.dark',
+                  '& .MuiAvatar-root': {
+                    bgcolor: 'error.main'
+                  },
+                  '& .MuiTypography-root': {
+                    color: 'error.contrastText'
+                  }
+                }
+              }}
+            >
               <ListItemAvatar>
-                <Avatar><LogoutIcon /></Avatar>
+                <Avatar sx={{ bgcolor: 'action.selected', width: 40, height: 40 }}>
+                  <LogoutIcon />
+                </Avatar>
               </ListItemAvatar>
-              <ListItemText primary="Logout" />
+              <ListItemText 
+                primary={
+                  <Typography variant="body1" fontWeight="500">
+                    Logout
+                  </Typography>
+                }
+                sx={{ ml: 1 }}
+              />
             </ListItem>
           </List>
         </Box>
