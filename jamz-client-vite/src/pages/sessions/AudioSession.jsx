@@ -1261,18 +1261,29 @@ const AudioSession = () => {
       recvTransportRef.current = recvTransport;
       console.log('✅ Receive transport created for consuming');
 
-      // Get existing producers and consume them
+      // Store our own producer ID to avoid consuming it
+      const myProducerId = producer.id;
+
+      // Get existing producers and consume them (skip our own)
       const existingProducersResp = await new Promise((res) => signaling.emit('mediasoup-get-producers', { sessionId }, (r) => res(r)));
       if (existingProducersResp && existingProducersResp.success && existingProducersResp.producerIds) {
         for (const producerId of existingProducersResp.producerIds) {
-          await consumeProducer(signaling, producerId, recvTransport, device.rtpCapabilities);
+          if (producerId !== myProducerId) {
+            await consumeProducer(signaling, producerId, recvTransport, device.rtpCapabilities);
+          } else {
+            console.log('⏭️ Skipping own producer:', producerId);
+          }
         }
       }
 
-      // Listen for new producers
+      // Listen for new producers (skip our own)
       signaling.on('new-producer', async (data) => {
-        console.log('📢 New producer available:', data.producerId);
-        await consumeProducer(signaling, data.producerId, recvTransport, device.rtpCapabilities);
+        if (data.producerId !== myProducerId) {
+          console.log('📢 New producer available:', data.producerId);
+          await consumeProducer(signaling, data.producerId, recvTransport, device.rtpCapabilities);
+        } else {
+          console.log('⏭️ Ignoring own producer event');
+        }
       });
     }
 
