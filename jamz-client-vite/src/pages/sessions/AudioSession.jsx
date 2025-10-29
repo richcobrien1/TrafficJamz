@@ -797,7 +797,18 @@ const AudioSession = () => {
       return;
     }
 
-    console.log('🎥 Setting up peer connection...');
+    // Try mediasoup first, fall back to peer-to-peer if it fails
+    try {
+      console.log('🎥 Attempting mediasoup publish...');
+      await startMediasoupPublish(signaling);
+      console.log('✅ Mediasoup publish successful');
+      return;
+    } catch (error) {
+      console.warn('⚠️ Mediasoup publish failed, falling back to peer-to-peer:', error.message);
+    }
+
+    // Fallback to peer-to-peer WebRTC
+    console.log('🎥 Setting up peer connection (fallback mode)...');
     await setupPeerConnection(signaling);
 
     console.log('🎥 WebRTC initialization complete');
