@@ -131,6 +131,9 @@ const AudioSession = () => {
   const rtcConnectionRef = useRef(null);
   const audioPlayerRef = useRef(null);
   const signalingRef = useRef(null); // Add ref for signaling
+  const mediasoupDeviceRef = useRef(null); // Store mediasoup device
+  const recvTransportRef = useRef(null); // Store receive transport for consuming
+  const consumersRef = useRef(new Map()); // Store consumers
   
   // Initialize component
   useEffect(() => {
@@ -1199,37 +1202,35 @@ const AudioSession = () => {
     const device = new mediasoupClient.Device();
     try {
       await device.load({ routerRtpCapabilities: rtpCapsResp.rtpCapabilities });
+      mediasoupDeviceRef.current = device;
+      console.log('✅ Mediasoup device loaded with RTP capabilities');
     } catch (err) {
       console.warn('Failed to load mediasoup Device, falling back to native:', err.message);
       return nativePublishFallback(signaling);
     }
 
-    // Create server transport
-    const createResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
-    if (!createResp || !createResp.success) {
-      console.warn('mediasoup create transport failed, fallback to native');
+    // Create send transport for producing
+    const sendTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
+    if (!sendTransportResp || !sendTransportResp.success) {
+      console.warn('mediasoup create send transport failed, fallback to native');
       return nativePublishFallback(signaling);
     }
 
-    const serverTransport = createResp.transport;
-
-    // Create send transport on the client
     const sendTransport = device.createSendTransport({
-      id: serverTransport.id,
-      iceParameters: serverTransport.iceParameters,
-      iceCandidates: serverTransport.iceCandidates,
-      dtlsParameters: serverTransport.dtlsParameters
+      id: sendTransportResp.transport.id,
+      iceParameters: sendTransportResp.transport.iceParameters,
+      iceCandidates: sendTransportResp.transport.iceCandidates,
+      dtlsParameters: sendTransportResp.transport.dtlsParameters
     });
 
-    // Wire up transport events
     sendTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
-      signaling.emit('mediasoup-connect-transport', { sessionId, transportId: serverTransport.id, dtlsParameters }, (resp) => {
+      signaling.emit('mediasoup-connect-transport', { sessionId, transportId: sendTransportResp.transport.id, dtlsParameters }, (resp) => {
         if (resp && resp.success) callback(); else errback(resp && resp.error ? new Error(resp.error) : new Error('connect failed'));
       });
     });
 
     sendTransport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
-      signaling.emit('mediasoup-produce', { sessionId, transportId: serverTransport.id, kind, rtpParameters }, (resp) => {
+      signaling.emit('mediasoup-produce', { sessionId, transportId: sendTransportResp.transport.id, kind, rtpParameters }, (resp) => {
         if (resp && resp.success) callback({ id: resp.id }); else errback(new Error(resp && resp.error ? resp.error : 'produce failed'));
       });
     });
@@ -1239,8 +1240,79 @@ const AudioSession = () => {
     if (!track) return nativePublishFallback(signaling);
 
     const producer = await sendTransport.produce({ track });
-    console.log('Mediasoup producer created', producer.id);
+    console.log('🎤 Mediasoup producer created:', producer.id);
+
+    // Create receive transport for consuming
+    const recvTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
+    if (recvTransportResp && recvTransportResp.success) {
+      const recvTransport = device.createRecvTransport({
+        id: recvTransportResp.transport.id,
+        iceParameters: recvTransportResp.transport.iceParameters,
+        iceCandidates: recvTransportResp.transport.iceCandidates,
+        dtlsParameters: recvTransportResp.transport.dtlsParameters
+      });
+
+      recvTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
+        signaling.emit('mediasoup-connect-transport', { sessionId, transportId: recvTransportResp.transport.id, dtlsParameters }, (resp) => {
+          if (resp && resp.success) callback(); else errback(resp && resp.error ? new Error(resp.error) : new Error('connect failed'));
+        });
+      });
+
+      recvTransportRef.current = recvTransport;
+      console.log('✅ Receive transport created for consuming');
+
+      // Get existing producers and consume them
+      const existingProducersResp = await new Promise((res) => signaling.emit('mediasoup-get-producers', { sessionId }, (r) => res(r)));
+      if (existingProducersResp && existingProducersResp.success && existingProducersResp.producerIds) {
+        for (const producerId of existingProducersResp.producerIds) {
+          await consumeProducer(signaling, producerId, recvTransport, device.rtpCapabilities);
+        }
+      }
+
+      // Listen for new producers
+      signaling.on('new-producer', async (data) => {
+        console.log('📢 New producer available:', data.producerId);
+        await consumeProducer(signaling, data.producerId, recvTransport, device.rtpCapabilities);
+      });
+    }
+
     return { mode: 'mediasoup', producerId: producer.id };
+  };
+
+  // Consume a producer (receive audio from another participant)
+  const consumeProducer = async (signaling, producerId, recvTransport, rtpCapabilities) => {
+    try {
+      const consumeResp = await new Promise((res) => 
+        signaling.emit('mediasoup-consume', { 
+          sessionId, 
+          transportId: recvTransport.id, 
+          producerId,
+          rtpCapabilities 
+        }, (r) => res(r))
+      );
+
+      if (!consumeResp || !consumeResp.success) {
+        console.warn('Failed to consume producer:', producerId);
+        return;
+      }
+
+      const consumer = await recvTransport.consume({
+        id: consumeResp.consumer.id,
+        producerId: consumeResp.consumer.producerId,
+        kind: consumeResp.consumer.kind,
+        rtpParameters: consumeResp.consumer.rtpParameters
+      });
+
+      consumersRef.current.set(consumer.id, consumer);
+      console.log('🎧 Consumer created:', consumer.id, 'for producer:', producerId);
+
+      // Create audio element for the consumed track
+      const stream = new MediaStream([consumer.track]);
+      handleRemoteAudioStream(stream);
+
+    } catch (err) {
+      console.error('Error consuming producer:', producerId, err);
+    }
   };
 
   // Native peer connection publish fallback: create offer and send via socket.io

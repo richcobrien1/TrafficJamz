@@ -20,16 +20,26 @@ class AudioService {
     try {
       // Skip MediaSoup initialization if disabled (for testing/development)
       if (process.env.DISABLE_MEDIASOUP === 'true') {
-        console.log('MediaSoup initialization skipped (DISABLE_MEDIASOUP=true)');
+        console.log('🔴 MediaSoup initialization SKIPPED (DISABLE_MEDIASOUP=true)');
         return;
       }
 
+      console.log('🎤 ========================================');
+      console.log('🎤 STARTING MEDIASOUP INITIALIZATION');
+      console.log('🎤 ========================================');
+      
       // Create mediasoup workers (CPU cores - 1, minimum 1)
       const numWorkers = Math.max(1, require('os').cpus().length - 1);
       await mediasoupConfig.createWorkers(numWorkers);
-      console.log(`AudioService initialized with ${numWorkers} mediasoup workers`);
+      
+      console.log('🎤 ========================================');
+      console.log(`🎤 ✅ AudioService initialized with ${numWorkers} mediasoup workers`);
+      console.log('🎤 ========================================');
     } catch (error) {
-      console.error('Error initializing AudioService:', error);
+      console.error('🎤 ========================================');
+      console.error('🎤 ❌ ERROR INITIALIZING AUDIOSERVICE:', error);
+      console.error('🎤 ========================================');
+      console.error(error.stack);
     }
   }
 
