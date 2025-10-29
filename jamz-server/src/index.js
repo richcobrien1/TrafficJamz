@@ -463,6 +463,7 @@ io.on("connection", (socket) => {
 
       // Detect announced IP for Render or use auto-detection
       const announcedIp = process.env.RENDER_EXTERNAL_HOSTNAME || process.env.RENDER_EXTERNAL_URL?.replace(/^https?:\/\//, '') || null;
+      console.log(`🌐 Creating transport with announcedIp: ${announcedIp || 'auto-detect'}`);
       const listenIps = announcedIp 
         ? [{ ip: '0.0.0.0', announcedIp }]
         : [{ ip: '0.0.0.0', announcedIp: null }];
