@@ -61,7 +61,9 @@ async function connectTransport(sessionId, transportId, dtlsParameters) {
   const transport = sessionTransports.get(transportId);
   if (!transport) throw new Error('Transport not found');
 
+  console.log(`🔌 Connecting transport ${transportId} in session ${sessionId}...`);
   await transport.connect({ dtlsParameters });
+  console.log(`✅ Transport ${transportId} connected successfully (DTLS handshake complete)`);
   return true;
 }
 
