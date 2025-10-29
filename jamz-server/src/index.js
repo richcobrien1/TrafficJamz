@@ -512,9 +512,42 @@ io.on("connection", (socket) => {
       if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
 
       const res = await mediasoupService.produce(sessionId, data.transportId, data.kind || 'audio', data.rtpParameters, { socketId: socket.id });
+      
+      // Notify other participants in the room that a new producer is available
+      const room = `audio-${sessionId}`;
+      socket.to(room).emit('new-producer', { producerId: res.id, socketId: socket.id });
+      
       cb && cb({ success: true, id: res.id });
     } catch (err) {
       console.error('mediasoup-produce handler error:', err);
+      cb && cb({ success: false, error: err.message });
+    }
+  });
+
+  socket.on('mediasoup-consume', async (data, cb) => {
+    try {
+      if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
+
+      const res = await mediasoupService.consume(sessionId, data.transportId, data.producerId, data.rtpCapabilities);
+      cb && cb({ success: true, consumer: res });
+    } catch (err) {
+      console.error('mediasoup-consume handler error:', err);
+      cb && cb({ success: false, error: err.message });
+    }
+  });
+
+  socket.on('mediasoup-get-producers', async (data, cb) => {
+    try {
+      if (!mediasoupService) return cb && cb({ success: false, error: 'mediasoup-disabled' });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
+
+      const producerIds = mediasoupService.getProducers(sessionId);
+      cb && cb({ success: true, producerIds });
+    } catch (err) {
+      console.error('mediasoup-get-producers handler error:', err);
       cb && cb({ success: false, error: err.message });
     }
   });
@@ -778,16 +811,38 @@ function setupServer() {
   // Mediasoup debug/status endpoint (lazy-load service)
   app.get('/api/debug/mediasoup', (req, res) => {
     if (process.env.DISABLE_MEDIASOUP === 'true') {
-      return res.json({ enabled: false, message: 'mediasoup disabled via DISABLE_MEDIASOUP' });
+      return res.json({ 
+        enabled: false, 
+        message: 'mediasoup disabled via DISABLE_MEDIASOUP',
+        env: {
+          DISABLE_MEDIASOUP: process.env.DISABLE_MEDIASOUP,
+          RENDER_EXTERNAL_URL: process.env.RENDER_EXTERNAL_URL
+        }
+      });
     }
 
     try {
+      const mediasoupConfig = require('./config/mediasoup');
       const ms = require('./services/mediasoup.service');
       const status = ms && typeof ms.getStatus === 'function' ? ms.getStatus() : { worker: false, routers: 0, transports: 0 };
-      return res.json({ enabled: true, status });
+      
+      return res.json({ 
+        enabled: true, 
+        status,
+        config: {
+          rtcMinPort: mediasoupConfig.workerOptions.rtcMinPort,
+          rtcMaxPort: mediasoupConfig.workerOptions.rtcMaxPort,
+          logLevel: mediasoupConfig.workerOptions.logLevel
+        },
+        env: {
+          RENDER_EXTERNAL_URL: process.env.RENDER_EXTERNAL_URL,
+          MEDIASOUP_MIN_PORT: process.env.MEDIASOUP_MIN_PORT,
+          MEDIASOUP_MAX_PORT: process.env.MEDIASOUP_MAX_PORT
+        }
+      });
     } catch (e) {
       console.error('Error loading mediasoup service for debug endpoint:', e);
-      return res.status(500).json({ enabled: false, error: e.message });
+      return res.status(500).json({ enabled: false, error: e.message, stack: e.stack });
     }
   });
 
