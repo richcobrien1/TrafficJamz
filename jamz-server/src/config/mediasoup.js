@@ -38,11 +38,30 @@ const routerOptions = {
 
 // Mediasoup WebRtcTransport options
 // Update in mediasoup.js
+const getAnnouncedIp = () => {
+  // Auto-detect announced IP based on environment
+  if (process.env.MEDIASOUP_ANNOUNCED_IP && process.env.MEDIASOUP_ANNOUNCED_IP !== '127.0.0.1') {
+    return process.env.MEDIASOUP_ANNOUNCED_IP;
+  }
+  
+  // On Render, use the RENDER_EXTERNAL_URL
+  if (process.env.RENDER_EXTERNAL_URL) {
+    // Extract hostname from URL (e.g., https://trafficjamz.onrender.com -> trafficjamz.onrender.com)
+    const url = new URL(process.env.RENDER_EXTERNAL_URL);
+    console.log('🎤 Auto-detected Render hostname for mediasoup:', url.hostname);
+    return url.hostname;
+  }
+  
+  // Fallback to localhost for local development
+  console.log('🎤 Using localhost for mediasoup (local development)');
+  return '127.0.0.1';
+};
+
 const webRtcTransportOptions = {
   listenIps: [
     {
       ip: process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
-      announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP || '127.0.0.1'
+      announcedIp: getAnnouncedIp()
     }
   ],
   enableUdp: true,
