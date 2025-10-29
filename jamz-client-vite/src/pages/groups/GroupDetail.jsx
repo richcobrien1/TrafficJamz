@@ -736,6 +736,7 @@ const GroupDetail = () => {
 
                   <Box sx={{ flex: '0 0 calc(50% - 8px)', minWidth: 0 }}>
                     <Paper 
+                      component="button"
                       sx={{ 
                         p: 3,
                         display: 'flex', 
@@ -744,6 +745,7 @@ const GroupDetail = () => {
                         cursor: 'pointer',
                         minHeight: 200,
                         height: '100%',
+                        width: '100%',
                         border: isLocationWatchActive ? '3px solid' : '1px solid',
                         borderColor: isLocationWatchActive ? 'secondary.main' : 'divider',
                         boxShadow: isLocationWatchActive ? 4 : 1,
@@ -764,14 +766,6 @@ const GroupDetail = () => {
                       onClick={() => {
                         console.log('🗺️ Locator panel clicked, navigating to:', `/location-tracking/${groupId}`);
                         navigate(`/location-tracking/${groupId}`);
-                      }}
-                      onTouchStart={(e) => {
-                        console.log('👆 Locator panel touched');
-                        e.currentTarget.style.transform = 'scale(0.98)';
-                      }}
-                      onTouchEnd={(e) => {
-                        console.log('👆 Locator panel touch ended');
-                        e.currentTarget.style.transform = 'scale(1)';
                       }}
                     >
                       <Avatar sx={{ 
