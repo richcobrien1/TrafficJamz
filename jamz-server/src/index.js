@@ -461,7 +461,13 @@ io.on("connection", (socket) => {
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return cb && cb({ success: false, error: 'missing-session' });
 
-      const transportInfo = await mediasoupService.createWebRtcTransport(sessionId);
+      // Detect announced IP for Render or use auto-detection
+      const announcedIp = process.env.RENDER_EXTERNAL_HOSTNAME || process.env.RENDER_EXTERNAL_URL?.replace(/^https?:\/\//, '') || null;
+      const listenIps = announcedIp 
+        ? [{ ip: '0.0.0.0', announcedIp }]
+        : [{ ip: '0.0.0.0', announcedIp: null }];
+
+      const transportInfo = await mediasoupService.createWebRtcTransport(sessionId, listenIps);
       // return transport params to client
       cb && cb({ success: true, transport: {
         id: transportInfo.id,
