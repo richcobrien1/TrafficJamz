@@ -88,7 +88,11 @@ let nextWorkerIndex = 0;
 
 const createWorkers = async (numWorkers = 1) => {
   try {
+    console.log(`🎤 Creating ${numWorkers} mediasoup worker(s)...`);
+    console.log(`🎤 RTC Port Range: ${workerOptions.rtcMinPort}-${workerOptions.rtcMaxPort}`);
+    
     for (let i = 0; i < numWorkers; i++) {
+      console.log(`🎤 Creating worker ${i + 1}/${numWorkers}...`);
       const worker = await mediasoup.createWorker(workerOptions);
       
       worker.on('died', () => {
@@ -97,12 +101,14 @@ const createWorkers = async (numWorkers = 1) => {
       });
       
       workers.push(worker);
-      console.log(`mediasoup Worker ${i + 1} created [pid:${worker.pid}]`);
+      console.log(`✅ mediasoup Worker ${i + 1} created [pid:${worker.pid}]`);
     }
     
-    console.log(`${numWorkers} mediasoup Workers created successfully.`);
+    console.log(`✅ ${numWorkers} mediasoup Workers created successfully.`);
   } catch (error) {
-    console.error('Error creating mediasoup Workers:', error);
+    console.error('❌ Error creating mediasoup Workers:', error);
+    console.error('Stack:', error.stack);
+    throw error;
   }
 };
 
