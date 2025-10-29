@@ -1314,6 +1314,10 @@ const AudioSession = () => {
         rtpParameters: consumeResp.consumer.rtpParameters
       });
 
+      // Resume the consumer to start receiving media
+      await consumer.resume();
+      console.log('▶️ Consumer resumed:', consumer.id);
+
       consumersRef.current.set(consumer.id, consumer);
       console.log('🎧 Consumer created:', consumer.id, 'for producer:', producerId);
 
