@@ -123,6 +123,8 @@ async function consume(sessionId, transportId, producerId, rtpCapabilities) {
   });
   
   console.log(`✅ Consumer created in session ${sessionId}: ${consumer.id} for producer ${producerId}`);
+  console.log(`   Consumer paused: ${consumer.paused}, kind: ${consumer.kind}, type: ${consumer.type}`);
+  console.log(`   Producer paused: ${producer.paused}, kind: ${producer.kind}, type: ${producer.type}`);
   
   return {
     id: consumer.id,
