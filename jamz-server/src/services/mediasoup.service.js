@@ -8,9 +8,14 @@ const producers = new Map(); // sessionId -> Map(producerId -> producer)
 
 async function createWorkerIfNeeded() {
   if (worker) return worker;
+  
+  // Use environment variables or default to 10000-10100 (matching old AudioService)
+  const rtcMinPort = Number(process.env.MEDIASOUP_MIN_PORT) || 10000;
+  const rtcMaxPort = Number(process.env.MEDIASOUP_MAX_PORT) || 10100;
+  
   worker = await mediasoup.createWorker({
-    rtcMinPort: 40000,
-    rtcMaxPort: 40100,
+    rtcMinPort,
+    rtcMaxPort,
     logLevel: 'warn',
     logTags: ['info', 'ice', 'dtls', 'rtp']
   });
@@ -20,7 +25,7 @@ async function createWorkerIfNeeded() {
     setTimeout(() => process.exit(1), 2000);
   });
 
-  console.log(`✅ Mediasoup worker created with RTC ports 40000-40100 [pid:${worker.pid}]`);
+  console.log(`✅ Mediasoup worker created with RTC ports ${rtcMinPort}-${rtcMaxPort} [pid:${worker.pid}]`);
   return worker;
 }
 
