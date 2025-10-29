@@ -9,10 +9,10 @@ const producers = new Map(); // sessionId -> Map(producerId -> producer)
 async function createWorkerIfNeeded() {
   if (worker) return worker;
   worker = await mediasoup.createWorker({
-    rtcMinPort: 20000,
-    rtcMaxPort: 20200,
+    rtcMinPort: 40000,
+    rtcMaxPort: 40100,
     logLevel: 'warn',
-    logTags: ['info', 'ice', 'dtls']
+    logTags: ['info', 'ice', 'dtls', 'rtp']
   });
 
   worker.on('died', () => {
@@ -20,6 +20,7 @@ async function createWorkerIfNeeded() {
     setTimeout(() => process.exit(1), 2000);
   });
 
+  console.log(`✅ Mediasoup worker created with RTC ports 40000-40100 [pid:${worker.pid}]`);
   return worker;
 }
 
