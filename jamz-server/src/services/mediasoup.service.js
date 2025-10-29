@@ -54,6 +54,16 @@ async function createWebRtcTransport(sessionId, listenIps = [{ ip: '0.0.0.0', an
     maxIncomingBitrate: 1500000
   });
 
+  // Log ICE state changes
+  transport.on('icestatechange', (iceState) => {
+    console.log(`🧊 Transport ${transport.id} ICE state: ${iceState}`);
+  });
+
+  // Log DTLS state changes
+  transport.on('dtlsstatechange', (dtlsState) => {
+    console.log(`🔐 Transport ${transport.id} DTLS state: ${dtlsState}`);
+  });
+
   // Store transport
   if (!transports.has(sessionId)) {
     transports.set(sessionId, new Map());
