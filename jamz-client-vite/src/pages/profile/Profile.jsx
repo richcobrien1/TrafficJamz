@@ -41,7 +41,7 @@ import {
   LinkedIn as LinkedInIcon,
   Twitter as TwitterIcon,
   Link as LinkIcon,
-  Unlink as UnlinkIcon
+  LinkOff as UnlinkIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts//AuthContext';
 
