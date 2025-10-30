@@ -178,15 +178,38 @@ app.use('/api/', limiter);
 // Initialize Passport
 app.use(passport.initialize());
 
+// ===== STATIC FILE SERVING FOR FRONTEND =====
+// Serve built React frontend from jamz-client-vite/dist
+// This allows the backend to serve the frontend on Render Standard
+const path = require('path');
+const frontendPath = path.join(__dirname, '../../jamz-client-vite/dist');
+
+// Serve static files from the React build directory
+app.use(express.static(frontendPath));
+
+// Catch-all handler: send back index.html for any non-API routes
+// This enables client-side routing for the React SPA
+app.get('*', (req, res, next) => {
+  // Skip API routes - let them be handled by the API routers
+  if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
+    return next();
+  }
+  
+  // For all other routes, serve the React app
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 // Mount debug routes early (router implemented in src/routes/debug.routes.js)
 const debugRoutes = require('./routes/debug.routes');
 app.use('/api/debug', debugRoutes);
 
 // Debugging only, Add this near the top of your index.js file
-const path = require('path');
-console.log('Current directory:', __dirname);
-console.log('Resolved routes path:', path.resolve(__dirname, 'routes'));
-console.log('Routes directory exists:', require('fs').existsSync(path.resolve(__dirname, 'routes')));
+const debug = require('debug')('app:debug');
+const fs = require('fs');
+const routesPath = path.resolve(__dirname, 'routes');
+debug('Current directory:', __dirname);
+debug('Resolved routes path:', routesPath);
+debug('Routes directory exists:', fs.existsSync(routesPath));
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
