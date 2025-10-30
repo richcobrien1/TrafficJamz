@@ -1,0 +1,68 @@
+services:
+  # Full-stack service: Backend API + Frontend
+  - type: web
+    name: trafficjamz-fullstack
+    runtime: node
+    buildCommand: npm run build
+    startCommand: cd jamz-server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - fromSecret: SUPABASE_URL
+      - fromSecret: SUPABASE_ANON_KEY
+      - fromSecret: SUPABASE_SERVICE_ROLE_KEY
+      - fromSecret: SUPABASE_JWT_SECRET
+      - fromSecret: POSTGRES_USER
+      - fromSecret: POSTGRES_PASSWORD
+      - fromSecret: POSTGRES_DB
+      - fromSecret: POSTGRES_HOST
+      - fromSecret: POSTGRES_PORT
+      - fromSecret: PGSSLMODE
+      - fromSecret: MONGODB_URI
+      - fromSecret: JWT_SECRET
+      - fromSecret: JWT_ACCESS_EXPIRATION
+      - fromSecret: JWT_REFRESH_EXPIRATION
+      - fromSecret: REDIS_HOST
+      - fromSecret: REDIS_PORT
+      - fromSecret: REDIS_PASSWORD
+      - fromSecret: INFLUXDB_BUCKET
+      - fromSecret: INFLUXDB_ORG
+      - fromSecret: INFLUXDB_TOKEN
+      - fromSecret: INFLUXDB_URL
+      - fromSecret: KAFKA_BROKERS
+      - fromSecret: KAFKA_CLIENT_ID
+      - fromSecret: KAFKA_GROUP_ID
+      - fromSecret: MEDIASOUP_ANNOUNCED_IP
+      - fromSecret: MEDIASOUP_LISTEN_IP
+      - fromSecret: MEDIASOUP_MIN_PORT
+      - fromSecret: MEDIASOUP_MAX_PORT
+      - fromSecret: STUN_SERVER
+      - fromSecret: TURN_SERVER
+      - fromSecret: TURN_USERNAME
+      - fromSecret: TURN_CREDENTIAL
+      - fromSecret: APNS_BUNDLE_ID
+      - fromSecret: APNS_KEY_FILE
+      - fromSecret: APNS_KEY_ID
+      - fromSecret: APNS_TEAM_ID
+      - fromSecret: FCM_SERVER_KEY
+      - fromSecret: AWS_ACCESS_KEY_ID
+      - fromSecret: AWS_SECRET_ACCESS_KEY
+      - fromSecret: AWS_REGION
+      - fromSecret: AZURE_STORAGE_CONNECTION_STRING
+      - fromSecret: AZURE_STORAGE_CONTAINER
+      - fromSecret: S3_BUCKET
+      - fromSecret: GCP_PROJECT_ID
+      - fromSecret: GCP_STORAGE_BUCKET
+      - fromSecret: GOOGLE_MAPS_API_KEY
+      - fromSecret: STRIPE_SECRET_KEY
+      - fromSecret: STRIPE_WEBHOOK_SECRET
+      - fromSecret: HELMET_CONTENT_SECURITY_POLICY
+      - fromSecret: RATE_LIMIT_MAX
+      - fromSecret: RATE_LIMIT_WINDOW_MS
+      - fromSecret: LOG_LEVEL
+      - fromSecret: LOG_FORMAT
+      - fromSecret: LOG_DIR
+      - fromSecret: CORS_ORIGIN</content>
+<parameter name="filePath">c:\Users\richc\Projects\TrafficJamz\render.yaml
