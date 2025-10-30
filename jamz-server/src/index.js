@@ -48,6 +48,9 @@ require('./config/passport');
 // Import database connection
 const sequelize = require('./config/database');
 
+// Import models to set up associations
+const models = require('./models');
+
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
 
