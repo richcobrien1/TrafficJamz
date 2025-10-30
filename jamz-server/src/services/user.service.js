@@ -32,6 +32,20 @@ class UserService {
       if (!userJson.preferences || typeof userJson.preferences !== 'object') {
         userJson.preferences = {};
       }
+
+      // Flatten notification preferences for easier frontend access
+      if (userJson.preferences.notifications) {
+        userJson.email_notifications = userJson.preferences.notifications.email_enabled ?? true;
+        userJson.push_notifications = userJson.preferences.notifications.push_enabled ?? true;
+        userJson.proximity_alerts = userJson.preferences.notifications.proximity_alerts ?? true;
+        userJson.group_invitations = userJson.preferences.notifications.group_invites ?? true;
+      } else {
+        // Set defaults if notifications object doesn't exist
+        userJson.email_notifications = true;
+        userJson.push_notifications = true;
+        userJson.proximity_alerts = true;
+        userJson.group_invitations = true;
+      }
     } catch (err) {
       // Non-fatal: return as-is if normalization fails
     }
@@ -269,9 +283,10 @@ class UserService {
    * Update user profile
    * @param {string} user_id - User ID
    * @param {Object} updateData - Data to update
+   * @param {Object} notificationData - Notification settings to update
    * @returns {Promise<Object>} - Updated user data
    */
-  async updateUser(user_id, updateData) {
+  async updateUser(user_id, updateData, notificationData = {}) {
     try {
       // Changed from findByPk to findOne with user_id
       const user = await User.findOne({ 
@@ -297,13 +312,24 @@ class UserService {
         }
       }
 
+      // Update notification settings if provided
+      if (Object.keys(notificationData).length > 0) {
+        user.preferences = {
+          ...user.preferences,
+          notifications: {
+            ...user.preferences.notifications,
+            ...notificationData
+          }
+        };
+      }
+
       await user.save();
 
       // Remove sensitive data
       const userJson = user.toJSON();
       delete userJson.password_hash;
 
-      return userJson;
+      return this.normalizeUserJson(userJson);
     } catch (error) {
       throw error;
     }
