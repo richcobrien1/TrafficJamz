@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userService = require('../services/user.service');
+const socialAvatarService = require('../services/social-avatar.service');
 const passport = require('passport');
 const { body, validationResult } = require('express-validator');
 
@@ -150,6 +151,31 @@ router.get('/:id',
       // In a real app, we would check if the requesting user has permission to view this user
       const user = await userService.getUserById(req.params.id);
       res.json({ success: true, user });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
+ * @route GET /api/users/social-avatars
+ * @desc Get social avatars for current user
+ * @access Private
+ */
+router.get('/social-avatars',
+  passport.authenticate('jwt', { session: false }),
+  async (req, res) => {
+    try {
+      const user = await userService.getUserById(req.user.user_id);
+      const avatars = await socialAvatarService.getAllSocialAvatars(user.social_accounts);
+      const bestAvatar = await socialAvatarService.getBestSocialAvatar(user.social_accounts);
+
+      res.json({
+        success: true,
+        avatars,
+        best_avatar: bestAvatar,
+        connected_platforms: user.connected_social_platforms || []
+      });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
