@@ -87,12 +87,8 @@ const User = sequelize.define('users', {
     defaultValue: false
   },
   mfa_methods: {
-    type: DataTypes.ARRAY(DataTypes.STRING),
-    defaultValue: []
-  },
-  social_accounts: {
-    type: DataTypes.JSONB,
-    defaultValue: {}
+    type: DataTypes.STRING, // Changed from ARRAY to STRING to match database
+    allowNull: true
   }
 }, {
   timestamps: true,

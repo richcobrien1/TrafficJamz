@@ -134,7 +134,8 @@ class UserService {
     
       // Find user by email
       const user = await User.findOne({ 
-        where: { email } 
+        where: { email },
+        attributes: ['user_id', 'username', 'email', 'phone_number', 'password_hash', 'first_name', 'last_name', 'profile_image_url', 'date_of_birth', 'last_login', 'status', 'preferences', 'mfa_enabled', 'mfa_methods', 'createdAt', 'updatedAt', 'deletedAt']
       });
       console.log('User found:', user ? 'Yes' : 'No');
       
