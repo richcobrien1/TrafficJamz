@@ -182,13 +182,51 @@ app.use(passport.initialize());
 // Serve built React frontend from jamz-client-vite/dist
 // This allows the backend to serve the frontend on Render Standard
 const path = require('path');
-const frontendPath = path.join(__dirname, '../../jamz-client-vite/dist');
+const fs = require('fs');
 
-console.log('🔗 Frontend static file path:', frontendPath);
-console.log('🔗 Frontend path exists:', require('fs').existsSync(frontendPath));
+// Try multiple possible paths for the frontend build
+const possiblePaths = [
+  path.join(__dirname, '../../jamz-client-vite/dist'), // From jamz-server/src/
+  path.join(process.cwd(), 'jamz-client-vite/dist'),   // From project root
+  path.join(__dirname, '../../../jamz-client-vite/dist'), // From deeper in jamz-server/
+  '/opt/render/project/jamz-client-vite/dist',         // Render's default path
+];
 
-// Serve static files from the React build directory
-app.use(express.static(frontendPath));
+let frontendPath = null;
+for (const testPath of possiblePaths) {
+  console.log('� Checking frontend path:', testPath);
+  if (fs.existsSync(testPath)) {
+    frontendPath = testPath;
+    console.log('✅ Found frontend at:', frontendPath);
+    break;
+  }
+}
+
+if (!frontendPath) {
+  console.error('❌ Frontend build not found in any expected location');
+  console.log('📂 Current working directory:', process.cwd());
+  console.log('📂 __dirname:', __dirname);
+
+  // List contents of potential directories
+  const dirsToCheck = [
+    path.dirname(__dirname), // jamz-server/
+    path.dirname(path.dirname(__dirname)), // project root
+  ];
+
+  dirsToCheck.forEach(dir => {
+    try {
+      const contents = fs.readdirSync(dir);
+      console.log(`📁 Contents of ${dir}:`, contents);
+    } catch (e) {
+      console.log(`❌ Cannot read ${dir}:`, e.message);
+    }
+  });
+}
+
+// Serve static files from the React build directory if found
+if (frontendPath) {
+  app.use(express.static(frontendPath));
+}
 
 // Catch-all handler: send back index.html for any non-API routes
 // This enables client-side routing for the React SPA
@@ -200,17 +238,19 @@ app.get('*', (req, res, next) => {
 
   console.log('🌐 Serving frontend for path:', req.path);
 
-  // Check if index.html exists before serving
-  const indexPath = path.join(frontendPath, 'index.html');
-  if (require('fs').existsSync(indexPath)) {
-    res.sendFile(indexPath);
+  if (frontendPath) {
+    // Check if index.html exists before serving
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.log('❌ index.html not found at:', indexPath);
+      res.status(404).json({ error: 'Frontend not built yet' });
+    }
   } else {
-    console.log('❌ index.html not found at:', indexPath);
-    res.status(404).json({ error: 'Frontend not built yet' });
+    res.status(503).json({ error: 'Frontend not available - build in progress' });
   }
-});
-
-// Mount debug routes early (router implemented in src/routes/debug.routes.js)
+});// Mount debug routes early (router implemented in src/routes/debug.routes.js)
 const debugRoutes = require('./routes/debug.routes');
 app.use('/api/debug', debugRoutes);
 
