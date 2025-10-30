@@ -156,7 +156,7 @@ const Login = () => {
               alignItems: "center",
             }}>
             <Grid size="grow">
-              <Link component={RouterLink} to="/forgot-password" variant="body2">
+              <Link component={RouterLink} to="/auth/forgot-password" variant="body2">
                 Forgot my password?
               </Link>
             </Grid>
