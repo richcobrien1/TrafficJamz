@@ -1045,19 +1045,20 @@ const Profile = () => {
           )}
 
           {helpCenterTab === 'chat' && (
-            <Box sx={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
               {/* Chat Messages */}
               <Box 
                 sx={{ 
                   flex: 1, 
                   overflowY: 'auto', 
                   mb: 2, 
-                  p: 1,
+                  p: 2,
                   border: '1px solid',
                   borderColor: 'divider',
-                  borderRadius: 1,
-                  minHeight: '300px',
-                  maxHeight: '350px'
+                  borderRadius: 2,
+                  minHeight: '350px',
+                  maxHeight: '400px',
+                  bgcolor: 'grey.50'
                 }}
               >
                 {chatMessages.map((message) => (
@@ -1071,34 +1072,36 @@ const Profile = () => {
                   >
                     <Box 
                       sx={{ 
-                        maxWidth: '70%',
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: message.type === 'user' ? 'primary.main' : 'grey.100',
+                        maxWidth: '85%',
+                        p: 2,
+                        borderRadius: 3,
+                        bgcolor: message.type === 'user' ? 'primary.main' : 'white',
                         color: message.type === 'user' ? 'white' : 'text.primary',
+                        boxShadow: 1,
                         position: 'relative'
                       }}
                     >
                       {message.type === 'bot' && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                          <Avatar sx={{ width: 20, height: 20, mr: 1, bgcolor: 'primary.main' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: 'primary.main' }}>
                             🤖
                           </Avatar>
-                          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
                             AI Assistant
                           </Typography>
                         </Box>
                       )}
-                      <Typography variant="body2">
+                      <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
                         {message.content}
                       </Typography>
                       <Typography 
                         variant="caption" 
                         sx={{ 
                           display: 'block', 
-                          mt: 0.5, 
+                          mt: 1, 
                           opacity: 0.7,
-                          textAlign: message.type === 'user' ? 'right' : 'left'
+                          textAlign: message.type === 'user' ? 'right' : 'left',
+                          color: message.type === 'user' ? 'rgba(255,255,255,0.8)' : 'text.secondary'
                         }}
                       >
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1111,25 +1114,26 @@ const Profile = () => {
                   <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
                     <Box 
                       sx={{ 
-                        maxWidth: '70%',
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: 'grey.100',
+                        maxWidth: '85%',
+                        p: 2,
+                        borderRadius: 3,
+                        bgcolor: 'white',
                         display: 'flex',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        boxShadow: 1
                       }}
                     >
-                      <Avatar sx={{ width: 20, height: 20, mr: 1, bgcolor: 'primary.main' }}>
+                      <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: 'primary.main' }}>
                         🤖
                       </Avatar>
-                      <Typography variant="body2" sx={{ mr: 1 }}>
+                      <Typography variant="body1" sx={{ mr: 2, color: 'text.primary' }}>
                         AI Assistant is typing
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
                         <Box sx={{ 
-                          width: 4, 
-                          height: 4, 
-                          bgcolor: 'grey.500', 
+                          width: 6, 
+                          height: 6, 
+                          bgcolor: 'primary.main', 
                           borderRadius: '50%', 
                           animation: 'typing 1.4s ease-in-out infinite both',
                           '@keyframes typing': {
@@ -1138,9 +1142,9 @@ const Profile = () => {
                           }
                         }} />
                         <Box sx={{ 
-                          width: 4, 
-                          height: 4, 
-                          bgcolor: 'grey.500', 
+                          width: 6, 
+                          height: 6, 
+                          bgcolor: 'primary.main', 
                           borderRadius: '50%', 
                           animation: 'typing 1.4s ease-in-out 0.16s infinite both',
                           '@keyframes typing': {
@@ -1149,9 +1153,9 @@ const Profile = () => {
                           }
                         }} />
                         <Box sx={{ 
-                          width: 4, 
-                          height: 4, 
-                          bgcolor: 'grey.500', 
+                          width: 6, 
+                          height: 6, 
+                          bgcolor: 'primary.main', 
                           borderRadius: '50%', 
                           animation: 'typing 1.4s ease-in-out 0.32s infinite both',
                           '@keyframes typing': {
@@ -1166,7 +1170,7 @@ const Profile = () => {
               </Box>
 
               {/* Chat Input */}
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
                 <TextField
                   fullWidth
                   placeholder="Ask me anything about TrafficJamz..."
@@ -1175,19 +1179,24 @@ const Profile = () => {
                   onKeyPress={handleChatKeyPress}
                   disabled={chatLoading}
                   size="small"
-                  sx={{ flex: 1 }}
+                  sx={{ 
+                    flex: 1,
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'white'
+                    }
+                  }}
                 />
                 <Button
                   variant="contained"
                   onClick={handleSendChatMessage}
                   disabled={!chatInput.trim() || chatLoading}
-                  sx={{ minWidth: 'auto', px: 3 }}
+                  sx={{ minWidth: 'auto', px: 3, py: 1 }}
                 >
                   Send
                 </Button>
               </Box>
 
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
                 AI support is available 24/7. For complex issues, contact our support team.
               </Typography>
             </Box>
