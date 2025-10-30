@@ -1040,7 +1040,7 @@ const Profile = () => {
               </Button>
             </Paper>
             
-            <Paper sx={{ p: 3, borderRadius: 2 }}>
+            <Paper sx={{ p: 3, mt: 3, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 Social Accounts
               </Typography>
@@ -1061,7 +1061,7 @@ const Profile = () => {
                 Connect your social accounts to use your profile pictures and enable easier login.
               </Typography>
               
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* Facebook */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
