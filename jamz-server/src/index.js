@@ -184,6 +184,9 @@ app.use(passport.initialize());
 const path = require('path');
 const frontendPath = path.join(__dirname, '../../jamz-client-vite/dist');
 
+console.log('🔗 Frontend static file path:', frontendPath);
+console.log('🔗 Frontend path exists:', require('fs').existsSync(frontendPath));
+
 // Serve static files from the React build directory
 app.use(express.static(frontendPath));
 
@@ -194,9 +197,17 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
     return next();
   }
-  
-  // For all other routes, serve the React app
-  res.sendFile(path.join(frontendPath, 'index.html'));
+
+  console.log('🌐 Serving frontend for path:', req.path);
+
+  // Check if index.html exists before serving
+  const indexPath = path.join(frontendPath, 'index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.log('❌ index.html not found at:', indexPath);
+    res.status(404).json({ error: 'Frontend not built yet' });
+  }
 });
 
 // Mount debug routes early (router implemented in src/routes/debug.routes.js)
