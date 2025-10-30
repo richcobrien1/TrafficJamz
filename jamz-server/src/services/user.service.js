@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { Op } = require('sequelize');
+const socialAvatarService = require('./social-avatar.service');
 
 /**
  * User service for handling user-related operations
@@ -45,6 +46,22 @@ class UserService {
         userJson.push_notifications = true;
         userJson.proximity_alerts = true;
         userJson.group_invitations = true;
+      }
+
+      // Add social avatars if available
+      if (userJson.social_accounts) {
+        // Get social avatars asynchronously (but don't wait for them in normalize)
+        // The frontend will handle fetching these when needed
+        userJson.social_avatars = [];
+        userJson.best_social_avatar = null;
+
+        // For now, just indicate which platforms are connected
+        const connectedPlatforms = Object.keys(userJson.social_accounts);
+        userJson.connected_social_platforms = connectedPlatforms;
+      } else {
+        userJson.social_avatars = [];
+        userJson.best_social_avatar = null;
+        userJson.connected_social_platforms = [];
       }
     } catch (err) {
       // Non-fatal: return as-is if normalization fails
@@ -455,11 +472,31 @@ class UserService {
   }
 
   /**
-   * Setup multi-factor authentication
-   * @param {string} user_id - User ID
-   * @param {string} method - MFA method
-   * @returns {Promise<Object>} - MFA setup information
+   * Get user by social platform ID
+   * @param {string} platform - Social platform (facebook, linkedin, x)
+   * @param {string} socialId - Social platform user ID
+   * @returns {Promise<Object>} - User data
    */
+  async findBySocialId(platform, socialId) {
+    try {
+      const users = await User.findAll();
+
+      for (const user of users) {
+        if (user.social_accounts &&
+            user.social_accounts[platform] &&
+            user.social_accounts[platform].id === socialId) {
+          // Remove sensitive data
+          const userJson = user.toJSON();
+          delete userJson.password_hash;
+          return this.normalizeUserJson(userJson);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      throw error;
+    }
+  }
   async setupMFA(user_id, method) {
     try {
       // Changed from findByPk to findOne with user_id
