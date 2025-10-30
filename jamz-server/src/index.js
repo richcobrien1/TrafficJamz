@@ -256,7 +256,6 @@ app.use('/api/debug', debugRoutes);
 
 // Debugging only, Add this near the top of your index.js file
 const debug = require('debug')('app:debug');
-const fs = require('fs');
 const routesPath = path.resolve(__dirname, 'routes');
 debug('Current directory:', __dirname);
 debug('Resolved routes path:', routesPath);
