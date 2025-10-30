@@ -52,8 +52,18 @@ export const AuthProvider = ({ children }) => {
         const response = await Promise.race([profilePromise, timeoutPromise]);
         
         if (response.data) {
-          setUser(response.data);
-          if (import.meta.env.MODE === 'development') console.log('User profile fetched successfully');
+          // Normalize user data - handle both response.data.user and response.data formats
+          const userData = response.data.user || response.data;
+          setUser(userData);
+          if (import.meta.env.MODE === 'development') {
+            console.log('User profile fetched successfully:', userData);
+            console.log('Notification settings:', {
+              email_notifications: userData.email_notifications,
+              push_notifications: userData.push_notifications,
+              proximity_alerts: userData.proximity_alerts,
+              group_invitations: userData.group_invitations
+            });
+          }
           
           // Load client config
           try {
@@ -87,11 +97,22 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
 
       if (response.data) {
-        setUser(response.data.user);
+        // Normalize user data - handle both response.data.user and response.data formats
+        const userData = response.data.user || response.data;
+        setUser(userData);
 
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
-        if (import.meta.env.MODE === 'development') console.log('Token stored in localStorage after login');
+        if (import.meta.env.MODE === 'development') {
+          console.log('Token stored in localStorage after login');
+          console.log('User data after login:', userData);
+          console.log('Notification settings after login:', {
+            email_notifications: userData.email_notifications,
+            push_notifications: userData.push_notifications,
+            proximity_alerts: userData.proximity_alerts,
+            group_invitations: userData.group_invitations
+          });
+        }
 
         // Load client config
         try {
@@ -122,7 +143,9 @@ export const AuthProvider = ({ children }) => {
   const response = await api.post('/auth/register', userData);
       
       if (response.data) {
-        setUser(response.data.user);
+        // Normalize user data - handle both response.data.user and response.data formats
+        const userData = response.data.user || response.data;
+        setUser(userData);
         
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
@@ -219,15 +242,114 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-  const response = await api.put('/users/profile', userData);
+      const response = await api.put('/users/profile', userData);
       
       if (response.data) {
-        setUser(response.data);
+        // Normalize user data - handle both response.data.user and response.data formats
+        const userData = response.data.user || response.data;
+        setUser(userData);
       }
       
       return response.data;
     } catch (error) {
       console.error('Update profile error:', error);
+      setError(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Update notification settings
+  const updateNotificationSettings = async (notificationData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // For now, save notification settings through profile update
+      // In a real implementation, this would be a separate endpoint
+      const response = await api.put('/users/profile', { 
+        email_notifications: notificationData.email_notifications,
+        push_notifications: notificationData.push_notifications,
+        proximity_alerts: notificationData.proximity_alerts,
+        group_invitations: notificationData.group_invitations
+      });
+      
+      if (response.data) {
+        // Normalize user data - handle both response.data.user and response.data formats
+        const userData = response.data.user || response.data;
+        setUser(userData);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Update notification settings error:', error);
+      setError(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Enable 2FA
+  const enable2FA = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.post('/auth/2fa/enable');
+      
+      return response.data;
+    } catch (error) {
+      console.error('Enable 2FA error:', error);
+      setError(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Verify 2FA setup
+  const verify2FA = async (token) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.post('/auth/2fa/verify', { token });
+      
+      if (response.data) {
+        // Normalize user data - handle both response.data.user and response.data formats
+        const userData = response.data.user || response.data;
+        setUser(userData);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Verify 2FA error:', error);
+      setError(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Disable 2FA
+  const disable2FA = async (password) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.post('/auth/2fa/disable', { password });
+      
+      if (response.data) {
+        // Normalize user data - handle both response.data.user and response.data formats
+        const userData = response.data.user || response.data;
+        setUser(userData);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Disable 2FA error:', error);
       setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
@@ -252,7 +374,12 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     updatePassword,
     updateProfile,
+    updateNotificationSettings,
+    enable2FA,
+    verify2FA,
+    disable2FA,
     getToken,
+    setUser,
     isAuthenticated: !!user
   };
 

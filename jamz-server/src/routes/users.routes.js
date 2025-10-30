@@ -67,6 +67,10 @@ router.put('/profile',
     body('last_name').optional(),
     body('profile_image_url').optional().isURL().withMessage('Must be a valid URL'),
     body('phone_number').optional(),
+    body('email_notifications').optional().isBoolean().withMessage('Must be a boolean'),
+    body('push_notifications').optional().isBoolean().withMessage('Must be a boolean'),
+    body('proximity_alerts').optional().isBoolean().withMessage('Must be a boolean'),
+    body('group_invitations').optional().isBoolean().withMessage('Must be a boolean'),
     validate
   ],
   async (req, res) => {
@@ -78,7 +82,14 @@ router.put('/profile',
         phone_number: req.body.phone_number
       };
 
-      const user = await userService.updateUser(req.user.user_id, updateData);
+      // Handle notification settings separately
+      const notificationData = {};
+      if (req.body.email_notifications !== undefined) notificationData.email_enabled = req.body.email_notifications;
+      if (req.body.push_notifications !== undefined) notificationData.push_enabled = req.body.push_notifications;
+      if (req.body.proximity_alerts !== undefined) notificationData.proximity_alerts = req.body.proximity_alerts;
+      if (req.body.group_invitations !== undefined) notificationData.group_invites = req.body.group_invitations;
+
+      const user = await userService.updateUser(req.user.user_id, updateData, notificationData);
       res.json({ success: true, user });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
