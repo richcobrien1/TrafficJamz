@@ -205,7 +205,7 @@ class UserService {
       let refreshToken;
       try {
         accessToken = jwt.sign(
-          { sub: user_id, username: userObj && userObj.username },
+          { sub: user_id, username: userObj && userObj.username, email: userObj && userObj.email },
           process.env.JWT_SECRET,
           { expiresIn: '24h' }
         );
