@@ -36,7 +36,12 @@ import {
   Security as SecurityIcon,
   Help as HelpIcon,
   Logout as LogoutIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Facebook as FacebookIcon,
+  LinkedIn as LinkedInIcon,
+  Twitter as TwitterIcon,
+  Link as LinkIcon,
+  Unlink as UnlinkIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts//AuthContext';
 
@@ -97,6 +102,8 @@ const Profile = () => {
   const [notificationsError, setNotificationsError] = useState('');
   const [securitySuccess, setSecuritySuccess] = useState('');
   const [securityError, setSecurityError] = useState('');
+  const [socialSuccess, setSocialSuccess] = useState('');
+  const [socialError, setSocialError] = useState('');
   
   // Initialize form data from user data
   useEffect(() => {
@@ -406,6 +413,58 @@ const Profile = () => {
     logout();
     navigate('/login');
   };
+
+  // Social account management
+  const handleLinkSocialAccount = (provider) => {
+    // Redirect to OAuth flow
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/${provider}`;
+  };
+
+  const handleUnlinkSocialAccount = async (provider) => {
+    try {
+      setLoading(true);
+      setSocialError('');
+      setSocialSuccess('');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/unlink-social`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ provider })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update user data to reflect unlinked account
+        setUser(prevUser => ({
+          ...prevUser,
+          social_accounts: {
+            ...prevUser.social_accounts,
+            [provider]: undefined
+          },
+          connected_social_platforms: prevUser.connected_social_platforms?.filter(p => p !== provider) || []
+        }));
+
+        setSocialSuccess(`${provider} account unlinked successfully`);
+      } else {
+        setSocialError(data.message || 'Failed to unlink account');
+      }
+    } catch (error) {
+      console.error('Unlink social account error:', error);
+      setSocialError('Failed to unlink account. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+
+    // Auto-clear messages after 5 seconds
+    setTimeout(() => {
+      setSocialSuccess('');
+      setSocialError('');
+    }, 5000);
+  };
   
   // Generate avatar URL or use emoji fallback
   const getAvatarContent = () => {
@@ -414,9 +473,25 @@ const Profile = () => {
       return user.profile_image_url;
     }
     
-    // Second priority: social platform avatars (future enhancement)
-    if (user?.social_avatars?.length > 0) {
-      return user.social_avatars[0].url;
+    // Second priority: social platform avatars (in order of preference)
+    if (user?.social_accounts) {
+      // Facebook avatar
+      if (user.social_accounts.facebook?.profile_data?.picture?.data?.url) {
+        return user.social_accounts.facebook.profile_data.picture.data.url;
+      }
+      
+      // LinkedIn avatar (from profile data)
+      if (user.social_accounts.linkedin?.profile_data?.profilePicture?.displayImage) {
+        const images = user.social_accounts.linkedin.profile_data.profilePicture.displayImage;
+        if (images && images.length > 0) {
+          return images[images.length - 1].data['com.linkedin.digitalmedia.mediaartifact.StillImage'].storageSize.large.url;
+        }
+      }
+      
+      // X avatar
+      if (user.social_accounts.x?.profile_data?.profile_image_url_https) {
+        return user.social_accounts.x.profile_data.profile_image_url_https;
+      }
     }
     
     // Third priority: generate avatar from name using DiceBear
@@ -963,6 +1038,138 @@ const Profile = () => {
               >
                 Contact Support
               </Button>
+            </Paper>
+            
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Social Accounts
+              </Typography>
+              
+              {socialError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {socialError}
+                </Alert>
+              )}
+              
+              {socialSuccess && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {socialSuccess}
+                </Alert>
+              )}
+              
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Connect your social accounts to use your profile pictures and enable easier login.
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Facebook */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <FacebookIcon sx={{ mr: 2, color: '#1877F2' }} />
+                    <Box>
+                      <Typography variant="body1" fontWeight="500">
+                        Facebook
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {user?.connected_social_platforms?.includes('facebook') ? 'Connected' : 'Not connected'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {user?.connected_social_platforms?.includes('facebook') ? (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<UnlinkIcon />}
+                      onClick={() => handleUnlinkSocialAccount('facebook')}
+                      disabled={loading}
+                    >
+                      Unlink
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      startIcon={<LinkIcon />}
+                      onClick={() => handleLinkSocialAccount('facebook')}
+                      disabled={loading}
+                      sx={{ borderColor: '#1877F2', color: '#1877F2' }}
+                    >
+                      Connect
+                    </Button>
+                  )}
+                </Box>
+
+                {/* LinkedIn */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <LinkedInIcon sx={{ mr: 2, color: '#0077B5' }} />
+                    <Box>
+                      <Typography variant="body1" fontWeight="500">
+                        LinkedIn
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {user?.connected_social_platforms?.includes('linkedin') ? 'Connected' : 'Not connected'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {user?.connected_social_platforms?.includes('linkedin') ? (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<UnlinkIcon />}
+                      onClick={() => handleUnlinkSocialAccount('linkedin')}
+                      disabled={loading}
+                    >
+                      Unlink
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      startIcon={<LinkIcon />}
+                      onClick={() => handleLinkSocialAccount('linkedin')}
+                      disabled={loading}
+                      sx={{ borderColor: '#0077B5', color: '#0077B5' }}
+                    >
+                      Connect
+                    </Button>
+                  )}
+                </Box>
+
+                {/* X (Twitter) */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <TwitterIcon sx={{ mr: 2, color: '#000000' }} />
+                    <Box>
+                      <Typography variant="body1" fontWeight="500">
+                        X (Twitter)
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {user?.connected_social_platforms?.includes('x') ? 'Connected' : 'Not connected'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {user?.connected_social_platforms?.includes('x') ? (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<UnlinkIcon />}
+                      onClick={() => handleUnlinkSocialAccount('x')}
+                      disabled={loading}
+                    >
+                      Unlink
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      startIcon={<LinkIcon />}
+                      onClick={() => handleLinkSocialAccount('x')}
+                      disabled={loading}
+                      sx={{ borderColor: '#000000', color: '#000000' }}
+                    >
+                      Connect
+                    </Button>
+                  )}
+                </Box>
+              </Box>
             </Paper>
           </Box>
         </Box>
