@@ -7,7 +7,7 @@
     "jamz-server"
   ],
   "scripts": {
-    "build": "cd jamz-client-vite && npm run build",
+    "build": "cd jamz-client-vite && npm install && npm run build && cd ../jamz-server && npm install",
     "dev": "cd jamz-server && npm run dev",
     "smoke:routes": "node scripts/smoke_routes.js"
   },
