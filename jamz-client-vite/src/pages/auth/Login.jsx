@@ -13,7 +13,8 @@ import {
   Paper,
   Avatar,
   CircularProgress,
-  Alert
+  Alert,
+  Divider
 } from '@mui/material';
 // Replaced Lock icon with the TrafficJamz logo (served from public/)
 import { useAuth } from '../../contexts/AuthContext';
@@ -154,12 +155,12 @@ const Login = () => {
               justifyContent: "center",
               alignItems: "center",
             }}>
-            <Grid item xs>
+            <Grid size="grow">
               <Link component={RouterLink} to="/forgot-password" variant="body2">
                 Forgot my password?
               </Link>
             </Grid>
-            <Grid item xs>
+            <Grid size="grow">
               <Link component={RouterLink} to="/auth/register" state={{ from: location.state?.from }} variant="body2">
                 {"Don't have an account? Sign Up"}
               </Link>

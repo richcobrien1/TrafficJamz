@@ -23,8 +23,6 @@ import {
   Drawer,
   AppBar,
   Toolbar,
-  Menu,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -50,7 +48,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
@@ -90,8 +87,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
   const handleLogout = () => {
     logout();
     navigate('/auth/login');
@@ -142,7 +137,6 @@ const Dashboard = () => {
   };
 
   const handleGroupClick = (groupId) => navigate(`/groups/${groupId}`);
-  const isMenuOpen = Boolean(anchorEl);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -169,30 +163,8 @@ const Dashboard = () => {
               <NotificationsIcon />
             </Badge>
           </IconButton>
-          <IconButton
-            edge="end"
-            aria-label="account menu"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleProfileMenuOpen}
-            color="inherit"
-          >
-            <AccountCircleIcon />
-          </IconButton>
         </Toolbar>
       </AppBar>
-
-      <Menu
-        id="menu-appbar"
-        anchorEl={anchorEl}
-        open={isMenuOpen}
-        onClose={handleMenuClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Profile</MenuItem>
-        <MenuItem onClick={handleLogout}>Logout</MenuItem>
-      </Menu>
 
       <Drawer anchor="left" open={openDrawer} onClose={() => setOpenDrawer(false)}>
         <Box 
@@ -245,11 +217,11 @@ const Dashboard = () => {
             
             {/* Navigation Items */}
             <ListItem 
-              button 
               onClick={() => { setOpenDrawer(false); navigate('/'); }}
               sx={{ 
                 px: 3,
                 py: 1.5,
+                cursor: 'pointer',
                 '&:hover': { 
                   bgcolor: 'action.hover',
                   '& .MuiAvatar-root': {
@@ -274,11 +246,11 @@ const Dashboard = () => {
             </ListItem>
             
             <ListItem 
-              button 
               onClick={() => { setOpenDrawer(false); navigate('/profile'); }}
               sx={{ 
                 px: 3,
                 py: 1.5,
+                cursor: 'pointer',
                 '&:hover': { 
                   bgcolor: 'action.hover',
                   '& .MuiAvatar-root': {
@@ -306,11 +278,11 @@ const Dashboard = () => {
             
             {/* Logout */}
             <ListItem 
-              button 
               onClick={() => { setOpenDrawer(false); handleLogout(); }}
               sx={{ 
                 px: 3,
                 py: 1.5,
+                cursor: 'pointer',
                 '&:hover': { 
                   bgcolor: 'error.dark',
                   '& .MuiAvatar-root': {
