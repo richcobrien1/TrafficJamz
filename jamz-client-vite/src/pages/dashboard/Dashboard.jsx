@@ -38,10 +38,12 @@ import {
   Notifications as NotificationsIcon,
   AccountCircle as AccountCircleIcon,
   Menu as MenuIcon,
-  ExitToApp as LogoutIcon
+  ExitToApp as LogoutIcon,
+  SmartToy as AIIcon
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import AIChatAssistant from '../../components/AIChatAssistant';
 
 const Dashboard = () => {
   const [groups, setGroups] = useState([]);
@@ -56,6 +58,7 @@ const Dashboard = () => {
   const [createGroupLoading, setCreateGroupLoading] = useState(false);
   const [createGroupError, setCreateGroupError] = useState('');
   const [notifications, setNotifications] = useState([]);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -407,6 +410,26 @@ const Dashboard = () => {
           </Grid>
         )}
       </Container>
+
+      {/* AI Chat Assistant Button */}
+      <Fab
+        color="secondary"
+        aria-label="AI assistant"
+        onClick={() => setShowAIChat(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 20,
+          left: 20,
+          zIndex: 1000
+        }}
+      >
+        <AIIcon />
+      </Fab>
+
+      {/* AI Chat Assistant Panel */}
+      {showAIChat && (
+        <AIChatAssistant onClose={() => setShowAIChat(false)} />
+      )}
 
       <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} aria-labelledby="create-group-dialog">
         <DialogTitle id="create-group-dialog">Create New Group</DialogTitle>
