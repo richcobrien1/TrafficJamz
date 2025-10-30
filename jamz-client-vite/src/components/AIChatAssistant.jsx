@@ -157,8 +157,8 @@ const AIChatAssistant = ({ onClose }) => {
                   maxWidth: '80%',
                   p: 1.5,
                   borderRadius: 2,
-                  bgcolor: message.type === 'user' ? 'primary.main' : 'grey.100',
-                  color: message.type === 'user' ? 'primary.contrastText' : 'text.primary',
+                  bgcolor: message.type === 'user' ? 'primary.main' : 'grey.800',
+                  color: message.type === 'user' ? 'primary.contrastText' : 'grey.100',
                   boxShadow: 1
                 }}
               >
@@ -171,7 +171,7 @@ const AIChatAssistant = ({ onClose }) => {
                     display: 'block',
                     mt: 0.5,
                     opacity: 0.7,
-                    color: message.type === 'user' ? 'primary.contrastText' : 'text.secondary'
+                    color: message.type === 'user' ? 'primary.contrastText' : 'grey.400'
                   }}
                 >
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -189,7 +189,7 @@ const AIChatAssistant = ({ onClose }) => {
             <Chip
               label="AI is typing..."
               size="small"
-              sx={{ bgcolor: 'grey.200', color: 'text.primary' }}
+              sx={{ bgcolor: 'grey.700', color: 'grey.200' }}
             />
           </Box>
         )}
