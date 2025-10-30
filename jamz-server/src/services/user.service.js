@@ -1,8 +1,21 @@
 const User = require('../models/user.model');
+const PasswordResetToken = require('../models/password-reset-token.model');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { Op } = require('sequelize');
 const socialAvatarService = require('./social-avatar.service');
+const nodemailer = require('nodemailer');
+
+// Configure nodemailer transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
 
 /**
  * User service for handling user-related operations
@@ -422,52 +435,69 @@ class UserService {
    */
   async requestPasswordReset(email) {
     try {
-      const user = await User.findOne({ 
-        where: { email } 
+      const user = await User.findOne({
+        where: { email }
       });
+
       if (!user) {
-        // Don't reveal that the user doesn't exist
+        // Don't reveal that the user doesn't exist - return success anyway
         return true;
       }
 
-      // In a real implementation, we would:
-      // 1. Generate a reset token
-      // 2. Store it with an expiration
-      // 3. Send an email with the reset link
+      // Generate reset token
+      const resetToken = uuidv4();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+      // Save token to database
+      await PasswordResetToken.create({
+        user_id: user.user_id,
+        email: email,
+        token: resetToken,
+        expires_at: expiresAt
+      });
+
+      // Send reset email
+      await this.sendPasswordResetEmail(email, resetToken);
 
       return true;
     } catch (error) {
+      console.error('Password reset request error:', error);
       throw error;
     }
   }
 
   /**
-   * Reset password with token
-   * @param {string} token - Reset token
+   * Send password reset email
    * @param {string} email - User email
-   * @param {string} newPassword - New password
-   * @returns {Promise<boolean>} - Success status
+   * @param {string} token - Reset token
+   * @returns {Promise<void>}
    */
-  async resetPassword(token, email, newPassword) {
+  async sendPasswordResetEmail(email, token) {
     try {
-      const user = await User.findOne({ 
-        where: { email } 
-      });
-      if (!user) {
-        throw new Error('Invalid reset request');
-      }
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
 
-      // In a real implementation, we would:
-      // 1. Verify the token is valid and not expired
-      // 2. Update the password
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'noreply@trafficjamz.com',
+        to: email,
+        subject: 'Password Reset - TrafficJamz',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Reset Your Password</h2>
+            <p>You requested a password reset for your TrafficJamz account.</p>
+            <p>Click the link below to reset your password:</p>
+            <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this reset, please ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px;">TrafficJamz Team</p>
+          </div>
+        `
+      };
 
-      // Update password
-      user.password_hash = newPassword; // Will be hashed by model hook
-      await user.save();
-
-      return true;
+      await transporter.sendMail(mailOptions);
     } catch (error) {
-      throw error;
+      console.error('Email sending error:', error);
+      throw new Error('Failed to send password reset email');
     }
   }
 

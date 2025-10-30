@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
-  // Reset password
+  // Reset password - request reset
   const resetPassword = async (email) => {
     try {
       setLoading(true);
@@ -208,6 +208,28 @@ export const AuthProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error('Password reset error:', error);
+      setError(error.response?.data?.message || error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Confirm password reset with token
+  const confirmPasswordReset = async (token, email, newPassword) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await api.post('/auth/reset-password', {
+        token,
+        email,
+        password: newPassword
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Password reset confirmation error:', error);
       setError(error.response?.data?.message || error.message);
       throw error;
     } finally {
@@ -372,6 +394,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     resetPassword,
+    confirmPasswordReset,
     updatePassword,
     updateProfile,
     updateNotificationSettings,
