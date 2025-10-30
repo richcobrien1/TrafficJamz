@@ -3,7 +3,15 @@ services:
   - type: web
     name: trafficjamz-fullstack
     runtime: node
-    buildCommand: npm run build
+    buildCommand: |
+      echo "Building frontend..." && \
+      cd jamz-client-vite && \
+      npm install && \
+      npm run build && \
+      cd .. && \
+      echo "Building backend..." && \
+      cd jamz-server && \
+      npm install
     startCommand: cd jamz-server && npm start
     envVars:
       - key: NODE_ENV
