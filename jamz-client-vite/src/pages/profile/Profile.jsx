@@ -1091,7 +1091,7 @@ const Profile = () => {
                           </Typography>
                         </Box>
                       )}
-                      <Typography variant="body1" sx={{ lineHeight: 1.5 }}>
+                      <Typography variant="body1" sx={{ lineHeight: 1.5, color: message.type === 'user' ? 'white' : 'text.primary' }}>
                         {message.content}
                       </Typography>
                       <Typography 
