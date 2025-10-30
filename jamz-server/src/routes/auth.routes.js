@@ -7,6 +7,9 @@ const userService = require('../services/user.service');
 const passport = require('passport');
 const { body, validationResult } = require('express-validator');
 
+// Initialize social auth strategies
+require('../config/social-auth');
+
 // Middleware to validate request
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -214,5 +217,182 @@ router.get('/check-user/:email', async (req, res) => {
     res.json({ success: true, exists: false, error: error.message });
   }
 });
+
+/**
+ * SOCIAL AUTHENTICATION ROUTES
+ */
+
+/**
+ * @route GET /api/auth/facebook
+ * @desc Initiate Facebook OAuth login
+ * @access Public
+ */
+router.get('/facebook',
+  passport.authenticate('facebook', { scope: ['email', 'public_profile'] })
+);
+
+/**
+ * @route GET /api/auth/facebook/callback
+ * @desc Facebook OAuth callback
+ * @access Public
+ */
+router.get('/facebook/callback',
+  passport.authenticate('facebook', { failureRedirect: '/login?error=facebook_auth_failed' }),
+  async (req, res) => {
+    try {
+      // Generate tokens for the authenticated user
+      const tokens = userService.generateTokens(req.user);
+
+      // Redirect to frontend with tokens
+      const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5174'}/auth/callback?` +
+        `access_token=${tokens.access_token}&` +
+        `refresh_token=${tokens.refresh_token}&` +
+        `provider=facebook`;
+
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Facebook callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5174'}/login?error=token_generation_failed`);
+    }
+  }
+);
+
+/**
+ * @route GET /api/auth/linkedin
+ * @desc Initiate LinkedIn OAuth login
+ * @access Public
+ */
+router.get('/linkedin',
+  passport.authenticate('linkedin')
+);
+
+/**
+ * @route GET /api/auth/linkedin/callback
+ * @desc LinkedIn OAuth callback
+ * @access Public
+ */
+router.get('/linkedin/callback',
+  passport.authenticate('linkedin', { failureRedirect: '/login?error=linkedin_auth_failed' }),
+  async (req, res) => {
+    try {
+      // Generate tokens for the authenticated user
+      const tokens = userService.generateTokens(req.user);
+
+      // Redirect to frontend with tokens
+      const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5174'}/auth/callback?` +
+        `access_token=${tokens.access_token}&` +
+        `refresh_token=${tokens.refresh_token}&` +
+        `provider=linkedin`;
+
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('LinkedIn callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5174'}/login?error=token_generation_failed`);
+    }
+  }
+);
+
+/**
+ * @route GET /api/auth/x
+ * @desc Initiate X (Twitter) OAuth login
+ * @access Public
+ */
+router.get('/x',
+  passport.authenticate('twitter')
+);
+
+/**
+ * @route GET /api/auth/x/callback
+ * @desc X (Twitter) OAuth callback
+ * @access Public
+ */
+router.get('/x/callback',
+  passport.authenticate('twitter', { failureRedirect: '/login?error=x_auth_failed' }),
+  async (req, res) => {
+    try {
+      // Generate tokens for the authenticated user
+      const tokens = userService.generateTokens(req.user);
+
+      // Redirect to frontend with tokens
+      const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5174'}/auth/callback?` +
+        `access_token=${tokens.access_token}&` +
+        `refresh_token=${tokens.refresh_token}&` +
+        `provider=x`;
+
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('X callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5174'}/login?error=token_generation_failed`);
+    }
+  }
+);
+
+/**
+ * @route POST /api/auth/link-social
+ * @desc Link social account to existing user
+ * @access Private
+ */
+router.post('/link-social',
+  passport.authenticate('jwt', { session: false }),
+  [
+    body('provider').isIn(['facebook', 'linkedin', 'x']).withMessage('Invalid provider'),
+    body('access_token').exists().withMessage('Access token is required'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const { provider, access_token, profile_data } = req.body;
+      const user_id = req.user.user_id;
+
+      // Update user's social accounts
+      const user = await userService.getUserById(user_id);
+      user.social_accounts = {
+        ...user.social_accounts,
+        [provider]: {
+          ...profile_data,
+          access_token,
+          last_updated: new Date()
+        }
+      };
+      await user.save();
+
+      res.json({ success: true, message: `${provider} account linked successfully` });
+    } catch (error) {
+      console.error('Link social account error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
+ * @route DELETE /api/auth/unlink-social
+ * @desc Unlink social account from user
+ * @access Private
+ */
+router.delete('/unlink-social',
+  passport.authenticate('jwt', { session: false }),
+  [
+    body('provider').isIn(['facebook', 'linkedin', 'x']).withMessage('Invalid provider'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const { provider } = req.body;
+      const user_id = req.user.user_id;
+
+      // Remove social account
+      const user = await userService.getUserById(user_id);
+      if (user.social_accounts && user.social_accounts[provider]) {
+        delete user.social_accounts[provider];
+        await user.save();
+      }
+
+      res.json({ success: true, message: `${provider} account unlinked successfully` });
+    } catch (error) {
+      console.error('Unlink social account error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
 
 module.exports = router;
