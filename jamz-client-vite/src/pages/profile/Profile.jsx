@@ -46,6 +46,7 @@ import {
   PhotoCamera as PhotoCameraIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts//AuthContext';
+import api from '../../services/api';
 
 const Profile = () => {
   const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, logout, setUser } = useAuth();
@@ -501,7 +502,8 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('profile_image', file);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/users/upload-profile-image`, {
+      // Use the API service instead of direct fetch to ensure correct base URL
+      const response = await fetch(`${api.defaults.baseURL}/api/users/upload-profile-image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
