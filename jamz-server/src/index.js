@@ -228,6 +228,9 @@ if (frontendPath) {
   app.use(express.static(frontendPath));
 }
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Catch-all handler: send back index.html for any non-API routes
 // This enables client-side routing for the React SPA
 app.get('*', (req, res, next) => {

@@ -4,6 +4,9 @@ const userService = require('../services/user.service');
 const socialAvatarService = require('../services/social-avatar.service');
 const passport = require('passport');
 const { body, validationResult } = require('express-validator');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Middleware to validate request
 const validate = (req, res, next) => {
@@ -13,6 +16,39 @@ const validate = (req, res, next) => {
   }
   next();
 };
+
+// Configure multer for profile image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/profiles');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Generate unique filename with user ID
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, `profile-${req.user.user_id}-${uniqueSuffix}${extension}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Check if file is an image
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 /**
  * @route GET /api/users/profile
@@ -158,28 +194,38 @@ router.get('/:id',
 );
 
 /**
- * @route GET /api/users/social-avatars
- * @desc Get social avatars for current user
+ * @route POST /api/users/upload-profile-image
+ * @desc Upload profile image
  * @access Private
  */
-router.get('/social-avatars',
+router.post('/upload-profile-image',
   passport.authenticate('jwt', { session: false }),
+  upload.single('profile_image'),
   async (req, res) => {
     try {
-      const user = await userService.getUserById(req.user.user_id);
-      const avatars = await socialAvatarService.getAllSocialAvatars(user.social_accounts);
-      const bestAvatar = await socialAvatarService.getBestSocialAvatar(user.social_accounts);
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
+      }
+
+      // Create the image URL (assuming files are served from /uploads/)
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+
+      // Update user's profile image URL
+      const updateData = {
+        profile_image_url: imageUrl
+      };
+
+      const user = await userService.updateUser(req.user.user_id, updateData);
 
       res.json({
         success: true,
-        avatars,
-        best_avatar: bestAvatar,
-        connected_platforms: user.connected_social_platforms || []
+        message: 'Profile image uploaded successfully',
+        image_url: imageUrl,
+        user
       });
     } catch (error) {
+      console.error('Profile image upload error:', error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
 );
-
-module.exports = router;

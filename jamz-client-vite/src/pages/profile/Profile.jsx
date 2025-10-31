@@ -41,7 +41,9 @@ import {
   LinkedIn as LinkedInIcon,
   Twitter as TwitterIcon,
   Link as LinkIcon,
-  LinkOff as UnlinkIcon
+  LinkOff as UnlinkIcon,
+  Add as AddIcon,
+  PhotoCamera as PhotoCameraIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts//AuthContext';
 
@@ -104,6 +106,10 @@ const Profile = () => {
   const [securityError, setSecurityError] = useState('');
   const [socialSuccess, setSocialSuccess] = useState('');
   const [socialError, setSocialError] = useState('');
+  
+  // Profile photo upload
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
   
   // Initialize form data from user data
   useEffect(() => {
@@ -465,6 +471,74 @@ const Profile = () => {
       setSocialError('');
     }, 5000);
   };
+
+  // Profile photo upload handlers
+  const handlePhotoUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setPersonalInfoError('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setPersonalInfoError('Image file size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      setPersonalInfoError('');
+      setPersonalInfoSuccess('');
+
+      const formData = new FormData();
+      formData.append('profile_image', file);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/users/upload-profile-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update user data with new profile image URL
+        setUser(prevUser => ({
+          ...prevUser,
+          profile_image_url: data.image_url
+        }));
+
+        setPersonalInfoSuccess('Profile photo updated successfully');
+      } else {
+        setPersonalInfoError(data.message || 'Failed to upload profile photo');
+      }
+    } catch (error) {
+      console.error('Profile photo upload error:', error);
+      setPersonalInfoError('Failed to upload profile photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+
+    // Auto-clear messages after 5 seconds
+    setTimeout(() => {
+      setPersonalInfoSuccess('');
+      setPersonalInfoError('');
+    }, 5000);
+  };
   
   // Generate avatar URL or use emoji fallback
   const getAvatarContent = () => {
@@ -615,19 +689,60 @@ const Profile = () => {
             }}>
               <Paper sx={{ p: 3, borderRadius: 2 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-                <Avatar 
-                  src={getAvatarContent()}
-                  sx={{ 
-                    width: { xs: 80, md: 120 }, 
-                    height: { xs: 80, md: 120 }, 
-                    mb: 2,
-                    bgcolor: 'primary.main',
-                    border: '4px solid',
-                    borderColor: 'primary.light'
-                  }}
-                >
-                  {user?.first_name?.[0] || user?.username?.[0] || '👤'}
-                </Avatar>
+                <Box sx={{ position: 'relative', mb: 2 }}>
+                  <Avatar 
+                    src={getAvatarContent()}
+                    sx={{ 
+                      width: { xs: 80, md: 120 }, 
+                      height: { xs: 80, md: 120 }, 
+                      bgcolor: 'primary.main',
+                      border: '4px solid',
+                      borderColor: 'primary.light'
+                    }}
+                  >
+                    {user?.first_name?.[0] || user?.username?.[0] || '👤'}
+                  </Avatar>
+                  
+                  {/* Upload photo button overlay */}
+                  <IconButton
+                    onClick={handlePhotoUploadClick}
+                    disabled={uploadingPhoto}
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      border: '3px solid',
+                      borderColor: 'background.paper',
+                      width: { xs: 28, md: 36 },
+                      height: { xs: 28, md: 36 },
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
+                      '&:disabled': {
+                        bgcolor: 'action.disabledBackground',
+                        color: 'action.disabled'
+                      }
+                    }}
+                  >
+                    {uploadingPhoto ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <PhotoCameraIcon sx={{ fontSize: { xs: 16, md: 20 } }} />
+                    )}
+                  </IconButton>
+                </Box>
+                
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoFileChange}
+                  style={{ display: 'none' }}
+                />
+                
                 <Typography variant="h5" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
                   {user?.first_name} {user?.last_name}
                 </Typography>
