@@ -47,6 +47,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts//AuthContext';
 import api from '../../services/api';
+import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Profile = () => {
   const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, logout, setUser } = useAuth();
@@ -541,44 +542,7 @@ const Profile = () => {
       setPersonalInfoError('');
     }, 5000);
   };
-  
-  // Generate avatar URL or use emoji fallback
-  const getAvatarContent = () => {
-    // First priority: user's actual profile image
-    if (user?.profile_image_url) {
-      return user.profile_image_url;
-    }
-    
-    // Second priority: social platform avatars (in order of preference)
-    if (user?.social_accounts) {
-      // Facebook avatar
-      if (user.social_accounts.facebook?.profile_data?.picture?.data?.url) {
-        return user.social_accounts.facebook.profile_data.picture.data.url;
-      }
-      
-      // LinkedIn avatar (from profile data)
-      if (user.social_accounts.linkedin?.profile_data?.profilePicture?.displayImage) {
-        const images = user.social_accounts.linkedin.profile_data.profilePicture.displayImage;
-        if (images && images.length > 0) {
-          return images[images.length - 1].data['com.linkedin.digitalmedia.mediaartifact.StillImage'].storageSize.large.url;
-        }
-      }
-      
-      // X avatar
-      if (user.social_accounts.x?.profile_data?.profile_image_url_https) {
-        return user.social_accounts.x.profile_data.profile_image_url_https;
-      }
-    }
-    
-    // Third priority: generate avatar from name using DiceBear
-    const name = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
-    if (name) {
-      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-    }
-    
-    // Final fallback: default emoji
-    return null;
-  };
+
   
   // Format join date
   const formatJoinDate = () => {
@@ -693,7 +657,7 @@ const Profile = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                 <Box sx={{ position: 'relative', mb: 2 }}>
                   <Avatar 
-                    src={getAvatarContent()}
+                    src={getAvatarContent(user)}
                     sx={{ 
                       width: { xs: 80, md: 120 }, 
                       height: { xs: 80, md: 120 }, 
@@ -702,7 +666,7 @@ const Profile = () => {
                       borderColor: 'primary.light'
                     }}
                   >
-                    {user?.first_name?.[0] || user?.username?.[0] || '👤'}
+                    {getAvatarFallback(user)}
                   </Avatar>
                   
                   {/* Upload photo button overlay */}
