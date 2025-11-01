@@ -7,11 +7,14 @@
  * @returns {string|null} Avatar URL or null for fallback
  */
 export const getAvatarContent = (user) => {
-  // First priority: user's actual profile image (but ignore generated placeholder URLs)
+  // First priority: user's actual uploaded profile image from Supabase Storage
+  // Only ignore old ui-avatars.com URLs (legacy placeholders)
   if (user?.profile_image_url && 
-      !user.profile_image_url.includes('ui-avatars.com') &&
-      !user.profile_image_url.includes('api.dicebear.com')) {
-    return user.profile_image_url;
+      !user.profile_image_url.includes('ui-avatars.com')) {
+    // Check if it's a real Supabase Storage URL (not a generated placeholder)
+    if (user.profile_image_url.includes('supabase.co/storage')) {
+      return user.profile_image_url;
+    }
   }
 
   // Second priority: social platform avatars (in order of preference)
@@ -35,24 +38,8 @@ export const getAvatarContent = (user) => {
     }
   }
 
-  // Third priority: generate avatar from name using DiceBear with gender-aware styling
-  const name = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
-  if (name) {
-    // Use gender field if available, otherwise use neutral 'avataaars' style
-    // Note: Consider adding a 'gender' field to User model for better representation
-    const gender = user?.gender?.toLowerCase();
-    
-    if (gender === 'male' || gender === 'm') {
-      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9&gender=male`;
-    } else if (gender === 'female' || gender === 'f') {
-      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9&gender=female`;
-    } else {
-      // Gender-neutral avatar for non-specified or non-binary users
-      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-    }
-  }
-
-  // Final fallback: return null to let Avatar component handle the fallback
+  // No DiceBear generation - return null to show initials
+  // Avatar component will use getAvatarFallback() which shows first initial or initials
   return null;
 };
 
