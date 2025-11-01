@@ -2779,7 +2779,7 @@ const LocationTracking = () => {
         markerEl.appendChild(spikeEl);
 
         // Add hover details
-        const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
+        const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name, location.last_name);
         const lastUpdate = location.timestamp ? new Date(location.timestamp).toLocaleString() : null;
         if (location.location_missing && !lastUpdate) {
           markerEl.title = `${displayName}\nLocation not shared`;
