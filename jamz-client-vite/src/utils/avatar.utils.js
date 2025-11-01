@@ -7,8 +7,10 @@
  * @returns {string|null} Avatar URL or null for fallback
  */
 export const getAvatarContent = (user) => {
-  // First priority: user's actual profile image
-  if (user?.profile_image_url) {
+  // First priority: user's actual profile image (but ignore generated placeholder URLs)
+  if (user?.profile_image_url && 
+      !user.profile_image_url.includes('ui-avatars.com') &&
+      !user.profile_image_url.includes('api.dicebear.com')) {
     return user.profile_image_url;
   }
 
