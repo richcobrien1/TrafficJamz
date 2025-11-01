@@ -11,8 +11,9 @@ const s3Config = {
 };
 
 // Add endpoint for Cloudflare R2 or custom S3-compatible storage
-if (process.env.S3_ENDPOINT) {
-  s3Config.endpoint = process.env.S3_ENDPOINT;
+const endpoint = process.env.R2_ENDPOINT || process.env.S3_ENDPOINT;
+if (endpoint) {
+  s3Config.endpoint = endpoint;
   s3Config.signatureVersion = 'v4';
 }
 
@@ -90,8 +91,9 @@ const upload = multer({
 const getFileUrl = (filename) => {
   if (isS3Configured()) {
     // For Cloudflare R2 or custom S3-compatible storage with custom domain
-    if (process.env.S3_PUBLIC_URL) {
-      return `${process.env.S3_PUBLIC_URL}/${filename}`;
+    const publicUrl = process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL;
+    if (publicUrl) {
+      return `${publicUrl}/${filename}`;
     }
     // For standard AWS S3
     const region = process.env.AWS_REGION || 'us-east-1';
