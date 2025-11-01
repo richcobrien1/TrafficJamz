@@ -84,7 +84,7 @@ class EmailService {
       await this.init();
       console.log('Sending invitation email to:', to);
   
-  const { groupName, inviterName, inviterFullName, inviterHandle, inviterFirstName, inviterLastName, invitationLink, inviter_profile } = invitationData;
+  const { groupName, groupAvatarUrl, inviterName, inviterFullName, inviterHandle, inviterFirstName, inviterLastName, inviterProfileImage, invitationLink, inviter_profile } = invitationData;
       // Development-only: log full invitation payload so we can see exactly what fields were passed
       if (process.env.NODE_ENV !== 'production') {
         try {
@@ -186,15 +186,40 @@ class EmailService {
         rawInvitationText
       ].join('\n');
 
+      // Build avatar section HTML
+      const inviterAvatarHtml = inviterProfileImage 
+        ? `<img src="${inviterProfileImage}" alt="${displayableHtml}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);" />`
+        : `<div style="width: 60px; height: 60px; border-radius: 50%; background-color: #333; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">${displayableText.charAt(0).toUpperCase()}</div>`;
+      
+      const groupAvatarHtml = groupAvatarUrl
+        ? `<img src="${groupAvatarUrl}" alt="${groupName}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.2);" />`
+        : `<div style="width: 80px; height: 80px; border-radius: 50%; background-color: #ff9900; color: #000; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border: 4px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">🎶</div>`;
+
       const htmlBody = `
         <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #FF0037FF, #FFAE00FF); color: #000; padding: 2em; border-radius: 12px;">
           <h1 style="text-align: center; font-size: 2em; margin-bottom: 0.5em;">🎶 You've Been Invited to TrafficJamz!</h1>
           <div style="text-align: center; margin-bottom: 1.5em;">
             <img src="https://www.v2u.us/Jamz-sking.png" alt="TrafficJamz in action" style="display: block; margin: 0 auto; width: 100%; max-width: 480px; border-radius: 8px;" />
           </div>
-            <p style="font-size: 1.1em; line-height: 1.6; text-align: center;">
-              <strong>${displayableHtml}</strong> has invited you to join the group <strong>"${groupName}"</strong> on <strong>TrafficJamz</strong>—the real-time audio and location-sharing app for connected crews.
-            </p>
+          
+          <!-- Inviter and Group Avatar Section -->
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+              <div style="text-align: center;">
+                ${inviterAvatarHtml}
+                <div style="margin-top: 8px; font-size: 14px; font-weight: bold;">${displayableHtml}</div>
+              </div>
+              <div style="font-size: 32px; color: #000; padding: 0 10px;">→</div>
+              <div style="text-align: center;">
+                ${groupAvatarHtml}
+                <div style="margin-top: 8px; font-size: 14px; font-weight: bold;">${groupName}</div>
+              </div>
+            </div>
+          </div>
+          
+          <p style="font-size: 1.1em; line-height: 1.6; text-align: center;">
+            <strong>${displayableHtml}</strong> has invited you to join the group <strong>"${groupName}"</strong> on <strong>TrafficJamz</strong>—the real-time audio and location-sharing app for connected crews.
+          </p>
           <p style="font-size: 1.1em; line-height: 1.6;">
             Whether you're skiing, cruising, or holiday traveling, Jamz lets you hear, speak, and track your group in real time. It's audio, location, and vibes—all in one.
           </p>

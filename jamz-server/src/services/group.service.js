@@ -569,6 +569,7 @@ class GroupService {
   let inviterName = 'A user'; // Default fallback
   let inviterFullName = null;
   let inviterHandle = null;
+  let inviterProfileImage = null;
 
       try {
         // Coerce inviterId to string for safe checks
@@ -590,7 +591,7 @@ class GroupService {
           // Use QueryTypes.SELECT from Sequelize to avoid referencing on the instance
           const Sequelize = require('sequelize');
           const users = await sequelize.query(
-            `SELECT username, first_name, last_name, email FROM users WHERE user_id = :userId`,
+            `SELECT username, first_name, last_name, email, profile_image_url FROM users WHERE user_id = :userId`,
             {
               replacements: { userId: inviterIdStr },
               type: Sequelize.QueryTypes.SELECT
@@ -607,15 +608,16 @@ class GroupService {
             const pgParts = [user.first_name, user.last_name].filter(Boolean);
             inviterFullName = pgParts.length ? pgParts.join(' ').trim() : null;
             inviterHandle = (user.username || user.email) ? (user.username || (user.email && user.email.split('@')[0])) : null;
+            inviterProfileImage = user.profile_image_url || null;
             inviterName = inviterFullName || inviterHandle || inviterName;
-            console.log(`Set inviterName to: ${inviterName}`, { inviterFullName, inviterHandle });
+            console.log(`Set inviterName to: ${inviterName}`, { inviterFullName, inviterHandle, inviterProfileImage });
           } else {
             console.log(`No user found with ID: ${inviterId}`);
           }
 
           // Debug: log raw Postgres users result for troubleshooting
           try {
-            console.log('Postgres users result (sanitized):', JSON.stringify(users && users.map(u => ({ username: u.username, first_name: u.first_name, last_name: u.last_name, email: u.email })), null, 2));
+            console.log('Postgres users result (sanitized):', JSON.stringify(users && users.map(u => ({ username: u.username, first_name: u.first_name, last_name: u.last_name, email: u.email, profile_image_url: u.profile_image_url })), null, 2));
           } catch (e) {
             console.error('Error serializing Postgres users result for logs:', e);
           }
@@ -655,7 +657,9 @@ class GroupService {
         inviterName,
         inviterFullName,
         inviterHandle,
+        inviterProfileImage,
         inviterSource,
+        groupAvatarUrl: group.avatar_url,
         invitationLink
       });
 
@@ -666,9 +670,11 @@ class GroupService {
           console.log('📧 Attempting to send invitation email to:', email);
           emailResult = await emailService.sendInvitationEmail(email, {
             groupName: group.group_name,
+            groupAvatarUrl: group.avatar_url,
             inviterName: inviterName,
             inviterFullName,
             inviterHandle,
+            inviterProfileImage,
             invitationLink
           });
           
@@ -1374,18 +1380,26 @@ class GroupService {
       let inviterName = 'A user';
       let inviterFullName = null;
       let inviterHandle = null;
+      let inviterProfileImage = null;
 
       try {
         const inviterIdStr = invitation.invited_by ? invitation.invited_by.toString() : '';
         if (inviterIdStr.includes('-')) {
           const sequelize = require('../config/database');
-          const [results] = await sequelize.query(
-            'SELECT username, full_name FROM users WHERE user_id = :userId',
-            { replacements: { userId: inviterIdStr } }
+          const Sequelize = require('sequelize');
+          const results = await sequelize.query(
+            'SELECT username, first_name, last_name, profile_image_url FROM users WHERE user_id = :userId',
+            { 
+              replacements: { userId: inviterIdStr },
+              type: Sequelize.QueryTypes.SELECT
+            }
           );
           if (results && results.length > 0) {
-            inviterHandle = results[0].username;
-            inviterFullName = results[0].full_name;
+            const user = results[0];
+            inviterHandle = user.username;
+            const nameParts = [user.first_name, user.last_name].filter(Boolean);
+            inviterFullName = nameParts.length ? nameParts.join(' ').trim() : null;
+            inviterProfileImage = user.profile_image_url || null;
             inviterName = inviterFullName || inviterHandle;
           }
         }
@@ -1394,14 +1408,18 @@ class GroupService {
       }
 
       console.log('👤 Inviter name:', inviterName);
-      console.log('📨 About to send email to:', invitation.email);
+      console.log('🖼️ Inviter profile image:', inviterProfileImage);
+      console.log('�️ Group avatar:', group.avatar_url);
+      console.log('�📨 About to send email to:', invitation.email);
 
       // Send email
       await emailService.sendInvitationEmail(invitation.email, {
         groupName: group.group_name,
+        groupAvatarUrl: group.avatar_url,
         inviterName,
         inviterFullName,
         inviterHandle,
+        inviterProfileImage,
         invitationLink
       });
 
