@@ -2696,10 +2696,10 @@ const LocationTracking = () => {
                 if (circle.textContent !== count) circle.textContent = count;
                 // Auto-size the circle based on count length
                 const len = count.length;
-                const size = len <= 2 ? 28 : (len === 3 ? 34 : 40);
+                const size = len <= 2 ? 40 : (len === 3 ? 46 : 52);
                 circle.style.width = `${size}px`;
                 circle.style.height = `${size}px`;
-                circle.style.fontSize = len <= 2 ? '12px' : (len === 3 ? '11px' : '10px');
+                circle.style.fontSize = len <= 2 ? '16px' : (len === 3 ? '14px' : '12px');
               } else if (!location.place) {
                 // For member markers, try to use avatar image
                 const avatarSrc = getAvatarContent(location);
@@ -2733,12 +2733,14 @@ const LocationTracking = () => {
                     };
                     circle.appendChild(avatarImg);
                   }
-                } else {
-                  console.log('⚠️ No avatarSrc on update, using initials');
-                  if (existingImg) existingImg.remove();
+                } else if (!existingImg) {
+                  // Only show initials if there's no existing image AND no avatarSrc
+                  // This prevents replacing images with initials during re-renders
+                  console.log('⚠️ No avatarSrc and no existing image, using initials');
                   const fallbackText = getAvatarFallback(location);
                   if (circle.textContent !== fallbackText) circle.textContent = fallbackText;
                 }
+                // If existingImg exists but no avatarSrc, preserve the existing image
               } else {
                 // For place markers
                 const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
@@ -2773,8 +2775,8 @@ const LocationTracking = () => {
 
         // Circle part - use avatar image for members, or circle for places/aggregated
         const circleEl = document.createElement('div');
-        circleEl.style.width = '24px';
-        circleEl.style.height = '24px';
+        circleEl.style.width = '36px';
+        circleEl.style.height = '36px';
         circleEl.style.borderRadius = '50%';
         circleEl.style.backgroundColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
         circleEl.style.border = '2px solid white';
@@ -2783,7 +2785,7 @@ const LocationTracking = () => {
         circleEl.style.alignItems = 'center';
         circleEl.style.justifyContent = 'center';
         circleEl.style.color = 'white';
-        circleEl.style.fontSize = '12px';
+        circleEl.style.fontSize = '14px';
         circleEl.style.fontWeight = 'bold';
         circleEl.style.overflow = 'hidden';
         if (location.location_missing) {
@@ -2796,11 +2798,11 @@ const LocationTracking = () => {
           circleEl.textContent = String(location.count);
           // auto-size the circle based on count length
           const len = String(location.count).length;
-          const size = len <= 2 ? 28 : (len === 3 ? 34 : 40);
+          const size = len <= 2 ? 40 : (len === 3 ? 46 : 52);
           circleEl.style.width = `${size}px`;
           circleEl.style.height = `${size}px`;
           circleEl.style.borderRadius = '50%';
-          circleEl.style.fontSize = len <= 2 ? '12px' : (len === 3 ? '11px' : '10px');
+          circleEl.style.fontSize = len <= 2 ? '16px' : (len === 3 ? '14px' : '12px');
         } else if (!location.place) {
           // For member markers, try to use avatar image
           const avatarSrc = getAvatarContent(location);
@@ -2847,8 +2849,8 @@ const LocationTracking = () => {
 
         // Spike part
         const spikeEl = document.createElement('div');
-  spikeEl.style.width = '12px';
-  spikeEl.style.height = '8px';
+  spikeEl.style.width = '16px';
+  spikeEl.style.height = '12px';
   spikeEl.style.backgroundColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
   spikeEl.style.clipPath = 'polygon(50% 100%, 0% 0%, 100% 0%)';
   if (location.location_missing) spikeEl.style.opacity = '0.6';
