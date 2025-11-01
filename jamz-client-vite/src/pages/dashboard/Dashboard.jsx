@@ -44,6 +44,7 @@ import {
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import AIChatAssistant from '../../components/AIChatAssistant';
+import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Dashboard = () => {
   const [groups, setGroups] = useState([]);
@@ -190,7 +191,7 @@ const Dashboard = () => {
             >
               <ListItemAvatar>
                 <Avatar 
-                  src={currentUser?.profile_image_url}
+                  src={getAvatarContent(currentUser)}
                   sx={{ 
                     width: 56, 
                     height: 56,
@@ -198,7 +199,7 @@ const Dashboard = () => {
                     borderColor: 'primary.main'
                   }}
                 >
-                  {currentUser?.first_name?.[0] || currentUser?.username?.[0]}
+                  {getAvatarFallback(currentUser)}
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
