@@ -2683,11 +2683,19 @@ const LocationTracking = () => {
               } else if (!location.place) {
                 // For member markers, try to use avatar image
                 const avatarSrc = getAvatarContent(location);
+                console.log('🔄 PIN Avatar Update Debug:', {
+                  username: location.username,
+                  has_profile_image_url: !!location.profile_image_url,
+                  profile_image_url: location.profile_image_url,
+                  avatarSrc: avatarSrc
+                });
                 const existingImg = circle.querySelector('img');
                 if (avatarSrc) {
                   if (existingImg && existingImg.src !== avatarSrc) {
+                    console.log('🔄 Updating existing img src to:', avatarSrc);
                     existingImg.src = avatarSrc;
                   } else if (!existingImg) {
+                    console.log('➕ Creating new avatar img:', avatarSrc);
                     circle.textContent = '';
                     const avatarImg = document.createElement('img');
                     avatarImg.src = avatarSrc;
@@ -2695,13 +2703,18 @@ const LocationTracking = () => {
                     avatarImg.style.height = '100%';
                     avatarImg.style.objectFit = 'cover';
                     avatarImg.style.borderRadius = '50%';
-                    avatarImg.onerror = () => {
+                    avatarImg.onerror = (err) => {
+                      console.error('❌ PIN Avatar update failed:', avatarSrc, err);
                       avatarImg.remove();
                       circle.textContent = getAvatarFallback(location);
+                    };
+                    avatarImg.onload = () => {
+                      console.log('✅ PIN Avatar update loaded:', avatarSrc);
                     };
                     circle.appendChild(avatarImg);
                   }
                 } else {
+                  console.log('⚠️ No avatarSrc on update, using initials');
                   if (existingImg) existingImg.remove();
                   const fallbackText = getAvatarFallback(location);
                   if (circle.textContent !== fallbackText) circle.textContent = fallbackText;
@@ -2771,6 +2784,14 @@ const LocationTracking = () => {
         } else if (!location.place) {
           // For member markers, try to use avatar image
           const avatarSrc = getAvatarContent(location);
+          console.log('🖼️ PIN Avatar Debug:', {
+            username: location.username,
+            has_profile_image_url: !!location.profile_image_url,
+            profile_image_url: location.profile_image_url,
+            has_social_accounts: !!location.social_accounts,
+            avatarSrc: avatarSrc,
+            fallback: getAvatarFallback(location)
+          });
           if (avatarSrc) {
             const avatarImg = document.createElement('img');
             avatarImg.src = avatarSrc;
@@ -2779,13 +2800,18 @@ const LocationTracking = () => {
             avatarImg.style.objectFit = 'cover';
             avatarImg.style.borderRadius = '50%';
             // Fallback to initials if image fails to load
-            avatarImg.onerror = () => {
+            avatarImg.onerror = (err) => {
+              console.error('❌ PIN Avatar image failed to load:', avatarSrc, err);
               avatarImg.remove();
               circleEl.textContent = getAvatarFallback(location);
+            };
+            avatarImg.onload = () => {
+              console.log('✅ PIN Avatar image loaded successfully:', avatarSrc);
             };
             circleEl.appendChild(avatarImg);
           } else {
             // No avatar available, use fallback initials
+            console.log('⚠️ No avatarSrc, using fallback initials');
             circleEl.textContent = getAvatarFallback(location);
           }
         } else {
