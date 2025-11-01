@@ -5,6 +5,8 @@ const Group = require('../models/group.model');
 const groupService = require('../services/group.service');
 const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
+const s3Service = require('../services/s3.service');
+const path = require('path');
 
 // Import MongoDB connection status checker
 // Adjust the path if needed based on your project structure
@@ -183,91 +185,75 @@ router.post('/',
  */
 router.post('/upload-avatar',
   passport.authenticate('jwt', { session: false }),
+  s3Service.upload.single('avatar'),
   async (req, res) => {
     try {
-      const multer = require('multer');
-      const path = require('path');
-      const supabase = require('../config/supabase');
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
       
-      // Configure multer for memory storage
-      const upload = multer({
-        storage: multer.memoryStorage(),
-        limits: {
-          fileSize: 5 * 1024 * 1024 // 5MB limit
-        },
-        fileFilter: (req, file, cb) => {
-          // Accept images only
-          if (!file.mimetype.startsWith('image/')) {
-            return cb(new Error('Only image files are allowed'));
-          }
-          cb(null, true);
-        }
-      }).single('avatar');
+      const { groupId } = req.body;
+      if (!groupId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Group ID is required'
+        });
+      }
       
-      // Handle the upload
-      upload(req, res, async function(err) {
-        if (err) {
-          return res.status(400).json({
-            success: false,
-            message: err.message
-          });
-        }
-        
-        if (!req.file) {
-          return res.status(400).json({
-            success: false,
-            message: 'No file uploaded'
-          });
-        }
-        
-        const { groupId } = req.body;
-        if (!groupId) {
-          return res.status(400).json({
-            success: false,
-            message: 'Group ID is required'
-          });
-        }
-        
-        try {
-          // Generate unique filename
-          const fileExt = path.extname(req.file.originalname);
-          const fileName = `group-${groupId}-${Date.now()}${fileExt}`;
-          const filePath = `group-avatars/${fileName}`;
-          
-          // Upload to Supabase Storage
-          const { data, error: uploadError } = await supabase.storage
-            .from('profile-images')
-            .upload(filePath, req.file.buffer, {
-              contentType: req.file.mimetype,
-              upsert: false
-            });
-          
-          if (uploadError) {
-            throw uploadError;
-          }
-          
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('profile-images')
-            .getPublicUrl(filePath);
-          
-          res.json({
-            success: true,
-            avatarUrl: publicUrl
-          });
-        } catch (uploadError) {
-          console.error('Error uploading to storage:', uploadError);
-          res.status(500).json({
-            success: false,
-            message: 'Failed to upload image to storage'
-          });
-        }
+      if (!s3Service.isSupabaseConfigured()) {
+        return res.status(503).json({
+          success: false,
+          message: 'Storage service not configured'
+        });
+      }
+      
+      // Generate unique filename for group avatar
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const extension = path.extname(req.file.originalname);
+      const filename = `group-${groupId}-${uniqueSuffix}${extension}`;
+      const filePath = `group-avatars/${filename}`;
+      
+      console.log('Uploading group avatar:', { filePath, groupId, size: req.file.buffer.length });
+      
+      // Upload to Supabase using the centralized Supabase client
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+          cacheControl: '3600'
+        });
+      
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+      
+      console.log('Group avatar uploaded successfully:', data);
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath);
+      
+      res.json({
+        success: true,
+        avatarUrl: urlData.publicUrl
       });
     } catch (error) {
       console.error('Avatar upload error:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: error.message || 'Failed to upload avatar'
       });
     }
   }
