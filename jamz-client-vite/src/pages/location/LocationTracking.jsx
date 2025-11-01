@@ -3488,32 +3488,40 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Audio Controls */}
-      {/* Join/Leave Audio Session Button */}
-      <Tooltip title={isInSession ? "Leave Audio Call" : "Join Audio Call"}>
-        <IconButton
+      {/* Audio Call Button */}
+      <Tooltip title={isInSession ? `Leave Audio Call (${audioParticipants.length + 1} in call)` : "Join Audio Call"}>
+        <Badge 
+          badgeContent={isInSession ? audioParticipants.length + 1 : 0} 
+          color="success"
           sx={{
             position: 'absolute',
-            bottom: 140,
-            right: 16,
+            top: showControls ? 72 : 16,
+            right: 256,
             zIndex: 10,
-            bgcolor: isInSession ? 'error.main' : 'success.main',
-            color: 'white',
-            boxShadow: 3,
-            animation: isInSession ? 'pulse 2s infinite' : 'none',
-            '@keyframes pulse': {
-              '0%': { boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)' },
-              '70%': { boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)' },
-              '100%': { boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)' }
-            },
-            '&:hover': {
-              bgcolor: isInSession ? 'error.dark' : 'success.dark',
-            }
+            display: showMembersList ? 'none' : undefined,
           }}
-          onClick={isInSession ? leaveSession : joinSession}
         >
-          {isInSession ? <PhoneDisabledIcon /> : <PhoneIcon />}
-        </IconButton>
+          <IconButton
+            sx={{
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+              color: isInSession ? 'error.main' : 'purple',
+              boxShadow: 2,
+              cursor: 'pointer',
+              animation: isInSession ? 'pulse 2s infinite' : 'none',
+              '@keyframes pulse': {
+                '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
+                '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
+                '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
+              },
+              '&:hover': {
+                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+              }
+            }}
+            onClick={isInSession ? leaveSession : joinSession}
+          >
+            {isInSession ? <PhoneDisabledIcon /> : <PhoneIcon />}
+          </IconButton>
+        </Badge>
       </Tooltip>
 
       {/* Mute/Unmute Button (only show when in session) */}
@@ -3522,19 +3530,21 @@ const LocationTracking = () => {
           <IconButton
             sx={{
               position: 'absolute',
-              bottom: 80,
-              right: 16,
+              top: showControls ? 72 : 16,
+              right: 316,
               zIndex: 10,
-              bgcolor: isMuted ? 'grey.500' : 'primary.main',
-              color: 'white',
-              boxShadow: 3,
-              animation: isSpeaking ? 'speaking 0.5s infinite' : 'none',
+              display: showMembersList ? 'none' : undefined,
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+              color: isMuted ? 'grey.500' : isSpeaking ? 'success.main' : 'purple',
+              boxShadow: 2,
+              cursor: 'pointer',
+              animation: isSpeaking ? 'speaking 1s infinite' : 'none',
               '@keyframes speaking': {
-                '0%, 100%': { transform: 'scale(1)' },
-                '50%': { transform: 'scale(1.1)' }
+                '0%, 100%': { boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)' },
+                '50%': { boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)' }
               },
               '&:hover': {
-                bgcolor: isMuted ? 'grey.700' : 'primary.dark',
+                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
               }
             }}
             onClick={toggleMute}
@@ -3544,32 +3554,15 @@ const LocationTracking = () => {
         </Tooltip>
       )}
 
-      {/* Audio Participants Chip (only show when in session) */}
-      {isInSession && (
-        <Chip
-          icon={<PeopleIcon />}
-          label={`${audioParticipants.length + 1} in call`}
-          size="small"
-          sx={{
-            position: 'absolute',
-            bottom: 20,
-            right: 16,
-            zIndex: 10,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            boxShadow: 2
-          }}
-        />
-      )}
-
       {/* Speaking Indicator (only show when speaking) */}
       {isSpeaking && !isMuted && (
         <Box
           sx={{
             position: 'absolute',
-            top: 16,
+            top: showControls ? 132 : 76,
             right: 16,
             zIndex: 10,
-            display: 'flex',
+            display: showMembersList ? 'none' : 'flex',
             alignItems: 'center',
             gap: 1,
             bgcolor: 'success.main',
@@ -3585,12 +3578,12 @@ const LocationTracking = () => {
             }
           }}
         >
-          <MicIcon />
-          <Typography variant="body2">Speaking...</Typography>
+          <MicIcon fontSize="small" />
+          <Typography variant="caption">Speaking</Typography>
           <Box
             sx={{
-              width: 60,
-              height: 4,
+              width: 40,
+              height: 3,
               bgcolor: 'rgba(255, 255, 255, 0.3)',
               borderRadius: 1,
               overflow: 'hidden'
