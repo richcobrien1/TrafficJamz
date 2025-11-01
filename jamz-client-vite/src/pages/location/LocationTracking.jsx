@@ -95,13 +95,16 @@ const LocationTracking = () => {
   const currentUser = useMemo(() => {
     console.log('🔍 useMemo executing - user:', user);
     console.log('🔍 user?.id:', user?.id, 'user?.user_id:', user?.user_id);
+    console.log('🔍 user?.profile_image_url:', user?.profile_image_url);
     
     if (user && (user.id || user.user_id)) {
       console.log('✅ Using user from useAuth:', user);
-      return {
+      const result = {
         ...user,
         id: user.id || user.user_id  // Ensure id is always set
       };
+      console.log('🔍 currentUser result.profile_image_url:', result.profile_image_url);
+      return result;
     }
     
     console.log('⚠️ user missing or user.id undefined, attempting JWT decode');
@@ -652,18 +655,21 @@ const LocationTracking = () => {
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
       console.log('🗺️ [fetchWithRateLimitProtection] Building allLocations. userLocation:', userLocation ? 'SET' : 'NULL');
+      console.log('🔍 [fetchWithRateLimitProtection] user from useAuth:', user);
+      console.log('🔍 [fetchWithRateLimitProtection] user?.profile_image_url:', user?.profile_image_url);
       if (userLocation) {
         const currentUserLocation = {
-          user_id: currentUser?.id || 'current-user',
-          username: currentUser?.username || 'CurrentUser',
-          first_name: currentUser?.first_name || null,
-          last_name: currentUser?.last_name || null,
-          profile_image_url: currentUser?.profile_image_url || null,
-          social_accounts: currentUser?.social_accounts || null,
+          user_id: user?.user_id || user?.id || currentUser?.id || 'current-user',
+          username: user?.username || currentUser?.username || 'CurrentUser',
+          first_name: user?.first_name || currentUser?.first_name || null,
+          last_name: user?.last_name || currentUser?.last_name || null,
+          profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
+          social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
         };
+        console.log('🖼️ [fetchWithRateLimitProtection] currentUserLocation.profile_image_url:', currentUserLocation.profile_image_url);
         console.log('✅ [fetchWithRateLimitProtection] Adding current user to allLocations');
         // No need to filter again - we already filtered enrichedLocations above
         allLocations = [currentUserLocation, ...enrichedLocations];
@@ -841,19 +847,22 @@ const LocationTracking = () => {
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
       console.log('🗺️ [fetchMemberLocations] Building allLocations. userLocation:', userLocation ? 'SET' : 'NULL', 'enrichedLocations count:', enrichedLocations.length);
+      console.log('🔍 [fetchMemberLocations] user from useAuth:', user);
+      console.log('🔍 [fetchMemberLocations] user?.profile_image_url:', user?.profile_image_url);
       if (userLocation) {
         const currentUserLocation = {
-          user_id: currentUser?.id || 'current-user',
-          username: currentUser?.username || 'CurrentUser',
-          first_name: currentUser?.first_name || null,
-          last_name: currentUser?.last_name || null,
-          profile_image_url: currentUser?.profile_image_url || null,
-          social_accounts: currentUser?.social_accounts || null,
+          user_id: user?.user_id || user?.id || currentUser?.id || 'current-user',
+          username: user?.username || currentUser?.username || 'CurrentUser',
+          first_name: user?.first_name || currentUser?.first_name || null,
+          last_name: user?.last_name || currentUser?.last_name || null,
+          profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
+          social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
         };
         console.log('✅ Adding current user to allLocations:', { user_id: currentUserLocation.user_id, username: currentUserLocation.username });
+        console.log('🖼️ [fetchMemberLocations] currentUserLocation.profile_image_url:', currentUserLocation.profile_image_url);
         // No need to filter again - we already filtered enrichedLocations above
         allLocations = [currentUserLocation, ...enrichedLocations];
       } else {
