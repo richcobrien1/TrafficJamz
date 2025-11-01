@@ -14,6 +14,8 @@ import {
   Paper,
   Avatar,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
   Alert,
   Stepper,
   Step,
@@ -31,7 +33,8 @@ const Register = () => {
     confirmPassword: '',
     first_name: '',
     last_name: '',
-    phone_number: ''
+    phone_number: '',
+    gender: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,7 +98,8 @@ const Register = () => {
         password: formData.password,
         first_name: formData.first_name,
         last_name: formData.last_name,
-        phone_number: formData.phone_number
+        phone_number: formData.phone_number,
+        gender: formData.gender || null
       };
       
   // Register will store the token and set the user in AuthContext.
@@ -225,6 +229,38 @@ const Register = () => {
                   value={formData.phone_number}
                   onChange={handleChange}
                 />
+              </Grid>
+              <Grid item xs={12}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Gender (for avatar personalization)
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={formData.gender}
+                    exclusive
+                    onChange={(event, newGender) => {
+                      if (newGender !== null) {
+                        setFormData(prev => ({ ...prev, gender: newGender }));
+                      }
+                    }}
+                    aria-label="gender selection"
+                    fullWidth
+                    sx={{ mt: 1 }}
+                  >
+                    <ToggleButton value="male" aria-label="male">
+                      Male
+                    </ToggleButton>
+                    <ToggleButton value="female" aria-label="female">
+                      Female
+                    </ToggleButton>
+                    <ToggleButton value="non-binary" aria-label="non-binary">
+                      Non-binary
+                    </ToggleButton>
+                    <ToggleButton value="prefer-not-to-say" aria-label="prefer not to say">
+                      Prefer not to say
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
               </Grid>
             </Grid>
           )}

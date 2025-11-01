@@ -37,7 +37,8 @@ router.post('/register', [
       password: req.body.password,
       first_name: req.body.first_name,
       last_name: req.body.last_name,
-      phone_number: req.body.phone_number
+      phone_number: req.body.phone_number,
+      gender: req.body.gender || null
     };
 
     const user = await userService.register(userData);

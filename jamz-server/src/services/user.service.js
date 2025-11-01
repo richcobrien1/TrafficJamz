@@ -110,7 +110,8 @@ class UserService {
         password_hash: userData.password, // Will be hashed by model hook
         first_name: userData.first_name,
         last_name: userData.last_name,
-        phone_number: userData.phone_number
+        phone_number: userData.phone_number,
+        gender: userData.gender || null
       });
 
       // Remove sensitive data
