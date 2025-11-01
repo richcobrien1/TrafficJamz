@@ -2458,13 +2458,17 @@ const LocationTracking = () => {
     if (mapRef.current && (locations.length > 0 || (showPlaces && places.length > 0) || userLocation)) {
       // Include current user location
       const currentUserLoc = userLocation ? [{
-        user_id: currentUser?.id || 'current-user',
-        username: currentUser?.username || 'CurrentUser',
-        first_name: currentUser?.first_name || null,
+        user_id: user?.user_id || user?.id || currentUser?.id || 'current-user',
+        username: user?.username || currentUser?.username || 'CurrentUser',
+        first_name: user?.first_name || currentUser?.first_name || null,
+        last_name: user?.last_name || currentUser?.last_name || null,
+        profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
+        social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
         coordinates: userLocation,
         timestamp: new Date().toISOString(),
         battery_level: 85
       }] : [];
+      console.log('🖼️ [draggingPlaceId-useEffect] currentUserLoc[0]?.profile_image_url:', currentUserLoc[0]?.profile_image_url);
       
       const allLocations = showPlaces 
         ? [...currentUserLoc, ...locations, ...places] 
