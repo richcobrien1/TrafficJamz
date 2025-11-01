@@ -196,4 +196,40 @@ router.post('/upload-profile-image',
   }
 );
 
+/**
+ * @route GET /api/users/storage-config
+ * @desc Get storage configuration status (for debugging)
+ * @access Private
+ */
+router.get('/storage-config',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    try {
+      const config = {
+        isS3Configured: s3Service.isS3Configured(),
+        storageType: s3Service.isS3Configured() ? 'R2/S3' : 'Local',
+        hasR2Endpoint: !!process.env.R2_ENDPOINT,
+        hasS3Endpoint: !!process.env.S3_ENDPOINT,
+        hasR2PublicUrl: !!process.env.R2_PUBLIC_URL,
+        hasS3PublicUrl: !!process.env.S3_PUBLIC_URL,
+        hasBucket: !!process.env.AWS_S3_BUCKET,
+        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION || 'auto',
+        // Don't expose actual values, just show they exist
+        endpoint: process.env.R2_ENDPOINT ? 'SET' : (process.env.S3_ENDPOINT ? 'SET' : 'NOT SET'),
+        publicUrl: process.env.R2_PUBLIC_URL ? 'SET' : (process.env.S3_PUBLIC_URL ? 'SET' : 'NOT SET'),
+      };
+
+      res.json({
+        success: true,
+        config
+      });
+    } catch (error) {
+      console.error('Storage config check error:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+);
+
 module.exports = router;
