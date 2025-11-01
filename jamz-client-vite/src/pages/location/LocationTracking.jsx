@@ -728,17 +728,19 @@ const LocationTracking = () => {
       // Update map markers - include current user location if available
       let allLocations = enrichedLocations;
       console.log('🗺️ [fetchWithRateLimitProtection] Building allLocations. userLocation:', userLocation ? 'SET' : 'NULL');
-      console.log('🔍 [fetchWithRateLimitProtection] user from useAuth:', user);
-      console.log('🔍 [fetchWithRateLimitProtection] user?.profile_image_url:', user?.profile_image_url);
+      console.log('🔍 [fetchWithRateLimitProtection] currentUser (JWT-enriched):', currentUser);
+      console.log('🔍 [fetchWithRateLimitProtection] currentUser?.profile_image_url:', currentUser?.profile_image_url);
+      console.log('🔍 [fetchWithRateLimitProtection] currentUser?.first_name:', currentUser?.first_name);
+      console.log('🔍 [fetchWithRateLimitProtection] currentUser?.last_name:', currentUser?.last_name);
       if (userLocation) {
         const currentUserLocation = {
-          user_id: user?.user_id || user?.id || currentUser?.id || 'current-user',
-          username: user?.username || currentUser?.username || 'CurrentUser',
-          first_name: user?.first_name || currentUser?.first_name || null,
-          last_name: user?.last_name || currentUser?.last_name || null,
-          profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
-          social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
-          gender: user?.gender || currentUser?.gender || null,
+          user_id: currentUser?.id || currentUser?.user_id || 'current-user',
+          username: currentUser?.username || 'CurrentUser',
+          first_name: currentUser?.first_name || null,
+          last_name: currentUser?.last_name || null,
+          profile_image_url: currentUser?.profile_image_url || null,
+          social_accounts: currentUser?.social_accounts || null,
+          gender: currentUser?.gender || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
@@ -2153,6 +2155,14 @@ const LocationTracking = () => {
   // Handle marker click to open location dialog
   // Handle marker click to open location dialog or aggregated member list
   const handleMarkerClick = (location) => {
+    console.log('🖱️ PIN CLICKED - Location data:', location);
+    console.log('🔍 PIN - user_id:', location?.user_id);
+    console.log('🔍 PIN - username:', location?.username);
+    console.log('🔍 PIN - first_name:', location?.first_name);
+    console.log('🔍 PIN - last_name:', location?.last_name);
+    console.log('🔍 PIN - profile_image_url:', location?.profile_image_url);
+    console.log('🔍 PIN - currentUser.id:', currentUser?.id);
+    
     if (location && location.aggregated) {
       // Build member list for this bucket using user_ids (fallback to locations/members data)
       const ids = location.user_ids || [];
@@ -4202,7 +4212,7 @@ const LocationTracking = () => {
                     height: 80,
                     mb: 1,
                     bgcolor: selectedLocation.place ? 'success.main' : 
-                             (selectedLocation.user_id === (user?.id || 'current-user') ? 'primary.main' : 'secondary.main')
+                             (selectedLocation.user_id === currentUser?.id ? 'primary.main' : 'secondary.main')
                   }}
                 >
                   {selectedLocation.place ? '📍' : getAvatarFallback(selectedLocation)}
@@ -4244,7 +4254,7 @@ const LocationTracking = () => {
                     </Box>
                     <Typography variant="body2" color="text.secondary">
                       {selectedLocation.place ? 'Saved Location' : 
-                       (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
+                       (selectedLocation.user_id === currentUser?.id ? 'Your Location' : 'Group Member')}
                     </Typography>
                   </>
                 ) : (
@@ -4256,7 +4266,7 @@ const LocationTracking = () => {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {selectedLocation.place ? 'Saved Location' : 
-                       (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
+                       (selectedLocation.user_id === currentUser?.id ? 'Your Location' : 'Group Member')}
                     </Typography>
                   </>
                 )}
