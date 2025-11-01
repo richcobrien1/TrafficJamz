@@ -61,7 +61,7 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
 
-  const { currentUser, logout } = useAuth();
+  const { user: currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
