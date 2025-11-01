@@ -44,25 +44,35 @@ const uploadToSupabase = async (file, userId) => {
     throw new Error('Supabase storage is not configured');
   }
 
-  // Generate unique filename
-  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-  const extension = path.extname(file.originalname);
-  const filename = `profile-${userId}-${uniqueSuffix}${extension}`;
-  const filePath = `profiles/${filename}`;
+  try {
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    const filename = `profile-${userId}-${uniqueSuffix}${extension}`;
+    const filePath = `profiles/${filename}`;
 
-  // Upload to Supabase Storage
-  const { data, error } = await supabase.storage
-    .from('profile-images')
-    .upload(filePath, file.buffer, {
-      contentType: file.mimetype,
-      upsert: false
-    });
+    console.log('Uploading to Supabase:', { filePath, size: file.buffer.length, type: file.mimetype });
 
-  if (error) {
-    throw new Error(`Supabase upload failed: ${error.message}`);
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('profile-images')
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+        cacheControl: '3600'
+      });
+
+    if (error) {
+      console.error('Supabase upload error details:', error);
+      throw new Error(`Supabase upload failed: ${error.message}`);
+    }
+
+    console.log('Upload successful:', data);
+    return filePath;
+  } catch (error) {
+    console.error('Upload exception:', error);
+    throw error;
   }
-
-  return filePath;
 };
 
 // Get public URL for uploaded file
