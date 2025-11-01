@@ -656,6 +656,134 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ===== MUSIC SESSION EVENTS =====
+  
+  // Join music session (same as audio session)
+  socket.on('join-music-session', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const { sessionId } = data;
+      if (!sessionId) {
+        console.warn('join-music-session missing sessionId from socket:', socket.id);
+        return;
+      }
+      
+      const room = `audio-${sessionId}`;
+      socket.join(room);
+      console.log(`Socket ${socket.id} joined music session: ${sessionId}`);
+      
+      // Notify others in the room
+      socket.to(room).emit('user-joined-music', {
+        socketId: socket.id,
+        sessionId
+      });
+    } catch (err) {
+      console.error('join-music-session handler error:', err);
+    }
+  });
+  
+  // Music control events (play, pause, seek)
+  socket.on('music-control', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      
+      const { action, position, trackId } = data;
+      const room = `audio-${sessionId}`;
+      
+      // Broadcast to all others in the room
+      socket.to(room).emit(`music-${action}`, {
+        position,
+        trackId,
+        from: socket.id,
+        timestamp: Date.now()
+      });
+      
+      console.log(`Music ${action} from ${socket.id} in session ${sessionId}`);
+    } catch (err) {
+      console.error('music-control handler error:', err);
+    }
+  });
+  
+  // Track change event
+  socket.on('music-track-change', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      
+      const room = `audio-${sessionId}`;
+      socket.to(room).emit('music-track-change', {
+        track: data.track,
+        from: socket.id,
+        timestamp: Date.now()
+      });
+      
+      console.log(`Track change from ${socket.id} in session ${sessionId}:`, data.track?.title);
+    } catch (err) {
+      console.error('music-track-change handler error:', err);
+    }
+  });
+  
+  // Controller (DJ) mode events
+  socket.on('music-take-control', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      
+      const room = `audio-${sessionId}`;
+      socket.to(room).emit('music-controller-changed', {
+        controllerId: socket.id,
+        timestamp: Date.now()
+      });
+      
+      console.log(`${socket.id} took DJ control in session ${sessionId}`);
+    } catch (err) {
+      console.error('music-take-control handler error:', err);
+    }
+  });
+  
+  socket.on('music-release-control', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      
+      const room = `audio-${sessionId}`;
+      socket.to(room).emit('music-controller-changed', {
+        controllerId: null,
+        timestamp: Date.now()
+      });
+      
+      console.log(`${socket.id} released DJ control in session ${sessionId}`);
+    } catch (err) {
+      console.error('music-release-control handler error:', err);
+    }
+  });
+  
+  // Playlist update event
+  socket.on('playlist-update', (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      
+      const room = `audio-${sessionId}`;
+      socket.to(room).emit('playlist-update', {
+        playlist: data.playlist,
+        from: socket.id,
+        timestamp: Date.now()
+      });
+      
+      console.log(`Playlist update from ${socket.id} in session ${sessionId}`);
+    } catch (err) {
+      console.error('playlist-update handler error:', err);
+    }
+  });
+  
+  // Music sync event (for periodic synchronization)
   socket.on('music-sync', (data) => {
     try {
       if (!audioSignalingEnabled) return;
