@@ -94,10 +94,14 @@ const LocationTracking = () => {
   // Fallback to extract user info from JWT token if useAuth() returns undefined
   const currentUser = useMemo(() => {
     console.log('🔍 useMemo executing - user:', user);
+    console.log('🔍 user?.id:', user?.id, 'user?.user_id:', user?.user_id);
     
-    if (user && user.id) {
+    if (user && (user.id || user.user_id)) {
       console.log('✅ Using user from useAuth:', user);
-      return user;
+      return {
+        ...user,
+        id: user.id || user.user_id  // Ensure id is always set
+      };
     }
     
     console.log('⚠️ user missing or user.id undefined, attempting JWT decode');
