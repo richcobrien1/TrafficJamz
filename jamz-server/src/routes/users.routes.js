@@ -172,8 +172,11 @@ router.post('/upload-profile-image',
         return res.status(400).json({ success: false, message: 'No file uploaded' });
       }
 
-      // Get the file URL based on storage type (S3 or local)
-      const imageUrl = s3Service.getFileUrl(req.file.key || req.file.filename);
+      // Upload to Supabase Storage
+      const filePath = await s3Service.uploadToSupabase(req.file, req.user.user_id);
+      
+      // Get the public URL
+      const imageUrl = s3Service.getFileUrl(filePath);
 
       // Update user's profile image URL
       const updateData = {
@@ -187,7 +190,7 @@ router.post('/upload-profile-image',
         message: 'Profile image uploaded successfully',
         image_url: imageUrl,
         user,
-        storage_type: s3Service.isS3Configured() ? 's3' : 'local'
+        storage_type: 'supabase'
       });
     } catch (error) {
       console.error('Profile image upload error:', error);
@@ -206,19 +209,11 @@ router.get('/storage-config',
   (req, res) => {
     try {
       const config = {
-        isS3Configured: s3Service.isS3Configured(),
-        storageType: s3Service.isS3Configured() ? 'R2/S3' : 'Local',
-        hasR2Endpoint: !!process.env.R2_ENDPOINT,
-        hasS3Endpoint: !!process.env.S3_ENDPOINT,
-        hasR2PublicUrl: !!process.env.R2_PUBLIC_URL,
-        hasS3PublicUrl: !!process.env.S3_PUBLIC_URL,
-        hasBucket: !!process.env.AWS_S3_BUCKET,
-        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-        region: process.env.AWS_REGION || 'auto',
-        // Don't expose actual values, just show they exist
-        endpoint: process.env.R2_ENDPOINT ? 'SET' : (process.env.S3_ENDPOINT ? 'SET' : 'NOT SET'),
-        publicUrl: process.env.R2_PUBLIC_URL ? 'SET' : (process.env.S3_PUBLIC_URL ? 'SET' : 'NOT SET'),
+        isSupabaseConfigured: s3Service.isSupabaseConfigured(),
+        storageType: s3Service.isSupabaseConfigured() ? 'Supabase' : 'Not Configured',
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        supabaseUrl: process.env.SUPABASE_URL || 'NOT SET'
       };
 
       res.json({
