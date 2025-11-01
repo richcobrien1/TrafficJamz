@@ -17,22 +17,25 @@ const isS3Configured = () => {
            process.env.AWS_S3_BUCKET);
 };
 
-// S3 upload configuration
-const s3Storage = multerS3({
-  s3: s3,
-  bucket: process.env.AWS_S3_BUCKET,
-  acl: 'public-read', // Makes files publicly accessible
-  metadata: (req, file, cb) => {
-    cb(null, { fieldName: file.fieldname });
-  },
-  key: (req, file, cb) => {
-    // Generate unique filename with user ID and timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const extension = path.extname(file.originalname);
-    const filename = `profiles/profile-${req.user.user_id}-${uniqueSuffix}${extension}`;
-    cb(null, filename);
-  }
-});
+// S3 upload configuration - only initialize if S3 is configured
+let s3Storage = null;
+if (isS3Configured()) {
+  s3Storage = multerS3({
+    s3: s3,
+    bucket: process.env.AWS_S3_BUCKET,
+    acl: 'public-read', // Makes files publicly accessible
+    metadata: (req, file, cb) => {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: (req, file, cb) => {
+      // Generate unique filename with user ID and timestamp
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const extension = path.extname(file.originalname);
+      const filename = `profiles/profile-${req.user.user_id}-${uniqueSuffix}${extension}`;
+      cb(null, filename);
+    }
+  });
+}
 
 // Local storage fallback (for development or when S3 is not configured)
 const localStorage = multer.diskStorage({
@@ -54,7 +57,7 @@ const localStorage = multer.diskStorage({
 });
 
 // Choose storage based on configuration
-const storage = isS3Configured() ? s3Storage : localStorage;
+const storage = s3Storage || localStorage;
 
 // File filter for images
 const fileFilter = (req, file, cb) => {
