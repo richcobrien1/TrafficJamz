@@ -76,6 +76,10 @@ const GroupDetail = () => {
   const [editAvatarOptions, setEditAvatarOptions] = useState([]);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
+  const [uploadedAvatarFile, setUploadedAvatarFile] = useState(null);
+  const [uploadedAvatarPreview, setUploadedAvatarPreview] = useState('');
+  const [generatingAIAvatars, setGeneratingAIAvatars] = useState(false);
+  const fileInputRef = useRef(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [openCancelInviteDialog, setOpenCancelInviteDialog] = useState(false);
@@ -112,22 +116,86 @@ const GroupDetail = () => {
     }
   }, [group]);
   
-  const generateEditAvatarOptions = (groupName) => {
+  const generateEditAvatarOptions = async (groupName, description = '') => {
     if (!groupName.trim()) {
       setEditAvatarOptions([]);
       return;
     }
     
-    // Generate 8 different avatar styles based on group name
+    // Generate DiceBear avatar styles based on group name
     const styles = ['adventurer', 'avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'personas', 'shapes'];
-    const options = styles.map(style => 
+    const diceOptions = styles.map(style => 
       `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(groupName)}&size=200`
     );
-    setEditAvatarOptions(options);
+    
+    setEditAvatarOptions(diceOptions);
+    
     // Keep current avatar selected if it exists, otherwise select first option
-    if (!selectedEditAvatar && options.length > 0) {
-      setSelectedEditAvatar(group?.avatar_url || options[0]);
+    if (!selectedEditAvatar && diceOptions.length > 0) {
+      setSelectedEditAvatar(group?.avatar_url || diceOptions[0]);
     }
+  };
+  
+  const generateAIAvatars = async () => {
+    if (!editName.trim()) {
+      setEditError('Please enter a group name first');
+      return;
+    }
+    
+    setGeneratingAIAvatars(true);
+    setEditError('');
+    
+    try {
+      // Create a prompt based on group name and description
+      const prompt = editDescription.trim() 
+        ? `${editName} - ${editDescription}`
+        : editName;
+      
+      // Call backend to generate AI images
+      const response = await api.post('/groups/generate-avatar', {
+        prompt: prompt,
+        count: 4 // Generate 4 AI options
+      });
+      
+      if (response.data.success && response.data.avatars) {
+        // Prepend AI-generated avatars to the existing options
+        setEditAvatarOptions(prev => [...response.data.avatars, ...prev]);
+      } else {
+        throw new Error('Failed to generate AI avatars');
+      }
+    } catch (error) {
+      console.error('Error generating AI avatars:', error);
+      setEditError('Failed to generate AI avatars. Using default options.');
+    } finally {
+      setGeneratingAIAvatars(false);
+    }
+  };
+  
+  const handleAvatarFileChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setEditError('Please select a valid image file');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setEditError('Image size must be less than 5MB');
+      return;
+    }
+    
+    setUploadedAvatarFile(file);
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUploadedAvatarPreview(reader.result);
+      setSelectedEditAvatar(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
   
   useEffect(() => {
@@ -440,19 +508,43 @@ const GroupDetail = () => {
   
   const handleEditGroup = async () => {
     try {
-      setSubmitting(true); // Now this will work
+      setSubmitting(true);
+      setEditError('');
       
-  console.log('Sending PUT request to:', `/groups/${groupId}`);
+      let avatarToSend = selectedEditAvatar || avatarUrl;
+      
+      // If user uploaded a file, upload it first
+      if (uploadedAvatarFile) {
+        try {
+          const formData = new FormData();
+          formData.append('avatar', uploadedAvatarFile);
+          formData.append('groupId', groupId);
+          
+          const uploadResponse = await api.post('/groups/upload-avatar', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          if (uploadResponse.data.success && uploadResponse.data.avatarUrl) {
+            avatarToSend = uploadResponse.data.avatarUrl;
+          }
+        } catch (uploadError) {
+          console.error('Error uploading avatar:', uploadError);
+          setEditError('Failed to upload avatar image');
+          setSubmitting(false);
+          return;
+        }
+      }
+      
+      console.log('Sending PUT request to:', `/groups/${groupId}`);
       console.log('Request data:', {
         group_name: editName,
         group_description: editDescription,
-        // TODO other fields...
+        avatar_url: avatarToSend
       });
       
-      // Determine avatar URL to send (use selected or keep existing)
-      const avatarToSend = selectedEditAvatar || avatarUrl;
-      
-  const response = await api.put(`/groups/${groupId}`, {
+      const response = await api.put(`/groups/${groupId}`, {
         group_name: editName,
         group_description: editDescription,
         privacy_level: privacyLevel,
@@ -461,8 +553,7 @@ const GroupDetail = () => {
       
       console.log('Update response:', response.data);
       
-      // Update only the changed fields instead of replacing the entire group object
-      // to preserve member details that might not be included in the update response
+      // Update the group state
       setGroup(prevGroup => ({
         ...prevGroup,
         name: response.data.group.name || response.data.group.group_name,
@@ -471,16 +562,21 @@ const GroupDetail = () => {
         avatar_url: response.data.group.avatar_url,
         updatedAt: response.data.group.updatedAt
       }));
+      
+      // Reset states and close dialog
       setEditMode(false);
-      setOpenEditDialog(false); // Close the dialog after successful save
+      setOpenEditDialog(false);
       setEditAvatarOptions([]);
       setSelectedEditAvatar('');
+      setUploadedAvatarFile(null);
+      setUploadedAvatarPreview('');
       setError('');
+      setEditError('');
     } catch (error) {
       console.error('Error updating group:', error);
-      setError(error.response?.data?.message || 'Failed to update group. Please try again.');
+      setEditError(error.response?.data?.message || 'Failed to update group. Please try again.');
     } finally {
-      setSubmitting(false); // And this will work too
+      setSubmitting(false);
     }
   };
   
@@ -1112,7 +1208,7 @@ const GroupDetail = () => {
       </Dialog>
       
       {/* Edit Group Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Edit Group</DialogTitle>
         <DialogContent>
           {editError && (
@@ -1124,14 +1220,14 @@ const GroupDetail = () => {
             autoFocus
             margin="dense"
             id="name"
-            label="Group Name"
+            label="Group Name *"
             type="text"
             fullWidth
             variant="outlined"
             value={editName}
             onChange={(e) => {
               setEditName(e.target.value);
-              generateEditAvatarOptions(e.target.value);
+              generateEditAvatarOptions(e.target.value, editDescription);
             }}
             required
           />
@@ -1147,36 +1243,105 @@ const GroupDetail = () => {
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
           />
-          {editAvatarOptions.length > 0 && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Select a Group Avatar
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
-                {editAvatarOptions.map((url, index) => (
-                  <Avatar
-                    key={index}
-                    src={url}
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      cursor: 'pointer',
-                      border: selectedEditAvatar === url ? '3px solid #1976d2' : '2px solid transparent',
-                      '&:hover': { opacity: 0.7 }
-                    }}
-                    onClick={() => setSelectedEditAvatar(url)}
-                  />
-                ))}
-              </Box>
+          
+          {/* Avatar Selection Section */}
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+              Group Avatar
+            </Typography>
+            
+            {/* Upload Custom Image */}
+            <Box sx={{ mb: 2 }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleAvatarFileChange}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => fileInputRef.current?.click()}
+                sx={{ mr: 1 }}
+              >
+                Upload Image
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={generateAIAvatars}
+                disabled={generatingAIAvatars || !editName.trim()}
+              >
+                {generatingAIAvatars ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+                Generate AI Avatars
+              </Button>
             </Box>
-          )}
+            
+            {/* Show uploaded preview */}
+            {uploadedAvatarPreview && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Uploaded Image:
+                </Typography>
+                <Box sx={{ mt: 1 }}>
+                  <Avatar
+                    src={uploadedAvatarPreview}
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      border: '3px solid #1976d2'
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+            
+            {/* Avatar Options Grid */}
+            {editAvatarOptions.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="caption" color="text.secondary" gutterBottom>
+                  Or choose from generated options:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                  {editAvatarOptions.map((url, index) => (
+                    <Avatar
+                      key={index}
+                      src={url}
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        cursor: 'pointer',
+                        border: selectedEditAvatar === url ? '3px solid #1976d2' : '2px solid #e0e0e0',
+                        '&:hover': { 
+                          opacity: 0.7,
+                          transform: 'scale(1.05)',
+                          transition: 'all 0.2s'
+                        }
+                      }}
+                      onClick={() => {
+                        setSelectedEditAvatar(url);
+                        setUploadedAvatarFile(null);
+                        setUploadedAvatarPreview('');
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setOpenEditDialog(false);
+            setUploadedAvatarFile(null);
+            setUploadedAvatarPreview('');
+            setEditError('');
+          }}>
+            Cancel
+          </Button>
           <Button 
             onClick={handleEditGroup} 
             variant="contained"
-            disabled={submitting}
+            disabled={submitting || !editName.trim()}
           >
             {submitting ? <CircularProgress size={24} /> : 'Save Changes'}
           </Button>
