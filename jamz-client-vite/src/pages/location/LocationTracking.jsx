@@ -3769,7 +3769,10 @@ const LocationTracking = () => {
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography variant="h6">
-                  {selectedLocation.place ? `📍 ${selectedLocation.username || 'Place'}` : `${selectedLocation.username || 'Unknown'}`}
+                  {selectedLocation.place ? `📍 ${selectedLocation.username || 'Place'}` : 
+                   (selectedLocation.first_name && selectedLocation.last_name ? 
+                    `${selectedLocation.first_name} ${selectedLocation.last_name}` : 
+                    selectedLocation.first_name || selectedLocation.username || 'Unknown')}
                 </Typography>
               </Box>
               <IconButton
@@ -3789,6 +3792,7 @@ const LocationTracking = () => {
             <DialogContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                 <Avatar 
+                  src={selectedLocation.place ? undefined : getAvatarContent(selectedLocation)}
                   sx={{ 
                     width: 80, 
                     height: 80,
@@ -3797,7 +3801,7 @@ const LocationTracking = () => {
                              (selectedLocation.user_id === (user?.id || 'current-user') ? 'primary.main' : 'secondary.main')
                   }}
                 >
-                  {selectedLocation.place ? '📍' : (selectedLocation.username ? selectedLocation.username.charAt(0).toUpperCase() : '?')}
+                  {selectedLocation.place ? '📍' : getAvatarFallback(selectedLocation)}
                 </Avatar>
                 {selectedLocation.place ? (
                   <>
@@ -3841,7 +3845,11 @@ const LocationTracking = () => {
                   </>
                 ) : (
                   <>
-                    <Typography variant="h6">{selectedLocation.username || 'Unknown'}</Typography>
+                    <Typography variant="h6">
+                      {selectedLocation.first_name && selectedLocation.last_name ? 
+                        `${selectedLocation.first_name} ${selectedLocation.last_name}` : 
+                        selectedLocation.first_name || selectedLocation.username || 'Unknown'}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {selectedLocation.place ? 'Saved Location' : 
                        (selectedLocation.user_id === (user?.id || 'current-user') ? 'Your Location' : 'Group Member')}
