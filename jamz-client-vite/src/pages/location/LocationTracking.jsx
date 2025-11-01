@@ -665,6 +665,7 @@ const LocationTracking = () => {
           last_name: user?.last_name || currentUser?.last_name || null,
           profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
           social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
+          gender: user?.gender || currentUser?.gender || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
@@ -857,6 +858,7 @@ const LocationTracking = () => {
           last_name: user?.last_name || currentUser?.last_name || null,
           profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
           social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
+          gender: user?.gender || currentUser?.gender || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
@@ -2464,6 +2466,7 @@ const LocationTracking = () => {
         last_name: user?.last_name || currentUser?.last_name || null,
         profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
         social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
+        gender: user?.gender || currentUser?.gender || null,
         coordinates: userLocation,
         timestamp: new Date().toISOString(),
         battery_level: 85
@@ -2970,6 +2973,7 @@ const LocationTracking = () => {
       last_name: user?.last_name || currentUser?.last_name || null,
       profile_image_url: user?.profile_image_url || currentUser?.profile_image_url || null,
       social_accounts: user?.social_accounts || currentUser?.social_accounts || null,
+      gender: user?.gender || currentUser?.gender || null,
       coordinates: userLocationData,
       timestamp: new Date().toISOString(),
       battery_level: 85 // Default battery level

@@ -332,19 +332,20 @@ class GroupService {
         members = members.filter(member => member.role === filters.role);
       }
       
-      // Enrich with User table data (profile_image_url, social_accounts)
+      // Enrich with User table data (profile_image_url, social_accounts, gender)
       const enrichedMembers = await Promise.all(members.map(async (member) => {
         const memberObj = member.toObject();
         try {
           const user = await User.findOne({ 
             where: { user_id: member.user_id },
-            attributes: ['profile_image_url', 'social_accounts']
+            attributes: ['profile_image_url', 'social_accounts', 'gender']
           });
           
           return {
             ...memberObj,
             profile_image_url: user?.profile_image_url || null,
             social_accounts: user?.social_accounts || null,
+            gender: user?.gender || null,
             avatarUrl: generateMemberAvatar(member.email, member.first_name)
           };
         } catch (err) {
@@ -353,6 +354,7 @@ class GroupService {
             ...memberObj,
             profile_image_url: null,
             social_accounts: null,
+            gender: null,
             avatarUrl: generateMemberAvatar(member.email, member.first_name)
           };
         }

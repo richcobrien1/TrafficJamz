@@ -35,10 +35,21 @@ export const getAvatarContent = (user) => {
     }
   }
 
-  // Third priority: generate avatar from name using DiceBear
+  // Third priority: generate avatar from name using DiceBear with gender-aware styling
   const name = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
   if (name) {
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    // Use gender field if available, otherwise use neutral 'avataaars' style
+    // Note: Consider adding a 'gender' field to User model for better representation
+    const gender = user?.gender?.toLowerCase();
+    
+    if (gender === 'male' || gender === 'm') {
+      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9&gender=male`;
+    } else if (gender === 'female' || gender === 'f') {
+      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9&gender=female`;
+    } else {
+      // Gender-neutral avatar for non-specified or non-binary users
+      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    }
   }
 
   // Final fallback: return null to let Avatar component handle the fallback
@@ -46,7 +57,7 @@ export const getAvatarContent = (user) => {
 };
 
 /**
- * Get the fallback content for avatar (initials or emoji)
+ * Get the fallback content for avatar (initials or default avatar)
  * @param {Object} user - User object
  * @returns {string} Fallback content
  */
@@ -63,6 +74,6 @@ export const getAvatarFallback = (user) => {
     return firstInitial;
   }
 
-  // Fallback to username initial or emoji
-  return user?.username?.[0]?.toUpperCase() || '👤';
+  // Fallback to username initial or generic initials
+  return user?.username?.[0]?.toUpperCase() || 'U';
 };
