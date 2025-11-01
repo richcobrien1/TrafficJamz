@@ -612,7 +612,10 @@ const LocationTracking = () => {
             return {
               ...location,
               username: member.username,
-              first_name: member.first_name
+              first_name: member.first_name,
+              last_name: member.last_name,
+              profile_image_url: member.profile_image_url,
+              social_accounts: member.social_accounts
             };
           }
 
@@ -640,6 +643,9 @@ const LocationTracking = () => {
           user_id: currentUser?.id || 'current-user',
           username: currentUser?.username || 'CurrentUser',
           first_name: currentUser?.first_name || null,
+          last_name: currentUser?.last_name || null,
+          profile_image_url: currentUser?.profile_image_url || null,
+          social_accounts: currentUser?.social_accounts || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
@@ -785,7 +791,10 @@ const LocationTracking = () => {
             return {
               ...location,
               username: member.username,
-              first_name: member.first_name
+              first_name: member.first_name,
+              last_name: member.last_name,
+              profile_image_url: member.profile_image_url,
+              social_accounts: member.social_accounts
             };
           }
 
@@ -813,6 +822,9 @@ const LocationTracking = () => {
           user_id: currentUser?.id || 'current-user',
           username: currentUser?.username || 'CurrentUser',
           first_name: currentUser?.first_name || null,
+          last_name: currentUser?.last_name || null,
+          profile_image_url: currentUser?.profile_image_url || null,
+          social_accounts: currentUser?.social_accounts || null,
           coordinates: userLocation,
           timestamp: new Date().toISOString(),
           battery_level: 85
