@@ -332,13 +332,33 @@ class GroupService {
         members = members.filter(member => member.role === filters.role);
       }
       
-      // Generate avatar URLs for each member
-      members = members.map(member => ({
-        ...member.toObject(),
-        avatarUrl: generateMemberAvatar(member.email, member.first_name)
+      // Enrich with User table data (profile_image_url, social_accounts)
+      const enrichedMembers = await Promise.all(members.map(async (member) => {
+        const memberObj = member.toObject();
+        try {
+          const user = await User.findOne({ 
+            where: { user_id: member.user_id },
+            attributes: ['profile_image_url', 'social_accounts']
+          });
+          
+          return {
+            ...memberObj,
+            profile_image_url: user?.profile_image_url || null,
+            social_accounts: user?.social_accounts || null,
+            avatarUrl: generateMemberAvatar(member.email, member.first_name)
+          };
+        } catch (err) {
+          console.error(`Error fetching user data for ${member.user_id}:`, err);
+          return {
+            ...memberObj,
+            profile_image_url: null,
+            social_accounts: null,
+            avatarUrl: generateMemberAvatar(member.email, member.first_name)
+          };
+        }
       }));
       
-      return members;
+      return enrichedMembers;
     } catch (error) {
       throw error;
     }
