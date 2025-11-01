@@ -175,6 +175,165 @@ router.post('/',
   }
 );
 
+/**
+ * @route POST /api/groups/upload-avatar
+ * @desc Upload a custom group avatar image
+ * @access Private
+ * NOTE: This route must be defined BEFORE /:group_id to avoid parameter matching
+ */
+router.post('/upload-avatar',
+  passport.authenticate('jwt', { session: false }),
+  async (req, res) => {
+    try {
+      const multer = require('multer');
+      const path = require('path');
+      const supabase = require('../config/supabase');
+      
+      // Configure multer for memory storage
+      const upload = multer({
+        storage: multer.memoryStorage(),
+        limits: {
+          fileSize: 5 * 1024 * 1024 // 5MB limit
+        },
+        fileFilter: (req, file, cb) => {
+          // Accept images only
+          if (!file.mimetype.startsWith('image/')) {
+            return cb(new Error('Only image files are allowed'));
+          }
+          cb(null, true);
+        }
+      }).single('avatar');
+      
+      // Handle the upload
+      upload(req, res, async function(err) {
+        if (err) {
+          return res.status(400).json({
+            success: false,
+            message: err.message
+          });
+        }
+        
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            message: 'No file uploaded'
+          });
+        }
+        
+        const { groupId } = req.body;
+        if (!groupId) {
+          return res.status(400).json({
+            success: false,
+            message: 'Group ID is required'
+          });
+        }
+        
+        try {
+          // Generate unique filename
+          const fileExt = path.extname(req.file.originalname);
+          const fileName = `group-${groupId}-${Date.now()}${fileExt}`;
+          const filePath = `group-avatars/${fileName}`;
+          
+          // Upload to Supabase Storage
+          const { data, error: uploadError } = await supabase.storage
+            .from('profile-images')
+            .upload(filePath, req.file.buffer, {
+              contentType: req.file.mimetype,
+              upsert: false
+            });
+          
+          if (uploadError) {
+            throw uploadError;
+          }
+          
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('profile-images')
+            .getPublicUrl(filePath);
+          
+          res.json({
+            success: true,
+            avatarUrl: publicUrl
+          });
+        } catch (uploadError) {
+          console.error('Error uploading to storage:', uploadError);
+          res.status(500).json({
+            success: false,
+            message: 'Failed to upload image to storage'
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/groups/generate-avatar
+ * @desc Generate AI avatars based on group name and description
+ * @access Private
+ * NOTE: This route must be defined BEFORE /:group_id to avoid parameter matching
+ */
+router.post('/generate-avatar',
+  passport.authenticate('jwt', { session: false }),
+  [
+    body('prompt').notEmpty().withMessage('Prompt is required'),
+    body('count').optional().isInt({ min: 1, max: 10 }).withMessage('Count must be between 1 and 10'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const { prompt, count = 4 } = req.body;
+      
+      // Generate themed avatars using DiceBear with different styles and variations
+      const styles = ['adventurer', 'avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'personas', 'shapes'];
+      const seeds = [];
+      
+      // Generate variations by combining prompt with different descriptors
+      const descriptors = ['team', 'squad', 'crew', 'gang', 'group', 'friends', 'family', 'community'];
+      for (let i = 0; i < count; i++) {
+        seeds.push(`${prompt}-${descriptors[i % descriptors.length]}-${i}`);
+      }
+      
+      const avatars = seeds.map((seed, index) => {
+        const style = styles[index % styles.length];
+        return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&size=200`;
+      });
+      
+      // TODO: For real AI-generated images, integrate with OpenAI DALL-E:
+      /*
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: `Create a group avatar icon for: ${prompt}. Style: modern, friendly, minimalist`,
+        n: 1,
+        size: "1024x1024"
+      });
+      
+      const avatars = response.data.map(img => img.url);
+      */
+      
+      res.json({
+        success: true,
+        avatars: avatars
+      });
+    } catch (error) {
+      console.error('Avatar generation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate avatars'
+      });
+    }
+  }
+);
+
 // Update the GET route for fetching a specific group
 router.get('/:group_id',
   passport.authenticate('jwt', { session: false }),
@@ -767,165 +926,6 @@ router.delete('/:group_id/members/:member_id',
         success: false, 
         message: error.message,
         error: 'REMOVE_MEMBER_FAILED'
-      });
-    }
-  }
-);
-
-/**
- * @route POST /api/groups/upload-avatar
- * @desc Upload a custom group avatar image
- * @access Private
- */
-router.post('/upload-avatar',
-  passport.authenticate('jwt', { session: false }),
-  async (req, res) => {
-    try {
-      const multer = require('multer');
-      const path = require('path');
-      const fs = require('fs').promises;
-      const supabase = require('../config/supabase'); // Assuming you have Supabase config
-      
-      // Configure multer for memory storage
-      const upload = multer({
-        storage: multer.memoryStorage(),
-        limits: {
-          fileSize: 5 * 1024 * 1024 // 5MB limit
-        },
-        fileFilter: (req, file, cb) => {
-          // Accept images only
-          if (!file.mimetype.startsWith('image/')) {
-            return cb(new Error('Only image files are allowed'));
-          }
-          cb(null, true);
-        }
-      }).single('avatar');
-      
-      // Handle the upload
-      upload(req, res, async function(err) {
-        if (err) {
-          return res.status(400).json({
-            success: false,
-            message: err.message
-          });
-        }
-        
-        if (!req.file) {
-          return res.status(400).json({
-            success: false,
-            message: 'No file uploaded'
-          });
-        }
-        
-        const { groupId } = req.body;
-        if (!groupId) {
-          return res.status(400).json({
-            success: false,
-            message: 'Group ID is required'
-          });
-        }
-        
-        try {
-          // Generate unique filename
-          const fileExt = path.extname(req.file.originalname);
-          const fileName = `group-${groupId}-${Date.now()}${fileExt}`;
-          const filePath = `group-avatars/${fileName}`;
-          
-          // Upload to Supabase Storage
-          const { data, error: uploadError } = await supabase.storage
-            .from('profile-images')
-            .upload(filePath, req.file.buffer, {
-              contentType: req.file.mimetype,
-              upsert: false
-            });
-          
-          if (uploadError) {
-            throw uploadError;
-          }
-          
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('profile-images')
-            .getPublicUrl(filePath);
-          
-          res.json({
-            success: true,
-            avatarUrl: publicUrl
-          });
-        } catch (uploadError) {
-          console.error('Error uploading to storage:', uploadError);
-          res.status(500).json({
-            success: false,
-            message: 'Failed to upload image to storage'
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Avatar upload error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error'
-      });
-    }
-  }
-);
-
-/**
- * @route POST /api/groups/generate-avatar
- * @desc Generate AI avatars based on group name and description
- * @access Private
- */
-router.post('/generate-avatar',
-  passport.authenticate('jwt', { session: false }),
-  [
-    body('prompt').notEmpty().withMessage('Prompt is required'),
-    body('count').optional().isInt({ min: 1, max: 10 }).withMessage('Count must be between 1 and 10'),
-    validate
-  ],
-  async (req, res) => {
-    try {
-      const { prompt, count = 4 } = req.body;
-      
-      // For now, generate themed avatars using DiceBear with different styles and variations
-      // In a production environment, you could integrate with OpenAI DALL-E or similar
-      const styles = ['adventurer', 'avataaars', 'bottts', 'fun-emoji', 'lorelei', 'micah', 'personas', 'shapes'];
-      const seeds = [];
-      
-      // Generate variations by combining prompt with different descriptors
-      const descriptors = ['team', 'squad', 'crew', 'gang', 'group', 'friends', 'family', 'community'];
-      for (let i = 0; i < count; i++) {
-        seeds.push(`${prompt}-${descriptors[i % descriptors.length]}-${i}`);
-      }
-      
-      const avatars = seeds.map((seed, index) => {
-        const style = styles[index % styles.length];
-        return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&size=200`;
-      });
-      
-      // TODO: If you want real AI-generated images, integrate with OpenAI DALL-E:
-      /*
-      const OpenAI = require('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: `Create a group avatar icon for: ${prompt}. Style: modern, friendly, minimalist`,
-        n: 1,
-        size: "1024x1024"
-      });
-      
-      const avatars = response.data.map(img => img.url);
-      */
-      
-      res.json({
-        success: true,
-        avatars: avatars
-      });
-    } catch (error) {
-      console.error('Avatar generation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to generate avatars'
       });
     }
   }
