@@ -38,8 +38,19 @@ export const getAvatarContent = (user) => {
     }
   }
 
-  // No DiceBear generation - return null to show initials
-  // Avatar component will use getAvatarFallback() which shows first initial or initials
+  // Third priority: gender-specific avatar silhouettes
+  const gender = user?.gender?.toLowerCase();
+  const name = `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.username || 'User';
+  
+  if (gender === 'male' || gender === 'm') {
+    // Male avatar silhouette using DiceBear's avataaars style with male characteristics
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=90caf9&style=circle`;
+  } else if (gender === 'female' || gender === 'f') {
+    // Female avatar silhouette using DiceBear's avataaars style with female characteristics  
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}&backgroundColor=f48fb1&style=circle`;
+  }
+  
+  // No gender specified - return null to show initials
   return null;
 };
 
