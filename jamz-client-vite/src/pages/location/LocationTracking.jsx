@@ -142,9 +142,14 @@ const LocationTracking = () => {
     console.log('🔍 useMemo executing - user:', user);
     console.log('🔍 user?.id:', user?.id, 'user?.user_id:', user?.user_id);
     console.log('🔍 user?.profile_image_url:', user?.profile_image_url);
+    console.log('🔍 user?.first_name:', user?.first_name, 'user?.last_name:', user?.last_name);
     
-    if (user && (user.id || user.user_id)) {
-      console.log('✅ Using user from useAuth:', user);
+    // Always try to enrich from JWT if fields are missing
+    const needsEnrichment = user && (user.id || user.user_id) && 
+      (!user.first_name || !user.last_name || !user.profile_image_url);
+    
+    if (user && (user.id || user.user_id) && !needsEnrichment) {
+      console.log('✅ Using user from useAuth (has all fields):', user);
       const result = {
         ...user,
         id: user.id || user.user_id  // Ensure id is always set
@@ -153,7 +158,7 @@ const LocationTracking = () => {
       return result;
     }
     
-    console.log('⚠️ user missing or user.id undefined, attempting JWT decode');
+    console.log('⚠️ user missing fields or undefined, attempting JWT decode to enrich');
     
     try {
       const token = localStorage.getItem('token');
@@ -186,6 +191,18 @@ const LocationTracking = () => {
       };
       
       console.log('✅ Extracted user from JWT:', extractedUser);
+      
+      // Merge with existing user object if available
+      if (user && (user.id || user.user_id)) {
+        const merged = {
+          ...user,
+          ...extractedUser,
+          id: user.id || user.user_id || extractedUser.id
+        };
+        console.log('✅ Merged user with JWT data:', merged);
+        return merged;
+      }
+      
       return extractedUser;
     } catch (e) {
       console.error('❌ Failed to decode JWT token:', e);
