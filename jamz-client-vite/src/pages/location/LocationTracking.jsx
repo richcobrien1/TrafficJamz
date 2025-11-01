@@ -13,6 +13,7 @@ import api, { MAPBOX_TOKEN } from '../../services/api';
 import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
+import { useAudioSession } from '../../hooks/useAudioSession';
 import { 
   Container, 
   Badge,
@@ -63,7 +64,11 @@ import {
   Close as CloseIcon,
   Satellite as SatelliteIcon,
   Place as PlaceIcon,
-  LocationOff as PlaceOffIcon
+  LocationOff as PlaceOffIcon,
+  Phone as PhoneIcon,
+  PhoneDisabled as PhoneDisabledIcon,
+  Mic as MicIcon,
+  MicOff as MicOffIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -87,6 +92,19 @@ const LocationTracking = () => {
   const { user } = useAuth();
   const { groupId } = useParams();
   const navigate = useNavigate();
+  
+  // Audio session hook
+  const { 
+    isInSession, 
+    isMuted, 
+    isSpeaking, 
+    participants: audioParticipants,
+    error: audioError,
+    audioLevel,
+    joinSession, 
+    leaveSession, 
+    toggleMute 
+  } = useAudioSession(groupId);
   
   // Debug: Check user on every render
   console.log('🔄 Component render - user from useAuth:', user);
@@ -2847,6 +2865,41 @@ const LocationTracking = () => {
           }
         }
 
+        // Speaking indicator ring (for audio participants)
+        if (!location.place && !location.aggregated) {
+          const isSpeakingInAudio = audioParticipants.some(p => 
+            String(p.userId) === String(location.user_id) && p.isSpeaking
+          );
+          
+          if (isSpeakingInAudio) {
+            const speakingRing = document.createElement('div');
+            speakingRing.style.position = 'absolute';
+            speakingRing.style.top = '-6px';
+            speakingRing.style.left = '-6px';
+            speakingRing.style.width = '48px';
+            speakingRing.style.height = '48px';
+            speakingRing.style.borderRadius = '50%';
+            speakingRing.style.border = '3px solid #4caf50';
+            speakingRing.style.animation = 'speakingPulse 1s infinite';
+            speakingRing.style.pointerEvents = 'none';
+            circleEl.style.position = 'relative';
+            circleEl.appendChild(speakingRing);
+            
+            // Add animation keyframes
+            if (!document.getElementById('speaking-pulse-animation')) {
+              const style = document.createElement('style');
+              style.id = 'speaking-pulse-animation';
+              style.textContent = `
+                @keyframes speakingPulse {
+                  0%, 100% { transform: scale(1); opacity: 1; }
+                  50% { transform: scale(1.1); opacity: 0.7; }
+                }
+              `;
+              document.head.appendChild(style);
+            }
+          }
+        }
+
         // Spike part
         const spikeEl = document.createElement('div');
   spikeEl.style.width = '16px';
@@ -3434,6 +3487,143 @@ const LocationTracking = () => {
           <PlaceIcon />
         </IconButton>
       </Tooltip>
+      
+      {/* Audio Controls */}
+      {/* Join/Leave Audio Session Button */}
+      <Tooltip title={isInSession ? "Leave Audio Call" : "Join Audio Call"}>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            bottom: 140,
+            right: 16,
+            zIndex: 10,
+            bgcolor: isInSession ? 'error.main' : 'success.main',
+            color: 'white',
+            boxShadow: 3,
+            animation: isInSession ? 'pulse 2s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%': { boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)' },
+              '70%': { boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)' },
+              '100%': { boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)' }
+            },
+            '&:hover': {
+              bgcolor: isInSession ? 'error.dark' : 'success.dark',
+            }
+          }}
+          onClick={isInSession ? leaveSession : joinSession}
+        >
+          {isInSession ? <PhoneDisabledIcon /> : <PhoneIcon />}
+        </IconButton>
+      </Tooltip>
+
+      {/* Mute/Unmute Button (only show when in session) */}
+      {isInSession && (
+        <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+          <IconButton
+            sx={{
+              position: 'absolute',
+              bottom: 80,
+              right: 16,
+              zIndex: 10,
+              bgcolor: isMuted ? 'grey.500' : 'primary.main',
+              color: 'white',
+              boxShadow: 3,
+              animation: isSpeaking ? 'speaking 0.5s infinite' : 'none',
+              '@keyframes speaking': {
+                '0%, 100%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.1)' }
+              },
+              '&:hover': {
+                bgcolor: isMuted ? 'grey.700' : 'primary.dark',
+              }
+            }}
+            onClick={toggleMute}
+          >
+            {isMuted ? <MicOffIcon /> : <MicIcon />}
+          </IconButton>
+        </Tooltip>
+      )}
+
+      {/* Audio Participants Chip (only show when in session) */}
+      {isInSession && (
+        <Chip
+          icon={<PeopleIcon />}
+          label={`${audioParticipants.length + 1} in call`}
+          size="small"
+          sx={{
+            position: 'absolute',
+            bottom: 20,
+            right: 16,
+            zIndex: 10,
+            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            boxShadow: 2
+          }}
+        />
+      )}
+
+      {/* Speaking Indicator (only show when speaking) */}
+      {isSpeaking && !isMuted && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: 'success.main',
+            color: 'white',
+            px: 2,
+            py: 1,
+            borderRadius: 2,
+            boxShadow: 3,
+            animation: 'pulse 1s infinite',
+            '@keyframes pulse': {
+              '0%, 100%': { opacity: 1 },
+              '50%': { opacity: 0.7 }
+            }
+          }}
+        >
+          <MicIcon />
+          <Typography variant="body2">Speaking...</Typography>
+          <Box
+            sx={{
+              width: 60,
+              height: 4,
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
+              borderRadius: 1,
+              overflow: 'hidden'
+            }}
+          >
+            <Box
+              sx={{
+                width: `${audioLevel}%`,
+                height: '100%',
+                bgcolor: 'white',
+                transition: 'width 0.1s'
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {/* Audio Error Alert */}
+      {audioError && (
+        <Alert
+          severity="error"
+          sx={{
+            position: 'absolute',
+            top: 80,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 10,
+            minWidth: 300
+          }}
+        >
+          {audioError}
+        </Alert>
+      )}
       
       {/* Drop Notification */}
       <Snackbar
