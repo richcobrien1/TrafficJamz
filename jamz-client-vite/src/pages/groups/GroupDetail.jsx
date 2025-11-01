@@ -47,6 +47,7 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../../contexts/AuthContext';
+import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const GroupDetail = () => {
   // Force rebuild - ensure equal panel widths
@@ -855,13 +856,10 @@ const GroupDetail = () => {
                                     overlap="circular"
                                   >
                                     <Avatar 
-                                      src={
-                                        member.profile_image_url || 
-                                        `https://ui-avatars.com/api/?name=${encodeURIComponent(`${member.first_name || ''} ${member.last_name || ''}`.trim())}&background=random&size=128`
-                                      }
+                                      src={getAvatarContent(member)}
                                       alt={`${member.first_name} ${member.last_name}`}
                                     >
-                                      {member.first_name?.[0]}
+                                      {getAvatarFallback(member)}
                                     </Avatar>
                                   </Badge>
                                 </ListItemAvatar>
