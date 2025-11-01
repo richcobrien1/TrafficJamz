@@ -3468,11 +3468,11 @@ const LocationTracking = () => {
                   <ListItemButton onClick={() => handleMemberClick(member)}>
                     <ListItemAvatar>
                       <Avatar 
-                        src={isOnline ? getAvatarContent(member) : undefined}
+                        src={getAvatarContent(member)}
                         alt={displayName}
                         sx={{
-                          opacity: isOnline ? 1 : 0.4,
-                          bgcolor: isOnline ? undefined : 'rgba(128, 128, 128, 0.3)',
+                          opacity: isOnline ? 1 : 0.6,
+                          filter: isOnline ? 'none' : 'grayscale(50%)',
                         }}
                       >
                         {getAvatarFallback(member)}
