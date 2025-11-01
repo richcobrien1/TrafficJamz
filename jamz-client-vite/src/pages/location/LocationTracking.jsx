@@ -2757,16 +2757,10 @@ const LocationTracking = () => {
           marker.setLngLat([longitude, latitude]);
           const el = marker.getElement && marker.getElement();
           if (el) {
-            // Update click handler to use latest location data
-            // Remove old listeners by cloning the element
-            const newEl = el.cloneNode(true);
-            el.parentNode.replaceChild(newEl, el);
-            newEl.addEventListener('click', (e) => {
-              e.stopPropagation();
-              handleMarkerClick(location);
-            });
+            // Store the latest location data on the element for the click handler
+            el._locationData = location;
             
-            const circle = newEl.querySelector('div');
+            const circle = el.querySelector('div');
             if (circle) {
               const desiredColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
               if (circle.style.backgroundColor !== desiredColor) circle.style.backgroundColor = desiredColor;
@@ -2845,9 +2839,9 @@ const LocationTracking = () => {
             const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name, location.last_name);
             const lastUpdate = location.timestamp ? new Date(location.timestamp).toLocaleString() : null;
             if (location.location_missing) {
-              newEl.title = lastUpdate ? `${displayName}\nLast known: ${lastUpdate}` : `${displayName}\nLocation not shared`;
+              el.title = lastUpdate ? `${displayName}\nLast known: ${lastUpdate}` : `${displayName}\nLocation not shared`;
             } else {
-              newEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
+              el.title = `${displayName}\nLast updated: ${lastUpdate}`;
             }
           }
         } catch (e) {
@@ -3044,9 +3038,13 @@ const LocationTracking = () => {
 
         // Add click handler only for non-draggable markers
         if (!shouldBeDraggable) {
+          // Store location data on the element
+          markerEl._locationData = location;
           markerEl.addEventListener('click', (e) => {
             e.stopPropagation();
-            handleMarkerClick(location);
+            // Use stored location data to ensure we have the latest
+            const locationData = e.currentTarget._locationData || location;
+            handleMarkerClick(locationData);
           });
         }
         
