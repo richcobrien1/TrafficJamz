@@ -4009,7 +4009,10 @@ const LocationTracking = () => {
                   <ListItemAvatar>
                     <Avatar src={m.profile_image_url}>{m.username ? m.username.charAt(0).toUpperCase() : '?'}</Avatar>
                   </ListItemAvatar>
-                  <ListItemText primary={m.username} secondary={m.coordinates ? 'Location shared' : 'No location'} />
+                  <ListItemText 
+                    primary={formatDisplayName(m.username, m.first_name, m.last_name)} 
+                    secondary={m.coordinates ? 'Location shared' : 'No location'} 
+                  />
                 </ListItemButton>
               </ListItem>
             ))}
