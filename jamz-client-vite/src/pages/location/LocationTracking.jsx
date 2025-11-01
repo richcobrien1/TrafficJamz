@@ -14,6 +14,8 @@ import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { useAudioSession } from '../../hooks/useAudioSession';
+import { useMusicSession } from '../../hooks/useMusicSession';
+import MusicPlayer from '../../components/MusicPlayer';
 import { 
   Container, 
   Badge,
@@ -68,7 +70,8 @@ import {
   Phone as PhoneIcon,
   PhoneDisabled as PhoneDisabledIcon,
   Mic as MicIcon,
-  MicOff as MicOffIcon
+  MicOff as MicOffIcon,
+  MusicNote as MusicNoteIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -105,6 +108,31 @@ const LocationTracking = () => {
     leaveSession, 
     toggleMute 
   } = useAudioSession(groupId);
+  
+  // Music session hook
+  const {
+    currentTrack,
+    playlist,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    isController,
+    play: musicPlay,
+    pause: musicPause,
+    seekTo: musicSeek,
+    playNext,
+    playPrevious,
+    setVolume,
+    takeControl,
+    releaseControl,
+    addTrack,
+    removeTrack,
+    loadAndPlay
+  } = useMusicSession(groupId);
+  
+  // Music player visibility
+  const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   
   // Debug: Check user on every render
   console.log('🔄 Component render - user from useAuth:', user);
@@ -3554,6 +3582,31 @@ const LocationTracking = () => {
         </Tooltip>
       )}
 
+      {/* Music Player Button */}
+      <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 376,
+            zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
+            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+            color: showMusicPlayer ? 'primary.main' : isPlaying ? 'success.main' : 'text.primary',
+            boxShadow: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+            }
+          }}
+          onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+        >
+          <Badge badgeContent={isPlaying ? '♪' : null} color="success">
+            <MusicNoteIcon />
+          </Badge>
+        </IconButton>
+      </Tooltip>
+
       {/* Speaking Indicator (only show when speaking) */}
       {isSpeaking && !isMuted && (
         <Box
@@ -4327,6 +4380,29 @@ const LocationTracking = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Music Player */}
+      {showMusicPlayer && (
+        <MusicPlayer
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          volume={volume}
+          playlist={playlist}
+          isController={isController}
+          onPlay={() => musicPlay()}
+          onPause={() => musicPause()}
+          onNext={() => playNext()}
+          onPrevious={() => playPrevious()}
+          onSeek={(position) => musicSeek(position)}
+          onVolumeChange={(vol) => setVolume(vol)}
+          onClose={() => setShowMusicPlayer(false)}
+          onTakeControl={takeControl}
+          onReleaseControl={releaseControl}
+          onSelectTrack={(track) => loadAndPlay(track)}
+        />
+      )}
 
       {/* Dev-only quick test panel */}
       {process.env.NODE_ENV !== 'production' && (
