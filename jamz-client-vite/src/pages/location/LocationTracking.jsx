@@ -1474,7 +1474,7 @@ const LocationTracking = () => {
         container: mapContainerRef.current,
         style: 'mapbox://styles/mapbox/streets-v12', // Try a different style
         center: defaultCenter, // Use last known location or neutral fallback
-        zoom: 7
+        zoom: 15
       });
       
       // console.log('Map object created:', !!map);
@@ -2020,7 +2020,7 @@ const LocationTracking = () => {
       setIsCentering(true);
       mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
-        zoom: 8,
+        zoom: 16,
         essential: true
       });
       // Light up for 2 seconds then turn off
