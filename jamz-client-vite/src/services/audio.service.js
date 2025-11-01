@@ -308,6 +308,44 @@ class AudioService {
   }
 
   /**
+   * Get display media (desktop/tab audio capture)
+   * @returns {Promise<MediaStream>} - Media stream with audio track
+   */
+  async getDisplayMedia() {
+    try {
+      console.log('🖥️ Requesting desktop audio access...');
+      
+      // Request display media with audio only
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: false,
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          sampleRate: 48000
+        }
+      });
+      
+      const audioTrack = stream.getAudioTracks()[0];
+      if (!audioTrack) {
+        throw new Error('No audio track in display media stream');
+      }
+      
+      console.log('✅ Desktop audio access granted');
+      console.log('   Audio track:', audioTrack.label);
+      
+      return stream;
+    } catch (error) {
+      if (error.name === 'NotAllowedError') {
+        console.warn('⚠️ User denied desktop audio access');
+      } else {
+        console.error('❌ Failed to get display media:', error);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Stop all local media tracks
    */
   stopLocalStream() {
