@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api, { MAPBOX_TOKEN } from '../../services/api';
 import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
+import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { 
   Container, 
   Badge,
@@ -2630,10 +2631,16 @@ const LocationTracking = () => {
                 const firstInitial = location.username ? location.username.charAt(0).toUpperCase() : '?';
                 circle.style.opacity = '0.6';
                 circle.style.borderStyle = 'dashed';
+                // Remove any existing avatar image
+                const existingImg = circle.querySelector('img');
+                if (existingImg) existingImg.remove();
                 if (circle.textContent !== firstInitial) circle.textContent = firstInitial;
               } else if (location.aggregated) {
                 // For aggregated markers, show the count
                 const count = String(location.count);
+                // Remove any existing avatar image
+                const existingImg = circle.querySelector('img');
+                if (existingImg) existingImg.remove();
                 if (circle.textContent !== count) circle.textContent = count;
                 // Auto-size the circle based on count length
                 const len = count.length;
@@ -2641,8 +2648,37 @@ const LocationTracking = () => {
                 circle.style.width = `${size}px`;
                 circle.style.height = `${size}px`;
                 circle.style.fontSize = len <= 2 ? '12px' : (len === 3 ? '11px' : '10px');
+              } else if (!location.place) {
+                // For member markers, try to use avatar image
+                const avatarSrc = getAvatarContent(location);
+                const existingImg = circle.querySelector('img');
+                if (avatarSrc) {
+                  if (existingImg && existingImg.src !== avatarSrc) {
+                    existingImg.src = avatarSrc;
+                  } else if (!existingImg) {
+                    circle.textContent = '';
+                    const avatarImg = document.createElement('img');
+                    avatarImg.src = avatarSrc;
+                    avatarImg.style.width = '100%';
+                    avatarImg.style.height = '100%';
+                    avatarImg.style.objectFit = 'cover';
+                    avatarImg.style.borderRadius = '50%';
+                    avatarImg.onerror = () => {
+                      avatarImg.remove();
+                      circle.textContent = getAvatarFallback(location);
+                    };
+                    circle.appendChild(avatarImg);
+                  }
+                } else {
+                  if (existingImg) existingImg.remove();
+                  const fallbackText = getAvatarFallback(location);
+                  if (circle.textContent !== fallbackText) circle.textContent = fallbackText;
+                }
               } else {
+                // For place markers
                 const firstInitial = location.place ? '📍' : (location.username ? location.username.charAt(0).toUpperCase() : '?');
+                const existingImg = circle.querySelector('img');
+                if (existingImg) existingImg.remove();
                 if (circle.textContent !== firstInitial) circle.textContent = firstInitial;
               }
             }
@@ -2670,7 +2706,7 @@ const LocationTracking = () => {
         markerEl.style.alignItems = 'center';
         markerEl.style.cursor = 'pointer';
 
-        // Circle part
+        // Circle part - use avatar image for members, or circle for places/aggregated
         const circleEl = document.createElement('div');
         circleEl.style.width = '24px';
         circleEl.style.height = '24px';
@@ -2684,12 +2720,13 @@ const LocationTracking = () => {
         circleEl.style.color = 'white';
         circleEl.style.fontSize = '12px';
         circleEl.style.fontWeight = 'bold';
+        circleEl.style.overflow = 'hidden';
         if (location.location_missing) {
           circleEl.style.opacity = '0.6';
           circleEl.style.borderStyle = 'dashed';
         }
 
-        // Add content: either first initial or aggregated count
+        // Add content: either avatar image, first initial, or aggregated count
         if (location.aggregated) {
           circleEl.textContent = String(location.count);
           // auto-size the circle based on count length
@@ -2699,6 +2736,26 @@ const LocationTracking = () => {
           circleEl.style.height = `${size}px`;
           circleEl.style.borderRadius = '50%';
           circleEl.style.fontSize = len <= 2 ? '12px' : (len === 3 ? '11px' : '10px');
+        } else if (!location.place) {
+          // For member markers, try to use avatar image
+          const avatarSrc = getAvatarContent(location);
+          if (avatarSrc) {
+            const avatarImg = document.createElement('img');
+            avatarImg.src = avatarSrc;
+            avatarImg.style.width = '100%';
+            avatarImg.style.height = '100%';
+            avatarImg.style.objectFit = 'cover';
+            avatarImg.style.borderRadius = '50%';
+            // Fallback to initials if image fails to load
+            avatarImg.onerror = () => {
+              avatarImg.remove();
+              circleEl.textContent = getAvatarFallback(location);
+            };
+            circleEl.appendChild(avatarImg);
+          } else {
+            // No avatar available, use fallback initials
+            circleEl.textContent = getAvatarFallback(location);
+          }
         } else {
           // For placeholders where member hasn't shared location, make them visually subtle
           if (location.location_missing) {
@@ -3411,14 +3468,14 @@ const LocationTracking = () => {
                   <ListItemButton onClick={() => handleMemberClick(member)}>
                     <ListItemAvatar>
                       <Avatar 
-                        src={isOnline ? member.profile_image_url : undefined}
+                        src={isOnline ? getAvatarContent(member) : undefined}
                         alt={displayName}
                         sx={{
                           opacity: isOnline ? 1 : 0.4,
                           bgcolor: isOnline ? undefined : 'rgba(128, 128, 128, 0.3)',
                         }}
                       >
-                        {displayName.charAt(0).toUpperCase()}
+                        {getAvatarFallback(member)}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText 
