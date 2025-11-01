@@ -3,12 +3,20 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const path = require('path');
 
-// Configure AWS S3
-const s3 = new AWS.S3({
+// Configure AWS S3 / Cloudflare R2 (S3-compatible)
+const s3Config = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || 'us-east-1'
-});
+  region: process.env.AWS_REGION || 'auto'
+};
+
+// Add endpoint for Cloudflare R2 or custom S3-compatible storage
+if (process.env.S3_ENDPOINT) {
+  s3Config.endpoint = process.env.S3_ENDPOINT;
+  s3Config.signatureVersion = 'v4';
+}
+
+const s3 = new AWS.S3(s3Config);
 
 // Check if S3 is configured
 const isS3Configured = () => {
@@ -81,7 +89,11 @@ const upload = multer({
 // Generate file URL based on storage type
 const getFileUrl = (filename) => {
   if (isS3Configured()) {
-    // Return S3 URL
+    // For Cloudflare R2 or custom S3-compatible storage with custom domain
+    if (process.env.S3_PUBLIC_URL) {
+      return `${process.env.S3_PUBLIC_URL}/${filename}`;
+    }
+    // For standard AWS S3
     const region = process.env.AWS_REGION || 'us-east-1';
     const bucket = process.env.AWS_S3_BUCKET;
     return `https://${bucket}.s3.${region}.amazonaws.com/${filename}`;
