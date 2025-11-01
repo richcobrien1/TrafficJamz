@@ -609,7 +609,7 @@ const LocationTracking = () => {
 
           // Only include users that have proper member data
           if (member) {
-            return {
+            const enriched = {
               ...location,
               username: member.username,
               first_name: member.first_name,
@@ -617,6 +617,16 @@ const LocationTracking = () => {
               profile_image_url: member.profile_image_url,
               social_accounts: member.social_accounts
             };
+            console.log('🎨 Enriched location:', {
+              user_id: enriched.user_id,
+              username: enriched.username,
+              first_name: enriched.first_name,
+              last_name: enriched.last_name,
+              has_profile_image: !!enriched.profile_image_url,
+              has_social_accounts: !!enriched.social_accounts,
+              avatar_content: getAvatarContent(enriched)
+            });
+            return enriched;
           }
 
           // Skip users without member data (return null to filter out later)
@@ -788,7 +798,7 @@ const LocationTracking = () => {
 
           // Only include users that have proper member data
           if (member) {
-            return {
+            const enriched = {
               ...location,
               username: member.username,
               first_name: member.first_name,
@@ -796,6 +806,16 @@ const LocationTracking = () => {
               profile_image_url: member.profile_image_url,
               social_accounts: member.social_accounts
             };
+            console.log('🎨 [fetchMemberLocations] Enriched location:', {
+              user_id: enriched.user_id,
+              username: enriched.username,
+              first_name: enriched.first_name,
+              last_name: enriched.last_name,
+              has_profile_image: !!enriched.profile_image_url,
+              has_social_accounts: !!enriched.social_accounts,
+              avatar_content: getAvatarContent(enriched)
+            });
+            return enriched;
           }
 
           // Skip users without member data (return null to filter out later)
