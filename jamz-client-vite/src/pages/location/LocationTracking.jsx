@@ -2757,7 +2757,16 @@ const LocationTracking = () => {
           marker.setLngLat([longitude, latitude]);
           const el = marker.getElement && marker.getElement();
           if (el) {
-            const circle = el.querySelector('div');
+            // Update click handler to use latest location data
+            // Remove old listeners by cloning the element
+            const newEl = el.cloneNode(true);
+            el.parentNode.replaceChild(newEl, el);
+            newEl.addEventListener('click', (e) => {
+              e.stopPropagation();
+              handleMarkerClick(location);
+            });
+            
+            const circle = newEl.querySelector('div');
             if (circle) {
               const desiredColor = location.place ? PLACE_PIN_COLOR : MEMBER_PIN_COLOR;
               if (circle.style.backgroundColor !== desiredColor) circle.style.backgroundColor = desiredColor;
@@ -2836,9 +2845,9 @@ const LocationTracking = () => {
             const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name, location.last_name);
             const lastUpdate = location.timestamp ? new Date(location.timestamp).toLocaleString() : null;
             if (location.location_missing) {
-              el.title = lastUpdate ? `${displayName}\nLast known: ${lastUpdate}` : `${displayName}\nLocation not shared`;
+              newEl.title = lastUpdate ? `${displayName}\nLast known: ${lastUpdate}` : `${displayName}\nLocation not shared`;
             } else {
-              el.title = `${displayName}\nLast updated: ${lastUpdate}`;
+              newEl.title = `${displayName}\nLast updated: ${lastUpdate}`;
             }
           }
         } catch (e) {
