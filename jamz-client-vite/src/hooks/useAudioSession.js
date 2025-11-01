@@ -496,6 +496,79 @@ export const useAudioSession = (groupId) => {
     };
   }, [leaveSession]);
 
+  /**
+   * Share desktop audio (system/tab audio)
+   */
+  const shareDesktopAudio = useCallback(async () => {
+    try {
+      if (!isInSession) {
+        throw new Error('Not in audio session');
+      }
+
+      console.log('🖥️ Starting desktop audio share...');
+      
+      // Get display media (desktop/tab audio)
+      const desktopStream = await audioService.getDisplayMedia();
+      const desktopTrack = desktopStream.getAudioTracks()[0];
+      
+      if (!desktopTrack) {
+        throw new Error('No audio track in desktop stream');
+      }
+
+      // Stop current microphone producer if exists
+      if (audioService.producer) {
+        await audioService.stopProducing();
+      }
+
+      // Start producing with desktop audio track
+      await audioService.startProducing(desktopTrack);
+      
+      // Handle track end (user stops sharing)
+      desktopTrack.onended = async () => {
+        console.log('🛑 Desktop audio share ended');
+        await stopDesktopAudio();
+      };
+
+      console.log('✅ Desktop audio share started');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to share desktop audio:', error);
+      if (error.name === 'NotAllowedError') {
+        setError('Desktop audio access denied. Please grant permission.');
+      } else {
+        setError(`Failed to share desktop audio: ${error.message}`);
+      }
+      return false;
+    }
+  }, [isInSession]);
+
+  /**
+   * Stop sharing desktop audio and return to microphone
+   */
+  const stopDesktopAudio = useCallback(async () => {
+    try {
+      console.log('🛑 Stopping desktop audio share...');
+      
+      // Stop current producer (desktop audio)
+      if (audioService.producer) {
+        await audioService.stopProducing();
+      }
+
+      // Restart with microphone if still in session
+      if (isInSession && !isMuted) {
+        const micStream = await audioService.getUserMedia({ audio: true });
+        const micTrack = micStream.getAudioTracks()[0];
+        await audioService.startProducing(micTrack);
+        setupAudioAnalyser(micStream);
+      }
+
+      console.log('✅ Desktop audio share stopped, returned to microphone');
+    } catch (error) {
+      console.error('❌ Failed to stop desktop audio:', error);
+      setError(`Failed to stop desktop audio: ${error.message}`);
+    }
+  }, [isInSession, isMuted]);
+
   return {
     // State
     isConnected,
@@ -509,6 +582,8 @@ export const useAudioSession = (groupId) => {
     // Actions
     joinSession,
     leaveSession,
-    toggleMute
+    toggleMute,
+    shareDesktopAudio,
+    stopDesktopAudio
   };
 };
