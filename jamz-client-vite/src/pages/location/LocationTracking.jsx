@@ -179,7 +179,10 @@ const LocationTracking = () => {
         username: payload.username,
         email: payload.email,
         first_name: payload.first_name,
-        last_name: payload.last_name
+        last_name: payload.last_name,
+        profile_image_url: payload.profile_image_url,
+        social_accounts: payload.social_accounts,
+        gender: payload.gender
       };
       
       console.log('✅ Extracted user from JWT:', extractedUser);
@@ -3584,27 +3587,38 @@ const LocationTracking = () => {
 
       {/* Music Player Button */}
       <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
-        <IconButton
+        <Badge 
+          badgeContent={isPlaying ? '♪' : null} 
+          color="success"
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 376,
+            right: isInSession ? 376 : 316,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
-            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: showMusicPlayer ? 'primary.main' : isPlaying ? 'success.main' : 'text.primary',
-            boxShadow: 2,
-            cursor: 'pointer',
-            '&:hover': {
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-            }
           }}
-          onClick={() => setShowMusicPlayer(!showMusicPlayer)}
         >
-          <Badge badgeContent={isPlaying ? '♪' : null} color="success">
+          <IconButton
+            sx={{
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+              color: showMusicPlayer ? 'primary.main' : isPlaying ? 'success.main' : 'purple',
+              boxShadow: 2,
+              cursor: 'pointer',
+              animation: isPlaying ? 'pulse 2s infinite' : 'none',
+              '@keyframes pulse': {
+                '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
+                '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
+                '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
+              },
+              '&:hover': {
+                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+              }
+            }}
+            onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+          >
             <MusicNoteIcon />
-          </Badge>
-        </IconButton>
+          </IconButton>
+        </Badge>
       </Tooltip>
 
       {/* Speaking Indicator (only show when speaking) */}
