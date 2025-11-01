@@ -71,7 +71,9 @@ import {
   PhoneDisabled as PhoneDisabledIcon,
   Mic as MicIcon,
   MicOff as MicOffIcon,
-  MusicNote as MusicNoteIcon
+  MusicNote as MusicNoteIcon,
+  ScreenShare as ScreenShareIcon,
+  StopScreenShare as StopScreenShareIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -106,8 +108,13 @@ const LocationTracking = () => {
     audioLevel,
     joinSession, 
     leaveSession, 
-    toggleMute 
+    toggleMute,
+    shareDesktopAudio,
+    stopDesktopAudio
   } = useAudioSession(groupId);
+  
+  // Desktop audio sharing state
+  const [isSharingDesktopAudio, setIsSharingDesktopAudio] = useState(false);
   
   // Music session hook
   const {
@@ -3579,7 +3586,7 @@ const LocationTracking = () => {
             sx={{
               position: 'absolute',
               top: showControls ? 72 : 16,
-              right: 316,
+              right: isSharingDesktopAudio ? 376 : 316,
               zIndex: 10,
               display: showMembersList ? 'none' : undefined,
               bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
@@ -3602,6 +3609,47 @@ const LocationTracking = () => {
         </Tooltip>
       )}
 
+      {/* Desktop Audio Share Button (only show when in session) */}
+      {isInSession && (
+        <Tooltip title={isSharingDesktopAudio ? "Stop Sharing Desktop Audio" : "Share Desktop Audio (Music/Games)"}>
+          <IconButton
+            sx={{
+              position: 'absolute',
+              top: showControls ? 72 : 16,
+              right: 316,
+              zIndex: 10,
+              display: showMembersList ? 'none' : undefined,
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+              color: isSharingDesktopAudio ? 'error.main' : 'purple',
+              boxShadow: 2,
+              cursor: 'pointer',
+              animation: isSharingDesktopAudio ? 'pulse 2s infinite' : 'none',
+              '@keyframes pulse': {
+                '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
+                '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
+                '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
+              },
+              '&:hover': {
+                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+              }
+            }}
+            onClick={async () => {
+              if (isSharingDesktopAudio) {
+                await stopDesktopAudio();
+                setIsSharingDesktopAudio(false);
+              } else {
+                const success = await shareDesktopAudio();
+                if (success) {
+                  setIsSharingDesktopAudio(true);
+                }
+              }
+            }}
+          >
+            {isSharingDesktopAudio ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+          </IconButton>
+        </Tooltip>
+      )}
+
       {/* Music Player Button */}
       <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
         <Badge 
@@ -3610,7 +3658,7 @@ const LocationTracking = () => {
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: isInSession ? 376 : 316,
+            right: isInSession ? (isSharingDesktopAudio ? 436 : 376) : 316,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
           }}
