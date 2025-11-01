@@ -1318,9 +1318,9 @@ const LocationTracking = () => {
 
   // Format name as "First Name Last Initial" for privacy
   const formatDisplayName = (username, firstName, lastName) => {
-    // If we have first and last name, use "First LastInitial."
+    // If we have first and last name, use full name
     if (firstName && lastName) {
-      return `${firstName.trim()} ${lastName.trim().charAt(0).toUpperCase()}.`;
+      return `${firstName.trim()} ${lastName.trim()}`;
     }
     
     // If we have first name only, use it
@@ -2683,7 +2683,7 @@ const LocationTracking = () => {
               }
             }
             // update title
-            const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name);
+            const displayName = location.place ? location.username : formatDisplayName(location.username, location.first_name, location.last_name);
             const lastUpdate = location.timestamp ? new Date(location.timestamp).toLocaleString() : null;
             if (location.location_missing) {
               el.title = lastUpdate ? `${displayName}\nLast known: ${lastUpdate}` : `${displayName}\nLocation not shared`;
