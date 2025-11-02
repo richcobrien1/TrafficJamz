@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMusicSession } from '../../hooks/useMusicSession';
 
 const AudioSession = () => {
   const { sessionId } = useParams();
