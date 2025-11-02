@@ -3,6 +3,8 @@ const router = express.Router();
 const audioService = require('../services/audio.service');
 const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
+const s3Service = require('../services/s3.service');
+const path = require('path');
 
 // Middleware to validate request
 const validate = (req, res, next) => {
