@@ -15,7 +15,9 @@ import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { useAudioSession } from '../../hooks/useAudioSession';
 import { useMusicSession } from '../../hooks/useMusicSession';
-import MusicPlayer from '../../components/MusicPlayer';
+import MusicPlayer from '../../components/music/MusicPlayer';
+import MusicUpload from '../../components/music/MusicUpload';
+import MusicPlaylist from '../../components/music/MusicPlaylist';
 import { 
   Container, 
   Badge,
