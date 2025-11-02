@@ -124,15 +124,7 @@ const AudioSession = () => {
   const longPressTimerRef = useRef(null);
   
   // Music state
-  const [musicVolume, setMusicVolume] = useState(0.5);
   const [openMusicDialog, setOpenMusicDialog] = useState(false);
-  const [musicState, setMusicState] = useState({
-    currentTrack: null,
-    isPlaying: false,
-    position: 0,
-    duration: 0,
-    volume: 0.5
-  });
   
   // Dialog state
   const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
@@ -1852,7 +1844,7 @@ const AudioSession = () => {
                   <Box sx={{ flexGrow: 1 }}>
                     <Slider
                       value={musicVolume}
-                      onChange={(e, newValue) => setMusicVolume(newValue)}
+                      onChange={(e, newValue) => changeMusicVolume(newValue)}
                       aria-labelledby="music-volume-slider"
                       min={0}
                       max={1}
