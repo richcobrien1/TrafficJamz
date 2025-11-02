@@ -21,6 +21,9 @@ import {
   Radio as RadioIcon
 } from '@mui/icons-material';
 
+/**
+ * MusicPlayer Component - Synchronized music playback control
+ */
 const MusicPlayer = ({
   currentTrack,
   isPlaying,
