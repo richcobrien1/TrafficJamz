@@ -402,4 +402,110 @@ router.get('/audio-session/:groupId/status',
   }
 );
 
+/**
+ * @route POST /api/audio/sessions/:sessionId/upload-music
+ * @desc Upload music file to session
+ * @access Private
+ */
+router.post('/sessions/:sessionId/upload-music',
+  passport.authenticate('jwt', { session: false }),
+  s3Service.upload.single('file'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
+      
+      const { sessionId } = req.params;
+      
+      // Validate session exists
+      if (!sessionId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Session ID is required'
+        });
+      }
+      
+      // Check if Supabase is configured
+      if (!s3Service.isSupabaseConfigured()) {
+        return res.status(503).json({
+          success: false,
+          message: 'Storage service not configured'
+        });
+      }
+      
+      // Generate unique filename for music file
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const extension = path.extname(req.file.originalname);
+      const filename = `music-${sessionId}-${uniqueSuffix}${extension}`;
+      const filePath = `session-music/${filename}`;
+      
+      console.log('Uploading music file:', { 
+        filePath, 
+        sessionId, 
+        originalName: req.file.originalname,
+        size: req.file.buffer.length,
+        mimetype: req.file.mimetype
+      });
+      
+      // Upload to Supabase
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+          cacheControl: '3600'
+        });
+      
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+      
+      console.log('Music file uploaded successfully:', data);
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath);
+      
+      // Add to playlist
+      const track = {
+        title: req.file.originalname.replace(extension, ''),
+        fileUrl: urlData.publicUrl,
+        duration: 0, // Will be determined by client
+        uploadedBy: req.user.user_id
+      };
+      
+      const playlist = await audioService.addMusicToPlaylist(
+        sessionId,
+        track,
+        req.user.user_id
+      );
+      
+      res.json({
+        success: true,
+        fileUrl: urlData.publicUrl,
+        track: track,
+        playlist: playlist
+      });
+    } catch (error) {
+      console.error('Music upload error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to upload music file'
+      });
+    }
+  }
+);
+
 module.exports = router;
