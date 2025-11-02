@@ -145,7 +145,7 @@ export const useAudioSession = (groupId) => {
           },
           body: JSON.stringify({
             groupId,
-            sessionType: 'voice_only'
+            sessionType: 'voice_with_music' // Enable music support
           })
         });
 

@@ -83,6 +83,30 @@ const AudioSession = () => {
   const [error, setError] = useState('');
   const [participants, setParticipants] = useState([]);
   
+  // Music session hook
+  const {
+    currentTrack,
+    playlist,
+    isPlaying: musicIsPlaying,
+    currentTime: musicCurrentTime,
+    duration: musicDuration,
+    volume: musicVolume,
+    isController: isMusicController,
+    isMusicEnabled,
+    play: musicPlay,
+    pause: musicPause,
+    seekTo: musicSeek,
+    playNext: musicNext,
+    playPrevious: musicPrevious,
+    addTrack: musicAddTrack,
+    removeTrack: musicRemoveTrack,
+    loadAndPlay: musicLoadAndPlay,
+    toggleMusic: toggleMusicFeature,
+    takeControl: takeMusicControl,
+    releaseControl: releaseMusicControl,
+    changeVolume: changeMusicVolume
+  } = useMusicSession(session?.group_id, sessionId);
+  
   // Audio state
   const [localStream, setLocalStream] = useState(null);
   const [isJoined, setIsJoined] = useState(false);
@@ -99,8 +123,8 @@ const AudioSession = () => {
   const [isLongPress, setIsLongPress] = useState(false);
   const longPressTimerRef = useRef(null);
   
-  // Music state
-  const [musicVolume, setMusicVolume] = useState(0.5);
+  // Local music volume (separate from session music volume)
+  const [localMusicVolume, setLocalMusicVolume] = useState(0.5);
   const [openMusicDialog, setOpenMusicDialog] = useState(false);
   const [musicState, setMusicState] = useState({
     currentTrack: null,
@@ -656,7 +680,7 @@ const AudioSession = () => {
         console.log('Creating new audio session for group:', sessionId);
         const createResponse = await api.post('/audio/sessions', {
           group_id: sessionId,
-          session_type: 'voice_only',
+          session_type: 'voice_with_music', // Enable music support
           device_type: 'web'
         });
 
@@ -669,7 +693,7 @@ const AudioSession = () => {
           sessionData = {
             id: `fallback-${sessionId}-${Date.now()}`,
             group_id: sessionId,
-            session_type: 'voice_only',
+            session_type: 'voice_with_music', // Enable music support for fallback too
             participants: []
           };
           console.warn('⚠️ FALLBACK: Using fallback session data due to unexpected response:', {
@@ -1827,8 +1851,8 @@ const AudioSession = () => {
                   <VolumeDownIcon />
                   <Box sx={{ flexGrow: 1 }}>
                     <Slider
-                      value={musicVolume}
-                      onChange={(e, newValue) => setMusicVolume(newValue)}
+                      value={localMusicVolume}
+                      onChange={(e, newValue) => setLocalMusicVolume(newValue)}
                       aria-labelledby="music-volume-slider"
                       min={0}
                       max={1}
@@ -1846,6 +1870,49 @@ const AudioSession = () => {
                 </Box>
               </Box>
             </Paper>
+
+            {/* Music Session Components */}
+            {session && (
+              <>
+                {/* Music Player */}
+                <MusicPlayer
+                  currentTrack={currentTrack}
+                  isPlaying={musicIsPlaying}
+                  currentTime={musicCurrentTime}
+                  duration={musicDuration}
+                  volume={musicVolume}
+                  isController={isMusicController}
+                  onPlay={musicPlay}
+                  onPause={musicPause}
+                  onNext={musicNext}
+                  onPrevious={musicPrevious}
+                  onSeek={musicSeek}
+                  onVolumeChange={changeMusicVolume}
+                  onTakeControl={takeMusicControl}
+                  onReleaseControl={releaseMusicControl}
+                  disabled={!isJoined}
+                />
+
+                {/* Music Upload */}
+                <MusicUpload
+                  onTracksAdded={(tracks) => {
+                    tracks.forEach(track => musicAddTrack(track));
+                  }}
+                  sessionId={sessionId}
+                  disabled={!isJoined}
+                />
+
+                {/* Music Playlist */}
+                <MusicPlaylist
+                  playlist={playlist}
+                  currentTrack={currentTrack}
+                  isController={isMusicController}
+                  onPlayTrack={musicLoadAndPlay}
+                  onRemoveTrack={musicRemoveTrack}
+                  disabled={!isJoined}
+                />
+              </>
+            )}
             
             {/* Hidden container for remote audio elements */}
             <div id="remote-audios" style={{ display: 'none' }}></div>

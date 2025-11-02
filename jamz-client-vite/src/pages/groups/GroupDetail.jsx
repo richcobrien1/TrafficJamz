@@ -249,7 +249,7 @@ const GroupDetail = () => {
             console.log('🎤 Creating audio session for group:', groupId);
             await api.post('/audio/sessions', {
               group_id: groupId,
-              session_type: 'voice_only',
+              session_type: 'voice_with_music', // Enable music support
               device_type: 'web'
             });
             console.log('✅ Audio session created successfully');
