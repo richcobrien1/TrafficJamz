@@ -42,10 +42,6 @@ import {
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMusicSession } from '../../hooks/useMusicSession';
-import MusicUpload from '../../components/music/MusicUpload';
-import MusicPlayer from '../../components/music/MusicPlayer';
-import MusicPlaylist from '../../components/music/MusicPlaylist';
 
 const AudioSession = () => {
   const { sessionId } = useParams();
@@ -127,8 +123,8 @@ const AudioSession = () => {
   const [isLongPress, setIsLongPress] = useState(false);
   const longPressTimerRef = useRef(null);
   
-  // Local music volume (separate from session music volume)
-  const [localMusicVolume, setLocalMusicVolume] = useState(0.5);
+  // Music state
+  const [musicVolume, setMusicVolume] = useState(0.5);
   const [openMusicDialog, setOpenMusicDialog] = useState(false);
   const [musicState, setMusicState] = useState({
     currentTrack: null,
@@ -684,7 +680,7 @@ const AudioSession = () => {
         console.log('Creating new audio session for group:', sessionId);
         const createResponse = await api.post('/audio/sessions', {
           group_id: sessionId,
-          session_type: 'voice_with_music', // Enable music support
+          session_type: 'voice_only',
           device_type: 'web'
         });
 
@@ -697,7 +693,7 @@ const AudioSession = () => {
           sessionData = {
             id: `fallback-${sessionId}-${Date.now()}`,
             group_id: sessionId,
-            session_type: 'voice_with_music', // Enable music support for fallback too
+            session_type: 'voice_only',
             participants: []
           };
           console.warn('⚠️ FALLBACK: Using fallback session data due to unexpected response:', {
@@ -1855,8 +1851,8 @@ const AudioSession = () => {
                   <VolumeDownIcon />
                   <Box sx={{ flexGrow: 1 }}>
                     <Slider
-                      value={localMusicVolume}
-                      onChange={(e, newValue) => setLocalMusicVolume(newValue)}
+                      value={musicVolume}
+                      onChange={(e, newValue) => setMusicVolume(newValue)}
                       aria-labelledby="music-volume-slider"
                       min={0}
                       max={1}
@@ -1874,49 +1870,6 @@ const AudioSession = () => {
                 </Box>
               </Box>
             </Paper>
-
-            {/* Music Session Components */}
-            {session && (
-              <>
-                {/* Music Player */}
-                <MusicPlayer
-                  currentTrack={currentTrack}
-                  isPlaying={musicIsPlaying}
-                  currentTime={musicCurrentTime}
-                  duration={musicDuration}
-                  volume={musicVolume}
-                  isController={isMusicController}
-                  onPlay={musicPlay}
-                  onPause={musicPause}
-                  onNext={musicNext}
-                  onPrevious={musicPrevious}
-                  onSeek={musicSeek}
-                  onVolumeChange={changeMusicVolume}
-                  onTakeControl={takeMusicControl}
-                  onReleaseControl={releaseMusicControl}
-                  disabled={!isJoined}
-                />
-
-                {/* Music Upload */}
-                <MusicUpload
-                  onTracksAdded={(tracks) => {
-                    tracks.forEach(track => musicAddTrack(track));
-                  }}
-                  sessionId={sessionId}
-                  disabled={!isJoined}
-                />
-
-                {/* Music Playlist */}
-                <MusicPlaylist
-                  playlist={playlist}
-                  currentTrack={currentTrack}
-                  isController={isMusicController}
-                  onPlayTrack={musicLoadAndPlay}
-                  onRemoveTrack={musicRemoveTrack}
-                  disabled={!isJoined}
-                />
-              </>
-            )}
             
             {/* Hidden container for remote audio elements */}
             <div id="remote-audios" style={{ display: 'none' }}></div>
