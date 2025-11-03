@@ -434,7 +434,7 @@ io.on("connection", (socket) => {
     return allowed;
   };
 
-  socket.on('join-audio-session', (data) => {
+  socket.on('join-audio-session', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
