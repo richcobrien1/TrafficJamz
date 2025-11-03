@@ -83,6 +83,7 @@ const AudioSessionSchema = new Schema({
     }
   }],
   music: {
+    controller_id: String, // Session-level controller (persists even when no track playing)
     currently_playing: {
       title: String,
       artist: String,

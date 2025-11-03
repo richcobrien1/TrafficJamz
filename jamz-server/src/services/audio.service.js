@@ -756,6 +756,9 @@ class AudioService {
         session.music = { playlist: [] };
       }
 
+      // Set the session-level controller (persists even when no track playing)
+      session.music.controller_id = user_id;
+
       // Set the controller on currently playing track
       if (session.music.currently_playing) {
         session.music.currently_playing.controlled_by = user_id;
@@ -785,6 +788,11 @@ class AudioService {
       
       if (!session) {
         throw new Error('Session not found');
+      }
+
+      // Clear session-level controller
+      if (session.music) {
+        session.music.controller_id = null;
       }
 
       // Clear controller from currently playing track
