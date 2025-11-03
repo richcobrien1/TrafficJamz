@@ -485,18 +485,27 @@ const AudioSession = () => {
       setMicInitializing(false);
     }
   };  // Leave audio session
-  const handleLeaveAudio = () => {
+  const handleLeaveAudio = async () => {
+    console.log('🚪 Leaving audio session...');
+    
+    // Stop local stream
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
       setLocalStream(null);
     }
+    
+    // Clean up state
     setIsJoined(false);
     setIsMuted(false);
     setIsPushToTalkActive(false);
     setMicInitialized(false);
     setAudioError(null);
     
+    // Leave session and clean up connections
+    await leaveSession();
+    
     // Navigate back to the previous page
+    console.log('🚪 Navigating back...');
     navigate(-1);
   };
   
@@ -1713,7 +1722,7 @@ const AudioSession = () => {
         {/* Traffic Jam App Bar */}
         <AppBar position="static" color="primary" sx={{ mb: 2 }}>
           <Toolbar>
-            <IconButton edge="start" color="inherit" onClick={() => navigate(-1)}>
+            <IconButton edge="start" color="inherit" onClick={handleLeaveAudio}>
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
