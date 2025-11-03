@@ -883,15 +883,39 @@ const AudioSession = () => {
     });
 
     socket.on('connect', () => {
-      console.log('✅ Socket.IO connection established successfully (using polling transport)');
+      console.log('✅ Socket.IO connection established successfully');
       console.log('✅ Socket transport used:', socket.io.engine.transport.name);
       console.log('✅ Socket ID:', socket.id);
       setConnecting(false);
       setConnected(true);
 
-      // Join the audio session room
-      socket.emit('join-audio-session', { sessionId });
-      console.log('📡 Joined audio session room:', sessionId);
+      // Join the audio session room with user info
+      const displayName = user?.first_name || user?.username || 'User';
+      const userId = user?.id || user?.user_id;
+      
+      socket.emit('join-audio-session', { 
+        sessionId,
+        userId: userId,
+        display_name: displayName
+      });
+      console.log(`📡 Joined audio session room: ${sessionId} as ${displayName}`);
+      
+      // Add current user to participants list
+      setParticipants(prev => {
+        const me = {
+          id: userId,
+          socketId: socket.id,
+          display_name: displayName,
+          isMuted: false,
+          isMe: true
+        };
+        
+        // Check if already in list
+        const exists = prev.some(p => p && (p.socketId === socket.id || p.id === userId));
+        if (exists) return prev;
+        
+        return [me, ...prev];
+      });
 
       // Send ready signal to let others know we're here
       socket.emit('webrtc-ready', { sessionId });
@@ -967,28 +991,65 @@ const AudioSession = () => {
 
     // Participant presence events
     socket.on('participant-joined', (data) => {
-      console.log('Participant joined via socket:', data);
-      if (data) {
-        const newParticipant = {
-          id: data.userId || data.id || null,
-          socketId: data.socketId || null,
-          display_name: data.display_name || data.name || 'Unknown',
-          isMuted: data.isMuted || false
-        };
+      console.log('👥 Participant joined via socket:', data);
+      if (data && data.socketId) {
         setParticipants(prev => {
-          // avoid duplicates
-          const exists = prev.some(p => p && (p.socketId === newParticipant.socketId || p.id === newParticipant.id));
-          if (exists) return prev;
+          // Check if already exists
+          const exists = prev.some(p => p && p.socketId === data.socketId);
+          if (exists) {
+            console.log('👥 Participant already in list, skipping');
+            return prev;
+          }
+          
+          const newParticipant = {
+            id: data.userId || null,
+            socketId: data.socketId,
+            display_name: data.display_name || 'User',
+            isMuted: data.isMuted || false
+          };
+          
+          console.log('👥 Adding participant:', newParticipant);
           return [...prev, newParticipant];
         });
       }
     });
 
     socket.on('participant-left', (data) => {
-      console.log('Participant left via socket:', data);
-      if (data) {
-        setParticipants(prev => prev.filter(p => p && (p.socketId !== data.socketId && p.id !== data.userId)));
+      console.log('👥 Participant left via socket:', data);
+      if (data && data.socketId) {
+        setParticipants(prev => {
+          const filtered = prev.filter(p => p && p.socketId !== data.socketId);
+          console.log('👥 Removed participant, remaining:', filtered.length);
+          return filtered;
+        });
       }
+    });
+    
+    socket.on('current-participants', (data) => {
+      console.log('👥 Received current participants:', data.participants);
+      if (data.participants && Array.isArray(data.participants)) {
+        setParticipants(prev => {
+          // Keep current user (marked with isMe)
+          const me = prev.find(p => p && p.isMe);
+          
+          // Add all other participants
+          const others = data.participants.map(p => ({
+            id: p.userId,
+            socketId: p.socketId,
+            display_name: p.display_name || 'User',
+            isMuted: false,
+            isMe: false
+          }));
+          
+          return me ? [me, ...others] : others;
+        });
+      }
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('👥 Socket disconnected, clearing remote participants');
+      // Keep only the current user in the list when disconnected
+      setParticipants(prev => prev.filter(p => p && p.isMe));
     });
 
     // Store the socket in state and ref
