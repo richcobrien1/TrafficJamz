@@ -722,11 +722,18 @@ io.on("connection", (socket) => {
       try {
         const session = await audioService.getSession(sessionId);
         if (session && session.music) {
-          console.log(`📝 Sending music state to ${socket.id}:`, {
-            playlistLength: session.music.playlist?.length || 0,
-            hasCurrentTrack: !!session.music.currently_playing,
-            controllerId: session.music.controller_id || null
-          });
+          console.log(`📝 ========================================`);
+          console.log(`📝 SENDING MUSIC STATE TO NEW CLIENT`);
+          console.log(`📝 ========================================`);
+          console.log(`📝 Socket ID: ${socket.id}`);
+          console.log(`📝 Session ID: ${sessionId}`);
+          console.log(`📝 Playlist length: ${session.music.playlist?.length || 0}`);
+          console.log(`📝 Playlist tracks:`, session.music.playlist?.map(t => t.title || t.name) || []);
+          console.log(`📝 Has current track: ${!!session.music.currently_playing}`);
+          console.log(`📝 Current track:`, session.music.currently_playing?.title || null);
+          console.log(`📝 Controller ID: ${session.music.controller_id || null}`);
+          console.log(`📝 Is playing: ${session.music.is_playing || false}`);
+          console.log(`📝 ========================================`);
           
           // Send comprehensive music state in one event
           socket.emit('music-session-state', {
@@ -737,6 +744,9 @@ io.on("connection", (socket) => {
             from: 'server',
             timestamp: Date.now()
           });
+          
+          console.log(`📝 ✅ music-session-state event emitted to ${socket.id}`);
+          console.log(`📝 ========================================`);
           
           // Also send individual events for backward compatibility
           socket.emit('playlist-update', {
@@ -779,7 +789,7 @@ io.on("connection", (socket) => {
   });
   
   // Music control events (play, pause, seek)
-  socket.on('music-control', (data) => {
+  socket.on('music-control', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
@@ -787,6 +797,37 @@ io.on("connection", (socket) => {
       
       const { action, position, trackId } = data;
       const room = `audio-${sessionId}`;
+      
+      // Persist music state to database
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session && session.music) {
+          // Update is_playing status
+          if (action === 'play') {
+            session.music.is_playing = true;
+          } else if (action === 'pause') {
+            session.music.is_playing = false;
+          }
+          
+          // Update position if provided
+          if (position !== undefined && session.music.currently_playing) {
+            session.music.currently_playing.position = position;
+          }
+          
+          // Update timestamp
+          session.music.currently_playing.started_at = new Date();
+          
+          await session.save();
+          console.log(`✅ Persisted music ${action} state:`, { 
+            is_playing: session.music.is_playing, 
+            position, 
+            trackId 
+          });
+        }
+      } catch (err) {
+        console.error('❌ Failed to persist music control state:', err);
+        // Continue anyway - socket notification still works
+      }
       
       // Broadcast to all others in the room
       socket.to(room).emit(`music-${action}`, {
@@ -803,11 +844,40 @@ io.on("connection", (socket) => {
   });
   
   // Track change event
-  socket.on('music-track-change', (data) => {
+  socket.on('music-track-change', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return;
+      
+      // Persist currently playing track to database
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session && session.music && data.track) {
+          const userId = data.userId || session.music.controller_id;
+          
+          // Update the currently playing track
+          session.music.currently_playing = {
+            ...data.track,
+            controlled_by: userId,
+            position: data.position || 0,
+            started_at: new Date()
+          };
+          
+          // Set playing state based on autoPlay flag
+          session.music.is_playing = data.autoPlay !== false;
+          
+          await session.save();
+          console.log(`✅ Persisted track change:`, { 
+            title: data.track.title,
+            userId,
+            is_playing: session.music.is_playing
+          });
+        }
+      } catch (err) {
+        console.error('❌ Failed to persist track change:', err);
+        // Continue anyway - socket notification still works
+      }
       
       const room = `audio-${sessionId}`;
       socket.to(room).emit('music-track-change', {
@@ -880,11 +950,27 @@ io.on("connection", (socket) => {
   });
   
   // Playlist update event
-  socket.on('playlist-update', (data) => {
+  socket.on('playlist-update', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return;
+      
+      // Persist playlist to database
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session && session.music && data.playlist) {
+          session.music.playlist = data.playlist;
+          await session.save();
+          console.log(`✅ Persisted playlist update:`, { 
+            trackCount: data.playlist.length,
+            tracks: data.playlist.map(t => t.title || t.name)
+          });
+        }
+      } catch (err) {
+        console.error('❌ Failed to persist playlist update:', err);
+        // Continue anyway - socket notification still works
+      }
       
       const room = `audio-${sessionId}`;
       socket.to(room).emit('playlist-update', {
