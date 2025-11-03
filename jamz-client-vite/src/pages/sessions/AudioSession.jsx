@@ -84,6 +84,7 @@ const AudioSession = () => {
   
   // Session state
   const [session, setSession] = useState(null);
+  const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [participants, setParticipants] = useState([]);
@@ -784,6 +785,19 @@ const AudioSession = () => {
     // Apply session state
     try {
       setSession(sessionData);
+
+      // Fetch group details for display
+      try {
+        console.log('📋 Fetching group details for:', sessionData.group_id);
+        const groupResponse = await api.get(`/groups/${sessionData.group_id}`);
+        if (groupResponse.data && groupResponse.data.group) {
+          setGroup(groupResponse.data.group);
+          console.log('📋 Group loaded:', groupResponse.data.group.name);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch group details:', err.message);
+        // Continue without group name
+      }
 
       console.log('👥 [DEBUG] Processing participants - raw data:', sessionData.participants);
       console.log('👥 [DEBUG] Participants is array?', Array.isArray(sessionData.participants));
@@ -1697,7 +1711,7 @@ const AudioSession = () => {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Traffic Jam - Audio Session
+              {group ? `${group.name} - Audio Session` : 'Audio Session'}
             </Typography>
             <IconButton color="inherit" onClick={() => setOpenMusicDialog(true)}>
               <MusicNoteIcon />
