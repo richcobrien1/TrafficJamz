@@ -178,9 +178,12 @@ export const MusicProvider = ({ children }) => {
     
     // Controller changes
     socket.on('music-controller-changed', (data) => {
-      console.log('🎵 [MusicContext] Controller changed:', data.controllerId);
+      console.log('🎵 [MusicContext] Controller changed - userId:', data.userId, 'controllerId:', data.controllerId);
       const myUserId = userRef.current?.id || userRef.current?.user_id;
-      const amController = data.controllerId === myUserId || data.userId === myUserId;
+      // Only compare userId (controllerId is socket ID, not user ID)
+      // When controller is released, data.userId will be null
+      const amController = data.userId ? (data.userId === myUserId) : false;
+      console.log('🎵 [MusicContext] Am I the controller?', amController, '(my ID:', myUserId, ')');
       setIsController(amController);
       musicService.isController = amController;
     });
