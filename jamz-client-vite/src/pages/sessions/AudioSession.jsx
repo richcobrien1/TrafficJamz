@@ -878,6 +878,7 @@ const AudioSession = () => {
     });
 
     const socket = io(socketUrl, {
+      autoConnect: false, // CRITICAL: Prevent auto-connection to register handlers first
       transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
       timeout: 10000, // Increase timeout to 10 seconds
       forceNew: true, // Force new connection
@@ -887,6 +888,8 @@ const AudioSession = () => {
       // Explicitly set the path
       path: '/socket.io'
     });
+
+    console.log('👥 [Participants] Registering all socket event handlers before connection...');
 
     socket.on('connect', () => {
       console.log('✅ Socket.IO connection established successfully');
@@ -1032,11 +1035,15 @@ const AudioSession = () => {
     });
     
     socket.on('current-participants', (data) => {
-      console.log('👥 Received current participants:', data.participants);
+      console.log('👥 ========================================');
+      console.log('👥 [Participants] CURRENT PARTICIPANTS RECEIVED');
+      console.log('👥 Received current participants:', JSON.stringify(data.participants, null, 2));
+      console.log('👥 Number of participants:', data.participants?.length || 0);
       if (data.participants && Array.isArray(data.participants)) {
         setParticipants(prev => {
           // Keep current user (marked with isMe)
           const me = prev.find(p => p && p.isMe);
+          console.log('👥 Current user in list:', me ? `${me.display_name} (${me.id})` : 'not found');
           
           // Add all other participants
           const others = data.participants.map(p => ({
@@ -1047,7 +1054,12 @@ const AudioSession = () => {
             isMe: false
           }));
           
-          return me ? [me, ...others] : others;
+          console.log('👥 Other participants:', others.map(p => `${p.display_name} (${p.id})`).join(', '));
+          const finalList = me ? [me, ...others] : others;
+          console.log('👥 Final participants list count:', finalList.length);
+          console.log('👥 ========================================');
+          
+          return finalList;
         });
       }
     });
@@ -1058,9 +1070,15 @@ const AudioSession = () => {
       setParticipants(prev => prev.filter(p => p && p.isMe));
     });
 
+    console.log('👥 [Participants] All event handlers registered, now connecting socket...');
+
     // Store the socket in state and ref
     setSocket(socket);
     signalingRef.current = socket;
+
+    // Connect the socket AFTER all handlers are registered
+    socket.connect();
+    console.log('👥 [Participants] Socket connection initiated');
 
     return socket;
   };
