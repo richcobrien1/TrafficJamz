@@ -468,6 +468,50 @@ io.on("connection", (socket) => {
       
       socket.join(room);
       console.log(`Socket ${socket.id} (${socket.userData.display_name}) joined audio session ${sessionId}`);
+      
+      // Persist participant to MongoDB
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session) {
+          // Initialize participants array if it doesn't exist
+          if (!session.participants) {
+            session.participants = [];
+          }
+          
+          // Check if participant already exists (by userId or socketId)
+          const existingParticipantIndex = session.participants.findIndex(
+            p => p.user_id === data.userId || p.socket_id === socket.id
+          );
+          
+          if (existingParticipantIndex >= 0) {
+            // Update existing participant with new socket ID
+            session.participants[existingParticipantIndex] = {
+              user_id: data.userId,
+              socket_id: socket.id,
+              display_name: data.display_name || 'User',
+              joined_at: new Date(),
+              left_at: null
+            };
+            console.log(`✅ Updated existing participant in DB: ${data.display_name}`);
+          } else {
+            // Add new participant
+            session.participants.push({
+              user_id: data.userId,
+              socket_id: socket.id,
+              display_name: data.display_name || 'User',
+              joined_at: new Date(),
+              left_at: null
+            });
+            console.log(`✅ Added new participant to DB: ${data.display_name}`);
+          }
+          
+          await session.save();
+          console.log(`✅ Persisted participant to MongoDB: ${data.display_name} (${session.participants.length} total)`);
+        }
+      } catch (err) {
+        console.error('❌ Failed to persist participant to MongoDB:', err);
+        // Continue anyway - socket notification still works
+      }
 
       // Send current participants list to the newly joined user
       socket.emit('current-participants', {
@@ -485,7 +529,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on('leave-audio-session', (data) => {
+  socket.on('leave-audio-session', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
@@ -496,6 +540,25 @@ io.on("connection", (socket) => {
       
       const displayName = socket.userData?.display_name || 'User';
       console.log(`Socket ${socket.id} (${displayName}) left audio session ${sessionId}`);
+      
+      // Mark participant as left in MongoDB
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session && session.participants) {
+          const participant = session.participants.find(
+            p => p.socket_id === socket.id || p.user_id === socket.userData?.userId
+          );
+          
+          if (participant) {
+            participant.left_at = new Date();
+            await session.save();
+            console.log(`✅ Marked participant as left in DB: ${displayName}`);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Failed to mark participant as left in MongoDB:', err);
+        // Continue anyway - socket notification still works
+      }
 
       safeEmitToRoom(room, 'participant-left', {
         userId: socket.userData?.userId || data.userId || null,
@@ -1013,14 +1076,32 @@ io.on("connection", (socket) => {
   }
   
   // Handle disconnection
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     const displayName = socket.userData?.display_name || 'User';
     const sessionId = socket.userData?.sessionId;
     
     console.log(`Client disconnected: ${socket.id} (${displayName})`);
     
-    // Notify session participants if user was in a session
+    // Mark participant as left in MongoDB
     if (sessionId) {
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session && session.participants) {
+          const participant = session.participants.find(
+            p => p.socket_id === socket.id || p.user_id === socket.userData?.userId
+          );
+          
+          if (participant && !participant.left_at) {
+            participant.left_at = new Date();
+            await session.save();
+            console.log(`✅ Marked disconnected participant as left in DB: ${displayName}`);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Failed to mark disconnected participant as left in MongoDB:', err);
+      }
+      
+      // Notify session participants
       const room = `audio-${sessionId}`;
       safeEmitToRoom(room, 'participant-left', {
         userId: socket.userData?.userId || null,
