@@ -178,11 +178,21 @@ export const MusicProvider = ({ children }) => {
       
       // Update controller status - use loose equality to handle string/number mismatch
       // BUT: Must check both values exist first to avoid null == undefined → true bug!
-      console.log('🎵 [MusicContext] Controller check - controller_id:', data.controller_id, '(type:', typeof data.controller_id, '), myUserId:', myUserId, '(type:', typeof myUserId, ')');
-      const amController = data.controller_id != null && myUserId != null && data.controller_id == myUserId;
-      setIsController(amController);
-      musicService.isController = amController;
-      console.log('🎵 [MusicContext] Controller status:', amController ? 'I am DJ ✅' : 'Listener 👂', '- Match result:', data.controller_id == myUserId);
+      console.log('🎵 [MusicContext] ⚠️ CRITICAL DEBUG - controller_id:', data.controller_id, '(type:', typeof data.controller_id, '), myUserId:', myUserId, '(type:', typeof myUserId, ')');
+      console.log('🎵 [MusicContext] ⚠️ CRITICAL DEBUG - userRef.current:', userRef.current);
+      
+      // CRITICAL FIX: If user not loaded, MUST default to false
+      if (!myUserId) {
+        console.warn('🎵 [MusicContext] ⚠️ User ID not available - FORCING isController to FALSE');
+        setIsController(false);
+        musicService.isController = false;
+      } else {
+        const amController = data.controller_id != null && data.controller_id == myUserId;
+        console.log('🎵 [MusicContext] Controller comparison:', { controller_id: data.controller_id, myUserId, result: amController });
+        setIsController(amController);
+        musicService.isController = amController;
+        console.log('🎵 [MusicContext] Controller status:', amController ? 'I am DJ ✅' : 'Listener 👂');
+      }
       
       // Update currently playing
       if (data.currently_playing) {
@@ -231,14 +241,21 @@ export const MusicProvider = ({ children }) => {
     socket.on('music-controller-changed', (data) => {
       console.log('🎵 [MusicContext] Controller changed event - userId:', data.userId, '(type:', typeof data.userId, '), controllerId:', data.controllerId);
       const myUserId = userRef.current?.id || userRef.current?.user_id;
-      // Only compare userId (controllerId is socket ID, not user ID)
-      // When controller is released, data.userId will be null
-      // Use loose equality (==) to handle string/number type mismatches
-      // Check both values exist to avoid null == undefined → true bug
-      const amController = data.userId != null && myUserId != null && data.userId == myUserId;
-      console.log('🎵 [MusicContext] Am I the controller?', amController ? '✅ YES (DJ)' : '❌ NO (Listener)', '- My ID:', myUserId, '(type:', typeof myUserId, ')');
-      setIsController(amController);
-      musicService.isController = amController;
+      console.log('🎵 [MusicContext] ⚠️ CRITICAL DEBUG - myUserId:', myUserId, 'userRef:', userRef.current);
+      
+      // CRITICAL FIX: If user not loaded, MUST default to false
+      if (!myUserId) {
+        console.warn('🎵 [MusicContext] ⚠️ User ID not available - FORCING isController to FALSE');
+        setIsController(false);
+        musicService.isController = false;
+      } else {
+        // Only compare userId (controllerId is socket ID, not user ID)
+        // When controller is released, data.userId will be null
+        const amController = data.userId != null && data.userId == myUserId;
+        console.log('🎵 [MusicContext] Am I the controller?', amController ? '✅ YES (DJ)' : '❌ NO (Listener)', '- My ID:', myUserId, '(type:', typeof myUserId, ')');
+        setIsController(amController);
+        musicService.isController = amController;
+      }
     });
     
     // Music control events
