@@ -51,6 +51,9 @@ const sequelize = require('./config/database');
 // Import models to set up associations
 const models = require('./models');
 
+// Import audio service for music session management
+const audioService = require('./services/audio.service');
+
 app.use(morgan('dev')); // HTTP request logger
 app.use(compression()); // Compress responses
 
