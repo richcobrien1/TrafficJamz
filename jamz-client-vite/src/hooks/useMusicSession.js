@@ -99,12 +99,12 @@ export const useMusicSession = (groupId, audioSessionId) => {
   const handleControllerChanged = useCallback((data) => {
     console.log('👑 Controller changed:', data);
     const myUserId = user?.id || user?.user_id;
-    if (data.controllerId === null) {
+    if (data.controllerId === null || data.userId === null) {
       // No one is controlling
       console.log('🎵 No DJ in control');
       setIsController(false);
       musicService.isController = false;
-    } else if (data.controllerId === myUserId) {
+    } else if (data.userId === myUserId || data.controllerId === myUserId) {
       // We are now the controller
       console.log('🎵 I am now the DJ');
       setIsController(true);
@@ -114,6 +114,59 @@ export const useMusicSession = (groupId, audioSessionId) => {
       setIsController(false);
       musicService.isController = false;
       console.log('🎵 Someone else is now DJ');
+    }
+  }, [user]);
+
+  /**
+   * Handle comprehensive music session state (sent on join)
+   */
+  const handleMusicSessionState = useCallback(async (data) => {
+    console.log('🎵 Received comprehensive music session state:', {
+      playlistLength: data.playlist?.length || 0,
+      hasCurrentTrack: !!data.currently_playing,
+      controllerId: data.controller_id,
+      isPlaying: data.is_playing
+    });
+
+    const myUserId = user?.id || user?.user_id;
+
+    // Update playlist
+    if (data.playlist && Array.isArray(data.playlist)) {
+      console.log('📝 Restoring playlist with', data.playlist.length, 'tracks');
+      setPlaylist(data.playlist);
+      musicService.playlist = data.playlist;
+    }
+
+    // Update controller status
+    const amController = data.controller_id === myUserId;
+    const someoneElseIsController = data.controller_id && data.controller_id !== myUserId;
+    
+    setIsController(amController);
+    musicService.isController = amController;
+    
+    console.log('👑 Controller status from session state:', {
+      myUserId,
+      controllerId: data.controller_id,
+      amController,
+      someoneElseIsController
+    });
+
+    // Update currently playing track
+    if (data.currently_playing) {
+      console.log('🎵 Restoring currently playing track:', data.currently_playing.title);
+      setCurrentTrack(data.currently_playing);
+      
+      // Load the track into the music service
+      await musicService.loadTrack(data.currently_playing);
+      
+      // If music is playing, sync playback position
+      if (data.is_playing && data.currently_playing.position !== undefined) {
+        console.log('▶️ Restoring playback at position:', data.currently_playing.position);
+        // Only auto-play if we're not the controller (listeners should sync)
+        if (!amController) {
+          await musicService.play(data.currently_playing.position);
+        }
+      }
     }
   }, [user]);
 
@@ -224,6 +277,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
       socket.on('music-sync', handleRemoteSync);
       socket.on('playlist-update', handlePlaylistUpdate);
       socket.on('music-controller-changed', handleControllerChanged);
+      socket.on('music-session-state', handleMusicSessionState); // Comprehensive state on join
       
       console.log('🎵 Music socket events registered for session:', audioSessionId);
     }
@@ -271,9 +325,10 @@ export const useMusicSession = (groupId, audioSessionId) => {
         socketRef.current.off('music-sync', handleRemoteSync);
         socketRef.current.off('playlist-update', handlePlaylistUpdate);
         socketRef.current.off('music-controller-changed', handleControllerChanged);
+        socketRef.current.off('music-session-state', handleMusicSessionState);
       }
     };
-  }, [groupId, audioSessionId, user, handleRemotePlay, handleRemotePause, handleRemoteSeek, handleRemoteTrackChange, handleRemoteSync, handlePlaylistUpdate, handleControllerChanged]);
+  }, [groupId, audioSessionId, user, handleRemotePlay, handleRemotePause, handleRemoteSeek, handleRemoteTrackChange, handleRemoteSync, handlePlaylistUpdate, handleControllerChanged, handleMusicSessionState]);
 
   /**
    * Play music
