@@ -88,6 +88,7 @@ const AudioSessionSchema = new Schema({
       artist: String,
       album: String,
       duration: Number,
+      fileUrl: String, // Supabase storage URL
       position: Number,
       controlled_by: String, // UUID from PostgreSQL User table
       started_at: Date
@@ -101,6 +102,8 @@ const AudioSessionSchema = new Schema({
       artist: String,
       album: String,
       duration: Number,
+      fileUrl: String, // Supabase storage URL
+      uploadedBy: String, // User who uploaded the track
       added_by: String // UUID from PostgreSQL User table
     }]
   },
