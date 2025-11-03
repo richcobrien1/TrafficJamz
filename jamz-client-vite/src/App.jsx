@@ -178,7 +178,7 @@ function App() {
                     <GroupDetail />
                   </ProtectedRoute>
                 } />
-                <Route path="/audio-session/:sessionId" element={
+                <Route path="/audio-session/:groupId" element={
                   <ProtectedRoute>
                     <AudioSession />
                   </ProtectedRoute>
