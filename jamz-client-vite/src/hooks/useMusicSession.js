@@ -172,6 +172,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
 
   /**
    * Initialize music service and socket connection
+   * NOTE: Socket connection persists across re-renders to avoid reconnection issues
    */
   useEffect(() => {
     if (!groupId || !audioSessionId) {
@@ -197,6 +198,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
     };
 
     // Connect to socket if not already connected
+    // Socket connection persists across re-renders to maintain connection
     if (!socketRef.current) {
       console.log('🎵 Creating new music socket connection...');
       const socket = io(API_URL, {
@@ -248,35 +250,22 @@ export const useMusicSession = (groupId, audioSessionId) => {
       }
       
       // Also join on connect/reconnect
-      socket.on('connect', () => {
+      const handleConnect = () => {
         console.log('🎵 Socket connected event fired');
         joinRoom();
-      });
+      };
+      socket.on('connect', handleConnect);
       
-      // Cleanup the connect listener when component unmounts or dependencies change
+      // Cleanup only the connect listener
       return () => {
-        socket.off('connect', joinRoom);
+        socket.off('connect', handleConnect);
       };
     }
 
-    return () => {
-      if (syncIntervalRef.current) {
-        clearInterval(syncIntervalRef.current);
-      }
-      // Clean up socket listeners
-      if (socketRef.current) {
-        socketRef.current.off('music-play', handleRemotePlay);
-        socketRef.current.off('music-pause', handleRemotePause);
-        socketRef.current.off('music-seek', handleRemoteSeek);
-        socketRef.current.off('music-change-track', handleRemoteTrackChange);
-        socketRef.current.off('music-track-change', handleRemoteTrackChange);
-        socketRef.current.off('music-sync', handleRemoteSync);
-        socketRef.current.off('playlist-update', handlePlaylistUpdate);
-        socketRef.current.off('music-controller-changed', handleControllerChanged);
-        socketRef.current.off('music-session-state', handleMusicSessionState);
-      }
-    };
-  }, [groupId, audioSessionId, user, handleRemotePlay, handleRemotePause, handleRemoteSeek, handleRemoteTrackChange, handleRemoteSync, handlePlaylistUpdate, handleControllerChanged, handleMusicSessionState]);
+    // NOTE: We do NOT clean up the socket or its listeners here
+    // The socket persists across re-renders to maintain the connection
+    // It will only be cleaned up when the component unmounts
+  }, [groupId, audioSessionId, user]);
 
   /**
    * Play music
@@ -501,6 +490,22 @@ export const useMusicSession = (groupId, audioSessionId) => {
   const changeVolume = useCallback((newVolume) => {
     setVolume(newVolume);
     musicService.setVolume(newVolume);
+  }, []);
+
+  /**
+   * Cleanup on unmount only
+   */
+  useEffect(() => {
+    return () => {
+      console.log('🎵 Music session hook unmounting - cleaning up socket');
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+      }
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   return {
