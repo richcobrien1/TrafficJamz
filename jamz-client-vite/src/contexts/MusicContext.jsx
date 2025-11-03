@@ -176,11 +176,12 @@ export const MusicProvider = ({ children }) => {
         console.warn('🎵 [MusicContext] ⚠️ No valid playlist in music-session-state event');
       }
       
-      // Update controller status
-      const amController = data.controller_id === myUserId;
+      // Update controller status - use loose equality to handle string/number mismatch
+      console.log('🎵 [MusicContext] Controller check - controller_id:', data.controller_id, '(type:', typeof data.controller_id, '), myUserId:', myUserId, '(type:', typeof myUserId, ')');
+      const amController = data.controller_id == myUserId; // Use == for type coercion
       setIsController(amController);
       musicService.isController = amController;
-      console.log('🎵 [MusicContext] Controller status:', amController ? 'I am DJ' : 'Listener');
+      console.log('🎵 [MusicContext] Controller status:', amController ? 'I am DJ ✅' : 'Listener 👂', '- Match result:', data.controller_id == myUserId);
       
       // Update currently playing
       if (data.currently_playing) {
@@ -227,12 +228,13 @@ export const MusicProvider = ({ children }) => {
     
     // Controller changes
     socket.on('music-controller-changed', (data) => {
-      console.log('🎵 [MusicContext] Controller changed - userId:', data.userId, 'controllerId:', data.controllerId);
+      console.log('🎵 [MusicContext] Controller changed event - userId:', data.userId, '(type:', typeof data.userId, '), controllerId:', data.controllerId);
       const myUserId = userRef.current?.id || userRef.current?.user_id;
       // Only compare userId (controllerId is socket ID, not user ID)
       // When controller is released, data.userId will be null
-      const amController = data.userId ? (data.userId === myUserId) : false;
-      console.log('🎵 [MusicContext] Am I the controller?', amController, '(my ID:', myUserId, ')');
+      // Use loose equality (==) to handle string/number type mismatches
+      const amController = data.userId ? (data.userId == myUserId) : false;
+      console.log('🎵 [MusicContext] Am I the controller?', amController ? '✅ YES (DJ)' : '❌ NO (Listener)', '- My ID:', myUserId, '(type:', typeof myUserId, ')');
       setIsController(amController);
       musicService.isController = amController;
     });
