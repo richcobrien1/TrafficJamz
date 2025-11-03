@@ -141,9 +141,37 @@ export const MusicProvider = ({ children }) => {
       // Update playlist (PERSIST IN CONTEXT)
       if (data.playlist && Array.isArray(data.playlist)) {
         console.log('🎵 [MusicContext] ✅ Setting playlist state with', data.playlist.length, 'tracks');
-        setPlaylist(data.playlist);
-        musicService.playlist = data.playlist;
-        console.log('🎵 [MusicContext] ✅ Playlist state updated successfully');
+        
+        // Deduplicate playlist (in case database has duplicates)
+        const deduplicatedPlaylist = [];
+        const seenUrls = new Set();
+        const seenTitleArtist = new Set();
+        
+        for (const track of data.playlist) {
+          const url = track.fileUrl || track.url;
+          const titleArtist = `${track.title}|${track.artist}`;
+          
+          if (url && seenUrls.has(url)) {
+            console.warn('🎵 [MusicContext] ⚠️ Duplicate track removed (by URL):', track.title);
+            continue;
+          }
+          if (seenTitleArtist.has(titleArtist)) {
+            console.warn('🎵 [MusicContext] ⚠️ Duplicate track removed (by title/artist):', track.title);
+            continue;
+          }
+          
+          if (url) seenUrls.add(url);
+          seenTitleArtist.add(titleArtist);
+          deduplicatedPlaylist.push(track);
+        }
+        
+        if (deduplicatedPlaylist.length !== data.playlist.length) {
+          console.warn('🎵 [MusicContext] ⚠️ Removed', data.playlist.length - deduplicatedPlaylist.length, 'duplicate tracks');
+        }
+        
+        setPlaylist(deduplicatedPlaylist);
+        musicService.playlist = deduplicatedPlaylist;
+        console.log('🎵 [MusicContext] ✅ Playlist state updated successfully with', deduplicatedPlaylist.length, 'tracks');
       } else {
         console.warn('🎵 [MusicContext] ⚠️ No valid playlist in music-session-state event');
       }
@@ -171,8 +199,29 @@ export const MusicProvider = ({ children }) => {
     socket.on('playlist-update', (data) => {
       console.log('🎵 [MusicContext] Playlist update received:', data.playlist?.length || 0, 'tracks');
       if (data.playlist && Array.isArray(data.playlist)) {
-        setPlaylist(data.playlist);
-        musicService.playlist = data.playlist;
+        // Deduplicate received playlist
+        const deduplicatedPlaylist = [];
+        const seenUrls = new Set();
+        const seenTitleArtist = new Set();
+        
+        for (const track of data.playlist) {
+          const url = track.fileUrl || track.url;
+          const titleArtist = `${track.title}|${track.artist}`;
+          
+          if (url && seenUrls.has(url)) continue;
+          if (seenTitleArtist.has(titleArtist)) continue;
+          
+          if (url) seenUrls.add(url);
+          seenTitleArtist.add(titleArtist);
+          deduplicatedPlaylist.push(track);
+        }
+        
+        setPlaylist(deduplicatedPlaylist);
+        musicService.playlist = deduplicatedPlaylist;
+        
+        if (deduplicatedPlaylist.length !== data.playlist.length) {
+          console.warn('🎵 [MusicContext] ⚠️ Removed', data.playlist.length - deduplicatedPlaylist.length, 'duplicates from received playlist');
+        }
       }
     });
     
@@ -255,6 +304,18 @@ export const MusicProvider = ({ children }) => {
    */
   const addTrack = async (track) => {
     console.log('🎵 [MusicContext] Adding track:', track.title);
+    
+    // Check for duplicates before adding (compare by fileUrl or title+artist)
+    const isDuplicate = musicService.playlist.some(t => 
+      (t.fileUrl && track.fileUrl && t.fileUrl === track.fileUrl) ||
+      (t.url && track.url && t.url === track.url) ||
+      (t.title === track.title && t.artist === track.artist)
+    );
+    
+    if (isDuplicate) {
+      console.warn('🎵 [MusicContext] ⚠️ Track already in playlist, skipping:', track.title);
+      return false;
+    }
     
     // Add to local state and music service
     musicService.addToPlaylist(track);
