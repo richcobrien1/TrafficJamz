@@ -90,10 +90,14 @@ export const MusicProvider = ({ children }) => {
         timeout: 10000,
         reconnection: true,
         reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionDelay: 1000,
+        autoConnect: false // DON'T connect until handlers are registered
       });
       
       socketRef.current = socket;
+      
+      // Register event handlers FIRST (before connecting)
+      setupSocketEventHandlers(socket);
       
       // Connection event handlers
       socket.on('connect', () => {
@@ -109,13 +113,9 @@ export const MusicProvider = ({ children }) => {
         console.log('🎵 [MusicContext] Socket disconnected:', reason);
       });
       
-      // Register event handlers
-      setupSocketEventHandlers(socket);
-      
-      // Join if already connected
-      if (socket.connected) {
-        joinMusicSession(sessionId, groupId);
-      }
+      // NOW connect with handlers ready
+      console.log('🎵 [MusicContext] Connecting socket with handlers ready...');
+      socket.connect();
     }
   };
   
@@ -127,18 +127,25 @@ export const MusicProvider = ({ children }) => {
     
     // Music session state (comprehensive state on join)
     socket.on('music-session-state', (data) => {
-      console.log('🎵 [MusicContext] Music session state received');
+      console.log('🎵 [MusicContext] ========================================');
+      console.log('🎵 [MusicContext] MUSIC SESSION STATE RECEIVED');
+      console.log('🎵 [MusicContext] ========================================');
       console.log('🎵 Playlist tracks:', data.playlist?.length || 0);
       console.log('🎵 Current track:', data.currently_playing?.title || 'none');
       console.log('🎵 Controller:', data.controller_id || 'none');
+      console.log('🎵 Full playlist data:', JSON.stringify(data.playlist, null, 2));
+      console.log('🎵 [MusicContext] ========================================');
       
       const myUserId = userRef.current?.id || userRef.current?.user_id;
       
       // Update playlist (PERSIST IN CONTEXT)
       if (data.playlist && Array.isArray(data.playlist)) {
-        console.log('🎵 [MusicContext] Updating playlist:', data.playlist.length, 'tracks');
+        console.log('🎵 [MusicContext] ✅ Setting playlist state with', data.playlist.length, 'tracks');
         setPlaylist(data.playlist);
         musicService.playlist = data.playlist;
+        console.log('🎵 [MusicContext] ✅ Playlist state updated successfully');
+      } else {
+        console.warn('🎵 [MusicContext] ⚠️ No valid playlist in music-session-state event');
       }
       
       // Update controller status
