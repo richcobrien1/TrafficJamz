@@ -177,8 +177,9 @@ export const MusicProvider = ({ children }) => {
       }
       
       // Update controller status - use loose equality to handle string/number mismatch
+      // BUT: Must check both values exist first to avoid null == undefined → true bug!
       console.log('🎵 [MusicContext] Controller check - controller_id:', data.controller_id, '(type:', typeof data.controller_id, '), myUserId:', myUserId, '(type:', typeof myUserId, ')');
-      const amController = data.controller_id == myUserId; // Use == for type coercion
+      const amController = data.controller_id != null && myUserId != null && data.controller_id == myUserId;
       setIsController(amController);
       musicService.isController = amController;
       console.log('🎵 [MusicContext] Controller status:', amController ? 'I am DJ ✅' : 'Listener 👂', '- Match result:', data.controller_id == myUserId);
@@ -233,7 +234,8 @@ export const MusicProvider = ({ children }) => {
       // Only compare userId (controllerId is socket ID, not user ID)
       // When controller is released, data.userId will be null
       // Use loose equality (==) to handle string/number type mismatches
-      const amController = data.userId ? (data.userId == myUserId) : false;
+      // Check both values exist to avoid null == undefined → true bug
+      const amController = data.userId != null && myUserId != null && data.userId == myUserId;
       console.log('🎵 [MusicContext] Am I the controller?', amController ? '✅ YES (DJ)' : '❌ NO (Listener)', '- My ID:', myUserId, '(type:', typeof myUserId, ')');
       setIsController(amController);
       musicService.isController = amController;
