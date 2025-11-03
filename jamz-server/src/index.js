@@ -450,10 +450,24 @@ io.on("connection", (socket) => {
         for (const socketId of socketsInRoom) {
           const participantSocket = io.sockets.sockets.get(socketId);
           if (participantSocket && participantSocket.userData) {
+            // Fetch full user details if available
+            let userDetails = null;
+            if (participantSocket.userData.userId) {
+              try {
+                userDetails = await models.User.findById(participantSocket.userData.userId).lean();
+              } catch (err) {
+                console.warn(`Failed to fetch user details for ${participantSocket.userData.userId}:`, err.message);
+              }
+            }
+            
             currentParticipants.push({
               socketId: socketId,
               userId: participantSocket.userData.userId,
-              display_name: participantSocket.userData.display_name
+              display_name: participantSocket.userData.display_name,
+              // Include avatar/profile info if user found
+              profile_image_url: userDetails?.profile_image_url || null,
+              first_name: userDetails?.first_name || null,
+              last_name: userDetails?.last_name || null
             });
           }
         }
@@ -518,11 +532,23 @@ io.on("connection", (socket) => {
         participants: currentParticipants
       });
 
-      // Notify others in the session (exclude sender)
+      // Notify others in the session (exclude sender) with full user details
+      let newUserDetails = null;
+      if (data.userId) {
+        try {
+          newUserDetails = await models.User.findById(data.userId).lean();
+        } catch (err) {
+          console.warn(`Failed to fetch user details for new participant ${data.userId}:`, err.message);
+        }
+      }
+      
       safeEmitToRoom(room, 'participant-joined', {
         userId: data.userId || null,
         socketId: socket.id,
-        display_name: data.display_name || 'User'
+        display_name: data.display_name || 'User',
+        profile_image_url: newUserDetails?.profile_image_url || null,
+        first_name: newUserDetails?.first_name || null,
+        last_name: newUserDetails?.last_name || null
       });
     } catch (err) {
       console.error('join-audio-session handler error:', err);
