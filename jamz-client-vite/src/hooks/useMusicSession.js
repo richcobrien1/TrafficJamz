@@ -174,8 +174,12 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Initialize music service and socket connection
    */
   useEffect(() => {
-    if (!groupId || !audioSessionId) return;
+    if (!groupId || !audioSessionId) {
+      console.log('🎵 Skipping music session init - missing groupId or audioSessionId:', { groupId, audioSessionId });
+      return;
+    }
 
+    console.log('🎵 Initializing music session hook for:', { groupId, audioSessionId });
     musicService.initialize();
 
     // Set up callbacks
@@ -192,71 +196,6 @@ export const useMusicSession = (groupId, audioSessionId) => {
       setDuration(musicService.getDuration());
     };
 
-    // Fetch initial music state (playlist, current track, controller)
-    const fetchMusicState = async () => {
-      try {
-        console.log('🎵 Fetching music state for session:', audioSessionId);
-        const response = await fetch(`${API_URL}/api/audio/sessions/${audioSessionId}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const data = await response.json();
-        
-        if (data.session?.music) {
-          const musicState = data.session.music;
-          console.log('🎵 Music state loaded:', musicState);
-          
-          // Check session-level controller (persists even when no track playing)
-          const myUserId = user?.id || user?.user_id;
-          const sessionControllerId = musicState.controller_id;
-          const amSessionController = sessionControllerId === myUserId;
-          const someoneElseIsController = sessionControllerId && sessionControllerId !== myUserId;
-          
-          // Set controller status based on session-level controller
-          setIsController(amSessionController);
-          musicService.isController = amSessionController;
-          
-          console.log('👑 Session controller status:', {
-            myUserId,
-            sessionControllerId,
-            amSessionController,
-            someoneElseIsController,
-            explanation: amSessionController ? 'I am the controller' : someoneElseIsController ? 'I am a listener' : 'No controller set'
-          });
-          
-          // Restore playlist
-          if (musicState.playlist && Array.isArray(musicState.playlist)) {
-            console.log('📝 Restoring playlist with', musicState.playlist.length, 'tracks');
-            setPlaylist(musicState.playlist);
-            musicService.playlist = musicState.playlist;
-          }
-          
-          // Restore currently playing track
-          if (musicState.currently_playing) {
-            console.log('🎵 Restoring currently playing track:', musicState.currently_playing.title);
-            const track = musicState.currently_playing;
-            setCurrentTrack(track);
-            
-            // Load the track into the music service
-            await musicService.loadTrack(track);
-            
-            // If music is playing, sync playback position
-            if (musicState.is_playing && track.position !== undefined) {
-              console.log('▶️ Restoring playback at position:', track.position);
-              // Only auto-play if we're not the controller (listeners should sync)
-              if (!amSessionController) {
-                await musicService.play(track.position);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('❌ Failed to fetch music state:', error);
-      }
-    };
-    fetchMusicState();
-
     // Connect to socket if not already connected
     if (!socketRef.current) {
       console.log('🎵 Creating new music socket connection...');
@@ -268,7 +207,9 @@ export const useMusicSession = (groupId, audioSessionId) => {
       
       socketRef.current = socket;
 
-      // Listen for music events
+      // CRITICAL: Register ALL event listeners BEFORE joining the room
+      // This ensures we don't miss the music-session-state event from the server
+      console.log('🎵 Registering music event listeners...');
       socket.on('music-play', handleRemotePlay);
       socket.on('music-pause', handleRemotePause);
       socket.on('music-seek', handleRemoteSeek);
@@ -278,8 +219,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
       socket.on('playlist-update', handlePlaylistUpdate);
       socket.on('music-controller-changed', handleControllerChanged);
       socket.on('music-session-state', handleMusicSessionState); // Comprehensive state on join
-      
-      console.log('🎵 Music socket events registered for session:', audioSessionId);
+      console.log('🎵 Music socket events registered');
     }
     
     // Join music room when socket is connected
@@ -287,23 +227,31 @@ export const useMusicSession = (groupId, audioSessionId) => {
     if (socket) {
       const joinRoom = () => {
         if (socket.connected) {
-          console.log('🎵 Joining music session room:', audioSessionId, 'groupId:', groupId);
+          console.log('🎵 Socket connected, joining music session room:', audioSessionId, 'groupId:', groupId);
           socket.emit('join-music-session', {
             sessionId: audioSessionId,
             groupId,
             userId: user?.id || user?.user_id
           });
-          console.log('🎵 Joined music session room:', audioSessionId);
+          console.log('🎵 join-music-session emitted, server should send music-session-state');
         } else {
-          console.log('🎵 Socket not connected yet, waiting...');
+          console.log('🎵 Socket not connected yet, waiting for connection...');
         }
       };
       
-      // Join immediately if already connected
-      joinRoom();
+      // If socket is already connected, join immediately
+      if (socket.connected) {
+        console.log('🎵 Socket already connected on hook init');
+        joinRoom();
+      } else {
+        console.log('🎵 Socket not connected yet, will join on connect event');
+      }
       
       // Also join on connect/reconnect
-      socket.on('connect', joinRoom);
+      socket.on('connect', () => {
+        console.log('🎵 Socket connected event fired');
+        joinRoom();
+      });
       
       // Cleanup the connect listener when component unmounts or dependencies change
       return () => {
