@@ -233,14 +233,51 @@ export const useMusicSession = (groupId, audioSessionId) => {
     // Connect to socket if not already connected
     // Socket connection persists across re-renders to maintain connection
     if (!socketRef.current) {
-      console.log('🎵 Creating new music socket connection...');
+      console.log('🎵 ========================================');
+      console.log('🎵 CREATING MUSIC SOCKET CONNECTION');
+      console.log('🎵 ========================================');
+      console.log('🎵 API_URL:', API_URL);
+      console.log('🎵 VITE_API_URL:', import.meta.env.VITE_API_URL);
+      console.log('🎵 VITE_BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
+      console.log('🎵 Token exists:', !!localStorage.getItem('token'));
+      console.log('🎵 Window location:', window.location.origin);
+      
       const socket = io(API_URL, {
         auth: {
           token: localStorage.getItem('token')
-        }
+        },
+        transports: ['websocket', 'polling'],
+        timeout: 10000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
       });
       
       socketRef.current = socket;
+
+      // Add connection event handlers for debugging
+      socket.on('connect', () => {
+        console.log('🎵 ✅ Music socket connected');
+        console.log('🎵 Socket ID:', socket.id);
+        console.log('🎵 Transport:', socket.io.engine.transport.name);
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('🎵 ❌ Music socket connection error:', error);
+        console.error('🎵 Error details:', {
+          message: error.message,
+          description: error.description,
+          type: error.type
+        });
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('🎵 ⚠️ Music socket disconnected:', reason);
+      });
+
+      socket.on('error', (error) => {
+        console.error('🎵 ❌ Music socket error:', error);
+      });
 
       // CRITICAL: Register ALL event listeners BEFORE joining the room
       // This ensures we don't miss the music-session-state event from the server
@@ -254,7 +291,8 @@ export const useMusicSession = (groupId, audioSessionId) => {
       socket.on('playlist-update', handlePlaylistUpdate);
       socket.on('music-controller-changed', handleControllerChanged);
       socket.on('music-session-state', handleMusicSessionState); // Comprehensive state on join
-      console.log('🎵 Music socket events registered');
+      console.log('🎵 ✅ Music socket events registered');
+      console.log('🎵 ========================================');
     }
     
     // Join music room when socket is connected
@@ -280,6 +318,27 @@ export const useMusicSession = (groupId, audioSessionId) => {
           console.log('🎵 ✅ join-music-session emitted');
           console.log('🎵 ⏳ Waiting for music-session-state from server...');
           console.log('🎵 ========================================');
+          
+          // Set a timeout to detect if state never arrives
+          const stateTimeout = setTimeout(() => {
+            console.warn('🎵 ⚠️ WARNING: music-session-state not received within 5 seconds');
+            console.warn('🎵 This could mean:');
+            console.warn('🎵 1. Backend not running');
+            console.warn('🎵 2. Socket connection issue');
+            console.warn('🎵 3. Session ID mismatch');
+            console.warn('🎵 4. Backend handler error');
+            console.warn('🎵 Check backend console for errors');
+          }, 5000);
+          
+          // Clear timeout when state is received
+          const originalHandler = handleMusicSessionState;
+          const wrappedHandler = async (data) => {
+            clearTimeout(stateTimeout);
+            await originalHandler(data);
+          };
+          
+          // Replace the handler temporarily (only for this join)
+          socket.once('music-session-state', wrappedHandler);
         } else {
           console.log('🎵 ❌ Socket not connected yet, waiting for connection...');
           console.log('🎵 Socket state:', socket.connected, socket.id);
