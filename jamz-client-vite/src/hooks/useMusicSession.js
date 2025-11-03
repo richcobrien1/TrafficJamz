@@ -23,11 +23,16 @@ export const useMusicSession = (groupId, audioSessionId) => {
   const socketRef = useRef(null);
   const syncIntervalRef = useRef(null);
   const isControllerRef = useRef(isController);
+  const userRef = useRef(user);
   
-  // Keep ref in sync with state
+  // Keep refs in sync with state/props
   useEffect(() => {
     isControllerRef.current = isController;
   }, [isController]);
+  
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   /**
    * Handle remote play event
@@ -98,7 +103,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
    */
   const handleControllerChanged = useCallback((data) => {
     console.log('👑 Controller changed:', data);
-    const myUserId = user?.id || user?.user_id;
+    const myUserId = userRef.current?.id || userRef.current?.user_id;
     if (data.controllerId === null || data.userId === null) {
       // No one is controlling
       console.log('🎵 No DJ in control');
@@ -115,7 +120,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
       musicService.isController = false;
       console.log('🎵 Someone else is now DJ');
     }
-  }, [user]);
+  }, []);
 
   /**
    * Handle comprehensive music session state (sent on join)
@@ -128,7 +133,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
       isPlaying: data.is_playing
     });
 
-    const myUserId = user?.id || user?.user_id;
+    const myUserId = userRef.current?.id || userRef.current?.user_id;
 
     // Update playlist
     if (data.playlist && Array.isArray(data.playlist)) {
@@ -168,7 +173,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
         }
       }
     }
-  }, [user]);
+  }, []);
 
   /**
    * Initialize music service and socket connection
@@ -233,7 +238,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
           socket.emit('join-music-session', {
             sessionId: audioSessionId,
             groupId,
-            userId: user?.id || user?.user_id
+            userId: userRef.current?.id || userRef.current?.user_id
           });
           console.log('🎵 join-music-session emitted, server should send music-session-state');
         } else {
@@ -467,9 +472,9 @@ export const useMusicSession = (groupId, audioSessionId) => {
     
     socketRef.current?.emit('music-take-control', {
       sessionId: audioSessionId,
-      userId: user?.id || user?.user_id
+      userId: userRef.current?.id || userRef.current?.user_id
     });
-  }, [audioSessionId, user]);
+  }, [audioSessionId]);
 
   /**
    * Release control
@@ -480,9 +485,9 @@ export const useMusicSession = (groupId, audioSessionId) => {
     
     socketRef.current?.emit('music-release-control', {
       sessionId: audioSessionId,
-      userId: user?.id || user?.user_id
+      userId: userRef.current?.id || userRef.current?.user_id
     });
-  }, [audioSessionId, user]);
+  }, [audioSessionId]);
 
   /**
    * Change volume
