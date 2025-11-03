@@ -2005,12 +2005,13 @@ const AudioSession = () => {
             </Typography>
             <MusicUpload
               sessionId={session?.id || session?._id}
-              onTracksAdded={(tracks) => {
+              onTracksAdded={async (tracks) => {
                 console.log('Tracks uploaded:', tracks);
                 // Add each track to the playlist
-                tracks.forEach(track => {
-                  musicAddTrack(track);
-                });
+                for (const track of tracks) {
+                  await musicAddTrack(track);
+                }
+                console.log('All tracks added to playlist');
               }}
               disabled={!session}
             />

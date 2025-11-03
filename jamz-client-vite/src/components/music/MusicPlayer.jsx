@@ -87,12 +87,24 @@ const MusicPlayer = ({
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent sx={{ textAlign: 'center', py: 4 }}>
           <MusicIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">
+          <Typography variant="h6" color="text.secondary" gutterBottom>
             No music playing
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Upload some tracks to get started!
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Upload tracks below, then click a track in the playlist to play it
           </Typography>
+          {!isController && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                💡 To control music playback:
+              </Typography>
+              <Typography variant="body2">
+                1. Click "Take Control" below to become the DJ<br/>
+                2. Upload or select a track from the playlist<br/>
+                3. Use the play/pause buttons to control playback
+              </Typography>
+            </Box>
+          )}
         </CardContent>
       </Card>
     );
@@ -230,9 +242,12 @@ const MusicPlayer = ({
 
         {/* Status Messages */}
         {!isController && (
-          <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
-            <Typography variant="caption" color="text.secondary" align="center" display="block">
-              Another member is controlling playback. Click "Take Control" to become the DJ.
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1, border: '1px solid', borderColor: 'warning.main' }}>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+              🎧 Listening Mode
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Another member is controlling playback. Click "Take Control" above to become the DJ and control the music.
             </Typography>
           </Box>
         )}
