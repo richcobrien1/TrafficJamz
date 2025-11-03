@@ -1531,7 +1531,11 @@ const AudioSession = () => {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Traffic Jam - Audio Session
             </Typography>
-            <IconButton color="inherit" onClick={() => setOpenMusicDialog(true)}>
+            <IconButton color="inherit" onClick={() => {
+              console.log('🎵 Music button clicked, openMusicDialog:', openMusicDialog);
+              setOpenMusicDialog(true);
+              console.log('🎵 setOpenMusicDialog(true) called');
+            }}>
               <MusicNoteIcon />
             </IconButton>
             <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
@@ -1953,6 +1957,7 @@ const AudioSession = () => {
       </Paper>
       
       {/* Music Dialog */}
+      {console.log('🎵 Rendering music dialog, openMusicDialog:', openMusicDialog)}
       <Dialog
         open={openMusicDialog}
         onClose={() => setOpenMusicDialog(false)}
