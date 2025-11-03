@@ -65,13 +65,22 @@ class MusicService {
     }
 
     this.currentTrack = track;
-    this.audioElement.src = track.url;
+    
+    // Handle both 'url' and 'fileUrl' properties
+    const trackUrl = track.url || track.fileUrl;
+    
+    if (!trackUrl) {
+      console.error('❌ Track has no URL:', track);
+      throw new Error('Track has no valid URL');
+    }
+    
+    this.audioElement.src = trackUrl;
     
     if (this.onTrackChange) {
       this.onTrackChange(track);
     }
 
-    console.log('🎵 Loaded track:', track.title);
+    console.log('🎵 Loaded track:', track.title, 'from URL:', trackUrl);
   }
 
   /**
