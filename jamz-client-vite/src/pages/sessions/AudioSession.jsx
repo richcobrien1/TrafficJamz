@@ -675,7 +675,7 @@ const AudioSession = () => {
         console.log('Creating new audio session for group:', sessionId);
         const createResponse = await api.post('/audio/sessions', {
           group_id: sessionId,
-          session_type: 'voice_only',
+          session_type: 'voice_with_music',
           device_type: 'web'
         });
 
@@ -688,7 +688,7 @@ const AudioSession = () => {
           sessionData = {
             id: `fallback-${sessionId}-${Date.now()}`,
             group_id: sessionId,
-            session_type: 'voice_only',
+            session_type: 'voice_with_music',
             participants: []
           };
           console.warn('⚠️ FALLBACK: Using fallback session data due to unexpected response:', {
@@ -704,7 +704,7 @@ const AudioSession = () => {
         sessionData = {
           id: `fallback-${sessionId}-${Date.now()}`,
           group_id: sessionId,
-          session_type: 'voice_only',
+          session_type: 'voice_with_music',
           participants: []
         };
         console.warn('⚠️ FALLBACK: Using fallback session due to creation failure:', {
