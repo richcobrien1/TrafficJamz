@@ -163,7 +163,7 @@ class AudioService {
 
       // Populate participant user details
       if (session.participants && session.participants.length > 0) {
-        const User = require('../models/User');
+        const User = require('../models/user.model');
         const enrichedParticipants = [];
         
         for (const participant of session.participants) {
