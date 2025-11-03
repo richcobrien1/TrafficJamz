@@ -193,16 +193,16 @@ const MusicPlaylist = ({
                 {/* Actions */}
                 <ListItemSecondaryAction>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {/* Play Button */}
-                    {isController && (
+                    {/* Play Button - only show when NOT currently playing this track */}
+                    {isController && !isCurrentTrack && (
                       <Tooltip title="Play this track">
                         <IconButton
                           edge="end"
                           onClick={() => handlePlayTrack(track)}
-                          disabled={disabled || isCurrentTrack}
+                          disabled={disabled}
                           size="small"
                           sx={{
-                            color: isCurrentTrack ? 'primary.main' : 'text.secondary'
+                            color: 'primary.main'
                           }}
                         >
                           <PlayIcon />
