@@ -126,39 +126,58 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Handle comprehensive music session state (sent on join)
    */
   const handleMusicSessionState = useCallback(async (data) => {
-    console.log('🎵 Received comprehensive music session state:', {
-      playlistLength: data.playlist?.length || 0,
-      hasCurrentTrack: !!data.currently_playing,
-      controllerId: data.controller_id,
-      isPlaying: data.is_playing
-    });
+    console.log('🎵 ========================================');
+    console.log('🎵 MUSIC SESSION STATE RECEIVED FROM SERVER');
+    console.log('🎵 ========================================');
+    console.log('🎵 Raw data:', JSON.stringify(data, null, 2));
+    console.log('🎵 Playlist length:', data.playlist?.length || 0);
+    console.log('🎵 Has current track:', !!data.currently_playing);
+    console.log('🎵 Controller ID:', data.controller_id);
+    console.log('🎵 Is playing:', data.is_playing);
+    console.log('🎵 From:', data.from);
+    console.log('🎵 Timestamp:', data.timestamp);
 
     const myUserId = userRef.current?.id || userRef.current?.user_id;
+    console.log('🎵 My user ID (from ref):', myUserId);
+    console.log('🎵 My user object (from ref):', userRef.current);
 
     // Update playlist
     if (data.playlist && Array.isArray(data.playlist)) {
-      console.log('📝 Restoring playlist with', data.playlist.length, 'tracks');
+      console.log('📝 ✅ Restoring playlist with', data.playlist.length, 'tracks');
+      console.log('📝 Playlist tracks:', data.playlist.map(t => t.title || t.name));
       setPlaylist(data.playlist);
       musicService.playlist = data.playlist;
+    } else {
+      console.log('📝 ❌ No playlist in session state');
     }
 
     // Update controller status
     const amController = data.controller_id === myUserId;
     const someoneElseIsController = data.controller_id && data.controller_id !== myUserId;
     
-    setIsController(amController);
-    musicService.isController = amController;
-    
-    console.log('👑 Controller status from session state:', {
+    console.log('👑 Controller status calculation:', {
       myUserId,
       controllerId: data.controller_id,
+      'controller_id === myUserId': data.controller_id === myUserId,
       amController,
       someoneElseIsController
     });
+    
+    setIsController(amController);
+    musicService.isController = amController;
+    
+    if (amController) {
+      console.log('👑 ✅ I AM THE DJ (controller)');
+    } else if (someoneElseIsController) {
+      console.log('👑 ℹ️ Someone else is DJ (listener mode)');
+    } else {
+      console.log('👑 ℹ️ No DJ in control');
+    }
 
     // Update currently playing track
     if (data.currently_playing) {
-      console.log('🎵 Restoring currently playing track:', data.currently_playing.title);
+      console.log('🎵 ✅ Restoring currently playing track:', data.currently_playing.title);
+      console.log('🎵 Track details:', data.currently_playing);
       setCurrentTrack(data.currently_playing);
       
       // Load the track into the music service
@@ -169,10 +188,19 @@ export const useMusicSession = (groupId, audioSessionId) => {
         console.log('▶️ Restoring playback at position:', data.currently_playing.position);
         // Only auto-play if we're not the controller (listeners should sync)
         if (!amController) {
+          console.log('▶️ Auto-playing for listener');
           await musicService.play(data.currently_playing.position);
+        } else {
+          console.log('▶️ Skipping auto-play (I am the controller)');
         }
       }
+    } else {
+      console.log('🎵 ❌ No currently playing track in session state');
     }
+    
+    console.log('🎵 ========================================');
+    console.log('🎵 MUSIC SESSION STATE PROCESSING COMPLETE');
+    console.log('🎵 ========================================');
   }, []);
 
   /**
@@ -234,15 +262,27 @@ export const useMusicSession = (groupId, audioSessionId) => {
     if (socket) {
       const joinRoom = () => {
         if (socket.connected) {
-          console.log('🎵 Socket connected, joining music session room:', audioSessionId, 'groupId:', groupId);
+          const myUserId = userRef.current?.id || userRef.current?.user_id;
+          console.log('🎵 ========================================');
+          console.log('🎵 JOINING MUSIC SESSION');
+          console.log('🎵 ========================================');
+          console.log('🎵 Audio Session ID:', audioSessionId);
+          console.log('🎵 Group ID:', groupId);
+          console.log('🎵 My User ID:', myUserId);
+          console.log('🎵 My User Object:', userRef.current);
+          console.log('🎵 Socket connected:', socket.connected);
+          console.log('🎵 Socket ID:', socket.id);
           socket.emit('join-music-session', {
             sessionId: audioSessionId,
             groupId,
-            userId: userRef.current?.id || userRef.current?.user_id
+            userId: myUserId
           });
-          console.log('🎵 join-music-session emitted, server should send music-session-state');
+          console.log('🎵 ✅ join-music-session emitted');
+          console.log('🎵 ⏳ Waiting for music-session-state from server...');
+          console.log('🎵 ========================================');
         } else {
-          console.log('🎵 Socket not connected yet, waiting for connection...');
+          console.log('🎵 ❌ Socket not connected yet, waiting for connection...');
+          console.log('🎵 Socket state:', socket.connected, socket.id);
         }
       };
       
