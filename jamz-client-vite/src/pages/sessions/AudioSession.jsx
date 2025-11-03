@@ -109,7 +109,7 @@ const AudioSession = () => {
     takeControl: takeMusicControl,
     releaseControl: releaseMusicControl,
     changeVolume: changeMusicVolume
-  } = useMusicSession(session?.group_id, sessionId);
+  } = useMusicSession(sessionId, session?.id);
   
   // Audio state
   const [localStream, setLocalStream] = useState(null);
