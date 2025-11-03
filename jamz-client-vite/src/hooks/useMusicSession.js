@@ -22,6 +22,100 @@ export const useMusicSession = (groupId, audioSessionId) => {
   // Refs
   const socketRef = useRef(null);
   const syncIntervalRef = useRef(null);
+  const isControllerRef = useRef(isController);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    isControllerRef.current = isController;
+  }, [isController]);
+
+  /**
+   * Handle remote play event
+   */
+  const handleRemotePlay = useCallback((data) => {
+    if (isControllerRef.current) return; // Controller ignores remote events
+    
+    console.log('🎵 Remote play:', data);
+    musicService.play(data.position);
+  }, []);
+
+  /**
+   * Handle remote pause event
+   */
+  const handleRemotePause = useCallback((data) => {
+    if (isControllerRef.current) return;
+    
+    console.log('⏸️ Remote pause:', data);
+    musicService.pause();
+  }, []);
+
+  /**
+   * Handle remote seek event
+   */
+  const handleRemoteSeek = useCallback((data) => {
+    if (isControllerRef.current) return;
+    
+    console.log('⏩ Remote seek:', data.position);
+    musicService.seek(data.position);
+  }, []);
+
+  /**
+   * Handle remote track change
+   */
+  const handleRemoteTrackChange = useCallback(async (data) => {
+    if (isControllerRef.current) return;
+    
+    console.log('🎵 Remote track change:', data.track);
+    await musicService.loadTrack(data.track);
+    if (data.autoPlay) {
+      await musicService.play(data.position || 0);
+    }
+  }, []);
+
+  /**
+   * Handle remote sync event
+   */
+  const handleRemoteSync = useCallback((data) => {
+    if (isControllerRef.current) return;
+    
+    console.log('🔄 Remote sync:', data);
+    musicService.syncWithRemote(data);
+  }, []);
+
+  /**
+   * Handle playlist update
+   */
+  const handlePlaylistUpdate = useCallback((data) => {
+    console.log('📝 Playlist updated from socket:', data.playlist?.length || 0, 'tracks');
+    if (data.playlist && Array.isArray(data.playlist)) {
+      setPlaylist(data.playlist);
+      musicService.playlist = data.playlist;
+    }
+  }, []);
+
+  /**
+   * Handle controller changed
+   */
+  const handleControllerChanged = useCallback((data) => {
+    console.log('👑 Controller changed:', data);
+    const myUserId = user?.id || user?.user_id;
+    if (data.controllerId === null) {
+      // No one is controlling
+      console.log('🎵 No DJ in control');
+      setIsController(false);
+      musicService.isController = false;
+    } else if (data.controllerId === myUserId) {
+      // We are now the controller
+      console.log('🎵 I am now the DJ');
+      setIsController(true);
+      musicService.isController = true;
+    } else {
+      // Someone else took control
+      setIsController(false);
+      musicService.isController = false;
+      console.log('🎵 Someone else is now DJ');
+    }
+  }, [user]);
 
   /**
    * Initialize music service and socket connection
@@ -159,85 +253,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
         socketRef.current.off('music-controller-changed', handleControllerChanged);
       }
     };
-  }, [groupId, audioSessionId, user]);
-
-  /**
-   * Handle remote play event
-   */
-  const handleRemotePlay = useCallback((data) => {
-    if (isController) return; // Controller ignores remote events
-    
-    console.log('🎵 Remote play:', data);
-    musicService.play(data.position);
-  }, [isController]);
-
-  /**
-   * Handle remote pause event
-   */
-  const handleRemotePause = useCallback((data) => {
-    if (isController) return;
-    
-    console.log('⏸️ Remote pause:', data);
-    musicService.pause();
-  }, [isController]);
-
-  /**
-   * Handle remote seek event
-   */
-  const handleRemoteSeek = useCallback((data) => {
-    if (isController) return;
-    
-    console.log('⏩ Remote seek:', data.position);
-    musicService.seek(data.position);
-  }, [isController]);
-
-  /**
-   * Handle remote track change
-   */
-  const handleRemoteTrackChange = useCallback(async (data) => {
-    if (isController) return;
-    
-    console.log('🎵 Remote track change:', data.track);
-    await musicService.loadTrack(data.track);
-    if (data.autoPlay) {
-      await musicService.play(data.position || 0);
-    }
-  }, [isController]);
-
-  /**
-   * Handle remote sync event
-   */
-  const handleRemoteSync = useCallback((data) => {
-    if (isController) return;
-    
-    console.log('🔄 Remote sync:', data);
-    musicService.syncWithRemote(data);
-  }, [isController]);
-
-  /**
-   * Handle playlist update
-   */
-  const handlePlaylistUpdate = useCallback((data) => {
-    console.log('📝 Playlist updated:', data.playlist);
-    setPlaylist(data.playlist);
-    musicService.playlist = data.playlist;
-  }, []);
-
-  /**
-   * Handle controller changed
-   */
-  const handleControllerChanged = useCallback((data) => {
-    console.log('👑 Controller changed:', data);
-    if (data.controllerId === null) {
-      // No one is controlling
-      console.log('🎵 No DJ in control');
-    } else if (data.controllerId !== socketRef.current?.id) {
-      // Someone else took control
-      setIsController(false);
-      musicService.isController = false;
-      console.log('🎵 Someone else is now DJ');
-    }
-  }, []);
+  }, [groupId, audioSessionId, user, handleRemotePlay, handleRemotePause, handleRemoteSeek, handleRemoteTrackChange, handleRemoteSync, handlePlaylistUpdate, handleControllerChanged]);
 
   /**
    * Play music
