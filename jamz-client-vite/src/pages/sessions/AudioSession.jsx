@@ -27,7 +27,8 @@ import {
   ListItemAvatar,
   Divider,
   FormControlLabel,
-  Switch
+  Switch,
+  Chip
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
@@ -1711,38 +1712,37 @@ const AudioSession = () => {
           )}
         </Box>
         
-        {/* Show microphone initialization or audio controls based on micInitialized */}
-        {!micInitialized ? (
-          <Box sx={{
-            p: 3,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            bgcolor: 'background.paper',
-            borderRadius: 1,
-            minHeight: 200
-          }}>
-            {console.log('🎤 Rendering mic init UI:', { micInitialized, requiresUserGesture, micInitializing })}
-            <MicIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Initialize Microphone
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3, maxWidth: 400 }}>
-              {requiresUserGesture ?
-                'Click the button below to grant microphone access. This is required for some browsers.' :
-                'Initializing microphone access...'
-              }
-            </Typography>
+        {/* Show microphone initialization prompt if needed */}
+        {!micInitialized && (
+          <Paper variant="outlined" sx={{ p: 3, mb: 2, bgcolor: 'info.light' }}>
+            {console.log('🎤 Mic not initialized:', { micInitialized, requiresUserGesture, micInitializing, isIOS })}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <MicIcon sx={{ fontSize: 36, color: 'primary.main', mr: 2 }} />
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h6">
+                  Microphone Not Initialized
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {requiresUserGesture ?
+                    'Click below to grant microphone access. Required for voice communication.' :
+                    'Initializing microphone...'
+                  }
+                </Typography>
+              </Box>
+            </Box>
             {requiresUserGesture ? (
               <Button
                 variant="contained"
                 color="primary"
                 size="large"
+                fullWidth
                 startIcon={<MicIcon />}
-                onClick={initializeMicrophone}
+                onClick={() => {
+                  console.log('🎤 User clicked Grant Microphone Access button');
+                  console.log('🎤 Current state:', { micInitialized, micInitializing, requiresUserGesture });
+                  initializeMicrophone();
+                }}
                 disabled={micInitializing}
-                sx={{ minWidth: 200 }}
               >
                 {micInitializing ? (
                   <>
@@ -1754,73 +1754,73 @@ const AudioSession = () => {
                 )}
               </Button>
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <CircularProgress size={40} />
-                {audioError && (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Alert severity="error" sx={{ mb: 2, maxWidth: 400 }}>
-                      {audioError}
-                    </Alert>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => {
-                        setAudioError(null);
-                        initializeMicrophone();
-                      }}
-                      disabled={micInitializing}
-                    >
-                      {micInitializing ? (
-                        <>
-                          <CircularProgress size={16} sx={{ mr: 1 }} />
-                          Retrying...
-                        </>
-                      ) : (
-                        'Retry Microphone Access'
-                      )}
-                    </Button>
-                  </Box>
-                )}
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+                <CircularProgress size={24} />
+                <Typography variant="body2">Requesting permission...</Typography>
               </Box>
             )}
-          </Box>
-        ) : (
-          <Box>
-            {/* Simplified Mic controls */}
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Mic Controls
-              </Typography>
+            {audioError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {audioError}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  onClick={() => {
+                    console.log('🎤 User clicked Retry button');
+                    setAudioError(null);
+                    initializeMicrophone();
+                  }}
+                  disabled={micInitializing}
+                  sx={{ mt: 1, ml: 2 }}
+                >
+                  Retry
+                </Button>
+              </Alert>
+            )}
+          </Paper>
+        )}
+
+        {/* Always show UI sections - just disable controls if mic not initialized */}
+        <Box>
+          {/* Simplified Mic controls */}
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, opacity: micInitialized ? 1 : 0.6 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Mic Controls {!micInitialized && <Chip label="Mic Not Ready" size="small" color="warning" sx={{ ml: 1 }} />}
+            </Typography>
               
-              <Grid container spacing={2} alignItems="center">
-                <Grid item>
-                  <Tooltip title={
-                    isPushToTalkActive 
+            <Grid container spacing={2} alignItems="center">
+              <Grid item>
+                <Tooltip title={
+                  !micInitialized
+                    ? "Microphone not initialized - click Grant Microphone Access above"
+                    : isPushToTalkActive 
                       ? "Push-to-Talk Active" 
                       : isMuted 
                         ? "Unmute Microphone (tap) or Push-to-Talk (hold)" 
                         : "Mute Microphone"
-                  }>
-                    <IconButton 
-                      color={isPushToTalkActive ? "secondary" : isMuted ? "default" : "primary"} 
-                      onMouseDown={handleMicButtonMouseDown}
-                      onMouseUp={handleMicButtonMouseUp}
-                      onMouseLeave={handleMicButtonMouseLeave}
-                      onTouchStart={handleMicButtonMouseDown}
-                      onTouchEnd={handleMicButtonMouseUp}
-                      aria-label={isMuted ? "Unmute" : "Mute"}
-                      sx={{ 
-                        width: 56, 
-                        height: 56,
-                        transition: 'all 0.2s ease-in-out',
-                        transform: isPushToTalkActive ? 'scale(1.2)' : 'scale(1)',
-                        boxShadow: isPushToTalkActive ? '0 0 10px rgba(255,0,0,0.5)' : 'none'
-                      }}
-                    >
-                      {isPushToTalkActive ? <MicIcon /> : isMuted ? <MicOffIcon /> : <MicIcon />}
-                    </IconButton>
-                  </Tooltip>
-                </Grid>
+                }>
+                  <IconButton 
+                    color={isPushToTalkActive ? "secondary" : isMuted ? "default" : "primary"} 
+                    onMouseDown={handleMicButtonMouseDown}
+                    onMouseUp={handleMicButtonMouseUp}
+                    onMouseLeave={handleMicButtonMouseLeave}
+                    onTouchStart={handleMicButtonMouseDown}
+                    onTouchEnd={handleMicButtonMouseUp}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                    disabled={!micInitialized}
+                    sx={{ 
+                      width: 56, 
+                      height: 56,
+                      transition: 'all 0.2s ease-in-out',
+                      transform: isPushToTalkActive ? 'scale(1.2)' : 'scale(1)',
+                      boxShadow: isPushToTalkActive ? '0 0 10px rgba(255,0,0,0.5)' : 'none'
+                    }}
+                  >
+                    {isPushToTalkActive ? <MicIcon /> : isMuted ? <MicOffIcon /> : <MicIcon />}
+                  </IconButton>
+                </Tooltip>
+              </Grid>
                 
                 <Grid item xs>
                   <Box sx={{ width: '100%' }}>
@@ -2009,8 +2009,7 @@ const AudioSession = () => {
                 )}
               </List>
             </Paper>
-          </Box>
-        )}
+        </Box>
       </Paper>
       
       {/* Music Dialog */}
