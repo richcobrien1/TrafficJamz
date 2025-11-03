@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { MusicProvider } from './contexts/MusicContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AppLoader from './components/AppLoader';
 import api from './services/api';
@@ -146,7 +147,8 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Suspense fallback={<div>Loading...</div>}>
+        <MusicProvider>
+          <Suspense fallback={<div>Loading...</div>}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -219,6 +221,7 @@ function App() {
             </motion.div>
           </AnimatePresence>
         </Suspense>
+        </MusicProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -43,7 +43,7 @@ import {
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMusicSession } from '../../hooks/useMusicSession';
+import { useMusic } from '../../contexts/MusicContext';
 import MusicUpload from '../../components/music/MusicUpload';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
 import MusicPlayer from '../../components/music/MusicPlayer';
@@ -88,7 +88,7 @@ const AudioSession = () => {
   const [error, setError] = useState('');
   const [participants, setParticipants] = useState([]);
   
-  // Music session hook
+  // Music context - centralized state management
   const {
     currentTrack,
     playlist,
@@ -98,6 +98,7 @@ const AudioSession = () => {
     volume: musicVolume,
     isController: isMusicController,
     isMusicEnabled,
+    initializeSession: initializeMusicSession,
     play: musicPlay,
     pause: musicPause,
     seekTo: musicSeek,
@@ -110,7 +111,7 @@ const AudioSession = () => {
     takeControl: takeMusicControl,
     releaseControl: releaseMusicControl,
     changeVolume: changeMusicVolume
-  } = useMusicSession(sessionId, session?.id);
+  } = useMusic();
   
   // Audio state
   const [localStream, setLocalStream] = useState(null);
@@ -797,6 +798,10 @@ const AudioSession = () => {
       } else {
         setParticipants([]);
       }
+
+      // Initialize music session with centralized context
+      console.log('🎵 Initializing music session context');
+      initializeMusicSession(sessionData.id, sessionId);
 
       // Note: WebRTC initialization is deferred until signaling connects
     } catch (err) {
