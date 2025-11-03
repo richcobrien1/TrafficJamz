@@ -2007,6 +2007,10 @@ const AudioSession = () => {
               sessionId={session?.id || session?._id}
               onTracksAdded={(tracks) => {
                 console.log('Tracks uploaded:', tracks);
+                // Add each track to the playlist
+                tracks.forEach(track => {
+                  musicAddTrack(track);
+                });
               }}
               disabled={!session}
             />
