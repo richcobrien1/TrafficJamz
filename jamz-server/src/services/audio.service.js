@@ -133,6 +133,23 @@ class AudioService {
   }
 
   /**
+   * Get session by ID
+   * @param {string} sessionId - Session ID
+   * @returns {Promise<Object>} - Audio session
+   */
+  async getSession(sessionId) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+      return session;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Get active audio session for a group
    * @param {string} groupId - Group ID
    * @returns {Promise<Object>} - Active audio session
