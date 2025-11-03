@@ -8,7 +8,8 @@ import {
   Slider,
   Chip,
   Tooltip,
-  Avatar
+  Avatar,
+  Button
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -91,20 +92,42 @@ const MusicPlayer = ({
             No music playing
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
-            Upload tracks below, then click a track in the playlist to play it
+            {isController 
+              ? "Upload tracks below, then click a track in the playlist to play it"
+              : "You need to take control to play music"
+            }
           </Typography>
+          
+          {/* Show prominent Take Control button when not controller */}
           {!isController && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                💡 To control music playback:
-              </Typography>
-              <Typography variant="body2">
-                1. Click "Take Control" below to become the DJ<br/>
-                2. Upload or select a track from the playlist<br/>
-                3. Use the play/pause buttons to control playback
-              </Typography>
-            </Box>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<RadioIcon />}
+              onClick={onTakeControl}
+              disabled={disabled}
+              sx={{ mt: 2, mb: 2 }}
+            >
+              Take Control of Music
+            </Button>
           )}
+          
+          {/* Show DJ status when already controller */}
+          {isController && (
+            <Chip
+              icon={<RadioIcon />}
+              label="You are the DJ"
+              color="primary"
+              sx={{ mt: 2, mb: 2 }}
+            />
+          )}
+          
+          <Typography variant="caption" color="text.secondary" display="block">
+            {isController 
+              ? "Upload tracks below to get started"
+              : "Only one person can control music at a time"
+            }
+          </Typography>
         </CardContent>
       </Card>
     );
