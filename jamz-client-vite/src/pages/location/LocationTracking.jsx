@@ -138,7 +138,7 @@ const LocationTracking = () => {
     addTrack,
     removeTrack,
     loadAndPlay
-  } = useMusicSession(groupId);
+  } = useMusicSession(groupId, groupId); // Use groupId as sessionId for location tracking
   
   // Music player visibility
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
@@ -4482,35 +4482,25 @@ const LocationTracking = () => {
 
       {/* Music Player */}
       {showMusicPlayer && (
-        <Box>
-          <MusicUpload
-            sessionId={audioSessionId}
-            onTracksAdded={(tracks) => {
-              console.log('Tracks uploaded:', tracks);
-              // Tracks are automatically added to playlist via backend
-            }}
-            disabled={!audioSessionId}
-          />
-          <MusicPlayer
-            currentTrack={currentTrack}
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            volume={volume}
-            playlist={playlist}
-            isController={isController}
-            onPlay={() => musicPlay()}
-            onPause={() => musicPause()}
-            onNext={() => playNext()}
-            onPrevious={() => playPrevious()}
-            onSeek={(position) => musicSeek(position)}
-            onVolumeChange={(vol) => setVolume(vol)}
-            onClose={() => setShowMusicPlayer(false)}
-            onTakeControl={takeControl}
-            onReleaseControl={releaseControl}
-            onSelectTrack={(track) => loadAndPlay(track)}
-          />
-        </Box>
+        <MusicPlayer
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          volume={volume}
+          playlist={playlist}
+          isController={isController}
+          onPlay={() => musicPlay()}
+          onPause={() => musicPause()}
+          onNext={() => playNext()}
+          onPrevious={() => playPrevious()}
+          onSeek={(position) => musicSeek(position)}
+          onVolumeChange={(vol) => setVolume(vol)}
+          onClose={() => setShowMusicPlayer(false)}
+          onTakeControl={takeControl}
+          onReleaseControl={releaseControl}
+          onSelectTrack={(track) => loadAndPlay(track)}
+        />
       )}
 
       {/* Dev-only quick test panel */}
