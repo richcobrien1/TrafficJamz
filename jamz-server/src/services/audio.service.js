@@ -161,6 +161,39 @@ class AudioService {
         throw new Error('No active audio session found for this group');
       }
 
+      // Populate participant user details
+      if (session.participants && session.participants.length > 0) {
+        const User = require('../models/User');
+        const enrichedParticipants = [];
+        
+        for (const participant of session.participants) {
+          if (participant.user_id) {
+            try {
+              const user = await User.findById(participant.user_id).lean();
+              if (user) {
+                enrichedParticipants.push({
+                  ...participant.toObject ? participant.toObject() : participant,
+                  display_name: user.first_name || user.username || 'User',
+                  profile_image_url: user.profile_image_url || null,
+                  first_name: user.first_name || null,
+                  last_name: user.last_name || null
+                });
+              } else {
+                enrichedParticipants.push(participant.toObject ? participant.toObject() : participant);
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch user ${participant.user_id}:`, err.message);
+              enrichedParticipants.push(participant.toObject ? participant.toObject() : participant);
+            }
+          } else {
+            enrichedParticipants.push(participant.toObject ? participant.toObject() : participant);
+          }
+        }
+        
+        // Replace participants with enriched version
+        session.participants = enrichedParticipants;
+      }
+
       // Get router
       const room = this.rooms.get(session.id.toString());
       if (!room) {
