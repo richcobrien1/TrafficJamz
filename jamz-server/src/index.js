@@ -118,7 +118,7 @@ const corsOptionsDelegate = function (req, callback) {
     return callback(null, {
       origin: true,
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       exposedHeaders: ['Content-Length', 'Authorization'],
       optionsSuccessStatus: 204
@@ -130,7 +130,7 @@ const corsOptionsDelegate = function (req, callback) {
     return callback(null, {
       origin: origin,
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       exposedHeaders: ['Content-Length', 'Authorization'],
       optionsSuccessStatus: 204
