@@ -88,8 +88,7 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
         console.log(`📤 Uploading file ${i + 1}/${selectedFiles.length}: ${file.name}`);
 
         const formData = new FormData();
-        formData.append('music', file);
-        formData.append('sessionId', sessionId);
+        formData.append('file', file);
 
         const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/upload-music`, {
           method: 'POST',
