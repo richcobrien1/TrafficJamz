@@ -6,34 +6,25 @@ import {
   CardContent,
   Typography,
   LinearProgress,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Alert,
-  Chip
+  Alert
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
-  MusicNote as MusicIcon,
-  Delete as DeleteIcon,
-  PlayArrow as PlayIcon
+  MusicNote as MusicIcon
 } from '@mui/icons-material';
 
 const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://trafficjamz.onrender.com';
 
   /**
-   * Handle file selection
+   * Handle file selection - automatically upload after selection
    */
-  const handleFileSelect = (event) => {
+  const handleFileSelect = async (event) => {
     const files = Array.from(event.target.files);
     
     // Filter audio files only
@@ -49,33 +40,19 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
       setError('');
     }
 
-    setSelectedFiles(prev => [...prev, ...audioFiles]);
-  };
+    if (audioFiles.length === 0) {
+      setError('Please select valid audio files');
+      return;
+    }
 
-  /**
-   * Remove a selected file
-   */
-  const removeFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  /**
-   * Clear all selected files
-   */
-  const clearFiles = () => {
-    setSelectedFiles([]);
-    setError('');
+    // Immediately upload the selected files
+    await uploadFiles(audioFiles);
   };
 
   /**
    * Upload files to server and add to playlist
    */
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
-      setError('Please select some music files first');
-      return;
-    }
-
+  const uploadFiles = async (filesToUpload) => {
     setUploading(true);
     setUploadProgress(0);
     setError('');
@@ -83,9 +60,9 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
     try {
       const uploadedTracks = [];
 
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        console.log(`📤 Uploading file ${i + 1}/${selectedFiles.length}: ${file.name}`);
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        console.log(`📤 Uploading file ${i + 1}/${filesToUpload.length}: ${file.name}`);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -106,7 +83,7 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
         uploadedTracks.push(result.track);
 
         // Update progress
-        setUploadProgress(((i + 1) / selectedFiles.length) * 100);
+        setUploadProgress(((i + 1) / filesToUpload.length) * 100);
       }
 
       console.log('✅ All files uploaded successfully:', uploadedTracks);
@@ -115,9 +92,6 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
       if (onTracksAdded) {
         onTracksAdded(uploadedTracks);
       }
-
-      // Clear selected files
-      clearFiles();
       
       // Reset file input
       if (fileInputRef.current) {
@@ -131,17 +105,6 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
       setUploading(false);
       setUploadProgress(0);
     }
-  };
-
-  /**
-   * Format file size for display
-   */
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -173,67 +136,19 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
           />
           
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<UploadIcon />}
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || uploading}
             fullWidth
           >
-            Choose Music Files
+            {uploading ? 'Uploading...' : 'Add Music Files'}
           </Button>
           
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
             Supported formats: MP3, WAV, M4A, AAC, OGG, FLAC
           </Typography>
         </Box>
-
-        {/* Selected Files List */}
-        {selectedFiles.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="subtitle2">
-                Selected Files ({selectedFiles.length})
-              </Typography>
-              <Button size="small" onClick={clearFiles} disabled={uploading}>
-                Clear All
-              </Button>
-            </Box>
-
-            <List dense>
-              {selectedFiles.map((file, index) => (
-                <ListItem key={index} divider>
-                  <ListItemText
-                    primary={file.name}
-                    secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                        <Chip 
-                          label={formatFileSize(file.size)} 
-                          size="small" 
-                          variant="outlined" 
-                        />
-                        <Chip 
-                          label={file.type || 'Unknown'} 
-                          size="small" 
-                          variant="outlined" 
-                        />
-                      </Box>
-                    }
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton 
-                      edge="end" 
-                      onClick={() => removeFile(index)}
-                      disabled={uploading}
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        )}
 
         {/* Upload Progress */}
         {uploading && (
@@ -244,17 +159,6 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
             <LinearProgress variant="determinate" value={uploadProgress} />
           </Box>
         )}
-
-        {/* Upload Button */}
-        <Button
-          variant="contained"
-          startIcon={<PlayIcon />}
-          onClick={handleUpload}
-          disabled={disabled || uploading || selectedFiles.length === 0}
-          fullWidth
-        >
-          {uploading ? 'Uploading...' : `Upload ${selectedFiles.length} Track${selectedFiles.length !== 1 ? 's' : ''}`}
-        </Button>
       </CardContent>
     </Card>
   );
