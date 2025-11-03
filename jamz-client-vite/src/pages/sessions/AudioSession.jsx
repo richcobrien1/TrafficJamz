@@ -792,12 +792,17 @@ const AudioSession = () => {
           .map(p => ({
             id: p.user_id || p.id || null,
             socketId: p.socket_id || p.socketId || null,
-            display_name: p.display_name || 'Unknown',
-            isMuted: p.isMuted || false
+            display_name: p.display_name || p.first_name || 'Unknown',
+            isMuted: p.isMuted || false,
+            profile_image_url: p.profile_image_url || null,
+            first_name: p.first_name || null,
+            last_name: p.last_name || null,
+            isMe: false // Will be set to true when socket connects
           }));
         console.log('👥 Loaded participants from session data:', validParticipants.map(p => `${p.display_name} (${p.id})`).join(', '));
         setParticipants(validParticipants);
       } else {
+        console.log('👥 No participants in session data, starting with empty list');
         setParticipants([]);
       }
 
@@ -912,20 +917,31 @@ const AudioSession = () => {
       });
       console.log(`📡 Joined audio session room: ${sessionId} (groupId: ${groupId}) as ${displayName}`);
       
-      // Add current user to participants list
+      // Add current user to participants list or update existing entry
       setParticipants(prev => {
         const me = {
           id: userId,
           socketId: socket.id,
           display_name: displayName,
           isMuted: false,
-          isMe: true
+          isMe: true,
+          profile_image_url: user?.profile_image_url || null,
+          first_name: user?.first_name || null,
+          last_name: user?.last_name || null
         };
         
-        // Check if already in list
-        const exists = prev.some(p => p && (p.socketId === socket.id || p.id === userId));
-        if (exists) return prev;
+        // Check if I already exist in the list (from initial load)
+        const myIndex = prev.findIndex(p => p && p.id === userId);
+        if (myIndex >= 0) {
+          // Update my entry with socket info and mark as me
+          const updated = [...prev];
+          updated[myIndex] = { ...updated[myIndex], ...me };
+          console.log('👥 Updated my participant entry with socket ID');
+          return updated;
+        }
         
+        // Not in list yet, add me
+        console.log('👥 Added myself to participant list');
         return [me, ...prev];
       });
 
