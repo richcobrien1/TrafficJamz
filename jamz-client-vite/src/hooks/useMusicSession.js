@@ -84,14 +84,29 @@ export const useMusicSession = (groupId, audioSessionId) => {
       socketRef.current.on('music-play', handleRemotePlay);
       socketRef.current.on('music-pause', handleRemotePause);
       socketRef.current.on('music-seek', handleRemoteSeek);
-      socketRef.current.on('music-track-change', handleRemoteTrackChange);
+      socketRef.current.on('music-change-track', handleRemoteTrackChange);
+      socketRef.current.on('music-track-change', handleRemoteTrackChange); // Legacy support
       socketRef.current.on('music-sync', handleRemoteSync);
       socketRef.current.on('playlist-update', handlePlaylistUpdate);
+      socketRef.current.on('music-controller-changed', handleControllerChanged);
+      
+      console.log('🎵 Music socket events registered for session:', audioSessionId);
     }
 
     return () => {
       if (syncIntervalRef.current) {
         clearInterval(syncIntervalRef.current);
+      }
+      // Clean up socket listeners
+      if (socketRef.current) {
+        socketRef.current.off('music-play', handleRemotePlay);
+        socketRef.current.off('music-pause', handleRemotePause);
+        socketRef.current.off('music-seek', handleRemoteSeek);
+        socketRef.current.off('music-change-track', handleRemoteTrackChange);
+        socketRef.current.off('music-track-change', handleRemoteTrackChange);
+        socketRef.current.off('music-sync', handleRemoteSync);
+        socketRef.current.off('playlist-update', handlePlaylistUpdate);
+        socketRef.current.off('music-controller-changed', handleControllerChanged);
       }
     };
   }, [groupId, audioSessionId, user]);
@@ -159,16 +174,35 @@ export const useMusicSession = (groupId, audioSessionId) => {
   }, []);
 
   /**
+   * Handle controller changed
+   */
+  const handleControllerChanged = useCallback((data) => {
+    console.log('👑 Controller changed:', data);
+    if (data.controllerId === null) {
+      // No one is controlling
+      console.log('🎵 No DJ in control');
+    } else if (data.controllerId !== socketRef.current?.id) {
+      // Someone else took control
+      setIsController(false);
+      musicService.isController = false;
+      console.log('🎵 Someone else is now DJ');
+    }
+  }, []);
+
+  /**
    * Play music
    */
   const play = useCallback(async () => {
+    console.log('▶️ Play music locally');
     await musicService.play();
     
     if (isController) {
+      const position = musicService.getCurrentTime();
+      console.log('▶️ Broadcasting play to group at position:', position);
       socketRef.current?.emit('music-control', {
         sessionId: audioSessionId,
         action: 'play',
-        position: musicService.getCurrentTime(),
+        position,
         trackId: currentTrack?.id
       });
     }
@@ -178,13 +212,16 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Pause music
    */
   const pause = useCallback(() => {
+    console.log('⏸️ Pause music locally');
     musicService.pause();
     
     if (isController) {
+      const position = musicService.getCurrentTime();
+      console.log('⏸️ Broadcasting pause to group at position:', position);
       socketRef.current?.emit('music-control', {
         sessionId: audioSessionId,
         action: 'pause',
-        position: musicService.getCurrentTime(),
+        position,
         trackId: currentTrack?.id
       });
     }
@@ -194,9 +231,11 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Seek to position
    */
   const seekTo = useCallback((position) => {
+    console.log('⏩ Seek locally to:', position);
     musicService.seek(position);
     
     if (isController) {
+      console.log('⏩ Broadcasting seek to group at position:', position);
       socketRef.current?.emit('music-control', {
         sessionId: audioSessionId,
         action: 'seek',
@@ -240,8 +279,10 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Add track to playlist
    */
   const addTrack = useCallback(async (track) => {
+    console.log('➕ Adding track to playlist:', track.title);
     musicService.addToPlaylist(track);
-    setPlaylist([...musicService.playlist]);
+    const updatedPlaylist = [...musicService.playlist];
+    setPlaylist(updatedPlaylist);
     
     // Notify server
     try {
@@ -253,6 +294,13 @@ export const useMusicSession = (groupId, audioSessionId) => {
         },
         body: JSON.stringify({ track })
       });
+      
+      // Broadcast playlist update to other users
+      socketRef.current?.emit('playlist-update', {
+        sessionId: audioSessionId,
+        playlist: updatedPlaylist
+      });
+      console.log('📝 Playlist update broadcasted to group');
     } catch (error) {
       console.error('Failed to add track:', error);
     }
@@ -282,13 +330,23 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Load and play a specific track
    */
   const loadAndPlay = useCallback(async (track) => {
+    console.log('🎵 Loading and playing track:', track.title);
     await musicService.loadTrack(track);
     await musicService.play();
     
     if (isController) {
+      console.log('🎵 Broadcasting track change to group');
+      // Emit both change-track action and separate track-change event for compatibility
       socketRef.current?.emit('music-control', {
         sessionId: audioSessionId,
         action: 'change-track',
+        track,
+        autoPlay: true,
+        position: 0
+      });
+      
+      socketRef.current?.emit('music-track-change', {
+        sessionId: audioSessionId,
         track,
         autoPlay: true
       });
