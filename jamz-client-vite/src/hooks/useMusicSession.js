@@ -45,25 +45,66 @@ export const useMusicSession = (groupId, audioSessionId) => {
       setDuration(musicService.getDuration());
     };
 
-    // Fetch initial playlist
-    const fetchPlaylist = async () => {
+    // Fetch initial music state (playlist, current track, controller)
+    const fetchMusicState = async () => {
       try {
+        console.log('🎵 Fetching music state for session:', audioSessionId);
         const response = await fetch(`${API_URL}/api/audio/sessions/${audioSessionId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
         const data = await response.json();
-        if (data.session?.music?.playlist) {
-          console.log('📝 Initial playlist loaded:', data.session.music.playlist);
-          setPlaylist(data.session.music.playlist);
-          musicService.playlist = data.session.music.playlist;
+        
+        if (data.session?.music) {
+          const musicState = data.session.music;
+          console.log('🎵 Music state loaded:', musicState);
+          
+          // Restore playlist
+          if (musicState.playlist && Array.isArray(musicState.playlist)) {
+            console.log('📝 Restoring playlist with', musicState.playlist.length, 'tracks');
+            setPlaylist(musicState.playlist);
+            musicService.playlist = musicState.playlist;
+          }
+          
+          // Restore currently playing track
+          if (musicState.currently_playing) {
+            console.log('🎵 Restoring currently playing track:', musicState.currently_playing.title);
+            const track = musicState.currently_playing;
+            setCurrentTrack(track);
+            
+            // Load the track into the music service
+            await musicService.loadTrack(track);
+            
+            // Check if we're the controller
+            const myUserId = user?.id || user?.user_id;
+            const controllerId = track.controlled_by;
+            const amController = controllerId === myUserId;
+            
+            setIsController(amController);
+            musicService.isController = amController;
+            
+            console.log('👑 Controller status:', {
+              myUserId,
+              controllerId,
+              amController
+            });
+            
+            // If music is playing, sync playback position
+            if (musicState.is_playing && track.position !== undefined) {
+              console.log('▶️ Restoring playback at position:', track.position);
+              // Only auto-play if we're not the controller (listeners should sync)
+              if (!amController) {
+                await musicService.play(track.position);
+              }
+            }
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch playlist:', error);
+        console.error('❌ Failed to fetch music state:', error);
       }
     };
-    fetchPlaylist();
+    fetchMusicState();
 
     // Connect to socket if not already connected
     if (!socketRef.current) {
