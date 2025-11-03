@@ -43,6 +43,8 @@ import {
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMusicSession } from '../../hooks/useMusicSession';
+import MusicUpload from '../../components/music/MusicUpload';
+import MusicPlaylist from '../../components/music/MusicPlaylist';
 
 const AudioSession = () => {
   const { sessionId } = useParams();
@@ -1863,6 +1865,36 @@ const AudioSession = () => {
                 </Box>
               </Box>
             </Paper>
+
+            {/* Music Upload */}
+            <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Upload Music
+              </Typography>
+              <MusicUpload
+                sessionId={sessionId}
+                onTracksAdded={(tracks) => {
+                  console.log('Tracks uploaded:', tracks);
+                }}
+                disabled={!session}
+              />
+            </Paper>
+
+            {/* Music Playlist */}
+            {playlist && playlist.length > 0 && (
+              <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Playlist
+                </Typography>
+                <MusicPlaylist
+                  playlist={playlist}
+                  currentTrack={currentTrack}
+                  onSelectTrack={(track) => musicLoadAndPlay(track)}
+                  onRemoveTrack={(trackId) => musicRemoveTrack(trackId)}
+                  disabled={!isMusicController}
+                />
+              </Paper>
+            )}
             
             {/* Hidden container for remote audio elements */}
             <div id="remote-audios" style={{ display: 'none' }}></div>
