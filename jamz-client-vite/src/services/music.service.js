@@ -22,6 +22,21 @@ class MusicService {
     this.audioElement = new Audio();
     this.audioElement.volume = this.volume;
     
+    // CRITICAL iOS FIX: Set attributes for ALL iOS browsers (Safari, Chrome, Firefox, etc.)
+    // All iOS browsers use WebKit under the hood and have the same restrictions
+    this.audioElement.setAttribute('playsinline', 'true');
+    this.audioElement.setAttribute('webkit-playsinline', 'true');
+    this.audioElement.playsInline = true;
+    
+    // iOS requires preload to be set for better compatibility
+    this.audioElement.preload = 'auto';
+    
+    // Detect iOS (any browser) for additional logging
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      console.log('🍎 iOS device detected - music service configured for iOS (all browsers)');
+    }
+    
     // Set up event listeners
     this.audioElement.addEventListener('play', () => {
       this.isPlaying = true;
@@ -50,9 +65,20 @@ class MusicService {
 
     this.audioElement.addEventListener('error', (e) => {
       console.error('❌ Audio playback error:', e);
+      console.error('❌ Error code:', this.audioElement.error?.code);
+      console.error('❌ Error message:', this.audioElement.error?.message);
+    });
+    
+    // Additional event for debugging iOS issues
+    this.audioElement.addEventListener('loadedmetadata', () => {
+      console.log('🎵 Audio metadata loaded - duration:', this.audioElement.duration);
+    });
+    
+    this.audioElement.addEventListener('canplay', () => {
+      console.log('🎵 Audio can play - ready state:', this.audioElement.readyState);
     });
 
-    console.log('✅ Music service initialized');
+    console.log('✅ Music service initialized', isIOS ? '(iOS mode)' : '');
   }
 
   /**
@@ -98,10 +124,35 @@ class MusicService {
     }
 
     try {
+      // iOS (ALL browsers) requires resuming AudioContext before playing
+      // This applies to Safari, Chrome, Firefox, etc. on iOS
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      if (isIOS && typeof window.AudioContext !== 'undefined') {
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') {
+            console.log('🍎 iOS AudioContext suspended, resuming...');
+            await audioCtx.resume();
+            console.log('🍎 iOS AudioContext resumed:', audioCtx.state);
+          }
+          audioCtx.close(); // Clean up
+        } catch (err) {
+          console.warn('⚠️ Failed to resume AudioContext:', err);
+        }
+      }
+      
       await this.audioElement.play();
-      console.log('▶️ Playing:', this.currentTrack.title);
+      console.log('▶️ Playing:', this.currentTrack.title, isIOS ? '(iOS)' : '');
     } catch (error) {
-      console.error('❌ Playback failed:', error);
+      console.error('❌ Playback failed:', error.name, error.message);
+      
+      // iOS-specific error handling (applies to ALL browsers on iOS)
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      if (isIOS && error.name === 'NotAllowedError') {
+        console.error('🍎 iOS requires user interaction to play audio. User must tap play button.');
+      }
+      
+      throw error; // Re-throw so caller knows it failed
     }
   }
 
