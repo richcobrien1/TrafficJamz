@@ -110,6 +110,18 @@ function isLocalhostOrigin(origin) {
   }
 }
 
+// Helper: check if origin is a Vercel preview deployment
+function isVercelPreviewOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const u = new URL(origin);
+    // Match Vercel preview URLs: traffic-jamz-*-v2u.vercel.app or jamz-*-v2u.vercel.app
+    return /^(traffic-jamz|jamz)-.*-v2u\.vercel\.app$/.test(u.hostname);
+  } catch (e) {
+    return false;
+  }
+}
+
 const corsOptionsDelegate = function (req, callback) {
   const origin = req.header('Origin');
 
@@ -125,8 +137,8 @@ const corsOptionsDelegate = function (req, callback) {
     });
   }
 
-  // Allowed origins or localhost variants
-  if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
+  // Allowed origins, localhost variants, or Vercel preview deployments
+  if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin) || isVercelPreviewOrigin(origin)) {
     return callback(null, {
       origin: origin,
       credentials: true,
