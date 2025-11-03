@@ -364,6 +364,8 @@ router.post('/sessions/:sessionId/music/playlist',
     body('artist').optional(),
     body('album').optional(),
     body('duration').optional().isNumeric().withMessage('Duration must be a number'),
+    body('fileUrl').optional().isString().withMessage('File URL must be a string'),
+    body('uploadedBy').optional(),
     validate
   ],
   async (req, res) => {
@@ -372,7 +374,9 @@ router.post('/sessions/:sessionId/music/playlist',
         title: req.body.title,
         artist: req.body.artist,
         album: req.body.album,
-        duration: req.body.duration
+        duration: req.body.duration,
+        fileUrl: req.body.fileUrl,
+        uploadedBy: req.body.uploadedBy
       };
 
       const playlist = await audioService.addMusicToPlaylist(
