@@ -434,17 +434,48 @@ io.on("connection", (socket) => {
   socket.on('join-audio-session', (data) => {
     try {
       if (!audioSignalingEnabled) return;
-  const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return; // ignore malformed payloads
 
       const room = `audio-${sessionId}`;
+      
+      // Get current participants before joining
+      const socketsInRoom = io.sockets.adapter.rooms.get(room);
+      const currentParticipants = [];
+      
+      if (socketsInRoom) {
+        for (const socketId of socketsInRoom) {
+          const participantSocket = io.sockets.sockets.get(socketId);
+          if (participantSocket && participantSocket.userData) {
+            currentParticipants.push({
+              socketId: socketId,
+              userId: participantSocket.userData.userId,
+              display_name: participantSocket.userData.display_name
+            });
+          }
+        }
+      }
+      
+      // Store user data on socket for future reference
+      socket.userData = {
+        userId: data.userId || null,
+        display_name: data.display_name || 'User',
+        sessionId: sessionId
+      };
+      
       socket.join(room);
-      console.log(`Socket ${socket.id} joined audio session ${sessionId}`);
+      console.log(`Socket ${socket.id} (${socket.userData.display_name}) joined audio session ${sessionId}`);
+
+      // Send current participants list to the newly joined user
+      socket.emit('current-participants', {
+        participants: currentParticipants
+      });
 
       // Notify others in the session (exclude sender)
       safeEmitToRoom(room, 'participant-joined', {
         userId: data.userId || null,
-        socketId: socket.id
+        socketId: socket.id,
+        display_name: data.display_name || 'User'
       });
     } catch (err) {
       console.error('join-audio-session handler error:', err);
@@ -459,11 +490,14 @@ io.on("connection", (socket) => {
 
       const room = `audio-${sessionId}`;
       socket.leave(room);
-      console.log(`Socket ${socket.id} left audio session ${sessionId}`);
+      
+      const displayName = socket.userData?.display_name || 'User';
+      console.log(`Socket ${socket.id} (${displayName}) left audio session ${sessionId}`);
 
       safeEmitToRoom(room, 'participant-left', {
-        userId: data.userId || null,
-        socketId: socket.id
+        userId: socket.userData?.userId || data.userId || null,
+        socketId: socket.id,
+        display_name: displayName
       });
     } catch (err) {
       console.error('leave-audio-session handler error:', err);
@@ -863,7 +897,21 @@ io.on("connection", (socket) => {
   
   // Handle disconnection
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    const displayName = socket.userData?.display_name || 'User';
+    const sessionId = socket.userData?.sessionId;
+    
+    console.log(`Client disconnected: ${socket.id} (${displayName})`);
+    
+    // Notify session participants if user was in a session
+    if (sessionId) {
+      const room = `audio-${sessionId}`;
+      safeEmitToRoom(room, 'participant-left', {
+        userId: socket.userData?.userId || null,
+        socketId: socket.id,
+        display_name: displayName
+      });
+      console.log(`Notified room ${room} about disconnect of ${displayName}`);
+    }
   });
 });
 

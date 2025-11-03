@@ -202,6 +202,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
 
     // Connect to socket if not already connected
     if (!socketRef.current) {
+      console.log('🎵 Creating new music socket connection...');
       const socket = io(API_URL, {
         auth: {
           token: localStorage.getItem('token')
@@ -209,20 +210,6 @@ export const useMusicSession = (groupId, audioSessionId) => {
       });
       
       socketRef.current = socket;
-
-      // Wait for connection before joining room
-      socket.on('connect', () => {
-        console.log('🎵 Music socket connected, joining room...');
-        
-        // Join music room
-        socket.emit('join-music-session', {
-          sessionId: audioSessionId,
-          groupId,
-          userId: user?.id || user?.user_id
-        });
-        
-        console.log('🎵 Joined music session room:', audioSessionId);
-      });
 
       // Listen for music events
       socket.on('music-play', handleRemotePlay);
@@ -235,6 +222,35 @@ export const useMusicSession = (groupId, audioSessionId) => {
       socket.on('music-controller-changed', handleControllerChanged);
       
       console.log('🎵 Music socket events registered for session:', audioSessionId);
+    }
+    
+    // Join music room when socket is connected
+    const socket = socketRef.current;
+    if (socket) {
+      const joinRoom = () => {
+        if (socket.connected) {
+          console.log('🎵 Joining music session room:', audioSessionId, 'groupId:', groupId);
+          socket.emit('join-music-session', {
+            sessionId: audioSessionId,
+            groupId,
+            userId: user?.id || user?.user_id
+          });
+          console.log('🎵 Joined music session room:', audioSessionId);
+        } else {
+          console.log('🎵 Socket not connected yet, waiting...');
+        }
+      };
+      
+      // Join immediately if already connected
+      joinRoom();
+      
+      // Also join on connect/reconnect
+      socket.on('connect', joinRoom);
+      
+      // Cleanup the connect listener when component unmounts or dependencies change
+      return () => {
+        socket.off('connect', joinRoom);
+      };
     }
 
     return () => {
