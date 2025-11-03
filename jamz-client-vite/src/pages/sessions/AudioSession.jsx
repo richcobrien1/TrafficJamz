@@ -839,7 +839,26 @@ const AudioSession = () => {
       console.log('🎵 Initializing music session context - sessionId:', sessionData.id, 'groupId:', groupId);
       initializeMusicSession(sessionData.id, groupId);
 
-      // Note: WebRTC initialization is deferred until signaling connects
+      // AUTO-CONNECT: Automatically connect signaling when session loads
+      // This ensures participants show up and remote audio works without requiring button click
+      console.log('🚀 AUTO-CONNECT: Setting up signaling automatically...');
+      try {
+        setConnecting(true);
+        const audioSessionId = sessionData.id;
+        const s = setupSignaling(audioSessionId);
+        console.log('📡 AUTO-CONNECT: Signaling setup initiated for session:', audioSessionId, 'groupId:', groupId);
+        
+        // When socket connects, initialize WebRTC automatically
+        s.on('connect', () => {
+          console.log('🎯 AUTO-CONNECT: Socket connected, initializing WebRTC...');
+          initializeWebRTC(audioSessionId);
+        });
+      } catch (err) {
+        console.error('❌ AUTO-CONNECT: Error setting up signaling:', err);
+        setConnecting(false);
+        // Don't set hard error - user can still manually connect via button
+        console.warn('AUTO-CONNECT failed, user can manually connect via button');
+      }
     } catch (err) {
       console.error('Error applying session state:', err);
       setError('Failed to initialize session state');
@@ -2110,7 +2129,29 @@ const AudioSession = () => {
               </Box>
             </Paper>
             <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
-              <Typography variant="subtitle1">Participants ({safeParticipants.length})</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="subtitle1">Participants ({safeParticipants.length})</Typography>
+                {connected ? (
+                  <Chip 
+                    label="Connected" 
+                    size="small" 
+                    color="success" 
+                    sx={{ fontWeight: 'bold' }} 
+                  />
+                ) : connecting ? (
+                  <Chip 
+                    label="Connecting..." 
+                    size="small" 
+                    color="warning" 
+                  />
+                ) : (
+                  <Chip 
+                    label="Disconnected" 
+                    size="small" 
+                    color="error" 
+                  />
+                )}
+              </Box>
               <List dense>
                 {safeParticipants && safeParticipants.length > 0 ? safeParticipants
                   .filter(p => p) // Filter out any null/undefined participants
