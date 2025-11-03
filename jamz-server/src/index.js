@@ -1099,9 +1099,8 @@ io.on("connection", (socket) => {
       console.error('music-sync handler error:', err);
     }
   });
-  }
   
-  // Handle disconnection
+  // Handle disconnection (MUST be inside the audio signaling block to access safeEmitToRoom)
   socket.on('disconnect', async () => {
     const displayName = socket.userData?.display_name || 'User';
     const sessionId = socket.userData?.sessionId;
@@ -1137,6 +1136,7 @@ io.on("connection", (socket) => {
       console.log(`Notified room ${room} about disconnect of ${displayName}`);
     }
   });
+  } // End of audio signaling enabled block
 });
 
 // Define function to set up routes and start server
