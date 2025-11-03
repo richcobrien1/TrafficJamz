@@ -722,19 +722,45 @@ io.on("connection", (socket) => {
       try {
         const session = await audioService.getSession(sessionId);
         if (session && session.music) {
-          console.log(`📝 Sending current playlist to ${socket.id}:`, session.music.playlist?.length || 0, 'tracks');
+          console.log(`📝 Sending music state to ${socket.id}:`, {
+            playlistLength: session.music.playlist?.length || 0,
+            hasCurrentTrack: !!session.music.currently_playing,
+            controllerId: session.music.controller_id || null
+          });
+          
+          // Send comprehensive music state in one event
+          socket.emit('music-session-state', {
+            playlist: session.music.playlist || [],
+            currently_playing: session.music.currently_playing || null,
+            controller_id: session.music.controller_id || null,
+            is_playing: session.music.is_playing || false,
+            from: 'server',
+            timestamp: Date.now()
+          });
+          
+          // Also send individual events for backward compatibility
           socket.emit('playlist-update', {
             playlist: session.music.playlist || [],
             from: 'server',
             timestamp: Date.now()
           });
           
-          // Also send currently playing track if it exists
+          // Send currently playing track if it exists
           if (session.music.currently_playing) {
             socket.emit('music-change-track', {
               track: session.music.currently_playing,
               autoPlay: false,
               from: 'server'
+            });
+          }
+          
+          // Send controller status
+          if (session.music.controller_id) {
+            socket.emit('music-controller-changed', {
+              controllerId: session.music.controller_id,
+              userId: session.music.controller_id,
+              from: 'server',
+              timestamp: Date.now()
             });
           }
         }
