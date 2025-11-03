@@ -325,16 +325,30 @@ export const useMusicSession = (groupId, audioSessionId) => {
     const updatedPlaylist = [...musicService.playlist];
     setPlaylist(updatedPlaylist);
     
-    // Notify server
+    // Notify server - persist to database
     try {
-      await fetch(`${API_URL}/api/audio/sessions/${audioSessionId}/playlist`, {
+      const response = await fetch(`${API_URL}/api/audio/sessions/${audioSessionId}/music/playlist`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ track })
+        body: JSON.stringify({
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration,
+          fileUrl: track.fileUrl || track.url,
+          uploadedBy: track.uploadedBy
+        })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Failed to persist track to database:', errorData);
+      } else {
+        console.log('✅ Track persisted to database');
+      }
       
       // Broadcast playlist update to other users
       socketRef.current?.emit('playlist-update', {
@@ -343,7 +357,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
       });
       console.log('📝 Playlist update broadcasted to group');
     } catch (error) {
-      console.error('Failed to add track:', error);
+      console.error('❌ Failed to add track:', error);
     }
   }, [audioSessionId]);
 
