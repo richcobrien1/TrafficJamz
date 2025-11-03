@@ -154,6 +154,24 @@ export const useMusicSession = (groupId, audioSessionId) => {
           const musicState = data.session.music;
           console.log('🎵 Music state loaded:', musicState);
           
+          // Check session-level controller (persists even when no track playing)
+          const myUserId = user?.id || user?.user_id;
+          const sessionControllerId = musicState.controller_id;
+          const amSessionController = sessionControllerId === myUserId;
+          const someoneElseIsController = sessionControllerId && sessionControllerId !== myUserId;
+          
+          // Set controller status based on session-level controller
+          setIsController(amSessionController);
+          musicService.isController = amSessionController;
+          
+          console.log('👑 Session controller status:', {
+            myUserId,
+            sessionControllerId,
+            amSessionController,
+            someoneElseIsController,
+            explanation: amSessionController ? 'I am the controller' : someoneElseIsController ? 'I am a listener' : 'No controller set'
+          });
+          
           // Restore playlist
           if (musicState.playlist && Array.isArray(musicState.playlist)) {
             console.log('📝 Restoring playlist with', musicState.playlist.length, 'tracks');
@@ -170,25 +188,11 @@ export const useMusicSession = (groupId, audioSessionId) => {
             // Load the track into the music service
             await musicService.loadTrack(track);
             
-            // Check if we're the controller
-            const myUserId = user?.id || user?.user_id;
-            const controllerId = track.controlled_by;
-            const amController = controllerId === myUserId;
-            
-            setIsController(amController);
-            musicService.isController = amController;
-            
-            console.log('👑 Controller status:', {
-              myUserId,
-              controllerId,
-              amController
-            });
-            
             // If music is playing, sync playback position
             if (musicState.is_playing && track.position !== undefined) {
               console.log('▶️ Restoring playback at position:', track.position);
               // Only auto-play if we're not the controller (listeners should sync)
-              if (!amController) {
+              if (!amSessionController) {
                 await musicService.play(track.position);
               }
             }
