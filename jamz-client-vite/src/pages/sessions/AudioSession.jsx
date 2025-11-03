@@ -688,37 +688,24 @@ const AudioSession = () => {
           sessionData = createResponse.data.session;
           console.log('Session created successfully:', sessionData.id);
         } else {
-          console.error('Create session returned unexpected body', createResponse && createResponse.data);
-          // Try to continue with a mock session for basic functionality
-          sessionData = {
-            id: `fallback-${groupId}-${Date.now()}`,
-            group_id: groupId,
-            session_type: 'voice_with_music',
-            participants: []
-          };
-          console.warn('⚠️ FALLBACK: Using fallback session data due to unexpected response:', {
-            id: sessionData.id,
-            group_id: sessionData.group_id,
-            session_type: sessionData.session_type,
-            participants: sessionData.participants
-          });
+          console.error('❌ CRITICAL: Create session returned unexpected body', createResponse && createResponse.data);
+          // DO NOT use fallback - this breaks music uploads and other backend operations
+          throw new Error('Backend returned invalid session data. Session creation completely failed.');
         }
       } catch (err) {
         logAxiosError('POST /audio/sessions failed', err);
-        // Create a fallback session to allow basic functionality
-        sessionData = {
-          id: `fallback-${groupId}-${Date.now()}`,
-          group_id: groupId,
-          session_type: 'voice_with_music',
-          participants: []
-        };
-        console.warn('⚠️ FALLBACK: Using fallback session due to creation failure:', {
-          id: sessionData.id,
-          group_id: sessionData.group_id,
-          session_type: sessionData.session_type,
-          participants: sessionData.participants,
-          error: err.message
+        console.error('❌ CRITICAL: Failed to create audio session on backend');
+        console.error('❌ CRITICAL: This will prevent music uploads and other features from working');
+        console.error('❌ CRITICAL: Error details:', {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data
         });
+        
+        // Show user-friendly error
+        setError(`Failed to create audio session: ${err.response?.data?.message || err.message}. Please check if the backend server is running.`);
+        setLoading(false);
+        return; // Stop here - don't try to continue with invalid session
       }
     }
 
