@@ -36,7 +36,7 @@ export const ROUTES = [
     icon: "📊",
   },
   {
-    path: "/audio-session/:sessionId",
+    path: "/audio-session/:groupId",
     name: "Audio Session",
     element: (
       <AudioSessionErrorBoundary>

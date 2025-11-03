@@ -49,7 +49,7 @@ import MusicPlaylist from '../../components/music/MusicPlaylist';
 import MusicPlayer from '../../components/music/MusicPlayer';
 
 const AudioSession = () => {
-  const { sessionId } = useParams();
+  const { groupId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -163,22 +163,22 @@ const AudioSession = () => {
     
     const initializeComponent = async () => {
       try {
-        console.log('AudioSession component mounting with sessionId:', sessionId);
+        console.log('AudioSession component mounting with groupId:', groupId);
         
-        // If sessionId is missing (bad route), bail out early and don't attempt
+        // If groupId is missing (bad route), bail out early and don't attempt
         // to auto-join or call backend APIs. This prevents POSTs with
-        // `undefined` session IDs and avoids initializing WebRTC with
-        // undefined session identifiers.
-        if (!sessionId) {
-          console.warn('AudioSession mounted without sessionId in route params');
+        // `undefined` group IDs and avoids initializing WebRTC with
+        // undefined group identifiers.
+        if (!groupId) {
+          console.warn('AudioSession mounted without groupId in route params');
           if (isMounted) {
-            setError('Missing session ID in URL');
+            setError('Missing group ID in URL');
             setLoading(false);
           }
           return;
         }
 
-        console.log('Session ID validated, proceeding with initialization');
+        console.log('Group ID validated, proceeding with initialization');
 
         // Only auto-initialize the microphone on non-iOS devices.
         // iOS Safari requires a user gesture; forcing auto-init there causes
@@ -208,7 +208,7 @@ const AudioSession = () => {
       }
 
       try {
-        console.log('Calling fetchSessionDetails with sessionId:', sessionId);
+        console.log('Calling fetchSessionDetails with groupId:', groupId);
         await fetchSessionDetails();
         console.log('Session details fetched successfully');
       } catch (error) {
@@ -624,12 +624,12 @@ const AudioSession = () => {
   
   // Fetch session details from API
   const fetchSessionDetails = async () => {
-    console.log('🚀 fetchSessionDetails start', { sessionId, user, sessionIdType: typeof sessionId, userType: typeof user });
+    console.log('🚀 fetchSessionDetails start', { groupId, user, groupIdType: typeof groupId, userType: typeof user });
     setLoading(true);
 
-    if (!sessionId || !user) {
-      console.error('Missing required parameters:', { sessionId, user });
-      setError('Missing session ID or user information');
+    if (!groupId || !user) {
+      console.error('Missing required parameters:', { groupId, user });
+      setError('Missing group ID or user information');
       setLoading(false);
       return;
     }
@@ -651,12 +651,12 @@ const AudioSession = () => {
 
     // Try to GET existing session
     try {
-      console.log('Checking for existing audio session for group:', sessionId);
+      console.log('Checking for existing audio session for group:', groupId);
       // Avoid sending custom headers here (Cache-Control/Pragma/Expires)
       // since they trigger CORS preflight checks on some client origins
       // (and iOS/remote devices will fail if backend doesn't allow these).
       // Use a cache-busting query param if needed instead.
-      const response = await api.get(`/audio/sessions/group/${sessionId}`);
+      const response = await api.get(`/audio/sessions/group/${groupId}`);
       console.log('GET session response status:', response.status);
       console.log('GET session response data:', response.data);
       
@@ -675,9 +675,9 @@ const AudioSession = () => {
     // Create session if missing
     if (!sessionData) {
       try {
-        console.log('Creating new audio session for group:', sessionId);
+        console.log('Creating new audio session for group:', groupId);
         const createResponse = await api.post('/audio/sessions', {
-          group_id: sessionId,
+          group_id: groupId,
           session_type: 'voice_with_music',
           device_type: 'web'
         });
@@ -689,8 +689,8 @@ const AudioSession = () => {
           console.error('Create session returned unexpected body', createResponse && createResponse.data);
           // Try to continue with a mock session for basic functionality
           sessionData = {
-            id: `fallback-${sessionId}-${Date.now()}`,
-            group_id: sessionId,
+            id: `fallback-${groupId}-${Date.now()}`,
+            group_id: groupId,
             session_type: 'voice_with_music',
             participants: []
           };
@@ -705,8 +705,8 @@ const AudioSession = () => {
         logAxiosError('POST /audio/sessions failed', err);
         // Create a fallback session to allow basic functionality
         sessionData = {
-          id: `fallback-${sessionId}-${Date.now()}`,
-          group_id: sessionId,
+          id: `fallback-${groupId}-${Date.now()}`,
+          group_id: groupId,
           session_type: 'voice_with_music',
           participants: []
         };
@@ -802,8 +802,8 @@ const AudioSession = () => {
       }
 
       // Initialize music session with centralized context
-      console.log('🎵 Initializing music session context');
-      initializeMusicSession(sessionData.id, sessionId);
+      console.log('🎵 Initializing music session context - sessionId:', sessionData.id, 'groupId:', groupId);
+      initializeMusicSession(sessionData.id, groupId);
 
       // Note: WebRTC initialization is deferred until signaling connects
     } catch (err) {
@@ -901,6 +901,7 @@ const AudioSession = () => {
       setConnected(true);
 
       // Join the audio session room with user info
+      // Note: sessionId here refers to the audio session document ID, NOT the groupId
       const displayName = user?.first_name || user?.username || 'User';
       const userId = user?.id || user?.user_id;
       
@@ -909,7 +910,7 @@ const AudioSession = () => {
         userId: userId,
         display_name: displayName
       });
-      console.log(`📡 Joined audio session room: ${sessionId} as ${displayName}`);
+      console.log(`📡 Joined audio session room: ${sessionId} (groupId: ${groupId}) as ${displayName}`);
       
       // Add current user to participants list
       setParticipants(prev => {
@@ -1215,6 +1216,8 @@ const AudioSession = () => {
   const handleRemoteAudioStream = (stream) => {
     console.log('🎵 Handling remote audio stream');
     console.log('🎵 Remote stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, id: t.id, enabled: t.enabled, readyState: t.readyState })));
+    console.log('🎵 User agent:', navigator.userAgent);
+    console.log('🎵 Is iOS:', isIOS);
 
     // Create audio element for remote stream
     const audioElement = new Audio();
@@ -1222,7 +1225,14 @@ const AudioSession = () => {
     audioElement.volume = outputVolume;
     audioElement.autoplay = true;
     audioElement.muted = false;
-    console.log('🎵 Created audio element with volume:', outputVolume, 'autoplay:', audioElement.autoplay, 'muted:', audioElement.muted);
+    
+    // CRITICAL for iOS: Set playsInline to prevent fullscreen video player behavior
+    // This also helps with audio playback policies on iOS Safari
+    audioElement.setAttribute('playsinline', 'true');
+    audioElement.setAttribute('webkit-playsinline', 'true');
+    audioElement.playsInline = true;
+    
+    console.log('🎵 Created audio element with volume:', outputVolume, 'autoplay:', audioElement.autoplay, 'muted:', audioElement.muted, 'playsInline:', audioElement.playsInline);
 
     // Add event listeners to debug audio playback
     audioElement.onloadedmetadata = () => console.log('🎵 Audio element loaded metadata');
@@ -1232,24 +1242,57 @@ const AudioSession = () => {
     audioElement.onerror = (e) => console.error('🎵 Audio element error:', e);
     audioElement.onended = () => console.log('🎵 Audio element ended');
 
-    // Try to play immediately
-    audioElement.play().then(() => {
-      console.log('🎵 Audio element play() succeeded');
-    }).catch((error) => {
-      console.error('🎵 Audio element play() failed:', error);
-      // Try to play on user interaction if autoplay fails
-      const playOnInteraction = () => {
-        audioElement.play().then(() => {
-          console.log('🎵 Audio element play() succeeded on user interaction');
-        }).catch((err) => {
-          console.error('🎵 Audio element play() failed even on interaction:', err);
-        });
-        document.removeEventListener('click', playOnInteraction);
-        document.removeEventListener('touchstart', playOnInteraction);
+    // For iOS: Resume AudioContext if suspended (required for audio playback)
+    if (isIOS && typeof window.AudioContext !== 'undefined') {
+      const resumeAudioContext = async () => {
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') {
+            console.log('🎵 iOS AudioContext suspended, resuming...');
+            await audioCtx.resume();
+            console.log('🎵 iOS AudioContext resumed:', audioCtx.state);
+          }
+        } catch (err) {
+          console.warn('🎵 Failed to resume AudioContext:', err);
+        }
       };
-      document.addEventListener('click', playOnInteraction);
-      document.addEventListener('touchstart', playOnInteraction);
-    });
+      resumeAudioContext();
+    }
+
+    // Try to play immediately
+    const attemptPlay = () => {
+      console.log('🎵 Attempting to play audio element...');
+      audioElement.play().then(() => {
+        console.log('🎵 ✅ Audio element play() succeeded');
+      }).catch((error) => {
+        console.error('🎵 ❌ Audio element play() failed:', error.name, error.message);
+        
+        // iOS Safari often requires user interaction before playing audio
+        if (isIOS) {
+          console.warn('🎵 iOS detected - audio playback requires user interaction');
+          console.warn('🎵 Audio will start playing after user taps/clicks anywhere on the screen');
+        }
+        
+        // Try to play on user interaction if autoplay fails
+        const playOnInteraction = () => {
+          console.log('🎵 User interaction detected, attempting play...');
+          audioElement.play().then(() => {
+            console.log('🎵 ✅ Audio element play() succeeded on user interaction');
+          }).catch((err) => {
+            console.error('🎵 ❌ Audio element play() failed even on interaction:', err.name, err.message);
+          });
+          document.removeEventListener('click', playOnInteraction);
+          document.removeEventListener('touchstart', playOnInteraction);
+          document.removeEventListener('touchend', playOnInteraction);
+        };
+        document.addEventListener('click', playOnInteraction, { once: true });
+        document.addEventListener('touchstart', playOnInteraction, { once: true });
+        document.addEventListener('touchend', playOnInteraction, { once: true });
+      });
+    };
+
+    // Small delay to ensure stream is ready (especially important on iOS)
+    setTimeout(attemptPlay, 100);
 
     // Store the audio element
     const remoteAudios = document.getElementById('remote-audios');
@@ -1559,7 +1602,8 @@ const AudioSession = () => {
       
       // Close signaling connection
       if (signalingRef.current) {
-        signalingRef.current.emit('leave-audio-session', { sessionId: session?.id || sessionId });
+        // Use actual audio session ID (from session.id), NOT groupId
+        signalingRef.current.emit('leave-audio-session', { sessionId: session?.id });
         signalingRef.current.disconnect();
       }
       
@@ -1696,7 +1740,8 @@ const AudioSession = () => {
             <Button variant="contained" color="error" onClick={() => {
               // Disconnect signaling
               if (signalingRef.current) {
-                signalingRef.current.emit('leave-audio-session', { sessionId: safeSession?.id || sessionId });
+                // Use actual audio session ID (from session.id), NOT groupId
+                signalingRef.current.emit('leave-audio-session', { sessionId: safeSession?.id });
                 signalingRef.current.disconnect();
                 setSocket(null);
                 signalingRef.current = null;
@@ -1715,14 +1760,20 @@ const AudioSession = () => {
                   setConnecting(true);
                   setError(null); // Clear any previous errors
                   
-                  // Connect signaling
-                  const s = setupSignaling(safeSession?.id || sessionId);
-                  console.log('📡 Signaling setup initiated, socket object:', s);
+                  // Connect signaling - use actual audio session ID (NOT groupId)
+                  // groupId is for identifying the group, session.id is the MongoDB session document
+                  const audioSessionId = safeSession?.id;
+                  if (!audioSessionId) {
+                    throw new Error('No audio session ID available');
+                  }
+                  
+                  const s = setupSignaling(audioSessionId);
+                  console.log('📡 Signaling setup initiated for session:', audioSessionId, 'groupId:', groupId);
                   
                   // once connected, try to initialize WebRTC
                   s.on('connect', () => {
                     console.log('🎯 Socket connected, initializing WebRTC...');
-                    initializeWebRTC(safeSession?.id || sessionId);
+                    initializeWebRTC(audioSessionId);
                   });
                 } catch (err) {
                   console.error('❌ Error setting up signaling:', err);
