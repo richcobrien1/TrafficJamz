@@ -671,7 +671,7 @@ io.on("connection", (socket) => {
   // ===== MUSIC SESSION EVENTS =====
   
   // Join music session (same as audio session)
-  socket.on('join-music-session', (data) => {
+  socket.on('join-music-session', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const { sessionId } = data;
@@ -683,6 +683,30 @@ io.on("connection", (socket) => {
       const room = `audio-${sessionId}`;
       socket.join(room);
       console.log(`Socket ${socket.id} joined music session: ${sessionId}`);
+      
+      // Send current music state to the newly joined user
+      try {
+        const session = await audioService.getSession(sessionId);
+        if (session && session.music) {
+          console.log(`📝 Sending current playlist to ${socket.id}:`, session.music.playlist?.length || 0, 'tracks');
+          socket.emit('playlist-update', {
+            playlist: session.music.playlist || [],
+            from: 'server',
+            timestamp: Date.now()
+          });
+          
+          // Also send currently playing track if it exists
+          if (session.music.currently_playing) {
+            socket.emit('music-change-track', {
+              track: session.music.currently_playing,
+              autoPlay: false,
+              from: 'server'
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching music state for new user:', err);
+      }
       
       // Notify others in the room
       socket.to(room).emit('user-joined-music', {
