@@ -1872,7 +1872,7 @@ const AudioSession = () => {
                 Upload Music
               </Typography>
               <MusicUpload
-                sessionId={sessionId}
+                sessionId={session?.id || session?._id}
                 onTracksAdded={(tracks) => {
                   console.log('Tracks uploaded:', tracks);
                 }}
