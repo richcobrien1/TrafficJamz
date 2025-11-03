@@ -411,7 +411,7 @@ router.get('/audio-session/:groupId/status',
  */
 router.post('/sessions/:sessionId/upload-music',
   passport.authenticate('jwt', { session: false }),
-  s3Service.upload.single('file'),
+  s3Service.audioUpload.single('file'),
   async (req, res) => {
     try {
       if (!req.file) {
