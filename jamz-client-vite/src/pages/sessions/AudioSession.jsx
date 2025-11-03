@@ -663,6 +663,7 @@ const AudioSession = () => {
       if (response.status === 200 && response.data && response.data.session) {
         sessionData = response.data.session;
         console.log('Found existing session:', sessionData.id);
+        console.log('👥 [DEBUG] Session participants from backend:', JSON.stringify(sessionData.participants, null, 2));
       } else {
         console.log('No existing session found (status:', response.status, ', data:', response.data, '), will create new one');
       }
@@ -784,25 +785,39 @@ const AudioSession = () => {
     try {
       setSession(sessionData);
 
+      console.log('👥 [DEBUG] Processing participants - raw data:', sessionData.participants);
+      console.log('👥 [DEBUG] Participants is array?', Array.isArray(sessionData.participants));
+      console.log('👥 [DEBUG] Participants length:', sessionData.participants?.length);
+      
       if (sessionData.participants && Array.isArray(sessionData.participants)) {
         // Filter out participants who have left and ensure valid participant objects
         // MongoDB uses user_id and socket_id (with underscores), need to map to camelCase
+        const beforeFilter = sessionData.participants.length;
         const validParticipants = sessionData.participants
-          .filter(p => p && !p.left_at)
-          .map(p => ({
-            id: p.user_id || p.id || null,
-            socketId: p.socket_id || p.socketId || null,
-            display_name: p.display_name || p.first_name || 'Unknown',
-            isMuted: p.isMuted || false,
-            profile_image_url: p.profile_image_url || null,
-            first_name: p.first_name || null,
-            last_name: p.last_name || null,
-            isMe: false // Will be set to true when socket connects
-          }));
+          .filter(p => {
+            const isValid = p && !p.left_at;
+            if (!isValid) console.log('👥 [DEBUG] Filtering out participant:', p);
+            return isValid;
+          })
+          .map(p => {
+            const mapped = {
+              id: p.user_id || p.id || null,
+              socketId: p.socket_id || p.socketId || null,
+              display_name: p.display_name || p.first_name || 'Unknown',
+              isMuted: p.isMuted || false,
+              profile_image_url: p.profile_image_url || null,
+              first_name: p.first_name || null,
+              last_name: p.last_name || null,
+              isMe: false // Will be set to true when socket connects
+            };
+            console.log('👥 [DEBUG] Mapped participant:', p, '→', mapped);
+            return mapped;
+          });
+        console.log(`👥 [DEBUG] Filtered ${beforeFilter} → ${validParticipants.length} participants`);
         console.log('👥 Loaded participants from session data:', validParticipants.map(p => `${p.display_name} (${p.id})`).join(', '));
         setParticipants(validParticipants);
       } else {
-        console.log('👥 No participants in session data, starting with empty list');
+        console.log('👥 [DEBUG] No valid participants array in session data');
         setParticipants([]);
       }
 
