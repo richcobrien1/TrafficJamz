@@ -20,7 +20,7 @@ const isSupabaseConfigured = () => {
 const memoryStorage = multer.memoryStorage();
 
 // File filter for images
-const fileFilter = (req, file, cb) => {
+const imageFileFilter = (req, file, cb) => {
   // Check if file is an image
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
@@ -29,13 +29,32 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Create multer upload instance
+// File filter for audio files
+const audioFileFilter = (req, file, cb) => {
+  // Check if file is audio
+  if (file.mimetype.startsWith('audio/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only audio files are allowed'), false);
+  }
+};
+
+// Create multer upload instance for images
 const upload = multer({
   storage: memoryStorage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
-  fileFilter: fileFilter
+  fileFilter: imageFileFilter
+});
+
+// Create multer upload instance for audio files
+const audioUpload = multer({
+  storage: memoryStorage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit for audio
+  },
+  fileFilter: audioFileFilter
 });
 
 // Upload file to Supabase Storage
@@ -112,6 +131,7 @@ const deleteFile = async (filePath) => {
 
 module.exports = {
   upload,
+  audioUpload,
   uploadToSupabase,
   getFileUrl,
   deleteFile,
