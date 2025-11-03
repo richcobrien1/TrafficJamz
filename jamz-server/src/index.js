@@ -885,11 +885,13 @@ io.on("connection", (socket) => {
       const room = `audio-${sessionId}`;
       socket.to(room).emit('music-track-change', {
         track: data.track,
+        autoPlay: data.autoPlay, // CRITICAL: Forward autoPlay flag to listeners
+        position: data.position || 0,
         from: socket.id,
         timestamp: Date.now()
       });
       
-      console.log(`Track change from ${socket.id} in session ${sessionId}:`, data.track?.title);
+      console.log(`Track change from ${socket.id} in session ${sessionId}:`, data.track?.title, `(autoPlay: ${data.autoPlay})`);
     } catch (err) {
       console.error('music-track-change handler error:', err);
     }
