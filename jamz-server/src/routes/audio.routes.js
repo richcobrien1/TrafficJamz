@@ -74,6 +74,50 @@ router.get('/sessions/group/:groupId',
 );
 
 /**
+ * @route GET /api/audio/sessions/:sessionId
+ * @desc Get audio session by ID with playlist
+ * @access Private
+ */
+router.get('/sessions/:sessionId',
+  passport.authenticate('jwt', { session: false }),
+  [
+    param('sessionId').isMongoId().withMessage('Valid session ID is required'),
+    validate
+  ],
+  async (req, res) => {
+    // Set no-cache headers to prevent 304 responses
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
+    try {
+      const AudioSession = require('../models/AudioSession');
+      const session = await AudioSession.findById(req.params.sessionId).lean();
+      
+      if (!session) {
+        return res.status(404).json({ success: false, message: 'Audio session not found' });
+      }
+      
+      // Check if user is a participant
+      const isParticipant = session.participants.some(
+        p => p.user_id.toString() === req.user.user_id.toString()
+      );
+      
+      if (!isParticipant) {
+        return res.status(403).json({ success: false, message: 'Not a participant in this session' });
+      }
+      
+      res.json({ success: true, session });
+    } catch (error) {
+      console.error('Error fetching audio session:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
  * @route POST /api/audio/sessions/:sessionId/join
  * @desc Join an audio session
  * @access Private
