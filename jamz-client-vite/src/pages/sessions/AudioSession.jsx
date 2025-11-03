@@ -786,14 +786,16 @@ const AudioSession = () => {
 
       if (sessionData.participants && Array.isArray(sessionData.participants)) {
         // Filter out participants who have left and ensure valid participant objects
+        // MongoDB uses user_id and socket_id (with underscores), need to map to camelCase
         const validParticipants = sessionData.participants
           .filter(p => p && !p.left_at)
           .map(p => ({
-            id: p.id || null,
-            socketId: p.socketId || null,
-            display_name: p.display_name || p.name || 'Unknown',
+            id: p.user_id || p.id || null,
+            socketId: p.socket_id || p.socketId || null,
+            display_name: p.display_name || 'Unknown',
             isMuted: p.isMuted || false
           }));
+        console.log('👥 Loaded participants from session data:', validParticipants.map(p => `${p.display_name} (${p.id})`).join(', '));
         setParticipants(validParticipants);
       } else {
         setParticipants([]);
