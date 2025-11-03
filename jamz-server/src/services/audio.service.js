@@ -739,6 +739,68 @@ class AudioService {
       throw error;
     }
   }
+
+  /**
+   * Set music controller
+   */
+  async setMusicController(session_id, user_id) {
+    try {
+      const session = await AudioSession.findById(session_id);
+      
+      if (!session) {
+        throw new Error('Session not found');
+      }
+
+      // Initialize music object if needed
+      if (!session.music) {
+        session.music = { playlist: [] };
+      }
+
+      // Set the controller on currently playing track
+      if (session.music.currently_playing) {
+        session.music.currently_playing.controlled_by = user_id;
+      } else {
+        // If no track is playing but there are tracks in playlist, set first track
+        if (session.music.playlist && session.music.playlist.length > 0) {
+          session.updateCurrentlyPlaying(session.music.playlist[0], user_id);
+        }
+      }
+
+      await session.save();
+      console.log(`User ${user_id} took control of music in session ${session_id}`);
+      
+      return session;
+    } catch (error) {
+      console.error('Error setting music controller:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Release music controller
+   */
+  async releaseMusicController(session_id) {
+    try {
+      const session = await AudioSession.findById(session_id);
+      
+      if (!session) {
+        throw new Error('Session not found');
+      }
+
+      // Clear controller from currently playing track
+      if (session.music?.currently_playing) {
+        session.music.currently_playing.controlled_by = null;
+      }
+
+      await session.save();
+      console.log(`Controller released in session ${session_id}`);
+      
+      return session;
+    } catch (error) {
+      console.error('Error releasing music controller:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new AudioService();

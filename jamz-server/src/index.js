@@ -739,33 +739,53 @@ io.on("connection", (socket) => {
   });
   
   // Controller (DJ) mode events
-  socket.on('music-take-control', (data) => {
+  socket.on('music-take-control', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return;
       
+      const userId = data.userId;
+      
+      // Persist controller to database
+      try {
+        await audioService.setMusicController(sessionId, userId);
+      } catch (err) {
+        console.error('Failed to persist music controller:', err);
+        // Continue anyway - socket notification still works
+      }
+      
       const room = `audio-${sessionId}`;
       socket.to(room).emit('music-controller-changed', {
         controllerId: socket.id,
+        userId: userId,
         timestamp: Date.now()
       });
       
-      console.log(`${socket.id} took DJ control in session ${sessionId}`);
+      console.log(`${socket.id} (user ${userId}) took DJ control in session ${sessionId}`);
     } catch (err) {
       console.error('music-take-control handler error:', err);
     }
   });
   
-  socket.on('music-release-control', (data) => {
+  socket.on('music-release-control', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return;
       
+      // Persist release to database
+      try {
+        await audioService.releaseMusicController(sessionId);
+      } catch (err) {
+        console.error('Failed to persist controller release:', err);
+        // Continue anyway - socket notification still works
+      }
+      
       const room = `audio-${sessionId}`;
       socket.to(room).emit('music-controller-changed', {
         controllerId: null,
+        userId: null,
         timestamp: Date.now()
       });
       
