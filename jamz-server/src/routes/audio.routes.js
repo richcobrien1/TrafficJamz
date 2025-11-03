@@ -405,6 +405,51 @@ router.get('/audio-session/:groupId/status',
 );
 
 /**
+ * @route PATCH /api/audio/sessions/:sessionId/enable-music
+ * @desc Enable music for an existing session by updating session_type
+ * @access Private
+ */
+router.patch('/sessions/:sessionId/enable-music',
+  passport.authenticate('jwt', { session: false }),
+  [
+    param('sessionId').isMongoId().withMessage('Valid session ID is required'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      const AudioSession = require('../models/audio-session.model');
+      const session = await AudioSession.findById(req.params.sessionId);
+      
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          message: 'Audio session not found'
+        });
+      }
+
+      // Update session type to support music
+      session.session_type = 'voice_with_music';
+      await session.save();
+
+      res.json({
+        success: true,
+        message: 'Music enabled for session',
+        session: {
+          id: session._id,
+          session_type: session.session_type
+        }
+      });
+    } catch (error) {
+      console.error('Error enabling music for session:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to enable music: ' + error.message
+      });
+    }
+  }
+);
+
+/**
  * @route POST /api/audio/sessions/:sessionId/upload-music
  * @desc Upload music file to session
  * @access Private
