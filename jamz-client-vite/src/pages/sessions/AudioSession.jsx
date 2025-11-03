@@ -45,6 +45,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useMusicSession } from '../../hooks/useMusicSession';
 import MusicUpload from '../../components/music/MusicUpload';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
+import MusicPlayer from '../../components/music/MusicPlayer';
 
 const AudioSession = () => {
   const { sessionId } = useParams();
@@ -1530,6 +1531,9 @@ const AudioSession = () => {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Traffic Jam - Audio Session
             </Typography>
+            <IconButton color="inherit" onClick={() => setOpenMusicDialog(true)}>
+              <MusicNoteIcon />
+            </IconButton>
             <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
               <LeaveIcon />
             </IconButton>
@@ -1866,36 +1870,6 @@ const AudioSession = () => {
               </Box>
             </Paper>
 
-            {/* Music Upload */}
-            <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Upload Music
-              </Typography>
-              <MusicUpload
-                sessionId={session?.id || session?._id}
-                onTracksAdded={(tracks) => {
-                  console.log('Tracks uploaded:', tracks);
-                }}
-                disabled={!session}
-              />
-            </Paper>
-
-            {/* Music Playlist */}
-            {playlist && playlist.length > 0 && (
-              <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Playlist
-                </Typography>
-                <MusicPlaylist
-                  playlist={playlist}
-                  currentTrack={currentTrack}
-                  onSelectTrack={(track) => musicLoadAndPlay(track)}
-                  onRemoveTrack={(trackId) => musicRemoveTrack(trackId)}
-                  disabled={!isMusicController}
-                />
-              </Paper>
-            )}
-            
             {/* Hidden container for remote audio elements */}
             <div id="remote-audios" style={{ display: 'none' }}></div>
 
@@ -1978,6 +1952,72 @@ const AudioSession = () => {
         )}
       </Paper>
       
+      {/* Music Dialog */}
+      <Dialog
+        open={openMusicDialog}
+        onClose={() => setOpenMusicDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Music Player</DialogTitle>
+        <DialogContent>
+          {/* Music Player */}
+          <Box sx={{ mb: 3 }}>
+            <MusicPlayer
+              currentTrack={currentTrack}
+              isPlaying={musicIsPlaying}
+              currentTime={musicCurrentTime}
+              duration={musicDuration}
+              volume={musicVolume}
+              isController={isMusicController}
+              onPlay={musicPlay}
+              onPause={musicPause}
+              onNext={musicNext}
+              onPrevious={musicPrevious}
+              onSeek={musicSeek}
+              onVolumeChange={changeMusicVolume}
+              onTakeControl={takeMusicControl}
+              onReleaseControl={releaseMusicControl}
+              disabled={!session}
+            />
+          </Box>
+
+          {/* Music Playlist */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Playlist
+            </Typography>
+            <MusicPlaylist
+              playlist={playlist}
+              currentTrack={currentTrack}
+              isController={isMusicController}
+              onPlayTrack={(track) => musicLoadAndPlay(track)}
+              onRemoveTrack={(trackId) => musicRemoveTrack(trackId)}
+              disabled={!session}
+            />
+          </Box>
+
+          {/* Music Upload */}
+          <Box>
+            <Typography variant="subtitle1" gutterBottom>
+              Upload Music
+            </Typography>
+            <MusicUpload
+              sessionId={session?.id || session?._id}
+              onTracksAdded={(tracks) => {
+                console.log('Tracks uploaded:', tracks);
+              }}
+              disabled={!session}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenMusicDialog(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Leave Dialog */}
       <Dialog
         open={openLeaveDialog}
