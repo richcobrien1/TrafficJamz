@@ -45,6 +45,26 @@ export const useMusicSession = (groupId, audioSessionId) => {
       setDuration(musicService.getDuration());
     };
 
+    // Fetch initial playlist
+    const fetchPlaylist = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/audio/sessions/${audioSessionId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        if (data.session?.music?.playlist) {
+          console.log('📝 Initial playlist loaded:', data.session.music.playlist);
+          setPlaylist(data.session.music.playlist);
+          musicService.playlist = data.session.music.playlist;
+        }
+      } catch (error) {
+        console.error('Failed to fetch playlist:', error);
+      }
+    };
+    fetchPlaylist();
+
     // Connect to socket if not already connected
     if (!socketRef.current) {
       socketRef.current = io(API_URL, {
