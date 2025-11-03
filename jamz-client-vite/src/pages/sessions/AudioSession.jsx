@@ -1017,7 +1017,10 @@ const AudioSession = () => {
             id: data.userId || null,
             socketId: data.socketId,
             display_name: data.display_name || 'User',
-            isMuted: data.isMuted || false
+            isMuted: data.isMuted || false,
+            profile_image_url: data.profile_image_url || null,
+            first_name: data.first_name || null,
+            last_name: data.last_name || null
           };
           
           console.log('👥 Adding participant:', newParticipant);
@@ -1048,13 +1051,16 @@ const AudioSession = () => {
           const me = prev.find(p => p && p.isMe);
           console.log('👥 Current user in list:', me ? `${me.display_name} (${me.id})` : 'not found');
           
-          // Add all other participants
+          // Add all other participants with full user details
           const others = data.participants.map(p => ({
             id: p.userId,
             socketId: p.socketId,
             display_name: p.display_name || 'User',
             isMuted: false,
-            isMe: false
+            isMe: false,
+            profile_image_url: p.profile_image_url || null,
+            first_name: p.first_name || null,
+            last_name: p.last_name || null
           }));
           
           console.log('👥 Other participants:', others.map(p => `${p.display_name} (${p.id})`).join(', '));
@@ -2059,28 +2065,43 @@ const AudioSession = () => {
               </Box>
             </Paper>
             <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
-              <Typography variant="subtitle1">Participants</Typography>
+              <Typography variant="subtitle1">Participants ({safeParticipants.length})</Typography>
               <List dense>
                 {safeParticipants && safeParticipants.length > 0 ? safeParticipants
                   .filter(p => p) // Filter out any null/undefined participants
-                  .map((p, idx) => (
-                    <React.Fragment key={p.socketId || p.id || `participant-${idx}`}>
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar>
-                            <GroupIcon />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary={p.display_name || p.name || p.id || p.socketId || 'Unknown'} 
-                          secondary={p.socketId ? `socket:${p.socketId}` : (p.id ? `id:${p.id}` : '')} 
-                        />
-                      </ListItem>
-                      <Divider variant="inset" component="li" />
-                    </React.Fragment>
-                  )) : (
+                  .map((p, idx) => {
+                    // Determine avatar source
+                    const avatarSrc = p.profile_image_url || p.avatar || null;
+                    const initials = p.display_name ? p.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
+                    
+                    return (
+                      <React.Fragment key={p.socketId || p.id || `participant-${idx}`}>
+                        <ListItem>
+                          <ListItemAvatar>
+                            <Avatar src={avatarSrc} alt={p.display_name}>
+                              {!avatarSrc && initials}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText 
+                            primary={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body2">{p.display_name || 'Unknown'}</Typography>
+                                {p.isMe && <Chip label="You" size="small" color="primary" />}
+                              </Box>
+                            }
+                            secondary={
+                              <Typography variant="caption" color="text.secondary">
+                                {p.isMuted ? '🔇 Muted' : '🎤 Active'}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                        {idx < safeParticipants.length - 1 && <Divider variant="inset" component="li" />}
+                      </React.Fragment>
+                    );
+                  }) : (
                   <ListItem>
-                    <ListItemText primary="No participants yet" />
+                    <ListItemText primary="No participants yet" secondary="Waiting for others to join..." />
                   </ListItem>
                 )}
               </List>
