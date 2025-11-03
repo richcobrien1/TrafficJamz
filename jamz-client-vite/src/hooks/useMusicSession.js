@@ -108,28 +108,37 @@ export const useMusicSession = (groupId, audioSessionId) => {
 
     // Connect to socket if not already connected
     if (!socketRef.current) {
-      socketRef.current = io(API_URL, {
+      const socket = io(API_URL, {
         auth: {
           token: localStorage.getItem('token')
         }
       });
+      
+      socketRef.current = socket;
 
-      // Join music room
-      socketRef.current.emit('join-music-session', {
-        sessionId: audioSessionId,
-        groupId,
-        userId: user?.id || user?.user_id
+      // Wait for connection before joining room
+      socket.on('connect', () => {
+        console.log('🎵 Music socket connected, joining room...');
+        
+        // Join music room
+        socket.emit('join-music-session', {
+          sessionId: audioSessionId,
+          groupId,
+          userId: user?.id || user?.user_id
+        });
+        
+        console.log('🎵 Joined music session room:', audioSessionId);
       });
 
       // Listen for music events
-      socketRef.current.on('music-play', handleRemotePlay);
-      socketRef.current.on('music-pause', handleRemotePause);
-      socketRef.current.on('music-seek', handleRemoteSeek);
-      socketRef.current.on('music-change-track', handleRemoteTrackChange);
-      socketRef.current.on('music-track-change', handleRemoteTrackChange); // Legacy support
-      socketRef.current.on('music-sync', handleRemoteSync);
-      socketRef.current.on('playlist-update', handlePlaylistUpdate);
-      socketRef.current.on('music-controller-changed', handleControllerChanged);
+      socket.on('music-play', handleRemotePlay);
+      socket.on('music-pause', handleRemotePause);
+      socket.on('music-seek', handleRemoteSeek);
+      socket.on('music-change-track', handleRemoteTrackChange);
+      socket.on('music-track-change', handleRemoteTrackChange); // Legacy support
+      socket.on('music-sync', handleRemoteSync);
+      socket.on('playlist-update', handlePlaylistUpdate);
+      socket.on('music-controller-changed', handleControllerChanged);
       
       console.log('🎵 Music socket events registered for session:', audioSessionId);
     }
