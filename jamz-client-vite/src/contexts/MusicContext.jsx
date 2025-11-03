@@ -199,9 +199,12 @@ export const MusicProvider = ({ children }) => {
         console.log('🎵 [MusicContext] Loading current track:', data.currently_playing.title);
         setCurrentTrack(data.currently_playing);
         musicService.loadTrack(data.currently_playing).then(() => {
-          if (data.is_playing && !amController) {
-            console.log('🎵 [MusicContext] Auto-playing for listener');
-            musicService.play(data.currently_playing.position);
+          // Check the ref since state might not be updated yet
+          const shouldAutoPlay = data.is_playing && !isControllerRef.current;
+          console.log('🎵 [MusicContext] Track loaded. Auto-play?', shouldAutoPlay, '(is_playing:', data.is_playing, ', isController:', isControllerRef.current, ')');
+          if (shouldAutoPlay) {
+            console.log('🎵 [MusicContext] Auto-playing for listener at position:', data.currently_playing.position);
+            musicService.play(data.currently_playing.position || 0);
           }
         });
       }
