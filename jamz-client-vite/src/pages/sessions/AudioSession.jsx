@@ -349,13 +349,23 @@ const AudioSession = () => {
   
   // Update volume of remote audio elements when outputVolume changes
   useEffect(() => {
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     const remoteAudios = document.getElementById('remote-audios');
+    
     if (remoteAudios) {
       const audioElements = remoteAudios.querySelectorAll('audio');
-      console.log('🔊 Updating voice volume:', outputVolume, 'for', audioElements.length, 'audio elements');
+      console.log('🔊 Updating voice volume:', outputVolume, 'for', audioElements.length, 'audio elements', isIOS ? '(iOS - device volume only)' : '');
+      
       audioElements.forEach((audio, index) => {
-        audio.volume = outputVolume;
-        console.log(`🔊 Audio element ${index}: volume=${audio.volume}, muted=${audio.muted}`);
+        if (isIOS) {
+          // iOS: volume control is via device buttons only, keep at 1.0
+          audio.volume = 1.0;
+          console.log(`🔊 Audio element ${index} (iOS): volume=1.0 (device controlled), muted=${audio.muted}`);
+        } else {
+          // Desktop: use app volume control
+          audio.volume = outputVolume;
+          console.log(`🔊 Audio element ${index}: volume=${audio.volume}, muted=${audio.muted}`);
+        }
       });
     } else {
       console.warn('🔊 Remote audios container not found');
@@ -387,13 +397,23 @@ const AudioSession = () => {
   
   // Apply voice mute state to all remote streams
   useEffect(() => {
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     const remoteAudios = document.getElementById('remote-audios');
+    
     if (remoteAudios) {
       const audioElements = remoteAudios.querySelectorAll('audio');
       console.log('🔇 Setting voice mute:', isVoiceMuted, 'for', audioElements.length, 'audio elements');
+      
       audioElements.forEach((audio, index) => {
-        audio.muted = isVoiceMuted;
-        console.log(`🔇 Audio element ${index}: muted=${audio.muted}, volume=${audio.volume}`);
+        if (isIOS) {
+          // iOS: Use muted property for mute control
+          audio.muted = isVoiceMuted;
+          console.log(`🔇 Audio element ${index} (iOS): muted=${audio.muted}`);
+        } else {
+          // Desktop: Can use either muted or volume=0, using muted for consistency
+          audio.muted = isVoiceMuted;
+          console.log(`🔇 Audio element ${index}: muted=${audio.muted}, volume=${audio.volume}`);
+        }
       });
     } else {
       console.warn('🔇 Remote audios container not found');
@@ -1352,9 +1372,22 @@ const AudioSession = () => {
     // Create audio element for remote stream
     const audioElement = new Audio();
     audioElement.srcObject = stream;
-    audioElement.volume = outputVolume;
+    
+    // For iOS and better device control compatibility:
+    // - Set volume to 1.0 (full) to allow device volume control
+    // - Use muted property for mute functionality instead of volume=0
+    // - iOS ignores the volume property entirely
+    if (isIOS) {
+      audioElement.volume = 1.0; // iOS uses device volume only
+      audioElement.muted = isVoiceMuted;
+      console.log('🎵 iOS: Using device volume control, app mute:', isVoiceMuted);
+    } else {
+      audioElement.volume = isVoiceMuted ? 0 : outputVolume;
+      audioElement.muted = false; // Use volume control on desktop
+      console.log('🎵 Desktop: Using app volume control:', outputVolume);
+    }
+    
     audioElement.autoplay = true;
-    audioElement.muted = isVoiceMuted; // Apply current voice mute state
     
     // CRITICAL for iOS: Set playsInline to prevent fullscreen video player behavior
     // This also helps with audio playback policies on iOS Safari
@@ -1362,7 +1395,7 @@ const AudioSession = () => {
     audioElement.setAttribute('webkit-playsinline', 'true');
     audioElement.playsInline = true;
     
-    console.log('🎵 Created audio element with volume:', outputVolume, 'autoplay:', audioElement.autoplay, 'muted:', audioElement.muted, 'playsInline:', audioElement.playsInline);
+    console.log('🎵 Created audio element with volume:', audioElement.volume, 'autoplay:', audioElement.autoplay, 'muted:', audioElement.muted, 'playsInline:', audioElement.playsInline);
 
     // Add event listeners to debug audio playback
     audioElement.onloadedmetadata = () => console.log('🎵 Audio element loaded metadata');
@@ -2152,6 +2185,11 @@ const AudioSession = () => {
                   </Box>
                   <VolumeUpIcon />
                 </Box>
+                {/iPhone|iPad|iPod/.test(navigator.userAgent) && (
+                  <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 1 }}>
+                    📱 On iOS, use your device volume buttons to control voice volume. The slider above won't work.
+                  </Typography>
+                )}
               </Box>
 
               <Box sx={{ width: '100%' }}>
