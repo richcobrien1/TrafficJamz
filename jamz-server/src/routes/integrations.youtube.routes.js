@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const youtubeService = require('../services/youtube.service');
-const { authenticateToken } = require('../middleware/auth');
 
 /**
  * YouTube Integration Routes
@@ -9,7 +9,7 @@ const { authenticateToken } = require('../middleware/auth');
  */
 
 // Search YouTube videos
-router.get('/youtube/search', authenticateToken, async (req, res) => {
+router.get('/youtube/search', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { q, maxResults = 25 } = req.query;
     
@@ -27,7 +27,7 @@ router.get('/youtube/search', authenticateToken, async (req, res) => {
 });
 
 // Get YouTube video details
-router.get('/youtube/videos/:videoId', authenticateToken, async (req, res) => {
+router.get('/youtube/videos/:videoId', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { videoId } = req.params;
     
@@ -41,7 +41,7 @@ router.get('/youtube/videos/:videoId', authenticateToken, async (req, res) => {
 });
 
 // Get YouTube playlist details
-router.get('/youtube/playlists/:playlistId', authenticateToken, async (req, res) => {
+router.get('/youtube/playlists/:playlistId', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { playlistId } = req.params;
     
@@ -55,7 +55,7 @@ router.get('/youtube/playlists/:playlistId', authenticateToken, async (req, res)
 });
 
 // Get YouTube playlist items
-router.get('/youtube/playlists/:playlistId/items', authenticateToken, async (req, res) => {
+router.get('/youtube/playlists/:playlistId/items', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { playlistId } = req.params;
     const { maxResults = 50 } = req.query;
