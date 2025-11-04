@@ -264,27 +264,75 @@ export const MusicProvider = ({ children }) => {
     // Music control events
     socket.on('music-play', async (data) => {
       if (isControllerRef.current) return;
-      console.log('🎵 [MusicContext] Remote play - position:', data.position);
+      
+      // Calculate sync position accounting for network latency
+      let syncPosition = data.position || 0;
+      if (data.timestamp) {
+        const networkDelay = (Date.now() - data.timestamp) / 1000; // Convert to seconds
+        syncPosition = syncPosition + networkDelay;
+        console.log('🎵 [MusicContext] Remote play - base position:', data.position, 'network delay:', networkDelay.toFixed(3), 's, synced position:', syncPosition.toFixed(3));
+      } else {
+        console.log('🎵 [MusicContext] Remote play - position:', data.position, '(no timestamp for sync)');
+      }
       
       // Ensure track is loaded before playing
       if (!musicService.currentTrack && data.track) {
         console.log('🎵 [MusicContext] Loading track before play:', data.track.title);
         await musicService.loadTrack(data.track);
+      } else if (!musicService.currentTrack) {
+        console.warn('🎵 [MusicContext] ⚠️ No track loaded and no track data in event');
+        return;
       }
       
-      await musicService.play(data.position);
+      await musicService.play(syncPosition);
     });
     
     socket.on('music-pause', (data) => {
       if (isControllerRef.current) return;
-      console.log('🎵 [MusicContext] Remote pause');
+      
+      // Sync to exact pause position if provided
+      if (data.position !== undefined) {
+        console.log('🎵 [MusicContext] Remote pause at position:', data.position);
+        musicService.seek(data.position);
+      } else {
+        console.log('🎵 [MusicContext] Remote pause (no position sync)');
+      }
       musicService.pause();
     });
     
-    socket.on('music-seek', (data) => {
+    socket.on('music-seek', async (data) => {
       if (isControllerRef.current) return;
-      console.log('🎵 [MusicContext] Remote seek:', data.position);
+      console.log('🎵 [MusicContext] Remote seek:', data.position, 'playing:', data.isPlaying);
+      
       musicService.seek(data.position);
+      
+      // If DJ was playing when they seeked, resume playing
+      if (data.isPlaying) {
+        console.log('🎵 [MusicContext] Resuming play after seek');
+        await musicService.play();
+      }
+    });
+    
+    // Position sync updates (from DJ every 5 seconds)
+    socket.on('music-position-sync', (data) => {
+      if (isControllerRef.current) return;
+      
+      // Only sync if we're playing and not too far off
+      if (musicService.isPlaying) {
+        const currentPos = musicService.getCurrentTime();
+        const targetPos = data.position || 0;
+        const drift = Math.abs(currentPos - targetPos);
+        
+        // Sync threshold from music service (default 2 seconds)
+        const syncThreshold = musicService.syncThreshold || 2.0;
+        
+        if (drift > syncThreshold) {
+          console.log('🎵 [MusicContext] Position drift detected:', drift.toFixed(2), 's - syncing to:', targetPos.toFixed(2));
+          musicService.seek(targetPos);
+        } else {
+          console.log('🎵 [MusicContext] Position in sync - drift:', drift.toFixed(3), 's');
+        }
+      }
     });
     
     socket.on('music-track-change', async (data) => {
@@ -440,10 +488,16 @@ export const MusicProvider = ({ children }) => {
     
     if (isController) {
       const position = musicService.getCurrentTime();
+      const timestamp = Date.now();
+      
+      console.log('🎵 [MusicContext] Broadcasting play - position:', position, 'timestamp:', timestamp);
+      
       socketRef.current?.emit('music-control', {
         sessionId: activeSessionId,
         action: 'play',
         position,
+        timestamp,
+        track: currentTrack, // Include full track data for sync
         trackId: currentTrack?.id
       });
     }
@@ -458,10 +512,15 @@ export const MusicProvider = ({ children }) => {
     
     if (isController) {
       const position = musicService.getCurrentTime();
+      const timestamp = Date.now();
+      
+      console.log('🎵 [MusicContext] Broadcasting pause - position:', position);
+      
       socketRef.current?.emit('music-control', {
         sessionId: activeSessionId,
         action: 'pause',
         position,
+        timestamp,
         trackId: currentTrack?.id
       });
     }
@@ -475,10 +534,17 @@ export const MusicProvider = ({ children }) => {
     musicService.seek(position);
     
     if (isController) {
+      const timestamp = Date.now();
+      const isPlaying = musicService.isPlaying;
+      
+      console.log('🎵 [MusicContext] Broadcasting seek - position:', position, 'playing:', isPlaying);
+      
       socketRef.current?.emit('music-control', {
         sessionId: activeSessionId,
         action: 'seek',
         position,
+        timestamp,
+        isPlaying, // Let listeners know if they should resume playing after seek
         trackId: currentTrack?.id
       });
     }
@@ -587,6 +653,37 @@ export const MusicProvider = ({ children }) => {
       musicService.cleanup();
     }
   };
+  
+  /**
+   * Periodic position sync for DJ (broadcasts position every 5 seconds during playback)
+   */
+  useEffect(() => {
+    let syncInterval;
+    
+    if (isController && isPlaying && currentTrack) {
+      console.log('🎵 [MusicContext] Starting position sync broadcast (every 5s)');
+      
+      syncInterval = setInterval(() => {
+        const position = musicService.getCurrentTime();
+        const timestamp = Date.now();
+        
+        console.log('🎵 [MusicContext] Broadcasting position sync:', position.toFixed(2));
+        
+        socketRef.current?.emit('music-position-sync', {
+          sessionId: activeSessionId,
+          position,
+          timestamp,
+          trackId: currentTrack?.id
+        });
+      }, 5000); // Sync every 5 seconds
+    }
+    
+    return () => {
+      if (syncInterval) {
+        clearInterval(syncInterval);
+      }
+    };
+  }, [isController, isPlaying, currentTrack, activeSessionId]);
   
   /**
    * Clean up on unmount
