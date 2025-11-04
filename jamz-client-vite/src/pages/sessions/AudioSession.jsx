@@ -127,6 +127,7 @@ const AudioSession = () => {
   // Listener mute controls
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
+  const [showIOSAudioPrompt, setShowIOSAudioPrompt] = useState(false);
   
   // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
@@ -1335,7 +1336,7 @@ const AudioSession = () => {
     audioElement.srcObject = stream;
     audioElement.volume = outputVolume;
     audioElement.autoplay = true;
-    audioElement.muted = false;
+    audioElement.muted = isVoiceMuted; // Apply current voice mute state
     
     // CRITICAL for iOS: Set playsInline to prevent fullscreen video player behavior
     // This also helps with audio playback policies on iOS Safari
@@ -1383,24 +1384,38 @@ const AudioSession = () => {
           console.warn('🎵 iOS detected - audio playback requires user interaction');
           console.warn('🎵 Audio will start playing after user taps/clicks anywhere on the screen');
         }
-        
-        // Try to play on user interaction if autoplay fails
-        const playOnInteraction = () => {
-          console.log('🎵 User interaction detected, attempting play...');
-          audioElement.play().then(() => {
-            console.log('🎵 ✅ Audio element play() succeeded on user interaction');
-          }).catch((err) => {
-            console.error('🎵 ❌ Audio element play() failed even on interaction:', err.name, err.message);
-          });
-          document.removeEventListener('click', playOnInteraction);
-          document.removeEventListener('touchstart', playOnInteraction);
-          document.removeEventListener('touchend', playOnInteraction);
-        };
-        document.addEventListener('click', playOnInteraction, { once: true });
-        document.addEventListener('touchstart', playOnInteraction, { once: true });
-        document.addEventListener('touchend', playOnInteraction, { once: true });
       });
     };
+
+    // Setup global interaction listener for iOS (plays all audio elements on first touch)
+    if (isIOS && !window.__audioInteractionHandlerSet) {
+      window.__audioInteractionHandlerSet = true;
+      
+      // Show prompt for listeners on iOS
+      if (!session?.isHost) {
+        setShowIOSAudioPrompt(true);
+      }
+      
+      const playAllAudioOnInteraction = () => {
+        console.log('🎵 iOS: User interaction detected, playing all audio elements...');
+        setShowIOSAudioPrompt(false); // Hide prompt after interaction
+        
+        const remoteAudios = document.getElementById('remote-audios');
+        if (remoteAudios) {
+          Array.from(remoteAudios.querySelectorAll('audio')).forEach(audio => {
+            if (audio.paused) {
+              audio.play().then(() => {
+                console.log('🎵 ✅ Started audio element on interaction');
+              }).catch(err => {
+                console.error('🎵 ❌ Failed to start audio:', err.message);
+              });
+            }
+          });
+        }
+      };
+      document.addEventListener('touchstart', playAllAudioOnInteraction, { once: true });
+      document.addEventListener('click', playAllAudioOnInteraction, { once: true });
+    }
 
     // Small delay to ensure stream is ready (especially important on iOS)
     setTimeout(attemptPlay, 100);
@@ -1781,6 +1796,26 @@ const AudioSession = () => {
             </IconButton>
           </Toolbar>
         </AppBar>
+
+        {/* iOS Audio Prompt for Listeners */}
+        {showIOSAudioPrompt && (
+          <Alert 
+            severity="info" 
+            sx={{ mb: 2, cursor: 'pointer' }}
+            onClick={() => {
+              setShowIOSAudioPrompt(false);
+              // Trigger audio play on all elements
+              const remoteAudios = document.getElementById('remote-audios');
+              if (remoteAudios) {
+                Array.from(remoteAudios.querySelectorAll('audio')).forEach(audio => {
+                  audio.play().catch(err => console.error('Audio play error:', err));
+                });
+              }
+            }}
+          >
+            <strong>Tap here to enable audio</strong> - iOS requires user interaction to play audio
+          </Alert>
+        )}
       
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         {error && (
