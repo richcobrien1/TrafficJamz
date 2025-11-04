@@ -15,6 +15,9 @@
     "nodemon": "^3.1.10"
   },
   "dependencies": {
-    "fdir": "^6.5.0"
+    "fdir": "^6.5.0",
+    "googleapis": "^164.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "spotify-web-api-node": "^5.0.2"
   }
 }

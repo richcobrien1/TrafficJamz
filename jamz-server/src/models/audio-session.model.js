@@ -89,10 +89,25 @@ const AudioSessionSchema = new Schema({
       artist: String,
       album: String,
       duration: Number,
-      fileUrl: String, // Supabase storage URL
+      fileUrl: String, // Supabase storage URL for local tracks
       position: Number,
       controlled_by: String, // UUID from PostgreSQL User table
-      started_at: Date
+      started_at: Date,
+      // Multi-platform support
+      source: {
+        type: String,
+        enum: ['local', 'spotify', 'youtube', 'apple_music'],
+        default: 'local'
+      },
+      spotifyId: String,
+      spotifyPreviewUrl: String,
+      youtubeId: String,
+      youtubeUrl: String,
+      appleMusicId: String,
+      appleMusicPreviewUrl: String,
+      albumArt: String,
+      isrc: String,
+      externalUrl: String
     },
     playlist: [{
       id: {
@@ -103,9 +118,28 @@ const AudioSessionSchema = new Schema({
       artist: String,
       album: String,
       duration: Number,
-      fileUrl: String, // Supabase storage URL
+      fileUrl: String, // Supabase storage URL for local tracks
       uploadedBy: String, // User who uploaded the track
-      added_by: String // UUID from PostgreSQL User table
+      added_by: String, // UUID from PostgreSQL User table
+      // Multi-platform support
+      source: {
+        type: String,
+        enum: ['local', 'spotify', 'youtube', 'apple_music'],
+        default: 'local'
+      },
+      // Spotify-specific fields
+      spotifyId: String,
+      spotifyPreviewUrl: String,
+      // YouTube-specific fields
+      youtubeId: String,
+      youtubeUrl: String,
+      // Apple Music-specific fields
+      appleMusicId: String,
+      appleMusicPreviewUrl: String,
+      // Shared metadata
+      albumArt: String,
+      isrc: String, // International Standard Recording Code
+      externalUrl: String // Link to track on platform
     }]
   },
   // WebRTC signaling data
