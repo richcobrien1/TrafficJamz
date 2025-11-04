@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -42,6 +42,15 @@ const MusicPlayer = ({
   onReleaseControl,
   disabled = false
 }) => {
+  // Remember previous volume for mute/unmute
+  const previousVolumeRef = useRef(0.5);
+  
+  // Update previous volume when volume changes (but not to 0)
+  useEffect(() => {
+    if (volume > 0) {
+      previousVolumeRef.current = volume;
+    }
+  }, [volume]);
   /**
    * Format time for display
    */
@@ -248,9 +257,27 @@ const MusicPlayer = ({
 
         {/* Volume Control */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton size="small">
-            {volume > 0 ? <VolumeIcon /> : <VolumeOffIcon />}
-          </IconButton>
+          <Tooltip title={volume > 0 ? "Mute music" : "Unmute music"}>
+            <IconButton 
+              size="small"
+              onClick={() => {
+                if (onVolumeChange) {
+                  if (volume > 0) {
+                    // Mute: set to 0
+                    onVolumeChange(0);
+                  } else {
+                    // Unmute: restore previous volume
+                    const volumeToRestore = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
+                    onVolumeChange(volumeToRestore);
+                  }
+                }
+              }}
+              disabled={disabled}
+              color={volume === 0 ? "error" : "default"}
+            >
+              {volume > 0 ? <VolumeIcon /> : <VolumeOffIcon />}
+            </IconButton>
+          </Tooltip>
           <Slider
             value={volume * 100}
             max={100}
