@@ -124,6 +124,10 @@ const AudioSession = () => {
   const [outputVolume, setOutputVolume] = useState(1.0);
   const [localAudioMonitoring, setLocalAudioMonitoring] = useState(false); // Disable by default for actual audio testing
   
+  // Listener mute controls
+  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
+  
   // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
   const [micButtonPressStartTime, setMicButtonPressStartTime] = useState(null);
@@ -354,6 +358,29 @@ const AudioSession = () => {
     }
   }, [outputVolume]);
   
+  // Apply music mute state
+  useEffect(() => {
+    if (isMusicMuted) {
+      changeMusicVolume(0);
+      console.log('🎵 Music muted');
+    } else {
+      changeMusicVolume(1.0);
+      console.log('🎵 Music unmuted');
+    }
+  }, [isMusicMuted, changeMusicVolume]);
+  
+  // Apply voice mute state to all remote streams
+  useEffect(() => {
+    Object.values(peerConnections.current).forEach(pc => {
+      const remoteStream = pc.remoteStream;
+      if (remoteStream) {
+        remoteStream.getAudioTracks().forEach(track => {
+          track.enabled = !isVoiceMuted;
+        });
+      }
+    });
+  }, [isVoiceMuted]);
+  
   // Initialize microphone (called from user gesture for browsers that require it)
   const initializeMicrophone = async () => {
     console.log('🎤 Initializing microphone from user gesture...');
@@ -524,6 +551,31 @@ const AudioSession = () => {
     } else {
       console.warn('🔇 Cannot toggle mute: no local stream available');
     }
+  };
+  
+  // Toggle music mute for listeners
+  const toggleMusicMute = () => {
+    const newMuteState = !isMusicMuted;
+    setIsMusicMuted(newMuteState);
+    console.log('🎵 Music mute toggled:', newMuteState);
+  };
+  
+  // Toggle voice mute for listeners
+  const toggleVoiceMute = () => {
+    const newMuteState = !isVoiceMuted;
+    setIsVoiceMuted(newMuteState);
+    
+    // Mute/unmute all remote audio elements
+    Object.values(peerConnections.current).forEach(pc => {
+      const remoteStream = pc.remoteStream;
+      if (remoteStream) {
+        remoteStream.getAudioTracks().forEach(track => {
+          track.enabled = !newMuteState;
+        });
+      }
+    });
+    
+    console.log('🔊 Voice mute toggled:', newMuteState);
   };
   
   // New unified mic control handlers
@@ -2023,9 +2075,19 @@ const AudioSession = () => {
               
              {/* Volume Controls */}
               <Box sx={{ mb: 3, width: '100%' }}>
-                <Typography id="voice-volume-slider" gutterBottom>
-                  Voice Volume
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography id="voice-volume-slider">
+                    Voice Volume
+                  </Typography>
+                  <IconButton 
+                    onClick={toggleVoiceMute}
+                    color={isVoiceMuted ? "error" : "default"}
+                    size="small"
+                    aria-label={isVoiceMuted ? "Unmute voice" : "Mute voice"}
+                  >
+                    {isVoiceMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+                  </IconButton>
+                </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <VolumeDownIcon />
                   <Box sx={{ flexGrow: 1 }}>
@@ -2038,6 +2100,7 @@ const AudioSession = () => {
                       step={0.01}
                       valueLabelDisplay="auto"
                       valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+                      disabled={isVoiceMuted}
                       sx={{ 
                         width: '100%',
                         '& .MuiSlider-rail': { height: 4 },
@@ -2050,9 +2113,19 @@ const AudioSession = () => {
               </Box>
 
               <Box sx={{ width: '100%' }}>
-                <Typography id="music-volume-slider" gutterBottom>
-                  Music Volume
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography id="music-volume-slider">
+                    Music Volume
+                  </Typography>
+                  <IconButton 
+                    onClick={toggleMusicMute}
+                    color={isMusicMuted ? "error" : "default"}
+                    size="small"
+                    aria-label={isMusicMuted ? "Unmute music" : "Mute music"}
+                  >
+                    {isMusicMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+                  </IconButton>
+                </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <VolumeDownIcon />
                   <Box sx={{ flexGrow: 1 }}>
@@ -2060,6 +2133,7 @@ const AudioSession = () => {
                       value={musicVolume}
                       onChange={(e, newValue) => changeMusicVolume(newValue)}
                       aria-labelledby="music-volume-slider"
+                      disabled={isMusicMuted}
                       min={0}
                       max={1}
                       step={0.01}
