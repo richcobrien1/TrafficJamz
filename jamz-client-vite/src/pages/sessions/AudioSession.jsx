@@ -154,6 +154,7 @@ const AudioSession = () => {
   const rtcConnectionRef = useRef(null);
   const audioPlayerRef = useRef(null);
   const signalingRef = useRef(null); // Add ref for signaling
+  const sessionIdRef = useRef(null); // Store current session ID for WebRTC handlers
   const mediasoupDeviceRef = useRef(null); // Store mediasoup device
   const recvTransportRef = useRef(null); // Store receive transport for consuming
   const consumersRef = useRef(new Map()); // Store consumers
@@ -504,9 +505,9 @@ const AudioSession = () => {
     // Leave session and clean up connections
     await leaveSession();
     
-    // Navigate back to the previous page
-    console.log('🚪 Navigating back...');
-    navigate(-1);
+    // Navigate back to the group detail page (where users came from)
+    console.log('🚪 Navigating to group detail page...');
+    navigate(`/groups/${groupId}`, { replace: true });
   };
   
   // Toggle microphone mute
@@ -908,6 +909,9 @@ const AudioSession = () => {
     }
   };  // Set up signaling for WebRTC
   const setupSignaling = (sessionId) => {
+    // Store sessionId in ref for use in WebRTC event handlers
+    sessionIdRef.current = sessionId;
+    
     // Determine the socket URL based on environment
     // In development: use Vite dev server origin (proxies to backend)
     // In production: use VITE_BACKEND_URL if set, otherwise current origin
@@ -1223,7 +1227,7 @@ const AudioSession = () => {
         console.log('🧊 Sending ICE candidate');
         signaling.emit('webrtc-candidate', {
           candidate: event.candidate,
-          sessionId: sessionId
+          sessionId: sessionIdRef.current
         });
       }
     };
@@ -1405,7 +1409,7 @@ const AudioSession = () => {
       console.log('📤 Sending offer via signaling...');
       signaling.emit('webrtc-offer', {
         offer: peerConnection.localDescription,
-        sessionId: sessionId
+        sessionId: sessionIdRef.current
       });
       console.log('📤 Offer sent successfully');
     } catch (error) {
@@ -1596,7 +1600,7 @@ const AudioSession = () => {
       console.log('📥 Sending answer...');
       signaling.emit('webrtc-answer', {
         answer: peerConnection.localDescription,
-        sessionId: sessionId
+        sessionId: sessionIdRef.current
       });
       console.log('📥 Answer sent');
     } catch (error) {
