@@ -147,9 +147,17 @@ const MusicPlayer = ({
       <CardContent>
         {/* Track Info */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 56, height: 56 }}>
-            <MusicIcon />
-          </Avatar>
+          {currentTrack.albumArt ? (
+            <Avatar 
+              src={currentTrack.albumArt} 
+              alt={currentTrack.album || currentTrack.title}
+              sx={{ mr: 2, width: 56, height: 56 }}
+            />
+          ) : (
+            <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 56, height: 56 }}>
+              <MusicIcon />
+            </Avatar>
+          )}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="h6" noWrap>
               {currentTrack.title}
