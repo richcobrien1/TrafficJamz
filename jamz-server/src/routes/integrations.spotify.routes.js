@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const passport = require('passport');
 const spotifyService = require('../services/spotify.service');
 const UserIntegration = require('../models/user-integration.model');
-const { authenticateToken } = require('../middleware/auth');
 
 /**
  * Spotify OAuth Routes
  */
 
 // Initiate Spotify OAuth flow
-router.get('/auth/spotify', authenticateToken, (req, res) => {
+router.get('/auth/spotify', passport.authenticate('jwt', { session: false }), (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -86,7 +86,7 @@ router.get('/auth/spotify/callback', async (req, res) => {
 });
 
 // Refresh Spotify access token
-router.post('/auth/spotify/refresh', authenticateToken, async (req, res) => {
+router.post('/auth/spotify/refresh', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -113,7 +113,7 @@ router.post('/auth/spotify/refresh', authenticateToken, async (req, res) => {
 });
 
 // Disconnect Spotify integration
-router.delete('/auth/spotify', authenticateToken, async (req, res) => {
+router.delete('/auth/spotify', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -131,7 +131,7 @@ router.delete('/auth/spotify', authenticateToken, async (req, res) => {
  */
 
 // Get user's Spotify playlists
-router.get('/spotify/playlists', authenticateToken, async (req, res) => {
+router.get('/spotify/playlists', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     const { limit = 50, offset = 0 } = req.query;
@@ -150,7 +150,7 @@ router.get('/spotify/playlists', authenticateToken, async (req, res) => {
 });
 
 // Get tracks from a Spotify playlist
-router.get('/spotify/playlists/:playlistId/tracks', authenticateToken, async (req, res) => {
+router.get('/spotify/playlists/:playlistId/tracks', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     const { playlistId } = req.params;
@@ -165,7 +165,7 @@ router.get('/spotify/playlists/:playlistId/tracks', authenticateToken, async (re
 });
 
 // Search Spotify tracks
-router.get('/spotify/search', authenticateToken, async (req, res) => {
+router.get('/spotify/search', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     const { q, limit = 20 } = req.query;
@@ -184,7 +184,7 @@ router.get('/spotify/search', authenticateToken, async (req, res) => {
 });
 
 // Get Spotify track details
-router.get('/spotify/tracks/:trackId', authenticateToken, async (req, res) => {
+router.get('/spotify/tracks/:trackId', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     const { trackId } = req.params;
@@ -199,7 +199,7 @@ router.get('/spotify/tracks/:trackId', authenticateToken, async (req, res) => {
 });
 
 // Check Spotify integration status
-router.get('/spotify/status', authenticateToken, async (req, res) => {
+router.get('/spotify/status', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     

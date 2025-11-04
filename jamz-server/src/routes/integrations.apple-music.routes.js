@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const appleMusicService = require('../services/apple-music.service');
 const UserIntegration = require('../models/user-integration.model');
-const { authenticateToken } = require('../middleware/auth');
 
 /**
  * Apple Music Integration Routes
  */
 
 // Save user's Apple Music token (obtained from MusicKit JS on frontend)
-router.post('/auth/apple-music', authenticateToken, async (req, res) => {
+router.post('/auth/apple-music', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     const { userToken, storefront } = req.body;
@@ -42,7 +42,7 @@ router.post('/auth/apple-music', authenticateToken, async (req, res) => {
 });
 
 // Disconnect Apple Music integration
-router.delete('/auth/apple-music', authenticateToken, async (req, res) => {
+router.delete('/auth/apple-music', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -56,7 +56,7 @@ router.delete('/auth/apple-music', authenticateToken, async (req, res) => {
 });
 
 // Get Apple Music developer token (for MusicKit JS initialization)
-router.get('/apple-music/developer-token', authenticateToken, (req, res) => {
+router.get('/apple-music/developer-token', passport.authenticate('jwt', { session: false }), (req, res) => {
   try {
     const developerToken = appleMusicService.generateDeveloperToken();
     res.json({ developerToken });
@@ -67,7 +67,7 @@ router.get('/apple-music/developer-token', authenticateToken, (req, res) => {
 });
 
 // Search Apple Music catalog
-router.get('/apple-music/search', authenticateToken, async (req, res) => {
+router.get('/apple-music/search', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { q, storefront = 'us', limit = 25 } = req.query;
     
@@ -85,7 +85,7 @@ router.get('/apple-music/search', authenticateToken, async (req, res) => {
 });
 
 // Get user's Apple Music playlists (requires user token)
-router.get('/apple-music/playlists', authenticateToken, async (req, res) => {
+router.get('/apple-music/playlists', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -108,7 +108,7 @@ router.get('/apple-music/playlists', authenticateToken, async (req, res) => {
 });
 
 // Get Apple Music playlist tracks
-router.get('/apple-music/playlists/:playlistId/tracks', authenticateToken, async (req, res) => {
+router.get('/apple-music/playlists/:playlistId/tracks', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     const { playlistId } = req.params;
@@ -131,7 +131,7 @@ router.get('/apple-music/playlists/:playlistId/tracks', authenticateToken, async
 });
 
 // Get Apple Music track details
-router.get('/apple-music/tracks/:trackId', authenticateToken, async (req, res) => {
+router.get('/apple-music/tracks/:trackId', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { trackId } = req.params;
     const { storefront = 'us' } = req.query;
@@ -146,7 +146,7 @@ router.get('/apple-music/tracks/:trackId', authenticateToken, async (req, res) =
 });
 
 // Check Apple Music integration status
-router.get('/apple-music/status', authenticateToken, async (req, res) => {
+router.get('/apple-music/status', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const userId = req.user.id;
     
