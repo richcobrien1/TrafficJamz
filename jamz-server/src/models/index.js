@@ -1,5 +1,6 @@
 const User = require('./user.model');
 const PasswordResetToken = require('./password-reset-token.model');
+const UserIntegration = require('./user-integration.model');
 
 // Set up associations
 User.associate && User.associate({
@@ -12,5 +13,6 @@ PasswordResetToken.associate && PasswordResetToken.associate({
 
 module.exports = {
   User,
-  PasswordResetToken
+  PasswordResetToken,
+  UserIntegration
 };
