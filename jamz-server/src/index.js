@@ -290,6 +290,9 @@ const notificationRoutes = require('./routes/notifications.routes');
 const placesRoutes = require('./routes/places.routes');
 const configRoutes = require('./routes/config.routes');
 const invitationsRoutes = require('./routes/invitations.routes');
+const spotifyIntegrationRoutes = require('./routes/integrations.spotify.routes');
+const youtubeIntegrationRoutes = require('./routes/integrations.youtube.routes');
+const appleMusicIntegrationRoutes = require('./routes/integrations.apple-music.routes');
 
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
@@ -1308,6 +1311,9 @@ function setupServer() {
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/config', configRoutes);
   app.use('/api/invitations', invitationsRoutes);
+  app.use('/api/integrations', spotifyIntegrationRoutes);
+  app.use('/api/integrations', youtubeIntegrationRoutes);
+  app.use('/api/integrations', appleMusicIntegrationRoutes);
 
   // Health check endpoint
   app.get('/health', async (req, res) => {
