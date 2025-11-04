@@ -352,21 +352,36 @@ const AudioSession = () => {
     const remoteAudios = document.getElementById('remote-audios');
     if (remoteAudios) {
       const audioElements = remoteAudios.querySelectorAll('audio');
-      audioElements.forEach(audio => {
+      console.log('🔊 Updating voice volume:', outputVolume, 'for', audioElements.length, 'audio elements');
+      audioElements.forEach((audio, index) => {
         audio.volume = outputVolume;
-        console.log('🔊 Updated remote audio volume to:', outputVolume);
+        console.log(`🔊 Audio element ${index}: volume=${audio.volume}, muted=${audio.muted}`);
       });
+    } else {
+      console.warn('🔊 Remote audios container not found');
     }
   }, [outputVolume]);
+  
+  // Store the previous volume before muting
+  const previousMusicVolumeRef = useRef(1.0);
+  
+  // Update previousVolume ref whenever volume changes (but not when muted)
+  useEffect(() => {
+    if (!isMusicMuted && musicVolume > 0) {
+      previousMusicVolumeRef.current = musicVolume;
+    }
+  }, [musicVolume, isMusicMuted]);
   
   // Apply music mute state
   useEffect(() => {
     if (isMusicMuted) {
       changeMusicVolume(0);
-      console.log('🎵 Music muted');
-    } else {
-      changeMusicVolume(1.0);
-      console.log('🎵 Music unmuted');
+      console.log('🎵 Music muted (saved volume:', previousMusicVolumeRef.current, ')');
+    } else if (musicVolume === 0) {
+      // Only restore if current volume is 0 (was muted)
+      const volumeToRestore = previousMusicVolumeRef.current > 0 ? previousMusicVolumeRef.current : 0.5;
+      changeMusicVolume(volumeToRestore);
+      console.log('🎵 Music unmuted (restored volume:', volumeToRestore, ')');
     }
   }, [isMusicMuted, changeMusicVolume]);
   
@@ -375,10 +390,13 @@ const AudioSession = () => {
     const remoteAudios = document.getElementById('remote-audios');
     if (remoteAudios) {
       const audioElements = remoteAudios.querySelectorAll('audio');
-      audioElements.forEach(audio => {
+      console.log('🔇 Setting voice mute:', isVoiceMuted, 'for', audioElements.length, 'audio elements');
+      audioElements.forEach((audio, index) => {
         audio.muted = isVoiceMuted;
+        console.log(`🔇 Audio element ${index}: muted=${audio.muted}, volume=${audio.volume}`);
       });
-      console.log(isVoiceMuted ? '🔇 Voice muted' : '🔊 Voice unmuted');
+    } else {
+      console.warn('🔇 Remote audios container not found');
     }
   }, [isVoiceMuted]);
   
