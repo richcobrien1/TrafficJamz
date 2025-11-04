@@ -262,10 +262,17 @@ export const MusicProvider = ({ children }) => {
     });
     
     // Music control events
-    socket.on('music-play', (data) => {
+    socket.on('music-play', async (data) => {
       if (isControllerRef.current) return;
-      console.log('🎵 [MusicContext] Remote play');
-      musicService.play(data.position);
+      console.log('🎵 [MusicContext] Remote play - position:', data.position);
+      
+      // Ensure track is loaded before playing
+      if (!musicService.currentTrack && data.track) {
+        console.log('🎵 [MusicContext] Loading track before play:', data.track.title);
+        await musicService.loadTrack(data.track);
+      }
+      
+      await musicService.play(data.position);
     });
     
     socket.on('music-pause', (data) => {
@@ -292,7 +299,16 @@ export const MusicProvider = ({ children }) => {
     socket.on('music-change-track', async (data) => {
       if (isControllerRef.current) return;
       console.log('🎵 [MusicContext] Remote track change (legacy):', data.track?.title);
-      await musicService.loadTrack(data.track);
+      
+      // Handle both data.track and data being the track itself
+      const track = data.track || data;
+      
+      if (!track || !track.title) {
+        console.error('🎵 [MusicContext] ❌ Invalid track data in music-change-track:', data);
+        return;
+      }
+      
+      await musicService.loadTrack(track);
       if (data.autoPlay) {
         await musicService.play(data.position || 0);
       }
