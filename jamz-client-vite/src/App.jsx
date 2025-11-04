@@ -64,12 +64,27 @@ const RootRedirect = () => {
 function App() {
   const location = useLocation();
   
-  // State for backend wake-up - check sessionStorage first to persist across navigation
+  // State for backend wake-up - use localStorage for iOS persistence, with timestamp check
   const [backendReady, setBackendReady] = useState(() => {
-    const cached = sessionStorage.getItem('backendReady');
-    return cached === 'true';
+    try {
+      const cached = localStorage.getItem('backendReady');
+      const timestamp = localStorage.getItem('backendReadyTimestamp');
+      // Consider backend ready if check was within last 5 minutes
+      if (cached === 'true' && timestamp) {
+        const age = Date.now() - parseInt(timestamp);
+        if (age < 5 * 60 * 1000) { // 5 minutes
+          console.log('✅ Using cached backend ready state (age:', Math.floor(age / 1000), 'seconds)');
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      console.warn('Error reading backend ready state:', e);
+      return false;
+    }
   });
   const [wakeupAttempts, setWakeupAttempts] = useState(0);
+  const [appError, setAppError] = useState(null);
 
   const theme = createTheme({
     palette: {
@@ -88,21 +103,25 @@ function App() {
     if (!backendReady) {
       const wakeUpBackend = async () => {
         try {
-          console.log('🔄 Attempting to wake up backend...');
+          console.log('🔄 Attempting to wake up backend... (attempt', wakeupAttempts + 1, ')');
           setWakeupAttempts(prev => prev + 1);
           await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
           console.log('✅ Backend is ready!');
           setBackendReady(true);
-          sessionStorage.setItem('backendReady', 'true'); // Persist across navigation
+          localStorage.setItem('backendReady', 'true');
+          localStorage.setItem('backendReadyTimestamp', Date.now().toString());
+          setAppError(null);
         } catch (error) {
-          console.warn('⚠️ Backend wake-up attempt failed, retrying...', error.message);
+          console.warn('⚠️ Backend wake-up attempt failed:', error.message);
           // Retry after 2 seconds if it fails (max 5 attempts)
           if (wakeupAttempts < 5) {
             setTimeout(wakeUpBackend, 2000);
           } else {
             console.error('❌ Backend failed to wake up after 5 attempts');
+            setAppError('Unable to connect to server. Please check your connection and refresh.');
             setBackendReady(true); // Show app anyway, let individual requests fail
-            sessionStorage.setItem('backendReady', 'true'); // Persist even on failure
+            localStorage.setItem('backendReady', 'true');
+            localStorage.setItem('backendReadyTimestamp', Date.now().toString());
           }
         }
       };
@@ -111,16 +130,75 @@ function App() {
     }
   }, []); // Run only once on mount
 
-  // Keep-alive ping every 60 seconds after backend is ready
+  // iOS-specific: Detect when app returns from background and refresh if needed
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('📱 App returned to foreground');
+        // Check if backend ready timestamp is stale (older than 5 minutes)
+        try {
+          const timestamp = localStorage.getItem('backendReadyTimestamp');
+          if (timestamp) {
+            const age = Date.now() - parseInt(timestamp);
+            if (age > 5 * 60 * 1000) {
+              console.log('⚠️ Backend state is stale, resetting...');
+              localStorage.removeItem('backendReady');
+              localStorage.removeItem('backendReadyTimestamp');
+              // Force reload to re-initialize
+              window.location.reload();
+            }
+          }
+        } catch (e) {
+          console.warn('Error checking backend state on foreground:', e);
+        }
+      }
+    };
+
+    const handlePageShow = (event) => {
+      // iOS Safari fires pageshow when returning from bfcache (back-forward cache)
+      if (event.persisted) {
+        console.log('📱 Page restored from bfcache');
+        // Check timestamp and reload if stale
+        try {
+          const timestamp = localStorage.getItem('backendReadyTimestamp');
+          if (timestamp) {
+            const age = Date.now() - parseInt(timestamp);
+            if (age > 5 * 60 * 1000) {
+              console.log('⚠️ Stale state detected from bfcache, reloading...');
+              window.location.reload();
+            }
+          }
+        } catch (e) {
+          console.warn('Error handling bfcache restore:', e);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
+  // Keep-alive ping every 60 seconds after backend is ready (only when page is visible)
   useEffect(() => {
     if (!backendReady) return;
 
     const keepAliveInterval = setInterval(async () => {
-      try {
-        await api.get('/health');
-        console.log('⏰ Keep-alive ping sent');
-      } catch (error) {
-        console.debug('Keep-alive ping failed:', error.message);
+      // Only ping if page is visible (don't waste battery on background pings)
+      if (!document.hidden) {
+        try {
+          await api.get('/health', { timeout: 5000 });
+          console.log('⏰ Keep-alive ping sent');
+          // Update timestamp on successful ping
+          localStorage.setItem('backendReadyTimestamp', Date.now().toString());
+        } catch (error) {
+          console.debug('Keep-alive ping failed:', error.message);
+          // Don't clear backend ready state, just log the failure
+        }
       }
     }, 60000);
 
@@ -133,11 +211,20 @@ function App() {
 
   // Show loading screen while backend wakes up
   if (!backendReady) {
+    const getMessage = () => {
+      if (wakeupAttempts === 0) return 'Initializing...';
+      if (wakeupAttempts === 1) return 'Connecting to server...';
+      if (wakeupAttempts <= 3) return 'Waking up server, please wait...';
+      return 'Server is taking longer than usual...';
+    };
+
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AppLoader 
-          message={wakeupAttempts > 1 ? 'Waking up server, please wait...' : 'Initializing...'}
+          message={getMessage()}
+          error={appError}
+          onRetry={() => window.location.reload()}
         />
       </ThemeProvider>
     );
