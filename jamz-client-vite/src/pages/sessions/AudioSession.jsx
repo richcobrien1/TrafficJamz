@@ -371,14 +371,14 @@ const AudioSession = () => {
   
   // Apply voice mute state to all remote streams
   useEffect(() => {
-    Object.values(peerConnections.current).forEach(pc => {
-      const remoteStream = pc.remoteStream;
-      if (remoteStream) {
-        remoteStream.getAudioTracks().forEach(track => {
-          track.enabled = !isVoiceMuted;
-        });
-      }
-    });
+    const remoteAudios = document.getElementById('remote-audios');
+    if (remoteAudios) {
+      const audioElements = remoteAudios.querySelectorAll('audio');
+      audioElements.forEach(audio => {
+        audio.muted = isVoiceMuted;
+      });
+      console.log(isVoiceMuted ? '🔇 Voice muted' : '🔊 Voice unmuted');
+    }
   }, [isVoiceMuted]);
   
   // Initialize microphone (called from user gesture for browsers that require it)
@@ -564,17 +564,6 @@ const AudioSession = () => {
   const toggleVoiceMute = () => {
     const newMuteState = !isVoiceMuted;
     setIsVoiceMuted(newMuteState);
-    
-    // Mute/unmute all remote audio elements
-    Object.values(peerConnections.current).forEach(pc => {
-      const remoteStream = pc.remoteStream;
-      if (remoteStream) {
-        remoteStream.getAudioTracks().forEach(track => {
-          track.enabled = !newMuteState;
-        });
-      }
-    });
-    
     console.log('🔊 Voice mute toggled:', newMuteState);
   };
   
