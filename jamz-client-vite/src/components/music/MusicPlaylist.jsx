@@ -121,16 +121,30 @@ const MusicPlaylist = ({
                 }}
               >
                 {/* Track Avatar */}
-                <Avatar 
-                  sx={{ 
-                    mr: 2, 
-                    width: 40, 
-                    height: 40,
-                    bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400'
-                  }}
-                >
-                  <MusicIcon fontSize="small" />
-                </Avatar>
+                {track.albumArt ? (
+                  <Avatar 
+                    src={track.albumArt}
+                    alt={track.album || track.title}
+                    sx={{ 
+                      mr: 2, 
+                      width: 40, 
+                      height: 40,
+                      border: isCurrentTrack ? '2px solid' : 'none',
+                      borderColor: isCurrentTrack ? 'primary.main' : 'transparent'
+                    }}
+                  />
+                ) : (
+                  <Avatar 
+                    sx={{ 
+                      mr: 2, 
+                      width: 40, 
+                      height: 40,
+                      bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400'
+                    }}
+                  >
+                    <MusicIcon fontSize="small" />
+                  </Avatar>
+                )}
 
                 {/* Track Info */}
                 <ListItemText
