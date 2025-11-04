@@ -263,7 +263,19 @@ export const MusicProvider = ({ children }) => {
     
     // Music control events
     socket.on('music-play', async (data) => {
-      if (isControllerRef.current) return;
+      console.log('🎵 [MusicContext] music-play event received:', {
+        isController: isControllerRef.current,
+        hasTrack: !!musicService.currentTrack,
+        dataTrack: !!data.track,
+        position: data.position,
+        timestamp: data.timestamp,
+        from: data.from
+      });
+      
+      if (isControllerRef.current) {
+        console.log('🎵 [MusicContext] Ignoring music-play - this device is the controller');
+        return;
+      }
       
       // Calculate sync position accounting for network latency
       let syncPosition = data.position || 0;
@@ -284,7 +296,9 @@ export const MusicProvider = ({ children }) => {
         return;
       }
       
+      console.log('🎵 [MusicContext] Calling musicService.play with position:', syncPosition);
       await musicService.play(syncPosition);
+      console.log('🎵 [MusicContext] musicService.play completed');
     });
     
     socket.on('music-pause', (data) => {

@@ -887,7 +887,7 @@ io.on("connection", (socket) => {
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return;
       
-      const { action, position, trackId } = data;
+      const { action, position, trackId, track } = data;
       const room = `audio-${sessionId}`;
       
       // Persist music state to database
@@ -922,16 +922,48 @@ io.on("connection", (socket) => {
       }
       
       // Broadcast to all others in the room
-      socket.to(room).emit(`music-${action}`, {
+      const broadcastData = {
         position,
         trackId,
+        track, // Include full track data for listeners
         from: socket.id,
         timestamp: Date.now()
-      });
+      };
       
-      console.log(`Music ${action} from ${socket.id} in session ${sessionId}`);
+      socket.to(room).emit(`music-${action}`, broadcastData);
+      
+      console.log(`🎶 Broadcasting music-${action} to room ${room} from ${socket.id}`, {
+        position: position?.toFixed(2),
+        trackId,
+        hasTrack: !!track,
+        timestamp: broadcastData.timestamp
+      });
     } catch (err) {
       console.error('music-control handler error:', err);
+    }
+  });
+  
+  // Position sync event (periodic sync from DJ)
+  socket.on('music-position-sync', async (data) => {
+    try {
+      if (!audioSignalingEnabled) return;
+      const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
+      if (!sessionId) return;
+      
+      const room = `audio-${sessionId}`;
+      const { position, timestamp, trackId } = data;
+      
+      // Broadcast position sync to all listeners in the room
+      socket.to(room).emit('music-position-sync', {
+        position,
+        timestamp,
+        trackId,
+        from: socket.id
+      });
+      
+      console.log(`🎵 Position sync from ${socket.id} in session ${sessionId}: ${position?.toFixed(2)}s`);
+    } catch (err) {
+      console.error('music-position-sync handler error:', err);
     }
   });
   
