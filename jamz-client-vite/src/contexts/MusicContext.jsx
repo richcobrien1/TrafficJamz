@@ -125,7 +125,7 @@ export const MusicProvider = ({ children }) => {
   const setupSocketEventHandlers = (socket) => {
     console.log('🎵 [MusicContext] Setting up socket event handlers');
     
-    // Music session state (comprehensive state on join)
+    // Music session state (comprehensive state on join/rejoin)
     socket.on('music-session-state', (data) => {
       console.log('🎵 [MusicContext] ========================================');
       console.log('🎵 [MusicContext] MUSIC SESSION STATE RECEIVED');
@@ -133,6 +133,9 @@ export const MusicProvider = ({ children }) => {
       console.log('🎵 Playlist tracks:', data.playlist?.length || 0);
       console.log('🎵 Current track:', data.currently_playing?.title || 'none');
       console.log('🎵 Controller:', data.controller_id || 'none');
+      console.log('🎵 Is playing:', data.is_playing || false);
+      console.log('🎵 Position:', data.position || 0);
+      console.log('🎵 Reason:', data.reason || 'initial-join');
       console.log('🎵 Full playlist data:', JSON.stringify(data.playlist, null, 2));
       console.log('🎵 [MusicContext] ========================================');
       
@@ -191,22 +194,61 @@ export const MusicProvider = ({ children }) => {
         console.log('🎵 [MusicContext] Controller comparison:', { controller_id: data.controller_id, myUserId, result: amController });
         setIsController(amController);
         musicService.isController = amController;
-        console.log('🎵 [MusicContext] Controller status:', amController ? 'I am DJ ✅' : 'Listener 👂');
+        
+        if (amController) {
+          console.log('🎵 [MusicContext] ✅✅✅ I AM THE DJ (restored after reconnect) ✅✅✅');
+        } else {
+          console.log('🎵 [MusicContext] 👂 I am a listener');
+        }
       }
       
-      // Update currently playing
+      // Update currently playing track
       if (data.currently_playing) {
         console.log('🎵 [MusicContext] Loading current track:', data.currently_playing.title);
         setCurrentTrack(data.currently_playing);
+        
         musicService.loadTrack(data.currently_playing).then(() => {
-          // Check the ref since state might not be updated yet
-          const shouldAutoPlay = data.is_playing && !isControllerRef.current;
-          console.log('🎵 [MusicContext] Track loaded. Auto-play?', shouldAutoPlay, '(is_playing:', data.is_playing, ', isController:', isControllerRef.current, ')');
-          if (shouldAutoPlay) {
-            console.log('🎵 [MusicContext] Auto-playing for listener at position:', data.currently_playing.position);
-            musicService.play(data.currently_playing.position || 0);
+          // Get the CURRENT ref values (state might not be updated yet)
+          const amController = isControllerRef.current;
+          const shouldSync = data.is_playing && !amController;
+          
+          console.log('🎵 [MusicContext] Track loaded. Playback decision:');
+          console.log('  - Am I controller?', amController);
+          console.log('  - Is DJ playing?', data.is_playing);
+          console.log('  - Should I sync playback?', shouldSync);
+          
+          if (shouldSync) {
+            // Listener rejoining - sync to current playback position
+            const position = data.position || data.currently_playing.position || 0;
+            console.log('🎵 [MusicContext] 🔄 LISTENER SYNC: Playing from position:', position);
+            
+            // Account for time since DJ started this position
+            let syncPosition = position;
+            if (data.timestamp && data.currently_playing.started_at) {
+              const serverTime = new Date(data.currently_playing.started_at).getTime();
+              const now = Date.now();
+              const elapsed = (now - serverTime) / 1000; // seconds since track started
+              syncPosition = position + elapsed;
+              console.log('🎵 [MusicContext] Time-corrected position:', syncPosition.toFixed(2), 's (elapsed:', elapsed.toFixed(2), 's)');
+            }
+            
+            musicService.play(syncPosition);
+            setIsPlaying(true);
+          } else if (amController && data.is_playing) {
+            // DJ rejoining while music was playing - resume playback
+            const position = data.position || data.currently_playing.position || 0;
+            console.log('🎵 [MusicContext] 🎵 DJ RESUME: Resuming playback from position:', position);
+            musicService.play(position);
+            setIsPlaying(true);
+          } else {
+            console.log('🎵 [MusicContext] ⏸️ Track loaded but not playing (DJ paused or controller mode)');
+            setIsPlaying(false);
           }
         });
+      } else {
+        console.log('🎵 [MusicContext] ⚠️ No current track in session state');
+        setCurrentTrack(null);
+        setIsPlaying(false);
       }
     });
     
@@ -351,16 +393,41 @@ export const MusicProvider = ({ children }) => {
     
     socket.on('music-track-change', async (data) => {
       if (isControllerRef.current) return;
-      console.log('🎵 [MusicContext] Remote track change:', data.track?.title);
+      console.log('🎵 [MusicContext] ========================================');
+      console.log('🎵 [MusicContext] REMOTE TRACK CHANGE RECEIVED');
+      console.log('🎵 [MusicContext] ========================================');
+      console.log('🎵 Track:', data.track?.title);
+      console.log('🎵 Auto-play:', data.autoPlay);
+      console.log('🎵 Position:', data.position);
+      console.log('🎵 From:', data.from);
+      console.log('🎵 [MusicContext] ========================================');
+      
+      if (!data.track || !data.track.title) {
+        console.error('🎵 [MusicContext] ❌ Invalid track data in music-track-change');
+        return;
+      }
+      
+      // Update local state
+      setCurrentTrack(data.track);
+      
+      // Load track in music service
       await musicService.loadTrack(data.track);
+      console.log('🎵 [MusicContext] ✅ Track loaded:', data.track.title);
+      
+      // Auto-play if DJ was playing
       if (data.autoPlay) {
-        await musicService.play(data.position || 0);
+        const position = data.position || 0;
+        console.log('🎵 [MusicContext] ▶️ Auto-playing from position:', position);
+        await musicService.play(position);
+        console.log('🎵 [MusicContext] ✅ Playback started');
+      } else {
+        console.log('🎵 [MusicContext] ⏸️ Track loaded but not auto-playing');
       }
     });
     
     socket.on('music-change-track', async (data) => {
       if (isControllerRef.current) return;
-      console.log('🎵 [MusicContext] Remote track change (legacy):', data.track?.title);
+      console.log('🎵 [MusicContext] Remote track change (legacy event):', data.track?.title || data.title);
       
       // Handle both data.track and data being the track itself
       const track = data.track || data;
@@ -370,10 +437,28 @@ export const MusicProvider = ({ children }) => {
         return;
       }
       
+      // Update local state
+      setCurrentTrack(track);
+      
       await musicService.loadTrack(track);
       if (data.autoPlay) {
         await musicService.play(data.position || 0);
       }
+    });
+    
+    // Handle next/previous track events (legacy - now handled by music-track-change)
+    socket.on('music-next', async (data) => {
+      if (isControllerRef.current) return;
+      console.log('🎵 [MusicContext] Remote next track event (legacy)');
+      // Just play next in local playlist
+      await musicService.playNext();
+    });
+    
+    socket.on('music-previous', async (data) => {
+      if (isControllerRef.current) return;
+      console.log('🎵 [MusicContext] Remote previous track event (legacy)');
+      // Just play previous in local playlist
+      await musicService.playPrevious();
     });
   };
   
@@ -631,11 +716,15 @@ export const MusicProvider = ({ children }) => {
   const playNext = async () => {
     await musicService.playNext();
     
-    if (isController) {
+    if (isController && musicService.currentTrack) {
+      console.log('🎵 [MusicContext] Broadcasting next track:', musicService.currentTrack.title);
       socketRef.current?.emit('music-control', {
         sessionId: activeSessionId,
         action: 'next',
-        trackId: musicService.currentTrack?.id
+        track: musicService.currentTrack, // Send full track data
+        trackId: musicService.currentTrack.id,
+        position: 0,
+        timestamp: Date.now()
       });
     }
   };
@@ -646,11 +735,15 @@ export const MusicProvider = ({ children }) => {
   const playPrevious = async () => {
     await musicService.playPrevious();
     
-    if (isController) {
+    if (isController && musicService.currentTrack) {
+      console.log('🎵 [MusicContext] Broadcasting previous track:', musicService.currentTrack.title);
       socketRef.current?.emit('music-control', {
         sessionId: activeSessionId,
         action: 'previous',
-        trackId: musicService.currentTrack?.id
+        track: musicService.currentTrack, // Send full track data
+        trackId: musicService.currentTrack.id,
+        position: 0,
+        timestamp: Date.now()
       });
     }
   };
