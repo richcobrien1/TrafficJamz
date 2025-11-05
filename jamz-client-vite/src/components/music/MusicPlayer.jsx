@@ -263,11 +263,28 @@ const MusicPlayer = ({
           </IconButton>
         </Box>
 
-        {/* Volume Control */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Volume Control - Simplified for mobile-first browser experience */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          p: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+          bgcolor: volume === 0 ? 'error.50' : 'background.paper'
+        }}>
+          <Box sx={{ textAlign: 'center', flex: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Music Volume
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Use device volume buttons to adjust
+            </Typography>
+          </Box>
           <Tooltip title={volume > 0 ? "Mute music" : "Unmute music"}>
             <IconButton 
-              size="small"
+              size="large"
               onClick={() => {
                 if (onVolumeChange) {
                   if (volume > 0) {
@@ -281,21 +298,22 @@ const MusicPlayer = ({
                 }
               }}
               disabled={disabled}
-              color={volume === 0 ? "error" : "default"}
+              sx={{ 
+                bgcolor: volume === 0 ? 'error.main' : 'primary.main',
+                color: 'white',
+                ml: 2,
+                '&:hover': {
+                  bgcolor: volume === 0 ? 'error.dark' : 'primary.dark'
+                },
+                '&:disabled': {
+                  bgcolor: 'action.disabledBackground',
+                  color: 'action.disabled'
+                }
+              }}
             >
               {volume > 0 ? <VolumeIcon /> : <VolumeOffIcon />}
             </IconButton>
           </Tooltip>
-          <Slider
-            value={volume * 100}
-            max={100}
-            onChange={handleVolumeChange}
-            disabled={disabled}
-            sx={{ flexGrow: 1 }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ minWidth: '3ch' }}>
-            {Math.round(volume * 100)}%
-          </Typography>
         </Box>
 
         {/* Status Messages */}

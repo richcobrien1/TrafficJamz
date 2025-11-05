@@ -2123,86 +2123,86 @@ const AudioSession = () => {
                 </Typography>
               </Box>
               
-             {/* Volume Controls */}
+             {/* Volume Controls - Simplified for mobile-first browser experience */}
+              {/* In native app, full volume controls are available. In browser, use device volume buttons */}
               <Box sx={{ mb: 3, width: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography id="voice-volume-slider">
-                    Voice Volume
-                  </Typography>
+                {/* Voice Mute Control */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  mb: 2,
+                  bgcolor: isVoiceMuted ? 'error.50' : 'background.paper'
+                }}>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="600">
+                      Voice Audio
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {isVoiceMuted ? 'Muted - Click to unmute' : 'Active - Click to mute'}
+                    </Typography>
+                  </Box>
                   <IconButton 
                     onClick={toggleVoiceMute}
-                    color={isVoiceMuted ? "error" : "default"}
-                    size="small"
+                    color={isVoiceMuted ? "error" : "primary"}
+                    size="large"
                     aria-label={isVoiceMuted ? "Unmute voice" : "Mute voice"}
+                    sx={{ 
+                      bgcolor: isVoiceMuted ? 'error.main' : 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: isVoiceMuted ? 'error.dark' : 'primary.dark'
+                      }
+                    }}
                   >
                     {isVoiceMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                   </IconButton>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <VolumeDownIcon />
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Slider
-                      value={outputVolume}
-                      onChange={(e, newValue) => setOutputVolume(newValue)}
-                      aria-labelledby="voice-volume-slider"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
-                      disabled={isVoiceMuted}
-                      sx={{ 
-                        width: '100%',
-                        '& .MuiSlider-rail': { height: 4 },
-                        '& .MuiSlider-track': { height: 4 }
-                      }}
-                    />
-                  </Box>
-                  <VolumeUpIcon />
-                </Box>
-                {NativeAudio.getVolumeControlMessage() && (
-                  <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 1 }}>
-                    {NativeAudio.getVolumeControlMessage()}
-                  </Typography>
-                )}
-              </Box>
 
-              <Box sx={{ width: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography id="music-volume-slider">
-                    Music Volume
-                  </Typography>
+                {/* Music Mute Control */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  bgcolor: isMusicMuted ? 'error.50' : 'background.paper'
+                }}>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="600">
+                      Music Audio
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {isMusicMuted ? 'Muted - Click to unmute' : 'Active - Click to mute'}
+                    </Typography>
+                  </Box>
                   <IconButton 
                     onClick={toggleMusicMute}
-                    color={isMusicMuted ? "error" : "default"}
-                    size="small"
+                    color={isMusicMuted ? "error" : "primary"}
+                    size="large"
                     aria-label={isMusicMuted ? "Unmute music" : "Mute music"}
+                    sx={{ 
+                      bgcolor: isMusicMuted ? 'error.main' : 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: isMusicMuted ? 'error.dark' : 'primary.dark'
+                      }
+                    }}
                   >
                     {isMusicMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                   </IconButton>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <VolumeDownIcon />
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Slider
-                      value={musicVolume}
-                      onChange={(e, newValue) => changeMusicVolume(newValue)}
-                      aria-labelledby="music-volume-slider"
-                      disabled={isMusicMuted}
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
-                      sx={{ 
-                        width: '100%',
-                        '& .MuiSlider-rail': { height: 4 },
-                        '& .MuiSlider-track': { height: 4 }
-                      }}
-                    />
-                  </Box>
-                  <VolumeUpIcon />
-                </Box>
+
+                {/* Volume info message */}
+                <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
+                  💡 Use your device volume buttons to adjust audio levels
+                </Typography>
               </Box>
             </Paper>
 
