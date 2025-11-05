@@ -803,7 +803,7 @@ io.on("connection", (socket) => {
   socket.on('join-music-session', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
-      const { sessionId } = data;
+      const { sessionId, userId } = data;
       if (!sessionId) {
         console.warn('join-music-session missing sessionId from socket:', socket.id);
         return;
@@ -811,7 +811,7 @@ io.on("connection", (socket) => {
       
       const room = `audio-${sessionId}`;
       socket.join(room);
-      console.log(`Socket ${socket.id} joined music session: ${sessionId}`);
+      console.log(`Socket ${socket.id} (user ${userId}) joined music session: ${sessionId}`);
       
       // Send current music state to the newly joined user
       try {
@@ -821,6 +821,7 @@ io.on("connection", (socket) => {
           console.log(`📝 SENDING MUSIC STATE TO NEW CLIENT`);
           console.log(`📝 ========================================`);
           console.log(`📝 Socket ID: ${socket.id}`);
+          console.log(`📝 User ID: ${userId}`);
           console.log(`📝 Session ID: ${sessionId}`);
           console.log(`📝 Playlist length: ${session.music.playlist?.length || 0}`);
           console.log(`📝 Playlist tracks:`, session.music.playlist?.map(t => t.title || t.name) || []);
@@ -830,12 +831,30 @@ io.on("connection", (socket) => {
           console.log(`📝 Is playing: ${session.music.is_playing || false}`);
           console.log(`📝 ========================================`);
           
+          // Check if this user was the controller (DJ refresh scenario)
+          const wasController = userId && session.music.controller_id && 
+                                userId == session.music.controller_id;
+          
+          if (wasController) {
+            console.log(`🎵 ✅ DJ RECONNECTED! User ${userId} was the controller, notifying all clients`);
+            
+            // Notify all clients (including this one) that this user is still the controller
+            io.to(room).emit('music-controller-changed', {
+              controllerId: socket.id,
+              userId: userId,
+              from: 'server',
+              reason: 'dj-reconnect',
+              timestamp: Date.now()
+            });
+          }
+          
           // Send comprehensive music state in one event
           socket.emit('music-session-state', {
             playlist: session.music.playlist || [],
             currently_playing: session.music.currently_playing || null,
             controller_id: session.music.controller_id || null,
             is_playing: session.music.is_playing || false,
+            position: session.music.currently_playing?.position || 0,
             from: 'server',
             timestamp: Date.now()
           });
@@ -854,7 +873,8 @@ io.on("connection", (socket) => {
           if (session.music.currently_playing) {
             socket.emit('music-change-track', {
               track: session.music.currently_playing,
-              autoPlay: false,
+              autoPlay: false, // Don't auto-play on reconnect - let client decide
+              position: session.music.currently_playing.position || 0,
               from: 'server'
             });
           }
@@ -876,6 +896,7 @@ io.on("connection", (socket) => {
       // Notify others in the room
       socket.to(room).emit('user-joined-music', {
         socketId: socket.id,
+        userId: userId,
         sessionId
       });
     } catch (err) {
@@ -883,14 +904,14 @@ io.on("connection", (socket) => {
     }
   });
   
-  // Music control events (play, pause, seek)
+  // Music control events (play, pause, seek, next, previous)
   socket.on('music-control', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
       if (!sessionId) return;
       
-      const { action, position, trackId, track } = data;
+      const { action, position, trackId, track, isPlaying } = data;
       const room = `audio-${sessionId}`;
       
       // Persist music state to database
@@ -904,19 +925,34 @@ io.on("connection", (socket) => {
             session.music.is_playing = false;
           }
           
+          // For next/previous, update currently_playing track
+          if ((action === 'next' || action === 'previous') && track) {
+            session.music.currently_playing = {
+              ...track,
+              controlled_by: session.music.controller_id,
+              position: 0,
+              started_at: new Date()
+            };
+            session.music.is_playing = true; // Auto-play next/previous tracks
+            console.log(`✅ Updated currently_playing for ${action}:`, track.title);
+          }
+          
           // Update position if provided
           if (position !== undefined && session.music.currently_playing) {
             session.music.currently_playing.position = position;
           }
           
           // Update timestamp
-          session.music.currently_playing.started_at = new Date();
+          if (session.music.currently_playing) {
+            session.music.currently_playing.started_at = new Date();
+          }
           
           await session.save();
           console.log(`✅ Persisted music ${action} state:`, { 
             is_playing: session.music.is_playing, 
             position, 
-            trackId 
+            trackId,
+            track: track?.title || 'none'
           });
         }
       } catch (err) {
@@ -924,23 +960,37 @@ io.on("connection", (socket) => {
         // Continue anyway - socket notification still works
       }
       
-      // Broadcast to all others in the room
-      const broadcastData = {
-        position,
-        trackId,
-        track, // Include full track data for listeners
-        from: socket.id,
-        timestamp: Date.now()
-      };
-      
-      socket.to(room).emit(`music-${action}`, broadcastData);
-      
-      console.log(`🎶 Broadcasting music-${action} to room ${room} from ${socket.id}`, {
-        position: position?.toFixed(2),
-        trackId,
-        hasTrack: !!track,
-        timestamp: broadcastData.timestamp
-      });
+      // For next/previous actions, send track-change event to listeners
+      if ((action === 'next' || action === 'previous') && track) {
+        console.log(`🎵 Broadcasting track change for ${action}:`, track.title);
+        socket.to(room).emit('music-track-change', {
+          track,
+          autoPlay: true, // Auto-play next/previous tracks
+          position: 0,
+          from: socket.id,
+          timestamp: Date.now()
+        });
+      } else {
+        // For other actions (play, pause, seek), broadcast as before
+        const broadcastData = {
+          position,
+          trackId,
+          track, // Include full track data for listeners
+          isPlaying, // Include playing state for seek
+          from: socket.id,
+          timestamp: Date.now()
+        };
+        
+        socket.to(room).emit(`music-${action}`, broadcastData);
+        
+        console.log(`🎶 Broadcasting music-${action} to room ${room} from ${socket.id}`, {
+          position: position?.toFixed(2),
+          trackId,
+          hasTrack: !!track,
+          isPlaying,
+          timestamp: broadcastData.timestamp
+        });
+      }
     } catch (err) {
       console.error('music-control handler error:', err);
     }
