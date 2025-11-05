@@ -15,6 +15,13 @@ export const isNativeApp = () => {
 };
 
 /**
+ * Check if running in web browser
+ */
+export const isBrowser = () => {
+  return !Capacitor.isNativePlatform();
+};
+
+/**
  * Get platform name
  */
 export const getPlatform = () => {
@@ -175,6 +182,7 @@ export const enableBackgroundAudio = async () => {
 
 export default {
   isNativeApp,
+  isBrowser,
   getPlatform,
   isIOS,
   isAndroid,

@@ -104,143 +104,169 @@ const MusicPlaylist = ({
 
         <Divider sx={{ mb: 2 }} />
 
-        {/* Playlist Items */}
-        <List dense>
+        {/* Playlist Items - Mobile-first design with large touch targets */}
+        <List sx={{ p: 0 }}>
           {playlist.map((track, index) => {
             const isCurrentTrack = currentTrack && currentTrack.id === track.id;
             
             return (
-              <ListItem
+              <Box
                 key={track.id || index}
                 sx={{
-                  bgcolor: isCurrentTrack ? 'primary.50' : 'transparent',
-                  borderRadius: 1,
-                  mb: 1,
-                  border: isCurrentTrack ? '1px solid' : '1px solid transparent',
-                  borderColor: isCurrentTrack ? 'primary.200' : 'transparent'
+                  mb: 2,
+                  position: 'relative'
                 }}
               >
-                {/* Track Avatar */}
-                {track.albumArt ? (
-                  <Avatar 
-                    src={track.albumArt}
-                    alt={track.album || track.title}
-                    sx={{ 
-                      mr: 2, 
-                      width: 40, 
-                      height: 40,
-                      border: isCurrentTrack ? '2px solid' : 'none',
-                      borderColor: isCurrentTrack ? 'primary.main' : 'transparent'
-                    }}
-                  />
-                ) : (
-                  <Avatar 
-                    sx={{ 
-                      mr: 2, 
-                      width: 40, 
-                      height: 40,
-                      bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400'
-                    }}
-                  >
-                    <MusicIcon fontSize="small" />
-                  </Avatar>
-                )}
+                {/* Main clickable area - full panel for mobile touch */}
+                <Box
+                  onClick={() => isController && !isCurrentTrack && !disabled && handlePlayTrack(track)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    p: 2,
+                    bgcolor: isCurrentTrack ? 'primary.50' : 'background.paper',
+                    borderRadius: 2,
+                    border: '2px solid',
+                    borderColor: isCurrentTrack ? 'primary.main' : 'divider',
+                    cursor: isController && !isCurrentTrack && !disabled ? 'pointer' : 'default',
+                    transition: 'all 0.2s ease',
+                    minHeight: { xs: 80, sm: 72 },
+                    '&:hover': isController && !isCurrentTrack && !disabled ? {
+                      bgcolor: 'primary.50',
+                      borderColor: 'primary.light',
+                      transform: 'translateY(-2px)',
+                      boxShadow: 2
+                    } : {},
+                    '&:active': isController && !isCurrentTrack && !disabled ? {
+                      transform: 'translateY(0)',
+                      boxShadow: 1
+                    } : {}
+                  }}
+                >
+                  {/* Album Art - Larger for touch */}
+                  {track.albumArt ? (
+                    <Avatar 
+                      src={track.albumArt}
+                      alt={track.album || track.title}
+                      sx={{ 
+                        mr: 2, 
+                        width: { xs: 56, sm: 48 },
+                        height: { xs: 56, sm: 48 },
+                        border: isCurrentTrack ? '3px solid' : 'none',
+                        borderColor: isCurrentTrack ? 'primary.main' : 'transparent',
+                        flexShrink: 0
+                      }}
+                    />
+                  ) : (
+                    <Avatar 
+                      sx={{ 
+                        mr: 2, 
+                        width: { xs: 56, sm: 48 },
+                        height: { xs: 56, sm: 48 },
+                        bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400',
+                        flexShrink: 0
+                      }}
+                    >
+                      <MusicIcon sx={{ fontSize: { xs: 28, sm: 24 } }} />
+                    </Avatar>
+                  )}
 
-                {/* Track Info */}
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* Track Info - Takes remaining space */}
+                  <Box sx={{ flex: 1, minWidth: 0, pr: isController ? 6 : 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Typography 
                         variant="body1" 
                         sx={{ 
-                          fontWeight: isCurrentTrack ? 'bold' : 'normal',
-                          color: isCurrentTrack ? 'primary.main' : 'text.primary'
+                          fontWeight: isCurrentTrack ? 'bold' : '600',
+                          color: isCurrentTrack ? 'primary.main' : 'text.primary',
+                          fontSize: { xs: '1rem', sm: '0.95rem' },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }}
                       >
                         {track.title}
                       </Typography>
+                    </Box>
+                    
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        mb: 0.5,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {track.artist || 'Unknown Artist'}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
                       {isCurrentTrack && (
                         <Chip 
                           label="Now Playing" 
                           size="small" 
                           color="primary"
+                          variant="filled"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
+                        />
+                      )}
+                      {track.duration && (
+                        <Chip 
+                          label={formatDuration(track.duration)} 
+                          size="small" 
                           variant="outlined"
+                          sx={{ height: 20, fontSize: '0.7rem' }}
                         />
                       )}
                     </Box>
-                  }
-                  secondary={
-                    <Box sx={{ mt: 0.5 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {track.artist || 'Unknown Artist'}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                        {track.duration && (
-                          <Chip 
-                            label={formatDuration(track.duration)} 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        )}
-                        {track.file_size && (
-                          <Chip 
-                            label={formatFileSize(track.file_size)} 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        )}
-                        {track.added_by && (
-                          <Tooltip title={`Added by ${track.added_by_name || 'Unknown'}`}>
-                            <Chip 
-                              icon={<PersonIcon />}
-                              label={track.added_by_name || 'Unknown'}
-                              size="small" 
-                              variant="outlined"
-                            />
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </Box>
-                  }
-                />
-
-                {/* Actions */}
-                <ListItemSecondaryAction>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {/* Play Button - only show when NOT currently playing this track */}
-                    {isController && !isCurrentTrack && (
-                      <Tooltip title="Play this track">
-                        <IconButton
-                          edge="end"
-                          onClick={() => handlePlayTrack(track)}
-                          disabled={disabled}
-                          size="small"
-                          sx={{
-                            color: 'primary.main'
-                          }}
-                        >
-                          <PlayIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-
-                    {/* Remove Button */}
-                    {isController && (
-                      <Tooltip title="Remove from playlist">
-                        <IconButton
-                          edge="end"
-                          onClick={() => handleRemoveTrack(track.id)}
-                          disabled={disabled}
-                          size="small"
-                          sx={{ color: 'error.main' }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
                   </Box>
-                </ListItemSecondaryAction>
-              </ListItem>
+
+                  {/* Play indicator for current track */}
+                  {isCurrentTrack && (
+                    <Box sx={{ 
+                      position: 'absolute',
+                      right: 16,
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}>
+                      <PlayIcon sx={{ color: 'primary.main', fontSize: 32 }} />
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Delete button - Separate for controller, large touch target */}
+                {isController && (
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveTrack(track.id);
+                    }}
+                    disabled={disabled}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: 'error.main',
+                      color: 'white',
+                      width: { xs: 40, sm: 36 },
+                      height: { xs: 40, sm: 36 },
+                      '&:hover': {
+                        bgcolor: 'error.dark'
+                      },
+                      '&:disabled': {
+                        bgcolor: 'action.disabledBackground',
+                        color: 'action.disabled'
+                      },
+                      zIndex: 1
+                    }}
+                    aria-label="Remove track"
+                  >
+                    <DeleteIcon sx={{ fontSize: { xs: 20, sm: 18 } }} />
+                  </IconButton>
+                )}
+              </Box>
             );
           })}
         </List>
