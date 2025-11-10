@@ -258,9 +258,13 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
         )}
 
         {/* Playlist Import Dialog */}
+        {console.log('🎭 Rendering PlaylistImportDialog with showImportDialog:', showImportDialog)}
         <PlaylistImportDialog
           open={showImportDialog}
-          onClose={() => setShowImportDialog(false)}
+          onClose={() => {
+            console.log('🚪 Dialog onClose called');
+            setShowImportDialog(false);
+          }}
           onImport={handlePlaylistImport}
         />
       </CardContent>

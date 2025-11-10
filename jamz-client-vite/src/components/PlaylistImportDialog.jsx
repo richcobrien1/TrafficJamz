@@ -36,6 +36,8 @@ import { spotify, youtube, appleMusic, integrations } from '../services/integrat
  * Browse and import playlists from Spotify, YouTube, and Apple Music
  */
 const PlaylistImportDialog = ({ open, onClose, onImport }) => {
+  console.log('🎬 PlaylistImportDialog RENDER - open:', open);
+  
   const [activeTab, setActiveTab] = useState(0); // 0: Spotify, 1: YouTube, 2: Apple Music
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -210,7 +212,13 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      sx={{ zIndex: 9999 }}
+    >
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6">Import Playlist</Typography>
