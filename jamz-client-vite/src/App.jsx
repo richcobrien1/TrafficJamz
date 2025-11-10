@@ -44,8 +44,8 @@ const InvitationAccept = lazy(() => import('./pages/groups/InvitationAccept'));
 
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const GroupDetail = lazy(() => import('./pages/groups/GroupDetail'));
-const AudioSession = lazy(() => import('./pages/sessions/AudioSession'));
 const LocationTracking = lazy(() => import('./pages/location/LocationTracking'));
+const AudioSettings = lazy(() => import('./pages/audio/AudioSettings'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
 const SubscriptionPlans = lazy(() => import('./pages/misc/SubscriptionPlans'));
 const NotFound = lazy(() => import('./pages/misc/NotFound'));
@@ -269,11 +269,6 @@ function App() {
                     <GroupDetail />
                   </ProtectedRoute>
                 } />
-                <Route path="/audio-session/:groupId" element={
-                  <ProtectedRoute>
-                    <AudioSession />
-                  </ProtectedRoute>
-                } />
                 <Route path="/dev/map" element={
                   <ProtectedRoute>
                     <MapboxMap />
@@ -286,6 +281,11 @@ function App() {
                 <Route path="/location-tracking/:groupId" element={
                   <ProtectedRoute>
                     <LocationTracking />
+                  </ProtectedRoute>
+                } />
+                <Route path="/audio-settings/:groupId" element={
+                  <ProtectedRoute>
+                    <AudioSettings />
                   </ProtectedRoute>
                 } />
                 <Route path="/profile" element={

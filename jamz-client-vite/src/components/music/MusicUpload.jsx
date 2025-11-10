@@ -1,17 +1,21 @@
 import React, { useState, useRef } from 'react';
 import {
   Box,
-  Button,
   Card,
   CardContent,
   Typography,
   LinearProgress,
   Alert,
-  Divider
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
-  MusicNote as MusicIcon
+  MusicNote as MusicIcon,
+  Link as LinkIcon
 } from '@mui/icons-material';
 import PlaylistImportAccordion from './PlaylistImportAccordion';
 
@@ -19,6 +23,7 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
+  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
@@ -113,6 +118,7 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
    * Handle playlist import from music platforms
    */
   const handlePlaylistImport = async (tracks) => {
+    setPlaylistDialogOpen(false);
     setUploading(true);
     setUploadProgress(0);
     setError('');
@@ -196,42 +202,81 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
           </Alert>
         )}
 
-        {/* File Upload Button */}
-        <Box sx={{ mb: 2 }}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
-            disabled={disabled || uploading}
-          />
-          
-          <Button
-            variant="contained"
-            startIcon={<UploadIcon />}
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || uploading}
-            fullWidth
-            sx={{ mb: 1 }}
-          >
-            {uploading ? 'Uploading...' : 'Upload Music Files'}
-          </Button>
-          
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
-            Supported formats: MP3, WAV, M4A, AAC, OGG, FLAC
-          </Typography>
+        {/* Icon-based actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: 4, 
+          my: 3 
+        }}>
+          {/* Upload Files Icon */}
+          <Box sx={{ textAlign: 'center' }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+              disabled={disabled || uploading}
+            />
+            <Tooltip title="Upload Music Files" arrow>
+              <IconButton
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled || uploading}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                  }
+                }}
+              >
+                <UploadIcon sx={{ fontSize: 40 }} />
+              </IconButton>
+            </Tooltip>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
+              Upload Files
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              MP3, WAV, M4A, etc.
+            </Typography>
+          </Box>
 
-          <Divider sx={{ my: 2 }}>
-            <Typography variant="caption" color="text.secondary">OR</Typography>
-          </Divider>
-
-          {/* Playlist Import Accordion */}
-          <PlaylistImportAccordion
-            sessionId={sessionId}
-            onImport={handlePlaylistImport}
-          />
+          {/* Link Playlist Icon */}
+          <Box sx={{ textAlign: 'center' }}>
+            <Tooltip title="Link Playlist from Spotify/YouTube/Apple Music" arrow>
+              <IconButton
+                onClick={() => setPlaylistDialogOpen(true)}
+                disabled={disabled || uploading}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: 'secondary.main',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'secondary.dark',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                  }
+                }}
+              >
+                <LinkIcon sx={{ fontSize: 40 }} />
+              </IconButton>
+            </Tooltip>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
+              Link Playlist
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Spotify, YouTube, Apple
+            </Typography>
+          </Box>
         </Box>
 
         {/* Upload Progress */}
@@ -243,6 +288,22 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
             <LinearProgress variant="determinate" value={uploadProgress} />
           </Box>
         )}
+
+        {/* Playlist Import Dialog */}
+        <Dialog 
+          open={playlistDialogOpen} 
+          onClose={() => setPlaylistDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Link Playlist</DialogTitle>
+          <DialogContent>
+            <PlaylistImportAccordion
+              sessionId={sessionId}
+              onImport={handlePlaylistImport}
+            />
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
