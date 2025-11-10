@@ -21,10 +21,17 @@
   <link rel="icon" href="/TrafficJamz.ico" />
   <link rel="apple-touch-icon" href="/TrafficJamz.ico" />
     <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Music Platform SDKs -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
+    
     <title>TrafficJamz</title>
   </head>
   <body>
     <div id="root"></div>
+    <!-- YouTube Player Container (hidden) -->
+    <div id="youtube-player" style="display:none;"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
