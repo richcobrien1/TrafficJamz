@@ -218,13 +218,18 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
       maxWidth="md" 
       fullWidth
       sx={{ 
-        zIndex: 9999,
+        zIndex: 10000,
         '& .MuiDialog-paper': {
           backgroundColor: 'background.paper',
           backgroundImage: 'none'
+        },
+        '& .MuiBackdrop-root': {
+          zIndex: 9999
         }
       }}
       disablePortal={false}
+      disableEnforceFocus
+      disableAutoFocus
     >
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
