@@ -107,7 +107,13 @@ const MusicPlaylist = ({
         {/* Playlist Items - Mobile-first design with large touch targets */}
         <List sx={{ p: 0 }}>
           {playlist.map((track, index) => {
-            const isCurrentTrack = currentTrack && currentTrack.id === track.id;
+            // More robust current track matching - check multiple ID fields
+            const isCurrentTrack = currentTrack && (
+              currentTrack.id === track.id || 
+              currentTrack._id === track._id ||
+              currentTrack.id === track._id ||
+              currentTrack._id === track.id
+            );
             
             return (
               <Box

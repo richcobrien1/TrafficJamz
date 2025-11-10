@@ -6,17 +6,21 @@ import {
   CardContent,
   Typography,
   LinearProgress,
-  Alert
+  Alert,
+  Divider
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
-  MusicNote as MusicIcon
+  MusicNote as MusicIcon,
+  Link as LinkIcon
 } from '@mui/icons-material';
+import PlaylistImportDialog from '../PlaylistImportDialog';
 
 const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
@@ -107,6 +111,77 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
     }
   };
 
+  /**
+   * Handle playlist import from music platforms
+   */
+  const handlePlaylistImport = async (tracks) => {
+    setUploading(true);
+    setUploadProgress(0);
+    setError('');
+
+    try {
+      console.log(`📥 Importing ${tracks.length} tracks from playlist`);
+      
+      // Upload tracks to the session
+      const uploadedTracks = [];
+      
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        console.log(`📤 Processing track ${i + 1}/${tracks.length}: ${track.title}`);
+
+        const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/import-track`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            track: {
+              title: track.title,
+              artist: track.artist,
+              album: track.album,
+              duration: track.duration,
+              albumArt: track.albumArt,
+              source: track.source, // 'spotify', 'youtube', 'appleMusic'
+              externalId: track.id,
+              previewUrl: track.previewUrl,
+              streamUrl: track.streamUrl
+            }
+          })
+        });
+
+        if (!response.ok) {
+          console.warn(`⚠️ Failed to import ${track.title}: ${response.statusText}`);
+          continue; // Skip failed tracks
+        }
+
+        const result = await response.json();
+        uploadedTracks.push(result.track);
+
+        // Update progress
+        setUploadProgress(((i + 1) / tracks.length) * 100);
+      }
+
+      console.log('✅ Playlist import completed:', uploadedTracks);
+
+      // Notify parent component
+      if (onTracksAdded && uploadedTracks.length > 0) {
+        onTracksAdded(uploadedTracks);
+      }
+
+      if (uploadedTracks.length < tracks.length) {
+        setError(`Imported ${uploadedTracks.length} of ${tracks.length} tracks. Some tracks may not be available.`);
+      }
+
+    } catch (error) {
+      console.error('❌ Playlist import failed:', error);
+      setError(`Import failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
@@ -141,12 +216,31 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || uploading}
             fullWidth
+            sx={{ mb: 1 }}
           >
-            {uploading ? 'Uploading...' : 'Add Music Files'}
+            {uploading ? 'Uploading...' : 'Upload Music Files'}
           </Button>
           
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 2 }}>
             Supported formats: MP3, WAV, M4A, AAC, OGG, FLAC
+          </Typography>
+
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="caption" color="text.secondary">OR</Typography>
+          </Divider>
+
+          <Button
+            variant="outlined"
+            startIcon={<LinkIcon />}
+            onClick={() => setShowImportDialog(true)}
+            disabled={disabled || uploading}
+            fullWidth
+          >
+            Link Playlist from Spotify/YouTube/Apple Music
+          </Button>
+          
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
+            Import tracks from your connected music platforms
           </Typography>
         </Box>
 
@@ -154,11 +248,18 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
         {uploading && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
-              Uploading... {Math.round(uploadProgress)}%
+              {uploadProgress < 100 ? 'Uploading...' : 'Processing...'} {Math.round(uploadProgress)}%
             </Typography>
             <LinearProgress variant="determinate" value={uploadProgress} />
           </Box>
         )}
+
+        {/* Playlist Import Dialog */}
+        <PlaylistImportDialog
+          open={showImportDialog}
+          onClose={() => setShowImportDialog(false)}
+          onImport={handlePlaylistImport}
+        />
       </CardContent>
     </Card>
   );

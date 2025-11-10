@@ -603,4 +603,77 @@ router.post('/sessions/:sessionId/upload-music',
   }
 );
 
+/**
+ * @route POST /api/audio/sessions/:sessionId/import-track
+ * @desc Import track from music platform (Spotify, YouTube, Apple Music)
+ * @access Private
+ */
+router.post('/sessions/:sessionId/import-track',
+  passport.authenticate('jwt', { session: false }),
+  async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { track } = req.body;
+      
+      // Validate session exists
+      if (!sessionId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Session ID is required'
+        });
+      }
+      
+      // Validate track data
+      if (!track || !track.title || !track.artist) {
+        return res.status(400).json({
+          success: false,
+          message: 'Track title and artist are required'
+        });
+      }
+      
+      console.log('Importing track from platform:', { 
+        sessionId, 
+        title: track.title,
+        artist: track.artist,
+        source: track.source
+      });
+      
+      // Create track object for playlist
+      const importedTrack = {
+        id: track.externalId || `${track.source}-${Date.now()}`,
+        title: track.title,
+        artist: track.artist,
+        album: track.album || 'Unknown Album',
+        duration: track.duration || 0,
+        albumArt: track.albumArt || null,
+        source: track.source, // 'spotify', 'youtube', 'appleMusic'
+        externalId: track.externalId,
+        previewUrl: track.previewUrl || null,
+        streamUrl: track.streamUrl || null,
+        uploadedBy: req.user.user_id,
+        importedAt: new Date()
+      };
+      
+      // Add to playlist
+      const playlist = await audioService.addMusicToPlaylist(
+        sessionId,
+        importedTrack,
+        req.user.user_id
+      );
+      
+      res.json({
+        success: true,
+        track: importedTrack,
+        playlist: playlist
+      });
+    } catch (error) {
+      console.error('Track import error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to import track'
+      });
+    }
+  }
+);
+
 module.exports = router;
