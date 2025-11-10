@@ -222,21 +222,9 @@ const MusicPlaylist = ({
                       )}
                     </Box>
                   </Box>
-
-                  {/* Play indicator for current track */}
-                  {isCurrentTrack && (
-                    <Box sx={{ 
-                      position: 'absolute',
-                      right: 16,
-                      top: '50%',
-                      transform: 'translateY(-50%)'
-                    }}>
-                      <PlayIcon sx={{ color: 'primary.main', fontSize: 32 }} />
-                    </Box>
-                  )}
                 </Box>
 
-                {/* Delete button - Separate for controller, large touch target */}
+                {/* Delete button - Separate for controller, large touch target, centered vertically */}
                 {isController && (
                   <IconButton
                     onClick={(e) => {
@@ -246,8 +234,9 @@ const MusicPlaylist = ({
                     disabled={disabled}
                     sx={{
                       position: 'absolute',
-                      top: 8,
+                      top: '50%',
                       right: 8,
+                      transform: 'translateY(-50%)',
                       bgcolor: 'error.main',
                       color: 'white',
                       width: { xs: 40, sm: 36 },
