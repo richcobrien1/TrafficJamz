@@ -17,14 +17,19 @@ import {
   Typography,
   Alert,
   Checkbox,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   MusicNote as SpotifyIcon,
   VideoLibrary as YouTubeIcon,
-  Album as AppleMusicIcon
+  Album as AppleMusicIcon,
+  Link as LinkIcon,
+  CheckCircle as ConnectedIcon,
+  Error as DisconnectedIcon
 } from '@mui/icons-material';
-import { spotify, youtube, appleMusic } from '../services/integrations.service';
+import { spotify, youtube, appleMusic, integrations } from '../services/integrations.service';
 
 /**
  * PlaylistImportDialog Component
@@ -39,6 +44,11 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
   const [tracks, setTracks] = useState([]);
   const [selectedTracks, setSelectedTracks] = useState([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
+  const [platformStatuses, setPlatformStatuses] = useState({
+    spotify: { connected: false },
+    appleMusic: { connected: false },
+    youtube: { connected: true }
+  });
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -47,9 +57,54 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
       setTracks([]);
       setSelectedTracks([]);
       setError(null);
+      loadPlatformStatuses();
       loadPlaylists();
     }
   }, [open, activeTab]);
+
+  // Load platform connection statuses
+  const loadPlatformStatuses = async () => {
+    try {
+      const statuses = await integrations.getAllStatuses();
+      setPlatformStatuses(statuses);
+    } catch (err) {
+      console.error('Error loading platform statuses:', err);
+    }
+  };
+
+  // Handle platform connection
+  const handleConnectPlatform = async (platform) => {
+    setError(null);
+    
+    if (platform === 'spotify') {
+      try {
+        const result = await spotify.initiateAuth();
+        if (result.authUrl) {
+          window.open(result.authUrl, '_blank', 'width=600,height=800');
+          setError('Please complete authentication in the popup window, then refresh this dialog.');
+        }
+      } catch (err) {
+        setError('Failed to connect to Spotify. Please try again.');
+      }
+    } else if (platform === 'appleMusic') {
+      try {
+        if (!window.MusicKit) {
+          throw new Error('Apple Music SDK not loaded');
+        }
+        const { developerToken } = await appleMusic.getDeveloperToken();
+        const music = window.MusicKit.configure({
+          developerToken,
+          app: { name: 'TrafficJamz', build: '1.0.0' }
+        });
+        const userToken = await music.authorize();
+        await appleMusic.saveToken(userToken, music.storefrontId);
+        await loadPlatformStatuses();
+        loadPlaylists();
+      } catch (err) {
+        setError('Failed to connect to Apple Music. Please try again.');
+      }
+    }
+  };
 
   // Load playlists based on active tab
   const loadPlaylists = async () => {
@@ -146,7 +201,25 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Import Playlist
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6">Import Playlist</Typography>
+          {activeTab === 0 && (
+            <Chip
+              icon={platformStatuses.spotify.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
+              label={platformStatuses.spotify.connected ? 'Spotify Connected' : 'Spotify Not Connected'}
+              size="small"
+              color={platformStatuses.spotify.connected ? 'success' : 'default'}
+            />
+          )}
+          {activeTab === 2 && (
+            <Chip
+              icon={platformStatuses.appleMusic.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
+              label={platformStatuses.appleMusic.connected ? 'Apple Music Connected' : 'Apple Music Not Connected'}
+              size="small"
+              color={platformStatuses.appleMusic.connected ? 'success' : 'default'}
+            />
+          )}
+        </Box>
       </DialogTitle>
       
       <DialogContent>
@@ -169,14 +242,38 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
               Select a playlist to import:
             </Typography>
             
+            {/* Show connect button if not connected */}
+            {((activeTab === 0 && !platformStatuses.spotify.connected) || 
+              (activeTab === 2 && !platformStatuses.appleMusic.connected)) && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="body2">
+                    Connect your {activeTab === 0 ? 'Spotify' : 'Apple Music'} account to access your playlists
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<LinkIcon />}
+                    onClick={() => handleConnectPlatform(activeTab === 0 ? 'spotify' : 'appleMusic')}
+                    sx={{ ml: 2 }}
+                  >
+                    Connect
+                  </Button>
+                </Box>
+              </Alert>
+            )}
+            
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
               </Box>
             ) : playlists.length === 0 ? (
               <Typography color="textSecondary" align="center" sx={{ p: 4 }}>
-                No playlists found. {activeTab === 0 && 'Connect your Spotify account in Settings.'}
-                {activeTab === 2 && 'Connect your Apple Music account in Settings.'}
+                {activeTab === 0 && !platformStatuses.spotify.connected && 'Connect your Spotify account to view playlists.'}
+                {activeTab === 0 && platformStatuses.spotify.connected && 'No playlists found.'}
+                {activeTab === 1 && 'Enter a YouTube playlist URL to import.'}
+                {activeTab === 2 && !platformStatuses.appleMusic.connected && 'Connect your Apple Music account to view playlists.'}
+                {activeTab === 2 && platformStatuses.appleMusic.connected && 'No playlists found.'}
               </Typography>
             ) : (
               <List>
