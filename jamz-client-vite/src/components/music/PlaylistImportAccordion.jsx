@@ -26,12 +26,15 @@ import {
   Album as AppleMusicIcon,
   Link as LinkIcon,
   CheckCircle as ConnectedIcon,
-  Error as DisconnectedIcon
+  Error as DisconnectedIcon,
+  PlayArrow as PlayIcon,
+  Pause as PauseIcon
 } from '@mui/icons-material';
 import { youtube, appleMusic, integrations } from '../../services/integrations.service';
 import spotifyClient from '../../services/spotify-client.service';
 import appleMusicClient from '../../services/apple-music-client.service';
 import youtubeClient from '../../services/youtube-client.service';
+import platformPlayer from '../../services/platform-player.service';
 
 /**
  * PlaylistImportAccordion Component
@@ -47,6 +50,7 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
   const [tracks, setTracks] = useState([]);
   const [selectedTracks, setSelectedTracks] = useState([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
+  const [playingTrackIndex, setPlayingTrackIndex] = useState(null);
   const [platformStatuses, setPlatformStatuses] = useState({
     spotify: { connected: false },
     appleMusic: { connected: false },
@@ -201,6 +205,24 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
     setSelectedPlaylist(null);
     setTracks([]);
     setSelectedTracks([]);
+    setPlayingTrackIndex(null);
+  };
+
+  const handlePlayTrack = async (track, index) => {
+    try {
+      if (playingTrackIndex === index) {
+        // Pause if already playing
+        await platformPlayer.pause();
+        setPlayingTrackIndex(null);
+      } else {
+        // Play new track
+        await platformPlayer.play(track);
+        setPlayingTrackIndex(index);
+      }
+    } catch (err) {
+      console.error('Error playing track:', err);
+      setError('Failed to play track: ' + err.message);
+    }
   };
 
   const getPlatformIcon = () => {
@@ -375,6 +397,16 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
                         primary={track.title}
                         secondary={`${track.artist} • ${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`}
                       />
+                      <Button
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePlayTrack(track, index);
+                        }}
+                        startIcon={playingTrackIndex === index ? <PauseIcon /> : <PlayIcon />}
+                      >
+                        {playingTrackIndex === index ? 'Pause' : 'Play'}
+                      </Button>
                     </ListItem>
                   ))}
                 </List>
