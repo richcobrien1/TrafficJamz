@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 
 const MusicContext = createContext();
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://trafficjamz.onrender.com';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
 
 export const MusicProvider = ({ children }) => {
   const { user } = useAuth();
