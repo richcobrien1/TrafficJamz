@@ -1,4 +1,6 @@
 // Music service for synchronized playback across group members
+import platformMusicService from './platform-music.service';
+
 class MusicService {
   constructor() {
     this.audioElement = null;
@@ -11,6 +13,7 @@ class MusicService {
     this.onPlayStateChange = null;
     this.onTimeUpdate = null;
     this.syncThreshold = 2.0; // seconds - sync if off by more than this
+    this.platformMode = false; // Are we using platform streaming?
   }
 
   /**
@@ -86,27 +89,67 @@ class MusicService {
    * @param {Object} track - Track object with url, title, artist, etc.
    */
   async loadTrack(track) {
-    if (!this.audioElement) {
-      this.initialize();
-    }
-
     this.currentTrack = track;
     
-    // Handle both 'url' and 'fileUrl' properties
-    const trackUrl = track.url || track.fileUrl;
-    
-    if (!trackUrl) {
-      console.error('❌ Track has no URL:', track);
-      throw new Error('Track has no valid URL');
+    // Check if this is a platform track (Spotify, YouTube, Apple Music)
+    if (track.source && ['spotify', 'youtube', 'appleMusic'].includes(track.source)) {
+      console.log('🎵 Loading platform track:', track.title, 'from', track.source);
+      this.platformMode = true;
+      
+      // Initialize platform service if needed
+      if (!platformMusicService.spotifyPlayer && !platformMusicService.youtubePlayer) {
+        await platformMusicService.initialize();
+      }
+      
+      // Set up event callbacks
+      platformMusicService.onPlayStateChange = (playing) => {
+        this.isPlaying = playing;
+        if (this.onPlayStateChange) {
+          this.onPlayStateChange(playing);
+        }
+      };
+      
+      platformMusicService.onTimeUpdate = (time) => {
+        if (this.onTimeUpdate) {
+          this.onTimeUpdate(time);
+        }
+      };
+      
+      platformMusicService.onTrackChange = (direction) => {
+        if (direction === 'next') {
+          this.playNext();
+        }
+      };
+      
+      platformMusicService.onError = (platform, error) => {
+        console.error(`❌ ${platform} error:`, error);
+      };
+      
+    } else {
+      // File-based track - use HTML5 Audio
+      console.log('🎵 Loading file track:', track.title);
+      this.platformMode = false;
+      
+      if (!this.audioElement) {
+        this.initialize();
+      }
+      
+      // Handle both 'url' and 'fileUrl' properties
+      const trackUrl = track.url || track.fileUrl;
+      
+      if (!trackUrl) {
+        console.error('❌ Track has no URL:', track);
+        throw new Error('Track has no valid URL');
+      }
+      
+      this.audioElement.src = trackUrl;
     }
-    
-    this.audioElement.src = trackUrl;
     
     if (this.onTrackChange) {
       this.onTrackChange(track);
     }
 
-    console.log('🎵 Loaded track:', track.title, 'from URL:', trackUrl);
+    console.log('✅ Track loaded:', track.title);
   }
 
   /**
@@ -114,35 +157,57 @@ class MusicService {
    * @param {number} position - Optional start position in seconds
    */
   async play(position = null) {
-    if (!this.audioElement || !this.currentTrack) {
+    if (!this.currentTrack) {
       console.warn('⚠️ No track loaded');
       return;
     }
 
-    if (position !== null) {
-      this.audioElement.currentTime = position;
-    }
-
     try {
-      // iOS (ALL browsers) requires resuming AudioContext before playing
-      // This applies to Safari, Chrome, Firefox, etc. on iOS
-      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-      if (isIOS && typeof window.AudioContext !== 'undefined') {
-        try {
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioCtx.state === 'suspended') {
-            console.log('🍎 iOS AudioContext suspended, resuming...');
-            await audioCtx.resume();
-            console.log('🍎 iOS AudioContext resumed:', audioCtx.state);
-          }
-          audioCtx.close(); // Clean up
-        } catch (err) {
-          console.warn('⚠️ Failed to resume AudioContext:', err);
+      if (this.platformMode) {
+        // Platform streaming
+        if (position !== null) {
+          await platformMusicService.seekTo(position);
         }
+        
+        if (platformMusicService.currentTrack?.externalId !== this.currentTrack.externalId) {
+          // New track - load and play
+          await platformMusicService.playTrack(this.currentTrack);
+        } else {
+          // Resume existing track
+          await platformMusicService.play();
+        }
+        
+      } else {
+        // File-based playback
+        if (!this.audioElement) {
+          console.warn('⚠️ Audio element not initialized');
+          return;
+        }
+
+        if (position !== null) {
+          this.audioElement.currentTime = position;
+        }
+
+        // iOS (ALL browsers) requires resuming AudioContext before playing
+        // This applies to Safari, Chrome, Firefox, etc. on iOS
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        if (isIOS && typeof window.AudioContext !== 'undefined') {
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') {
+              console.log('🍎 iOS AudioContext suspended, resuming...');
+              await audioCtx.resume();
+              console.log('🍎 iOS AudioContext resumed:', audioCtx.state);
+            }
+            audioCtx.close(); // Clean up
+          } catch (err) {
+            console.warn('⚠️ Failed to resume AudioContext:', err);
+          }
+        }
+        
+        await this.audioElement.play();
+        console.log('▶️ Playing:', this.currentTrack.title, isIOS ? '(iOS)' : '');
       }
-      
-      await this.audioElement.play();
-      console.log('▶️ Playing:', this.currentTrack.title, isIOS ? '(iOS)' : '');
     } catch (error) {
       console.error('❌ Playback failed:', error.name, error.message);
       
@@ -159,10 +224,13 @@ class MusicService {
   /**
    * Pause playback
    */
-  pause() {
-    if (!this.audioElement) return;
-    
-    this.audioElement.pause();
+  async pause() {
+    if (this.platformMode) {
+      await platformMusicService.pause();
+    } else {
+      if (!this.audioElement) return;
+      this.audioElement.pause();
+    }
     console.log('⏸️ Paused');
   }
 
@@ -170,10 +238,13 @@ class MusicService {
    * Seek to position
    * @param {number} position - Position in seconds
    */
-  seek(position) {
-    if (!this.audioElement) return;
-    
-    this.audioElement.currentTime = position;
+  async seek(position) {
+    if (this.platformMode) {
+      await platformMusicService.seekTo(position);
+    } else {
+      if (!this.audioElement) return;
+      this.audioElement.currentTime = position;
+    }
     console.log(`⏩ Seeked to ${position}s`);
   }
 
@@ -183,8 +254,12 @@ class MusicService {
    */
   setVolume(volume) {
     this.volume = Math.max(0, Math.min(1, volume));
-    if (this.audioElement) {
-      this.audioElement.volume = this.volume;
+    if (this.platformMode) {
+      platformMusicService.setVolume(this.volume);
+    } else {
+      if (this.audioElement) {
+        this.audioElement.volume = this.volume;
+      }
     }
   }
 
@@ -192,7 +267,10 @@ class MusicService {
    * Get current playback time
    * @returns {number} Current time in seconds
    */
-  getCurrentTime() {
+  async getCurrentTime() {
+    if (this.platformMode) {
+      return await platformMusicService.getCurrentTime();
+    }
     return this.audioElement ? this.audioElement.currentTime : 0;
   }
 
