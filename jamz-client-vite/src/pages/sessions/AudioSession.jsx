@@ -953,9 +953,9 @@ const AudioSession = () => {
       return;
     }
 
-    // TEMPORARY: Skip mediasoup, use P2P for immediate audio
-    // TODO: Re-enable mediasoup after moving to AWS
-    const useMediasoup = false;
+    // Mediasoup enabled on DigitalOcean for SFU architecture
+    // Supports 50-100+ users vs 4-6 peer-to-peer limit
+    const useMediasoup = true;
 
     if (useMediasoup) {
       // Try mediasoup first, fall back to peer-to-peer if it fails
