@@ -52,8 +52,8 @@ const getBaseURL = () => {
   // 4. Fallback to '/api'
   let apiBase;
   if (isCapacitor) {
-    // Mobile app - ALWAYS use full backend URL
-    apiBase = 'https://trafficjamz.onrender.com/api';
+    // Mobile app - ALWAYS use full backend URL from environment variable
+    apiBase = import.meta.env.VITE_API_BASE || 'https://trafficjamz.v2u.us/api';
     console.warn('📱 CAPACITOR DETECTED - Using production backend:', apiBase);
   } else if (import.meta.env.VITE_API_BASE && !isLocalDev) {
     apiBase = import.meta.env.VITE_API_BASE;
