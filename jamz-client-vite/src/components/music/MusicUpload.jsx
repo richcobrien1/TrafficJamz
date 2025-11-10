@@ -11,16 +11,14 @@ import {
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
-  MusicNote as MusicIcon,
-  Link as LinkIcon
+  MusicNote as MusicIcon
 } from '@mui/icons-material';
-import PlaylistImportDialog from '../PlaylistImportDialog';
+import PlaylistImportAccordion from './PlaylistImportAccordion';
 
 const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
-  const [showImportDialog, setShowImportDialog] = useState(false);
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
@@ -229,22 +227,11 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
             <Typography variant="caption" color="text.secondary">OR</Typography>
           </Divider>
 
-          <Button
-            variant="outlined"
-            startIcon={<LinkIcon />}
-            onClick={() => {
-              console.log('🔗 Link Playlist button clicked');
-              setShowImportDialog(true);
-            }}
-            disabled={disabled || uploading}
-            fullWidth
-          >
-            Link Playlist from Spotify/YouTube/Apple Music
-          </Button>
-          
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
-            Import tracks from your connected music platforms
-          </Typography>
+          {/* Playlist Import Accordion */}
+          <PlaylistImportAccordion
+            sessionId={sessionId}
+            onImport={handlePlaylistImport}
+          />
         </Box>
 
         {/* Upload Progress */}
@@ -256,17 +243,6 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
             <LinearProgress variant="determinate" value={uploadProgress} />
           </Box>
         )}
-
-        {/* Playlist Import Dialog */}
-        {console.log('🎭 Rendering PlaylistImportDialog with showImportDialog:', showImportDialog)}
-        <PlaylistImportDialog
-          open={showImportDialog}
-          onClose={() => {
-            console.log('🚪 Dialog onClose called');
-            setShowImportDialog(false);
-          }}
-          onImport={handlePlaylistImport}
-        />
       </CardContent>
     </Card>
   );
