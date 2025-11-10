@@ -25,7 +25,7 @@ class YouTubeClientService {
    * Initiate OAuth flow
    */
   async authorize() {
-    const redirectUri = 'https://trafficjamz.vercel.app/auth/youtube/callback';
+    const redirectUri = 'https://jamz.v2u.us/auth/youtube/callback';
     const scopes = [
       'https://www.googleapis.com/auth/youtube.readonly'
     ].join(' ');
@@ -64,7 +64,7 @@ class YouTubeClientService {
           client_id: YOUTUBE_CLIENT_ID,
           grant_type: 'authorization_code',
           code,
-          redirect_uri: 'https://trafficjamz.vercel.app/auth/youtube/callback',
+          redirect_uri: 'https://jamz.v2u.us/auth/youtube/callback',
           code_verifier: codeVerifier,
         }),
       });
