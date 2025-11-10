@@ -21,6 +21,26 @@ class SpotifyService {
       'playlist-read-collaborative',
       'user-library-read'
     ];
+
+    // Check if credentials are configured
+    this.isConfigured = !!(
+      process.env.SPOTIFY_CLIENT_ID &&
+      process.env.SPOTIFY_CLIENT_SECRET &&
+      process.env.SPOTIFY_REDIRECT_URI
+    );
+
+    if (!this.isConfigured) {
+      console.warn('⚠️  Spotify credentials not configured. Spotify integration will not be available.');
+    }
+  }
+
+  /**
+   * Check if Spotify is configured
+   */
+  checkConfiguration() {
+    if (!this.isConfigured) {
+      throw new Error('Spotify is not configured. Please set SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, and SPOTIFY_REDIRECT_URI in environment variables.');
+    }
   }
 
   /**
@@ -29,6 +49,7 @@ class SpotifyService {
    * @returns {string} Authorization URL
    */
   getAuthorizationUrl(state) {
+    this.checkConfiguration();
     return this.spotifyApi.createAuthorizeURL(this.scopes, state, true); // true = show dialog
   }
 
