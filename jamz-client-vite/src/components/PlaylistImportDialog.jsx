@@ -52,6 +52,7 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
 
   // Reset state when dialog opens
   useEffect(() => {
+    console.log('📱 PlaylistImportDialog open state changed:', open);
     if (open) {
       setSelectedPlaylist(null);
       setTracks([]);
