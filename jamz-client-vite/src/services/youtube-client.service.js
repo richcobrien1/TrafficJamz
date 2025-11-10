@@ -70,7 +70,9 @@ class YouTubeClientService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get access token');
+        const errorData = await response.json();
+        console.error('Token exchange failed:', errorData);
+        throw new Error(`Failed to get access token: ${errorData.error} - ${errorData.error_description}`);
       }
 
       const data = await response.json();
