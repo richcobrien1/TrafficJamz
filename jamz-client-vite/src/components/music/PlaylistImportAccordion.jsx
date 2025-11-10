@@ -35,12 +35,14 @@ import spotifyClient from '../../services/spotify-client.service';
 import appleMusicClient from '../../services/apple-music-client.service';
 import youtubeClient from '../../services/youtube-client.service';
 import platformPlayer from '../../services/platform-player.service';
+import { useMusic } from '../../contexts/MusicContext';
 
 /**
  * PlaylistImportAccordion Component
  * Inline accordion for browsing and importing playlists from music platforms
  */
 const PlaylistImportAccordion = ({ onImport, sessionId }) => {
+  const { playTrack, isController } = useMusic();
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -210,13 +212,18 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
 
   const handlePlayTrack = async (track, index) => {
     try {
+      if (!isController) {
+        setError('Only the DJ can play tracks');
+        return;
+      }
+      
       if (playingTrackIndex === index) {
-        // Pause if already playing
-        await platformPlayer.pause();
+        // Pause if already playing - use MusicContext
+        await playTrack(null);
         setPlayingTrackIndex(null);
       } else {
-        // Play new track
-        await platformPlayer.play(track);
+        // Play new track - use MusicContext to broadcast to all members
+        await playTrack(track);
         setPlayingTrackIndex(index);
       }
     } catch (err) {
