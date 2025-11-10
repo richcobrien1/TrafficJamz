@@ -25,6 +25,11 @@ class AppleMusicService {
    */
   generateDeveloperToken() {
     try {
+      // Check if credentials are configured
+      if (!this.teamId || !this.keyId || !this.privateKeyPath) {
+        throw new Error('Apple Music credentials not configured. Please set APPLE_TEAM_ID, APPLE_KEY_ID, and APPLE_PRIVATE_KEY_PATH in environment variables.');
+      }
+
       // Check if we have a cached valid token
       if (this.developerToken && this.tokenExpiresAt && Date.now() < this.tokenExpiresAt) {
         return this.developerToken;
