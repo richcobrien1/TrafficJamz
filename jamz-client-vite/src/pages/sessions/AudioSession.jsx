@@ -47,6 +47,7 @@ import { useMusic } from '../../contexts/MusicContext';
 import MusicUpload from '../../components/music/MusicUpload';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
 import MusicPlayer from '../../components/music/MusicPlayer';
+import MusicPlatformIntegration from '../../components/music/MusicPlatformIntegration';
 import NativeAudio from '../../services/native-audio.service';
 
 const AudioSession = () => {

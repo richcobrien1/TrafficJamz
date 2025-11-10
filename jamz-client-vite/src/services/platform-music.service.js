@@ -32,8 +32,9 @@ class PlatformMusicService {
     // Load Spotify SDK
     await this.loadSpotifySDK();
     
-    // Load YouTube SDK
+    // Load YouTube SDK and initialize player
     await this.loadYouTubeSDK();
+    this.initializeYouTubePlayer('youtube-player');
     
     // Apple MusicKit is loaded separately when user connects
     
