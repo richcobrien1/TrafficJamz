@@ -38,6 +38,8 @@ const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const SpotifyCallback = lazy(() => import('./pages/auth/SpotifyCallback'));
+const YouTubeCallback = lazy(() => import('./pages/auth/YouTubeCallback'));
 const InvitationAccept = lazy(() => import('./pages/groups/InvitationAccept'));
 
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
@@ -251,6 +253,8 @@ function App() {
                 <Route path="/auth/register" element={<Register />} />
                 <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
+                <Route path="/auth/youtube/callback" element={<YouTubeCallback />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/invitations/:groupId/:invitationIndex" element={<InvitationAccept />} />
 
