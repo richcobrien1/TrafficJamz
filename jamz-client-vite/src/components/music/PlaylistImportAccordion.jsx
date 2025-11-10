@@ -28,7 +28,10 @@ import {
   CheckCircle as ConnectedIcon,
   Error as DisconnectedIcon
 } from '@mui/icons-material';
-import { spotify, youtube, appleMusic, integrations } from '../../services/integrations.service';
+import { youtube, appleMusic, integrations } from '../../services/integrations.service';
+import spotifyClient from '../../services/spotify-client.service';
+import appleMusicClient from '../../services/apple-music-client.service';
+import youtubeClient from '../../services/youtube-client.service';
 
 /**
  * PlaylistImportAccordion Component
@@ -60,8 +63,20 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
 
   const loadPlatformStatuses = async () => {
     try {
-      const statuses = await integrations.getAllStatuses();
-      setPlatformStatuses(statuses);
+      // Check Spotify token
+      const spotifyConnected = spotifyClient.isAuthenticated();
+      
+      // Check Apple Music token  
+      const appleMusicConnected = appleMusicClient.isAuthenticated();
+      
+      // Check YouTube token
+      const youtubeConnected = youtubeClient.isAuthenticated();
+      
+      setPlatformStatuses({
+        spotify: { connected: spotifyConnected },
+        appleMusic: { connected: appleMusicConnected },
+        youtube: { connected: youtubeConnected }
+      });
     } catch (err) {
       console.error('Error loading platform statuses:', err);
     }
@@ -72,30 +87,31 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
     
     if (platform === 'spotify') {
       try {
-        const result = await spotify.initiateAuth();
-        if (result.authUrl) {
-          window.open(result.authUrl, '_blank', 'width=600,height=800');
-          setError('Please complete authentication in the popup window, then refresh.');
-        }
+        localStorage.setItem('spotify_auth_return', window.location.pathname);
+        await spotifyClient.authorize();
       } catch (err) {
+        console.error('Spotify auth error:', err);
         setError('Failed to connect to Spotify. Please try again.');
       }
     } else if (platform === 'appleMusic') {
       try {
-        if (!window.MusicKit) {
-          throw new Error('Apple Music SDK not loaded');
-        }
-        const { developerToken } = await appleMusic.getDeveloperToken();
-        const music = window.MusicKit.configure({
-          developerToken,
-          app: { name: 'TrafficJamz', build: '1.0.0' }
-        });
-        const userToken = await music.authorize();
-        await appleMusic.saveToken(userToken, music.storefrontId);
-        await loadPlatformStatuses();
-        loadPlaylists();
+        await appleMusicClient.authorize();
+        setPlatformStatuses(prev => ({
+          ...prev,
+          appleMusic: { connected: true }
+        }));
+        await loadPlaylists();
       } catch (err) {
+        console.error('Apple Music auth error:', err);
         setError('Failed to connect to Apple Music. Please try again.');
+      }
+    } else if (platform === 'youtube') {
+      try {
+        localStorage.setItem('youtube_auth_return', window.location.pathname);
+        await youtubeClient.authorize();
+      } catch (err) {
+        console.error('YouTube auth error:', err);
+        setError('Failed to connect to YouTube. Please try again.');
       }
     }
   };
@@ -113,23 +129,27 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
           setLoading(false);
           return;
         }
-        data = await spotify.getPlaylists();
+        data = await spotifyClient.getPlaylists();
       } else if (activeTab === 1) {
-        setError('Enter a YouTube playlist URL to import');
-        data = [];
+        if (!platformStatuses.youtube.connected) {
+          setPlaylists([]);
+          setLoading(false);
+          return;
+        }
+        data = await youtubeClient.getPlaylists();
       } else if (activeTab === 2) {
         if (!platformStatuses.appleMusic.connected) {
           setPlaylists([]);
           setLoading(false);
           return;
         }
-        data = await appleMusic.getPlaylists();
+        data = await appleMusicClient.getPlaylists();
       }
       
       setPlaylists(data);
     } catch (err) {
       console.error('Error loading playlists:', err);
-      setError(err.response?.data?.error || 'Failed to load playlists.');
+      setError(err.response?.data?.error || err.message || 'Failed to load playlists.');
     } finally {
       setLoading(false);
     }
@@ -143,18 +163,18 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
       let data = [];
       
       if (activeTab === 0) {
-        data = await spotify.getPlaylistTracks(playlist.id);
+        data = await spotifyClient.getPlaylistTracks(playlist.id);
       } else if (activeTab === 1) {
-        data = await youtube.getPlaylistItems(playlist.id);
+        data = await youtubeClient.getPlaylistTracks(playlist.id);
       } else if (activeTab === 2) {
-        data = await appleMusic.getPlaylistTracks(playlist.id);
+        data = await appleMusicClient.getPlaylistTracks(playlist.id);
       }
       
       setTracks(data);
       setSelectedTracks(data.map((_, index) => index));
     } catch (err) {
       console.error('Error loading playlist tracks:', err);
-      setError('Failed to load playlist tracks');
+      setError(err.message || 'Failed to load playlist tracks');
     } finally {
       setLoadingTracks(false);
     }
@@ -216,6 +236,14 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
                 color={platformStatuses.spotify.connected ? 'success' : 'default'}
               />
             )}
+            {activeTab === 1 && (
+              <Chip
+                icon={platformStatuses.youtube.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
+                label={platformStatuses.youtube.connected ? 'YouTube Connected' : 'YouTube Not Connected'}
+                size="small"
+                color={platformStatuses.youtube.connected ? 'success' : 'default'}
+              />
+            )}
             {activeTab === 2 && (
               <Chip
                 icon={platformStatuses.appleMusic.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
@@ -237,17 +265,18 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
             <Box>
               {/* Show connect button if not connected */}
               {((activeTab === 0 && !platformStatuses.spotify.connected) || 
+                (activeTab === 1 && !platformStatuses.youtube.connected) ||
                 (activeTab === 2 && !platformStatuses.appleMusic.connected)) && (
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Typography variant="body2">
-                      Connect your {activeTab === 0 ? 'Spotify' : 'Apple Music'} account
+                      Connect your {activeTab === 0 ? 'Spotify' : activeTab === 1 ? 'YouTube' : 'Apple Music'} account
                     </Typography>
                     <Button
                       variant="contained"
                       size="small"
                       startIcon={<LinkIcon />}
-                      onClick={() => handleConnectPlatform(activeTab === 0 ? 'spotify' : 'appleMusic')}
+                      onClick={() => handleConnectPlatform(activeTab === 0 ? 'spotify' : activeTab === 1 ? 'youtube' : 'appleMusic')}
                       sx={{ ml: 2 }}
                     >
                       Connect
@@ -264,7 +293,8 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
                 <Typography color="textSecondary" align="center" sx={{ p: 2 }}>
                   {activeTab === 0 && !platformStatuses.spotify.connected && 'Connect Spotify to view playlists'}
                   {activeTab === 0 && platformStatuses.spotify.connected && 'No playlists found'}
-                  {activeTab === 1 && 'Enter a YouTube playlist URL'}
+                  {activeTab === 1 && !platformStatuses.youtube.connected && 'Connect YouTube to view playlists'}
+                  {activeTab === 1 && platformStatuses.youtube.connected && 'No playlists found'}
                   {activeTab === 2 && !platformStatuses.appleMusic.connected && 'Connect Apple Music to view playlists'}
                   {activeTab === 2 && platformStatuses.appleMusic.connected && 'No playlists found'}
                 </Typography>
