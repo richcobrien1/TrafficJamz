@@ -24,7 +24,7 @@ class SpotifyClientService {
    * Initiate OAuth flow
    */
   async authorize() {
-    const redirectUri = 'https://trafficjamz.vercel.app/auth/spotify/callback';
+    const redirectUri = 'https://jamz.v2u.us/auth/spotify/callback';
     const scopes = [
       'user-read-private',
       'user-read-email',
@@ -65,7 +65,7 @@ class SpotifyClientService {
           client_id: SPOTIFY_CLIENT_ID,
           grant_type: 'authorization_code',
           code,
-          redirect_uri: 'https://trafficjamz.vercel.app/auth/spotify/callback',
+          redirect_uri: 'https://jamz.v2u.us/auth/spotify/callback',
           code_verifier: codeVerifier,
         }),
       });
