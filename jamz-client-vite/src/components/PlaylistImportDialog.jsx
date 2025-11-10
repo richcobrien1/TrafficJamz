@@ -116,12 +116,22 @@ const PlaylistImportDialog = ({ open, onClose, onImport }) => {
       let data = [];
       
       if (activeTab === 0) { // Spotify
+        if (!platformStatuses.spotify.connected) {
+          setPlaylists([]);
+          setLoading(false);
+          return;
+        }
         data = await spotify.getPlaylists();
       } else if (activeTab === 1) { // YouTube
         // Note: YouTube requires playlist URL/ID input
         setError('Enter a YouTube playlist URL or ID to import');
         data = [];
       } else if (activeTab === 2) { // Apple Music
+        if (!platformStatuses.appleMusic.connected) {
+          setPlaylists([]);
+          setLoading(false);
+          return;
+        }
         data = await appleMusic.getPlaylists();
       }
       
