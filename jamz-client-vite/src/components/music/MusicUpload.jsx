@@ -19,7 +19,7 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://trafficjamz.onrender.com';
+  const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
 
   /**
    * Handle file selection - automatically upload after selection
