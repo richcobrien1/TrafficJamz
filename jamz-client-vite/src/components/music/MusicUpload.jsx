@@ -232,7 +232,10 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
           <Button
             variant="outlined"
             startIcon={<LinkIcon />}
-            onClick={() => setShowImportDialog(true)}
+            onClick={() => {
+              console.log('🔗 Link Playlist button clicked');
+              setShowImportDialog(true);
+            }}
             disabled={disabled || uploading}
             fullWidth
           >
