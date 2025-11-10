@@ -794,7 +794,7 @@ const GroupDetail = () => {
                           color: audioSessionActive ? '#fff' : 'inherit'
                         }
                       }}
-                      onClick={() => navigate(`/audio-session/${groupId}`)}
+                      onClick={() => navigate(`/audio-settings/${groupId}`)}
                     >
                       <Avatar sx={{ 
                         bgcolor: audioSessionActive ? 'rgba(255, 255, 255, 0.2)' : 'primary.light', 
