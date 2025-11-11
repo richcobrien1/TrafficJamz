@@ -760,12 +760,45 @@ export const MusicProvider = ({ children }) => {
    */
   const takeControl = () => {
     console.log('🎵 [MusicContext] Taking control');
+    
+    // Validation checks
+    if (!socketRef.current) {
+      console.error('🎵 [MusicContext] ❌ Cannot take control - socket not initialized');
+      alert('Music system not connected. Please reload the page.');
+      return;
+    }
+    
+    if (!socketRef.current.connected) {
+      console.error('🎵 [MusicContext] ❌ Cannot take control - socket not connected');
+      alert('Music system not connected. Please check your connection.');
+      return;
+    }
+    
+    if (!activeSessionId) {
+      console.error('🎵 [MusicContext] ❌ Cannot take control - no active session');
+      alert('No active music session. Please reload the page.');
+      return;
+    }
+    
+    const userId = userRef.current?.id || userRef.current?.user_id;
+    if (!userId) {
+      console.error('🎵 [MusicContext] ❌ Cannot take control - user ID not available');
+      alert('User not authenticated. Please log in again.');
+      return;
+    }
+    
+    console.log('🎵 [MusicContext] ✅ All checks passed - emitting music-take-control', {
+      sessionId: activeSessionId,
+      userId,
+      socketConnected: socketRef.current.connected
+    });
+    
     setIsController(true);
     musicService.isController = true;
     
-    socketRef.current?.emit('music-take-control', {
+    socketRef.current.emit('music-take-control', {
       sessionId: activeSessionId,
-      userId: userRef.current?.id || userRef.current?.user_id
+      userId
     });
   };
   
@@ -774,12 +807,30 @@ export const MusicProvider = ({ children }) => {
    */
   const releaseControl = () => {
     console.log('🎵 [MusicContext] Releasing control');
+    
+    // Validation checks
+    if (!socketRef.current?.connected) {
+      console.error('🎵 [MusicContext] ❌ Cannot release control - socket not connected');
+      return;
+    }
+    
+    if (!activeSessionId) {
+      console.error('🎵 [MusicContext] ❌ Cannot release control - no active session');
+      return;
+    }
+    
+    const userId = userRef.current?.id || userRef.current?.user_id;
+    console.log('🎵 [MusicContext] ✅ Releasing control', {
+      sessionId: activeSessionId,
+      userId
+    });
+    
     setIsController(false);
     musicService.isController = false;
     
-    socketRef.current?.emit('music-release-control', {
+    socketRef.current.emit('music-release-control', {
       sessionId: activeSessionId,
-      userId: userRef.current?.id || userRef.current?.user_id
+      userId
     });
   };
   
