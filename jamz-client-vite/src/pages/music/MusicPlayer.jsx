@@ -99,7 +99,8 @@ const MusicPlayerPage = () => {
     };
 
     initMusic();
-  }, [groupId, initializeSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]); // Only run when groupId changes, not when initializeSession reference changes
 
   /**
    * Handle file selection and upload
