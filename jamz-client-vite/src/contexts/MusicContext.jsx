@@ -583,6 +583,63 @@ export const MusicProvider = ({ children }) => {
   };
   
   /**
+   * Clear entire playlist
+   */
+  const clearPlaylist = async () => {
+    console.log('🎵 [MusicContext] Clearing entire playlist');
+    
+    // Stop playback if playing
+    if (isPlaying) {
+      musicService.pause();
+      setIsPlaying(false);
+    }
+    
+    // Clear current track
+    setCurrentTrack(null);
+    musicService.currentTrack = null;
+    
+    // Clear playlist
+    musicService.playlist = [];
+    setPlaylist([]);
+    
+    try {
+      const response = await fetch(
+        `${API_URL}/api/audio/sessions/${activeSessionId}/music/playlist/clear`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear playlist on server');
+      }
+      
+      console.log('🎵 [MusicContext] ✅ Playlist cleared from database');
+      
+      // Broadcast update
+      socketRef.current?.emit('playlist-update', {
+        sessionId: activeSessionId,
+        playlist: []
+      });
+      
+      // Broadcast track change to null
+      socketRef.current?.emit('music-change-track', {
+        sessionId: activeSessionId,
+        track: null,
+        autoPlay: false
+      });
+      
+      console.log('🎵 [MusicContext] ✅ Playlist cleared and broadcasted');
+    } catch (error) {
+      console.error('🎵 [MusicContext] Failed to clear playlist:', error);
+      throw error;
+    }
+  };
+  
+  /**
    * Play music
    */
   const play = async () => {
@@ -827,6 +884,7 @@ export const MusicProvider = ({ children }) => {
     initializeSession,
     addTrack,
     removeTrack,
+    clearPlaylist,
     play,
     pause,
     seekTo,
