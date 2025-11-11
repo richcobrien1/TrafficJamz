@@ -524,10 +524,10 @@ export const MusicProvider = ({ children }) => {
             artist: track.artist,
             album: track.album,
             duration: track.duration,
-            fileUrl: track.fileUrl || track.url || track.previewUrl,
+            fileUrl: track.fileUrl || track.url,
             source: track.source,
             spotifyId: track.spotifyId,
-            spotifyPreviewUrl: track.previewUrl,
+            spotifyPreviewUrl: track.spotifyPreviewUrl || track.previewUrl,
             albumArt: track.albumArt,
             uploadedBy: track.uploadedBy
           })
@@ -537,6 +537,19 @@ export const MusicProvider = ({ children }) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('🎵 [MusicContext] Failed to persist track:', errorData);
+        console.error('🎵 [MusicContext] Validation errors:', errorData.errors);
+        console.error('🎵 [MusicContext] Track data sent:', {
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration,
+          fileUrl: track.fileUrl || track.url,
+          source: track.source,
+          spotifyId: track.spotifyId,
+          spotifyPreviewUrl: track.spotifyPreviewUrl || track.previewUrl,
+          albumArt: track.albumArt,
+          uploadedBy: track.uploadedBy
+        });
         throw new Error(errorData.message || 'Failed to persist track');
       }
       
