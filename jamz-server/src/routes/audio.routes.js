@@ -576,37 +576,22 @@ router.post('/sessions/:sessionId/upload-music',
         mimetype: req.file.mimetype
       });
       
-      // Upload to Supabase
-      const { createClient } = require('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
+      // Upload to Cloudflare R2
+      const { uploadToR2 } = require('../services/r2.service');
+      
+      const publicUrl = await uploadToR2(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        req.user.user_id
       );
       
-      const { data, error: uploadError } = await supabase.storage
-        .from('profile-images')
-        .upload(filePath, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: false,
-          cacheControl: '3600'
-        });
-      
-      if (uploadError) {
-        console.error('Supabase upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-      
-      console.log('Music file uploaded successfully:', data);
-      
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('profile-images')
-        .getPublicUrl(filePath);
+      console.log('Music file uploaded successfully to R2:', publicUrl);
       
       // Add to playlist
       const track = {
         title: req.file.originalname.replace(extension, ''),
-        fileUrl: urlData.publicUrl,
+        fileUrl: publicUrl,
         duration: 0, // Will be determined by client
         uploadedBy: req.user.user_id
       };
@@ -619,7 +604,7 @@ router.post('/sessions/:sessionId/upload-music',
       
       res.json({
         success: true,
-        fileUrl: urlData.publicUrl,
+        fileUrl: publicUrl,
         track: track,
         playlist: playlist
       });
