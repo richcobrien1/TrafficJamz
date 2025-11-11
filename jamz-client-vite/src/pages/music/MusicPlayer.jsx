@@ -7,12 +7,14 @@ import {
   Toolbar,
   IconButton,
   Typography,
-  Box
+  Box,
+  Button,
+  Tooltip
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   CloudUpload as UploadIcon,
-  QueueMusic as PlaylistIcon
+  Link as LinkIcon
 } from '@mui/icons-material';
 import { useMusic } from '../../contexts/MusicContext';
 import MusicUpload from '../../components/music/MusicUpload';
@@ -24,6 +26,8 @@ const MusicPlayerPage = () => {
   const navigate = useNavigate();
   const [showUpload, setShowUpload] = React.useState(false);
   const [showPlaylist, setShowPlaylist] = React.useState(false);
+  const fileInputRef = React.useRef(null);
+  const [uploading, setUploading] = React.useState(false);
   
   // Music context
   const {
@@ -90,49 +94,88 @@ const MusicPlayerPage = () => {
           justifyContent: 'center', 
           gap: 4 
         }}>
-          {/* Upload Icon */}
+          {/* Upload Files Icon */}
           <Box sx={{ textAlign: 'center' }}>
-            <IconButton
-              onClick={() => setShowUpload(!showUpload)}
-              sx={{
-                width: 80,
-                height: 80,
-                bgcolor: showUpload ? 'primary.main' : 'action.hover',
-                color: showUpload ? 'white' : 'primary.main',
-                '&:hover': {
-                  bgcolor: 'primary.main',
-                  color: 'white'
-                }
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+              onChange={(e) => {
+                setShowUpload(true);
+                // The MusicUpload component will handle the actual upload
               }}
-            >
-              <UploadIcon sx={{ fontSize: 40 }} />
-            </IconButton>
+              style={{ display: 'none' }}
+              disabled={!sessionId || uploading}
+            />
+            <Tooltip title="Upload Music Files" arrow>
+              <IconButton
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!sessionId || uploading}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                  }
+                }}
+              >
+                <UploadIcon sx={{ fontSize: 40 }} />
+              </IconButton>
+            </Tooltip>
             <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
-              Upload
+              Upload Files
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              MP3, WAV, M4A, etc.
             </Typography>
           </Box>
 
-          {/* Playlist Icon */}
+          {/* Link Playlist Icon */}
           <Box sx={{ textAlign: 'center' }}>
-            <IconButton
-              onClick={() => setShowPlaylist(!showPlaylist)}
-              sx={{
-                width: 80,
-                height: 80,
-                bgcolor: showPlaylist ? 'secondary.main' : 'action.hover',
-                color: showPlaylist ? 'white' : 'secondary.main',
-                '&:hover': {
+            <Tooltip title="Link Playlist from Spotify/YouTube/Apple Music" arrow>
+              <IconButton
+                onClick={() => setShowUpload(true)}
+                disabled={!sessionId || uploading}
+                sx={{
+                  width: 80,
+                  height: 80,
                   bgcolor: 'secondary.main',
-                  color: 'white'
-                }
-              }}
-            >
-              <PlaylistIcon sx={{ fontSize: 40 }} />
-            </IconButton>
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'secondary.dark',
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: 'action.disabledBackground',
+                  }
+                }}
+              >
+                <LinkIcon sx={{ fontSize: 40 }} />
+              </IconButton>
+            </Tooltip>
             <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
-              Playlist ({playlist.length})
+              Link Playlist
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Spotify, YouTube, Apple
             </Typography>
           </Box>
+        </Box>
+
+        {/* View Playlist Button */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => setShowPlaylist(!showPlaylist)}
+            disabled={!sessionId || playlist.length === 0}
+          >
+            {showPlaylist ? 'Hide Playlist' : `View Playlist (${playlist.length})`}
+          </Button>
         </Box>
       </Paper>
 
