@@ -58,7 +58,7 @@ const RootRedirect = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <AppLoader message="Checking authentication..." />;
   }
 
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
@@ -238,7 +238,7 @@ function App() {
       <CssBaseline />
       <AuthProvider>
         <MusicProvider>
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<AppLoader message="Loading page..." />}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
