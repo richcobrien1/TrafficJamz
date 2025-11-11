@@ -59,7 +59,7 @@ import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 const GroupDetail = () => {
   // Force rebuild - ensure equal panel widths
   const { groupId } = useParams();
-  const { isPlaying: musicIsPlaying } = useMusic();
+  const { isPlaying: musicIsPlaying, initializeSession: initializeMusicSession } = useMusic();
   const [group, setGroup] = useState(null);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
@@ -248,6 +248,10 @@ const GroupDetail = () => {
         if (checkResponse.data?.session) {
           console.log('✅ Audio session already exists');
           setAudioSessionActive(true);
+          // Initialize music session with the existing audio session
+          const sessionId = checkResponse.data.session.id || checkResponse.data.session._id;
+          console.log('🎵 Initializing music session with existing audio session:', sessionId);
+          initializeMusicSession(sessionId, groupId);
           return;
         }
       } catch (error) {
@@ -255,19 +259,36 @@ const GroupDetail = () => {
         if (error.response?.status === 404) {
           try {
             console.log('🎤 Creating audio session for group:', groupId);
-            await api.post('/audio/sessions', {
+            const createResponse = await api.post('/audio/sessions', {
               group_id: groupId,
               session_type: 'voice_with_music', // Enable music support
               device_type: 'web'
             });
             console.log('✅ Audio session created successfully');
             setAudioSessionActive(true);
+            // Initialize music session with the new audio session
+            const sessionId = createResponse.data.session?.id || createResponse.data.session?._id;
+            if (sessionId) {
+              console.log('🎵 Initializing music session with new audio session:', sessionId);
+              initializeMusicSession(sessionId, groupId);
+            }
           } catch (createError) {
             // If session already exists (400), that's actually good - it means it's active
             if (createError.response?.status === 400 && 
                 createError.response?.data?.message?.includes('already exists')) {
               console.log('✅ Audio session already exists (from 400)');
               setAudioSessionActive(true);
+              // Try to fetch the existing session for music initialization
+              try {
+                const fetchResponse = await api.get(`/audio/sessions/group/${groupId}`);
+                const sessionId = fetchResponse.data.session?.id || fetchResponse.data.session?._id;
+                if (sessionId) {
+                  console.log('🎵 Initializing music session with existing audio session (after 400):', sessionId);
+                  initializeMusicSession(sessionId, groupId);
+                }
+              } catch (fetchError) {
+                console.log('⚠️ Could not fetch session for music initialization:', fetchError.message);
+              }
             } else {
               console.log('ℹ️ Audio session not created:', createError.response?.data?.message || createError.message);
               // Don't set as active if creation failed for other reasons
