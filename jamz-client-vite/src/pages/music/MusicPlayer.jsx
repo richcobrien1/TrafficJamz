@@ -12,7 +12,9 @@ import {
   Tooltip,
   Dialog,
   DialogTitle,
-  DialogContent
+  DialogContent,
+  CircularProgress,
+  Fade
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -33,6 +35,8 @@ const MusicPlayerPage = () => {
   const [uploading, setUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [uploadError, setUploadError] = React.useState('');
+  const [isInitializing, setIsInitializing] = React.useState(true);
+  const initializationRef = React.useRef(false);
   
   const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
   
@@ -66,11 +70,20 @@ const MusicPlayerPage = () => {
    */
   React.useEffect(() => {
     const initMusic = async () => {
+      // Prevent multiple initializations
+      if (initializationRef.current) {
+        console.log('🎵 Already initialized, skipping');
+        return;
+      }
+      
       if (!groupId) {
         console.error('No groupId provided');
+        setIsInitializing(false);
         return;
       }
 
+      initializationRef.current = true;
+      
       try {
         // Fetch or create an active audio session for this group
         const token = localStorage.getItem('token');
@@ -95,6 +108,8 @@ const MusicPlayerPage = () => {
         }
       } catch (error) {
         console.error('Error initializing music session:', error);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
@@ -286,8 +301,27 @@ const MusicPlayerPage = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Content Area */}
-      <Box sx={{ p: 2 }}>
+      {/* Loading State */}
+      {isInitializing ? (
+        <Fade in={isInitializing}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '60vh',
+            gap: 2
+          }}>
+            <CircularProgress size={60} />
+            <Typography variant="h6" color="text.secondary">
+              Loading Music Session...
+            </Typography>
+          </Box>
+        </Fade>
+      ) : (
+        <>
+          {/* Content Area */}
+          <Box sx={{ p: 2 }}>
       {/* Music Player - Always Visible */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <MusicPlayer
@@ -440,6 +474,8 @@ const MusicPlayerPage = () => {
         </Paper>
       )}
       </Box>
+        </>
+      )}
     </Box>
   );
 };

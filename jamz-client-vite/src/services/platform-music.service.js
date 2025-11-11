@@ -15,6 +15,7 @@ class PlatformMusicService {
     this.currentTrack = null;
     this.isPlaying = false;
     this.volume = 1.0;
+    this.initialized = false; // Track initialization state
     
     // Event callbacks
     this.onTrackChange = null;
@@ -27,6 +28,11 @@ class PlatformMusicService {
    * Initialize platform SDKs
    */
   async initialize() {
+    if (this.initialized) {
+      console.log('✅ Platform music service already initialized');
+      return;
+    }
+    
     console.log('🎵 Initializing platform music service...');
     
     // Load Spotify SDK
@@ -38,6 +44,7 @@ class PlatformMusicService {
     
     // Apple MusicKit is loaded separately when user connects
     
+    this.initialized = true;
     console.log('✅ Platform music service initialized');
   }
 
