@@ -245,7 +245,7 @@ class SpotifyClientService {
           album: item.track.album.name,
           duration: Math.floor(item.track.duration_ms / 1000),
           albumArt: item.track.album.images[0]?.url || null,
-          previewUrl: item.track.preview_url,
+          spotifyPreviewUrl: item.track.preview_url,
         }));
 
       allTracks = allTracks.concat(tracks);
@@ -273,7 +273,7 @@ class SpotifyClientService {
       album: track.album.name,
       duration: Math.floor(track.duration_ms / 1000),
       albumArt: track.album.images[0]?.url || null,
-      previewUrl: track.preview_url,
+      spotifyPreviewUrl: track.preview_url,
     }));
   }
 
