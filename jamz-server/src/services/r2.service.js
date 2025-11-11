@@ -52,9 +52,15 @@ const uploadToR2 = async (fileBuffer, originalFilename, mimetype, userId) => {
       Body: fileBuffer,
       ContentType: mimetype,
       CacheControl: 'public, max-age=31536000',
+      // Add metadata to help with CORS and public access
+      Metadata: {
+        'uploaded-by': userId,
+        'original-name': originalFilename
+      }
     });
 
-    await r2Client.send(command);
+    const uploadResult = await r2Client.send(command);
+    console.log('R2 upload result:', uploadResult);
 
     // Generate public URL
     // If you have a custom domain, use it, otherwise construct from endpoint

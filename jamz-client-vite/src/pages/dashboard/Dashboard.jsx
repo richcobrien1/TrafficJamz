@@ -58,14 +58,10 @@ const Dashboard = () => {
   const { user: currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
-
-  const fetchGroups = async () => {
+  const fetchGroups = React.useCallback(async () => {
     try {
       setLoading(true);
-  const response = await api.get('/groups');
+      const response = await api.get('/groups');
       setGroups(response.data.groups);
       setError('');
     } catch (error) {
@@ -73,7 +69,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
   const handleLogout = () => {
     logout();
