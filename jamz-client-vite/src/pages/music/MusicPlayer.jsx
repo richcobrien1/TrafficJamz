@@ -54,6 +54,7 @@ const MusicPlayerPage = () => {
     playPrevious: musicPrevious,
     addTrack: musicAddTrack,
     removeTrack: musicRemoveTrack,
+    clearPlaylist: musicClearPlaylist,
     loadAndPlay: musicLoadAndPlay,
     takeControl: takeMusicControl,
     releaseControl: releaseMusicControl,
@@ -217,6 +218,24 @@ const MusicPlayerPage = () => {
     }
   };
 
+  /**
+   * Handle clear playlist confirmation
+   */
+  const handleClearPlaylist = async () => {
+    if (!window.confirm('Are you sure you want to clear all tracks from the playlist? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await musicClearPlaylist();
+      setShowPlaylist(false);
+      console.log('✅ Playlist cleared successfully');
+    } catch (error) {
+      console.error('❌ Failed to clear playlist:', error);
+      setUploadError(`Failed to clear playlist: ${error.message}`);
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', minHeight: '100vh' }}>
       {/* App Bar - Simple header */}
@@ -341,13 +360,21 @@ const MusicPlayerPage = () => {
         </Box>
 
         {/* View Playlist Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
           <Button 
             variant="outlined" 
             onClick={() => setShowPlaylist(!showPlaylist)}
             disabled={!sessionId || playlist.length === 0}
           >
             {showPlaylist ? 'Hide Playlist' : `View Playlist (${playlist.length})`}
+          </Button>
+          <Button 
+            variant="outlined" 
+            color="error"
+            onClick={handleClearPlaylist}
+            disabled={!sessionId || playlist.length === 0 || !isMusicController}
+          >
+            Clear All Tracks
           </Button>
         </Box>
       </Paper>
