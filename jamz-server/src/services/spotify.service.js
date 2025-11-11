@@ -197,9 +197,15 @@ class SpotifyService {
           fields: 'items(track(id,name,artists,album,duration_ms,preview_url,external_urls,external_ids)),next'
         });
         
+        const totalItems = data.body.items.filter(item => item.track).length;
         const tracks = data.body.items
           .filter(item => item.track) // Filter out null tracks
+          .filter(item => item.track.preview_url) // Only include tracks with preview URLs
           .map(item => this.formatTrack(item.track));
+        
+        if (tracks.length < totalItems) {
+          console.log(`⚠️ Filtered out ${totalItems - tracks.length} tracks without preview URLs`);
+        }
         
         allTracks = allTracks.concat(tracks);
         hasMore = !!data.body.next;
