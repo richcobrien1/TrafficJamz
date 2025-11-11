@@ -692,6 +692,40 @@ class AudioService {
   }
 
   /**
+   * Clear all tracks from playlist
+   * @param {string} sessionId - Audio session ID
+   * @param {string} user_id - User ID clearing playlist
+   * @returns {Promise<void>}
+   */
+  async clearPlaylist(sessionId, user_id) {
+    try {
+      const session = await AudioSession.findById(sessionId);
+      if (!session) {
+        throw new Error('Audio session not found');
+      }
+
+      if (session.status !== 'active') {
+        throw new Error('Audio session is not active');
+      }
+
+      if (session.session_type !== 'voice_with_music') {
+        throw new Error('This session does not support music sharing');
+      }
+
+      // Clear playlist
+      session.music.playlist = [];
+      session.music.currently_playing = null;
+      session.music.is_playing = false;
+      
+      await session.save();
+      
+      console.log(`🎵 Playlist cleared for session ${sessionId} by user ${user_id}`);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Control music playback
    * @param {string} sessionId - Audio session ID
    * @param {string} action - Playback action
