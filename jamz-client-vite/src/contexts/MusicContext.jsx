@@ -524,7 +524,11 @@ export const MusicProvider = ({ children }) => {
             artist: track.artist,
             album: track.album,
             duration: track.duration,
-            fileUrl: track.fileUrl || track.url,
+            fileUrl: track.fileUrl || track.url || track.previewUrl,
+            source: track.source,
+            spotifyId: track.spotifyId,
+            spotifyPreviewUrl: track.previewUrl,
+            albumArt: track.albumArt,
             uploadedBy: track.uploadedBy
           })
         }

@@ -95,19 +95,23 @@ class MusicService {
       source: track.source,
       title: track.title,
       previewUrl: track.previewUrl,
-      hasPreviewUrl: !!track.previewUrl
+      spotifyPreviewUrl: track.spotifyPreviewUrl,
+      url: track.url,
+      fileUrl: track.fileUrl,
+      hasPreviewUrl: !!(track.previewUrl || track.spotifyPreviewUrl)
     });
     
     // Check if this is a Spotify preview URL - treat as regular audio file
-    if (track.source === 'spotify' && track.previewUrl) {
-      console.log('🎵 Loading Spotify preview:', track.title);
+    const spotifyPreviewUrl = track.previewUrl || track.spotifyPreviewUrl || (track.source === 'spotify' && (track.url || track.fileUrl));
+    if (track.source === 'spotify' && spotifyPreviewUrl) {
+      console.log('🎵 Loading Spotify preview:', track.title, 'URL:', spotifyPreviewUrl);
       this.platformMode = false;
       
       if (!this.audioElement) {
         this.initialize();
       }
       
-      this.audioElement.src = track.previewUrl;
+      this.audioElement.src = spotifyPreviewUrl;
       
       if (this.onTrackChange) {
         this.onTrackChange(track);
