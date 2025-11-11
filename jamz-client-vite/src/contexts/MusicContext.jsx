@@ -256,13 +256,20 @@ export const MusicProvider = ({ children }) => {
     socket.on('playlist-update', (data) => {
       console.log('🎵 [MusicContext] Playlist update received:', data.playlist?.length || 0, 'tracks');
       if (data.playlist && Array.isArray(data.playlist)) {
-        // Deduplicate received playlist
+        // Deduplicate and normalize received playlist
         const deduplicatedPlaylist = [];
         const seenUrls = new Set();
         const seenTitleArtist = new Set();
         
         for (const track of data.playlist) {
-          const url = track.fileUrl || track.url;
+          // Normalize track URLs - ensure url field is set for all tracks
+          const normalizedTrack = {
+            ...track,
+            url: track.url || track.fileUrl || track.spotifyPreviewUrl,
+            previewUrl: track.previewUrl || track.spotifyPreviewUrl
+          };
+          
+          const url = normalizedTrack.url;
           const titleArtist = `${track.title}|${track.artist}`;
           
           if (url && seenUrls.has(url)) continue;
@@ -270,7 +277,7 @@ export const MusicProvider = ({ children }) => {
           
           if (url) seenUrls.add(url);
           seenTitleArtist.add(titleArtist);
-          deduplicatedPlaylist.push(track);
+          deduplicatedPlaylist.push(normalizedTrack);
         }
         
         setPlaylist(deduplicatedPlaylist);

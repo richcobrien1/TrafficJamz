@@ -43,44 +43,50 @@ class PlatformMusicService {
 
   /**
    * Load Spotify Web Playback SDK
-   * DISABLED - We only use preview URLs, not full playback SDK
+   * Enables full Spotify playback for Premium users
    */
   async loadSpotifySDK() {
-    console.log('⚠️ Spotify SDK loading disabled - using preview URLs only');
-    return Promise.resolve();
+    console.log('🎵 Loading Spotify Web Playback SDK...');
     
-    /* DISABLED - Causes app to freeze
     return new Promise((resolve) => {
       if (window.Spotify) {
+        console.log('✅ Spotify SDK already loaded');
         resolve();
         return;
       }
 
       window.onSpotifyWebPlaybackSDKReady = () => {
-        console.log('✅ Spotify SDK loaded');
+        console.log('✅ Spotify Web Playback SDK loaded successfully');
         resolve();
       };
 
       const script = document.createElement('script');
       script.src = 'https://sdk.scdn.co/spotify-player.js';
       script.async = true;
+      script.onerror = () => {
+        console.warn('⚠️ Failed to load Spotify SDK - will use preview URLs only');
+        resolve(); // Don't block on SDK failure
+      };
       document.body.appendChild(script);
     });
-    */
   }
 
   /**
    * Initialize Spotify player with access token
-   * DISABLED - We only use preview URLs, not full playback SDK
+   * Creates Web Playback SDK player for Premium users
    */
   async initializeSpotifyPlayer(accessToken) {
-    console.log('⚠️ Spotify player initialization disabled - using preview URLs only');
-    return Promise.resolve();
-    
-    /* DISABLED - Not needed for preview URLs
-    if (this.spotifyPlayer) {
+    if (!window.Spotify) {
+      console.warn('⚠️ Spotify SDK not loaded - cannot initialize player');
       return;
     }
+
+    if (this.spotifyPlayer) {
+      console.log('✅ Spotify player already initialized');
+      return;
+    }
+
+    console.log('🎵 Initializing Spotify Web Playback player...');
 
     const player = new window.Spotify.Player({
       name: 'TrafficJamz Player',
@@ -90,28 +96,29 @@ class PlatformMusicService {
 
     // Error handling
     player.addListener('initialization_error', ({ message }) => {
-      console.error('Spotify init error:', message);
+      console.error('❌ Spotify init error:', message);
       if (this.onError) this.onError('spotify', message);
     });
 
     player.addListener('authentication_error', ({ message }) => {
-      console.error('Spotify auth error:', message);
+      console.error('❌ Spotify auth error:', message);
       if (this.onError) this.onError('spotify', message);
     });
 
     player.addListener('account_error', ({ message }) => {
-      console.error('Spotify account error:', message);
-      if (this.onError) this.onError('spotify', 'Spotify Premium required');
+      console.error('❌ Spotify account error:', message);
+      console.log('💡 Note: Spotify Premium required for full playback. Falling back to preview URLs.');
+      if (this.onError) this.onError('spotify', 'Spotify Premium required - using preview URLs');
     });
 
     player.addListener('playback_error', ({ message }) => {
-      console.error('Spotify playback error:', message);
+      console.error('❌ Spotify playback error:', message);
       if (this.onError) this.onError('spotify', message);
     });
 
     // Ready
     player.addListener('ready', ({ device_id }) => {
-      console.log('✅ Spotify player ready:', device_id);
+      console.log('✅ Spotify Web Playback player ready! Device ID:', device_id);
       this.spotifyDeviceId = device_id;
     });
 
@@ -141,7 +148,7 @@ class PlatformMusicService {
 
     await player.connect();
     this.spotifyPlayer = player;
-    */
+    console.log('✅ Spotify Web Playback player connected');
   }
 
   /**

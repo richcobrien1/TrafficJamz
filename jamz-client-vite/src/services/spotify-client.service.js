@@ -221,7 +221,7 @@ class SpotifyClientService {
   }
 
   /**
-   * Get playlist tracks
+   * Get playlist tracks with YouTube fallback for tracks without preview URLs
    */
   async getPlaylistTracks(playlistId) {
     let allTracks = [];
@@ -234,12 +234,11 @@ class SpotifyClientService {
         `/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}&fields=items(track(id,name,artists,album,duration_ms,preview_url)),next`
       );
 
-      const totalItems = data.items.filter(item => item.track).length;
-      const tracks = data.items
-        .filter(item => item.track)
-        .filter(item => item.track.preview_url) // Only include tracks with preview URLs
-        .map(item => ({
-          source: 'spotify',
+      const items = data.items.filter(item => item.track);
+      
+      // Process all tracks - use Spotify preview if available, otherwise mark for YouTube fallback
+      const tracks = items.map(item => {
+        const track = {
           id: item.track.id,
           spotifyId: item.track.id,
           title: item.track.name,
@@ -247,19 +246,76 @@ class SpotifyClientService {
           album: item.track.album.name,
           duration: Math.floor(item.track.duration_ms / 1000),
           albumArt: item.track.album.images[0]?.url || null,
-          spotifyPreviewUrl: item.track.preview_url,
-        }));
+        };
 
-      if (tracks.length < totalItems) {
-        console.log(`⚠️ [Spotify] Filtered out ${totalItems - tracks.length} tracks without preview URLs`);
-      }
+        if (item.track.preview_url) {
+          // Has Spotify preview URL - use it
+          track.source = 'spotify';
+          track.spotifyPreviewUrl = item.track.preview_url;
+          track.url = item.track.preview_url;
+          track.previewUrl = item.track.preview_url;
+        } else {
+          // No Spotify preview - will use YouTube fallback
+          track.source = 'youtube';
+          track.needsYouTubeSearch = true;
+          track.originalSpotifyId = item.track.id;
+        }
+
+        return track;
+      });
 
       allTracks = allTracks.concat(tracks);
       hasMore = !!data.next;
       offset += limit;
     }
 
+    // Search YouTube for tracks that need it
+    const tracksNeedingYouTube = allTracks.filter(t => t.needsYouTubeSearch);
+    if (tracksNeedingYouTube.length > 0) {
+      console.log(`🔍 [Spotify→YouTube] ${tracksNeedingYouTube.length} tracks need YouTube fallback`);
+      await this.addYouTubeFallback(tracksNeedingYouTube);
+    }
+
     return allTracks;
+  }
+
+  /**
+   * Search YouTube for tracks and add video IDs
+   */
+  async addYouTubeFallback(tracks) {
+    const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+    if (!YOUTUBE_API_KEY) {
+      console.warn('⚠️ No YouTube API key - tracks without Spotify previews will be skipped');
+      return;
+    }
+
+    for (const track of tracks) {
+      try {
+        const searchQuery = `${track.title} ${track.artist} official audio`;
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&videoCategoryId=10&maxResults=1&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!response.ok) {
+          console.warn(`⚠️ YouTube search failed for "${track.title}"`);
+          continue;
+        }
+
+        const data = await response.json();
+        if (data.items && data.items.length > 0) {
+          const video = data.items[0];
+          track.youtubeId = video.id.videoId;
+          track.youtubeUrl = `https://www.youtube.com/watch?v=${video.id.videoId}`;
+          track.url = track.youtubeUrl;
+          delete track.needsYouTubeSearch;
+          console.log(`✅ [YouTube] Found: ${track.title} → ${track.youtubeId}`);
+        } else {
+          console.warn(`⚠️ No YouTube result for "${track.title} by ${track.artist}"`);
+        }
+      } catch (error) {
+        console.error(`❌ Error searching YouTube for "${track.title}":`, error);
+      }
+    }
   }
 
   /**
