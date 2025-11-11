@@ -263,59 +263,6 @@ const MusicPlayer = ({
           </IconButton>
         </Box>
 
-        {/* Volume Control - Simplified for mobile-first browser experience */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          p: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-          bgcolor: volume === 0 ? 'error.50' : 'background.paper'
-        }}>
-          <Box sx={{ textAlign: 'center', flex: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Music Volume
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Use device volume buttons to adjust
-            </Typography>
-          </Box>
-          <Tooltip title={volume > 0 ? "Mute music" : "Unmute music"}>
-            <IconButton 
-              size="large"
-              onClick={() => {
-                if (onVolumeChange) {
-                  if (volume > 0) {
-                    // Mute: set to 0
-                    onVolumeChange(0);
-                  } else {
-                    // Unmute: restore previous volume
-                    const volumeToRestore = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
-                    onVolumeChange(volumeToRestore);
-                  }
-                }
-              }}
-              disabled={disabled}
-              sx={{ 
-                bgcolor: volume === 0 ? 'error.main' : 'primary.main',
-                color: 'white',
-                ml: 2,
-                '&:hover': {
-                  bgcolor: volume === 0 ? 'error.dark' : 'primary.dark'
-                },
-                '&:disabled': {
-                  bgcolor: 'action.disabledBackground',
-                  color: 'action.disabled'
-                }
-              }}
-            >
-              {volume > 0 ? <VolumeIcon /> : <VolumeOffIcon />}
-            </IconButton>
-          </Tooltip>
-        </Box>
-
         {/* Status Messages */}
         {!isController && (
           <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1, border: '1px solid', borderColor: 'warning.main' }}>
