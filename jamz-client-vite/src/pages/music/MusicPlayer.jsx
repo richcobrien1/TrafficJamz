@@ -28,7 +28,6 @@ import PlaylistImportAccordion from '../../components/music/PlaylistImportAccord
 const MusicPlayerPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  const [showPlaylist, setShowPlaylist] = React.useState(false);
   const [showPlaylistImport, setShowPlaylistImport] = React.useState(false);
   const fileInputRef = React.useRef(null);
   const [uploading, setUploading] = React.useState(false);
@@ -358,25 +357,6 @@ const MusicPlayerPage = () => {
             </Typography>
           </Box>
         </Box>
-
-        {/* View Playlist Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
-          <Button 
-            variant="outlined" 
-            onClick={() => setShowPlaylist(!showPlaylist)}
-            disabled={!sessionId || playlist.length === 0}
-          >
-            {showPlaylist ? 'Hide Playlist' : `View Playlist (${playlist.length})`}
-          </Button>
-          <Button 
-            variant="outlined" 
-            color="error"
-            onClick={handleClearPlaylist}
-            disabled={!sessionId || playlist.length === 0 || !isMusicController}
-          >
-            Clear All Tracks
-          </Button>
-        </Box>
       </Paper>
 
       {/* Playlist Import Dialog */}
@@ -395,17 +375,12 @@ const MusicPlayerPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Playlist Section - Toggleable */}
-      {showPlaylist && (
-        <Paper elevation={3} sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">
-              Playlist ({playlist.length} tracks)
-            </Typography>
-            <Button size="small" onClick={() => setShowPlaylist(false)}>
-              Close
-            </Button>
-          </Box>
+      {/* Playlist Section - Always Visible */}
+      {playlist.length > 0 && (
+        <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Playlist ({playlist.length} tracks)
+          </Typography>
           <MusicPlaylist
             playlist={playlist}
             currentTrack={currentTrack}
