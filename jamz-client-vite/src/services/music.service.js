@@ -102,35 +102,96 @@ class MusicService {
     });
     
     // Check if this is a Spotify preview URL - treat as regular audio file
-    // Try spotifyPreviewUrl first, then previewUrl, then fileUrl (for old tracks), then url
-    const spotifyPreviewUrl = track.spotifyPreviewUrl || track.previewUrl || 
-                               (track.source === 'spotify' && (track.fileUrl || track.url));
-    
-    if (track.source === 'spotify' && spotifyPreviewUrl) {
-      console.log('🎵 Loading Spotify preview:', track.title, 'URL:', spotifyPreviewUrl);
-      this.platformMode = false;
+    // Check if this is a Spotify track
+    if (track.source === 'spotify') {
+      // Try to get Spotify access token for Premium playback
+      const spotifyAccessToken = localStorage.getItem('spotify_access_token');
+      const spotifyTokenExpiry = localStorage.getItem('spotify_token_expiry');
+      const hasValidToken = spotifyAccessToken && Date.now() < parseInt(spotifyTokenExpiry);
       
-      if (!this.audioElement) {
-        this.initialize();
+      // If user has valid Spotify token, try Premium playback via Web Playback SDK
+      if (hasValidToken && track.spotifyId) {
+        console.log('🎵 Loading Spotify track with Premium:', track.title);
+        this.platformMode = true;
+        
+        // Initialize platform service if needed
+        if (!platformMusicService.spotifyPlayer) {
+          await platformMusicService.initialize();
+          await platformMusicService.initializeSpotifyPlayer(spotifyAccessToken);
+        }
+        
+        // Set up event callbacks
+        platformMusicService.onPlayStateChange = (playing) => {
+          this.isPlaying = playing;
+          if (this.onPlayStateChange) {
+            this.onPlayStateChange(playing);
+          }
+        };
+        
+        platformMusicService.onTimeUpdate = (time) => {
+          if (this.onTimeUpdate) {
+            this.onTimeUpdate(time);
+          }
+        };
+        
+        platformMusicService.onTrackChange = (direction) => {
+          if (direction === 'next') {
+            this.playNext();
+          }
+        };
+        
+        platformMusicService.onError = (platform, error) => {
+          console.error(`❌ ${platform} error:`, error);
+          // If Premium fails, fall back to preview URL
+          if (track.spotifyPreviewUrl) {
+            console.log('⚠️ Falling back to Spotify preview URL');
+            this.platformMode = false;
+            if (!this.audioElement) {
+              this.initialize();
+            }
+            this.audioElement.src = track.spotifyPreviewUrl;
+            if (this.onTrackChange) {
+              this.onTrackChange(track);
+            }
+          }
+        };
+        
+        if (this.onTrackChange) {
+          this.onTrackChange(track);
+        }
+        
+        console.log('✅ Spotify Premium track loaded:', track.title);
+        return;
       }
       
-      this.audioElement.src = spotifyPreviewUrl;
-      
-      if (this.onTrackChange) {
-        this.onTrackChange(track);
+      // No Premium or no token - use preview URL
+      const spotifyPreviewUrl = track.spotifyPreviewUrl || track.previewUrl || track.fileUrl || track.url;
+      if (spotifyPreviewUrl) {
+        console.log('🎵 Loading Spotify preview (no Premium):', track.title);
+        this.platformMode = false;
+        
+        if (!this.audioElement) {
+          this.initialize();
+        }
+        
+        this.audioElement.src = spotifyPreviewUrl;
+        
+        if (this.onTrackChange) {
+          this.onTrackChange(track);
+        }
+        
+        console.log('✅ Spotify preview loaded:', track.title);
+        return;
       }
-      
-      console.log('✅ Spotify preview loaded:', track.title);
-      return;
     }
     
-    // Check if this is a platform track (Spotify with full access, YouTube, Apple Music)
-    if (track.source && ['spotify', 'youtube', 'appleMusic'].includes(track.source)) {
-      console.log('🎵 Loading platform track:', track.title, 'from', track.source);
+    // Check if this is a YouTube track
+    if (track.source === 'youtube' && track.youtubeId) {
+      console.log('🎵 Loading YouTube track:', track.title);
       this.platformMode = true;
       
       // Initialize platform service if needed
-      if (!platformMusicService.spotifyPlayer && !platformMusicService.youtubePlayer) {
+      if (!platformMusicService.youtubePlayer) {
         await platformMusicService.initialize();
       }
       
