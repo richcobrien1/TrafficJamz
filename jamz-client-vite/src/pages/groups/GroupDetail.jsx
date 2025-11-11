@@ -31,7 +31,10 @@ import {
   Tab,
   Chip,
   Menu,
-  MenuItem
+  MenuItem,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
@@ -42,6 +45,9 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   ExitToApp as LeaveIcon,
+  ExpandMore as ExpandMoreIcon,
+  MusicNote as MusicNoteIcon,
+  VolumeUp as VolumeUpIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -763,143 +769,82 @@ const GroupDetail = () => {
                   )}
                 </Paper>
                 
-                <Box 
-                  sx={{ 
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: 2,
-                    width: '100%'
-                  }}
-                >
-                  <Box sx={{ flex: '0 0 calc(50% - 8px)', minWidth: 0 }}>
-                    <Paper 
-                      sx={{ 
-                        p: 3,
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        minHeight: 200,
-                        height: '100%',
-                        border: audioSessionActive ? '3px solid' : '1px solid',
-                        borderColor: audioSessionActive ? 'primary.main' : 'divider',
-                        boxShadow: audioSessionActive ? 4 : 1,
-                        bgcolor: audioSessionActive ? 'primary.main' : 'background.paper',
-                        color: audioSessionActive ? '#fff' : 'inherit',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: 6
-                        },
-                        '& .MuiTypography-root': {
-                          color: audioSessionActive ? '#fff' : 'inherit'
-                        }
-                      }}
-                      onClick={() => navigate(`/audio-settings/${groupId}`)}
-                    >
-                      <Avatar sx={{ 
-                        bgcolor: audioSessionActive ? 'rgba(255, 255, 255, 0.2)' : 'primary.light', 
-                        color: audioSessionActive ? '#fff' : 'inherit',
-                        width: 60, 
-                        height: 60, 
-                        mb: 2,
-                        animation: audioSessionActive ? 'pulse 2s infinite' : 'none',
-                        '@keyframes pulse': {
-                          '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
-                          '70%': { boxShadow: '0 0 0 10px rgba(255, 255, 255, 0)' },
-                          '100%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' }
-                        }
-                      }}>
-                        <MicIcon fontSize="large" />
-                      </Avatar>
-                      <Typography variant="h6" gutterBottom align="center">
-                        {audioSessionActive ? 'Audio Active' : 'Audio'}
+                {/* Session Controls Accordion - Mobile Responsive */}
+                <Paper elevation={2} sx={{ mb: 3 }}>
+                  <Accordion defaultExpanded>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <VolumeUpIcon color="primary" />
+                        <Typography variant="h6">Voice</Typography>
+                        {audioSessionActive && (
+                          <Chip label="Active" color="primary" size="small" />
+                        )}
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Real-time voice communication with group members
                       </Typography>
-                      <Typography variant="body2" align="center">
-                        {audioSessionActive 
-                          ? 'Click to join the active audio conversation'
-                          : 'Start or join a real-time audio conversation with group members'
-                        }
-                      </Typography>
-                      {audioSessionActive && (
-                        <Chip 
-                          label="ACTIVE" 
-                          color="primary" 
-                          size="small" 
-                          sx={{ mt: 1, fontWeight: 'bold' }}
-                        />
-                      )}
-                    </Paper>
-                  </Box>
+                      <Button
+                        variant={audioSessionActive ? "outlined" : "contained"}
+                        fullWidth
+                        startIcon={<MicIcon />}
+                        onClick={() => navigate(`/audio-settings/${groupId}`)}
+                      >
+                        {audioSessionActive ? 'Join Voice Session' : 'Start Voice Session'}
+                      </Button>
+                    </AccordionDetails>
+                  </Accordion>
 
-                  <Box sx={{ flex: '0 0 calc(50% - 8px)', minWidth: 0 }}>
-                    <Paper 
-                      component="button"
-                      sx={{ 
-                        p: 3,
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        minHeight: 200,
-                        height: '100%',
-                        width: '100%',
-                        border: isLocationWatchActive ? '3px solid' : '1px solid',
-                        borderColor: isLocationWatchActive ? 'secondary.main' : 'divider',
-                        boxShadow: isLocationWatchActive ? 4 : 1,
-                        bgcolor: isLocationWatchActive ? 'secondary.main' : 'background.paper',
-                        color: isLocationWatchActive ? '#fff' : 'inherit',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: 6
-                        },
-                        '&:active': {
-                          transform: 'scale(0.98)',
-                          boxShadow: 2
-                        },
-                        '& .MuiTypography-root': {
-                          color: isLocationWatchActive ? '#fff' : 'inherit'
-                        }
-                      }}
-                      onClick={() => {
-                        console.log('🗺️ Locator panel clicked, navigating to:', `/location-tracking/${groupId}`);
-                        navigate(`/location-tracking/${groupId}`);
-                      }}
-                    >
-                      <Avatar sx={{ 
-                        bgcolor: isLocationWatchActive ? 'rgba(255, 255, 255, 0.2)' : 'secondary.light',
-                        color: isLocationWatchActive ? '#fff' : 'inherit',
-                        width: 60, 
-                        height: 60, 
-                        mb: 2,
-                        animation: isLocationWatchActive ? 'pulse 2s infinite' : 'none',
-                        '@keyframes pulse': {
-                          '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
-                          '70%': { boxShadow: '0 0 0 10px rgba(255, 255, 255, 0)' },
-                          '100%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' }
-                        }
-                      }}>
-                        <LocationIcon fontSize="large" />
-                      </Avatar>
-                      <Typography variant="h6" gutterBottom align="center">
-                        {isLocationWatchActive ? 'Locator Active' : 'Locator'}
+                  <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MusicNoteIcon color="secondary" />
+                        <Typography variant="h6">Music</Typography>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Share and control music playback for the group
                       </Typography>
-                      <Typography variant="body2" align="center">
-                        {isLocationWatchActive
-                          ? 'Location sharing active - click to view map'
-                          : 'View the location of your group members on the map'
-                        }
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        fullWidth
+                        startIcon={<MusicNoteIcon />}
+                        onClick={() => navigate(`/audio-settings/${groupId}`, { state: { tab: 1 } })}
+                      >
+                        Open Music Player
+                      </Button>
+                    </AccordionDetails>
+                  </Accordion>
+
+                  <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LocationIcon color="info" />
+                        <Typography variant="h6">Location</Typography>
+                        {isLocationWatchActive && (
+                          <Chip label="Sharing" color="info" size="small" />
+                        )}
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Share your location and track group members on the map
                       </Typography>
-                      {isLocationWatchActive && (
-                        <Chip 
-                          label="ACTIVE" 
-                          color="secondary" 
-                          size="small" 
-                          sx={{ mt: 1, fontWeight: 'bold' }}
-                        />
-                      )}
-                    </Paper>
-                  </Box>
-                </Box>
+                      <Button
+                        variant={isLocationWatchActive ? "outlined" : "contained"}
+                        color="info"
+                        fullWidth
+                        startIcon={<LocationIcon />}
+                        onClick={() => navigate(`/location-tracking/${groupId}`)}
+                      >
+                        {isLocationWatchActive ? 'View Map' : 'Start Location Sharing'}
+                      </Button>
+                    </AccordionDetails>
+                  </Accordion>
+                </Paper>
               </Box>
             ) : tabValue === 1 ? (
               <Box>
