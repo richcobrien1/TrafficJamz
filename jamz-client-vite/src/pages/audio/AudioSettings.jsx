@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -24,7 +24,15 @@ import MusicPlayer from '../../components/music/MusicPlayer';
 const AudioSettings = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  const [tabValue, setTabValue] = useState(0);
+  const location = useLocation();
+  const [tabValue, setTabValue] = useState(location.state?.tab || 0);
+  
+  // Update tab if state changes
+  useEffect(() => {
+    if (location.state?.tab !== undefined) {
+      setTabValue(location.state.tab);
+    }
+  }, [location.state]);
   
   // Music context
   const {
