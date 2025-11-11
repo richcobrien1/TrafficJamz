@@ -56,8 +56,8 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
   // Load platform statuses and playlists on mount
   useEffect(() => {
     const init = async () => {
-      await loadPlatformStatuses();
-      await loadPlaylists();
+      const statuses = await loadPlatformStatuses();
+      await loadPlaylists(statuses);
     };
     init();
   }, [activeTab]);
@@ -87,8 +87,10 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
       
       console.log('🔍 [PlaylistImport] Updated platform statuses:', newStatuses);
       setPlatformStatuses(newStatuses);
+      return newStatuses; // Return the statuses so they can be used immediately
     } catch (err) {
       console.error('❌ [PlaylistImport] Error loading platform statuses:', err);
+      return platformStatuses; // Return current state on error
     }
   };
 
@@ -106,11 +108,12 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
     } else if (platform === 'appleMusic') {
       try {
         await appleMusicClient.authorize();
-        setPlatformStatuses(prev => ({
-          ...prev,
+        const newStatuses = {
+          ...platformStatuses,
           appleMusic: { connected: true }
-        }));
-        await loadPlaylists();
+        };
+        setPlatformStatuses(newStatuses);
+        await loadPlaylists(newStatuses);
       } catch (err) {
         console.error('Apple Music auth error:', err);
         setError('Failed to connect to Apple Music. Please try again.');
@@ -126,18 +129,21 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
     }
   };
 
-  const loadPlaylists = async () => {
+  const loadPlaylists = async (statuses = null) => {
     setLoading(true);
     setError(null);
+    
+    // Use passed statuses or fall back to state
+    const currentStatuses = statuses || platformStatuses;
     
     try {
       let data = [];
       
       console.log('📋 [PlaylistImport] Loading playlists for tab:', activeTab);
-      console.log('📋 [PlaylistImport] Platform statuses:', platformStatuses);
+      console.log('📋 [PlaylistImport] Using statuses:', currentStatuses);
       
       if (activeTab === 0) {
-        if (!platformStatuses.spotify.connected) {
+        if (!currentStatuses.spotify.connected) {
           console.log('⚠️ [PlaylistImport] Spotify not connected');
           setPlaylists([]);
           setLoading(false);
@@ -147,14 +153,14 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
         data = await spotifyClient.getPlaylists();
         console.log('🎵 [PlaylistImport] Received playlists:', data);
       } else if (activeTab === 1) {
-        if (!platformStatuses.youtube.connected) {
+        if (!currentStatuses.youtube.connected) {
           setPlaylists([]);
           setLoading(false);
           return;
         }
         data = await youtubeClient.getPlaylists();
       } else if (activeTab === 2) {
-        if (!platformStatuses.appleMusic.connected) {
+        if (!currentStatuses.appleMusic.connected) {
           setPlaylists([]);
           setLoading(false);
           return;
