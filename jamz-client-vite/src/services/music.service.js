@@ -91,6 +91,13 @@ class MusicService {
   async loadTrack(track) {
     this.currentTrack = track;
     
+    console.log('🎵 [loadTrack] Track object:', {
+      source: track.source,
+      title: track.title,
+      previewUrl: track.previewUrl,
+      hasPreviewUrl: !!track.previewUrl
+    });
+    
     // Check if this is a Spotify preview URL - treat as regular audio file
     if (track.source === 'spotify' && track.previewUrl) {
       console.log('🎵 Loading Spotify preview:', track.title);
