@@ -37,7 +37,7 @@ import { useMusic } from '../../contexts/MusicContext';
  * Interface for browsing and importing playlists from music platforms
  */
 const PlaylistImportAccordion = ({ onImport, sessionId }) => {
-  const { playTrack, isController } = useMusic();
+  const { loadAndPlay, pause, isController } = useMusic();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -234,12 +234,12 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
       }
       
       if (playingTrackIndex === index) {
-        // Pause if already playing - use MusicContext
-        await playTrack(null);
+        // Pause if already playing
+        await pause();
         setPlayingTrackIndex(null);
       } else {
-        // Play new track - use MusicContext to broadcast to all members
-        await playTrack(track);
+        // Play new track - use loadAndPlay to load and play immediately
+        await loadAndPlay(track);
         setPlayingTrackIndex(index);
       }
     } catch (err) {
