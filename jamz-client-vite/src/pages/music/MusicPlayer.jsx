@@ -374,9 +374,20 @@ const MusicPlayerPage = () => {
       {/* Playlist Section - Always Visible */}
       {playlist.length > 0 && (
         <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Playlist ({playlist.length} tracks)
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6">
+              Playlist ({playlist.length} tracks)
+            </Typography>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={handleClearPlaylist}
+              disabled={!isMusicController}
+            >
+              Clear All
+            </Button>
+          </Box>
           <MusicPlaylist
             playlist={playlist}
             currentTrack={currentTrack}
