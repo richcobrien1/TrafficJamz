@@ -121,13 +121,19 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
     try {
       let data = [];
       
+      console.log('📋 [PlaylistImport] Loading playlists for tab:', activeTab);
+      console.log('📋 [PlaylistImport] Platform statuses:', platformStatuses);
+      
       if (activeTab === 0) {
         if (!platformStatuses.spotify.connected) {
+          console.log('⚠️ [PlaylistImport] Spotify not connected');
           setPlaylists([]);
           setLoading(false);
           return;
         }
+        console.log('🎵 [PlaylistImport] Calling spotifyClient.getPlaylists()...');
         data = await spotifyClient.getPlaylists();
+        console.log('🎵 [PlaylistImport] Received playlists:', data);
       } else if (activeTab === 1) {
         if (!platformStatuses.youtube.connected) {
           setPlaylists([]);
@@ -144,9 +150,10 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
         data = await appleMusicClient.getPlaylists();
       }
       
+      console.log('📋 [PlaylistImport] Setting playlists state:', data);
       setPlaylists(data);
     } catch (err) {
-      console.error('Error loading playlists:', err);
+      console.error('❌ [PlaylistImport] Error loading playlists:', err);
       setError(err.response?.data?.error || err.message || 'Failed to load playlists.');
     } finally {
       setLoading(false);

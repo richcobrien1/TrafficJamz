@@ -171,16 +171,33 @@ class SpotifyClientService {
    * Get user's playlists
    */
   async getPlaylists(limit = 50, offset = 0) {
-    const data = await this.makeRequest(`/me/playlists?limit=${limit}&offset=${offset}`);
-    return data.items.map(playlist => ({
-      id: playlist.id,
-      name: playlist.name,
-      description: playlist.description,
-      owner: playlist.owner.display_name,
-      tracksCount: playlist.tracks.total,
-      images: playlist.images,
-      externalUrl: playlist.external_urls.spotify,
-    }));
+    try {
+      console.log('🎵 [Spotify] Fetching playlists...');
+      const data = await this.makeRequest(`/me/playlists?limit=${limit}&offset=${offset}`);
+      console.log('🎵 [Spotify] Raw response:', data);
+      console.log('🎵 [Spotify] Number of playlists:', data.items?.length || 0);
+      
+      if (!data.items || data.items.length === 0) {
+        console.log('⚠️ [Spotify] No playlists in response');
+        return [];
+      }
+      
+      const playlists = data.items.map(playlist => ({
+        id: playlist.id,
+        name: playlist.name,
+        description: playlist.description,
+        owner: playlist.owner.display_name,
+        tracksCount: playlist.tracks.total,
+        images: playlist.images,
+        externalUrl: playlist.external_urls.spotify,
+      }));
+      
+      console.log('🎵 [Spotify] Mapped playlists:', playlists);
+      return playlists;
+    } catch (error) {
+      console.error('❌ [Spotify] Error fetching playlists:', error);
+      throw error;
+    }
   }
 
   /**
