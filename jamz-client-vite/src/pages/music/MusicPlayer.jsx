@@ -7,9 +7,7 @@ import {
   Toolbar,
   IconButton,
   Typography,
-  Box,
-  Button,
-  Grid
+  Box
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -52,7 +50,7 @@ const MusicPlayerPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ pb: 4 }}>
-      {/* App Bar with Upload and Playlist on opposite sides */}
+      {/* App Bar - Simple header */}
       <AppBar position="static" color="secondary" sx={{ mb: 3 }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
@@ -61,25 +59,6 @@ const MusicPlayerPage = () => {
           <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
             Music Player
           </Typography>
-          
-          {/* Upload Button - Right Side */}
-          <Button
-            color="inherit"
-            startIcon={<UploadIcon />}
-            onClick={() => setShowUpload(!showUpload)}
-            sx={{ mr: 1 }}
-          >
-            Upload
-          </Button>
-          
-          {/* Playlist Button - Far Right */}
-          <Button
-            color="inherit"
-            startIcon={<PlaylistIcon />}
-            onClick={() => setShowPlaylist(!showPlaylist)}
-          >
-            Playlist ({playlist.length})
-          </Button>
         </Toolbar>
       </AppBar>
 
@@ -102,6 +81,59 @@ const MusicPlayerPage = () => {
           onReleaseControl={releaseMusicControl}
           disabled={!sessionId}
         />
+      </Paper>
+
+      {/* Upload and Playlist Icons Panel */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: 4 
+        }}>
+          {/* Upload Icon */}
+          <Box sx={{ textAlign: 'center' }}>
+            <IconButton
+              onClick={() => setShowUpload(!showUpload)}
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: showUpload ? 'primary.main' : 'action.hover',
+                color: showUpload ? 'white' : 'primary.main',
+                '&:hover': {
+                  bgcolor: 'primary.main',
+                  color: 'white'
+                }
+              }}
+            >
+              <UploadIcon sx={{ fontSize: 40 }} />
+            </IconButton>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
+              Upload
+            </Typography>
+          </Box>
+
+          {/* Playlist Icon */}
+          <Box sx={{ textAlign: 'center' }}>
+            <IconButton
+              onClick={() => setShowPlaylist(!showPlaylist)}
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: showPlaylist ? 'secondary.main' : 'action.hover',
+                color: showPlaylist ? 'white' : 'secondary.main',
+                '&:hover': {
+                  bgcolor: 'secondary.main',
+                  color: 'white'
+                }
+              }}
+            >
+              <PlaylistIcon sx={{ fontSize: 40 }} />
+            </IconButton>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
+              Playlist ({playlist.length})
+            </Typography>
+          </Box>
+        </Box>
       </Paper>
 
       {/* Upload Section - Toggleable */}
