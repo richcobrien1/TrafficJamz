@@ -17,7 +17,23 @@ class SpotifyClientService {
    * Check if user is authenticated
    */
   isAuthenticated() {
-    return !!this.accessToken && Date.now() < parseInt(this.tokenExpiry);
+    // Always read fresh values from localStorage
+    const token = localStorage.getItem('spotify_access_token');
+    const expiry = localStorage.getItem('spotify_token_expiry');
+    
+    if (!token || !expiry) {
+      return false;
+    }
+    
+    const isValid = Date.now() < parseInt(expiry);
+    console.log('🔐 [Spotify] isAuthenticated check:', {
+      hasToken: !!token,
+      expiry: new Date(parseInt(expiry)).toISOString(),
+      now: new Date().toISOString(),
+      isValid
+    });
+    
+    return isValid;
   }
 
   /**
@@ -134,8 +150,12 @@ class SpotifyClientService {
    * Make authenticated API request
    */
   async makeRequest(endpoint, options = {}) {
+    // Read fresh token from localStorage
+    const accessToken = localStorage.getItem('spotify_access_token');
+    const refreshToken = localStorage.getItem('spotify_refresh_token');
+    
     if (!this.isAuthenticated()) {
-      if (this.refreshToken) {
+      if (refreshToken) {
         await this.refreshAccessToken();
       } else {
         throw new Error('Not authenticated');
@@ -145,7 +165,7 @@ class SpotifyClientService {
     const response = await fetch(`${SPOTIFY_API_BASE}${endpoint}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         ...options.headers,
       },
