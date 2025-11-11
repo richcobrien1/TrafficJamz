@@ -234,7 +234,7 @@ const Dashboard = () => {
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto', gap: 1 }}>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       size="small"
                       startIcon={<MicIcon />}
                       onClick={(e) => {
@@ -245,7 +245,7 @@ const Dashboard = () => {
                       Join Audio
                     </Button>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       size="small"
                       startIcon={<LocationIcon />}
                       onClick={(e) => {
