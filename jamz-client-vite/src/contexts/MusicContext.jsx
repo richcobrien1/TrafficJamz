@@ -815,6 +815,7 @@ export const MusicProvider = ({ children }) => {
     volume,
     isController,
     isMusicEnabled,
+    sessionId: activeSessionId, // Alias for backward compatibility
     activeSessionId,
     activeGroupId,
     
