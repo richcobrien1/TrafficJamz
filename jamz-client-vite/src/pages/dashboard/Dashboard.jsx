@@ -19,8 +19,6 @@ import {
   Avatar,
   Divider,
   IconButton,
-  Badge,
-  Drawer,
   AppBar,
   Toolbar,
   Dialog,
@@ -35,9 +33,7 @@ import {
   Group as GroupIcon,
   Mic as MicIcon,
   LocationOn as LocationIcon,
-  Notifications as NotificationsIcon,
-  AccountCircle as AccountCircleIcon,
-  Menu as MenuIcon,
+  Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
   SmartToy as AIIcon
 } from '@mui/icons-material';
@@ -50,7 +46,6 @@ const Dashboard = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [openDrawer, setOpenDrawer] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
@@ -58,7 +53,6 @@ const Dashboard = () => {
   const [avatarOptions, setAvatarOptions] = useState([]);
   const [createGroupLoading, setCreateGroupLoading] = useState(false);
   const [createGroupError, setCreateGroupError] = useState('');
-  const [notifications, setNotifications] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
 
   const { user: currentUser, logout } = useAuth();
@@ -66,7 +60,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchGroups();
-    fetchNotifications();
   }, []);
 
   const fetchGroups = async () => {
@@ -79,15 +72,6 @@ const Dashboard = () => {
       console.error('Error fetching groups:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-  const response = await api.get('/notifications/unread');
-      setNotifications(response.data.notifications);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
     }
   };
 
@@ -150,171 +134,38 @@ const Dashboard = () => {
         paddingRight: 'env(safe-area-inset-right)'
       }}>
         <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            sx={{ mr: 2 }}
-            onClick={() => setOpenDrawer(true)}
+          {/* User Avatar and Name */}
+          <Avatar 
+            src={getAvatarContent(currentUser)}
+            sx={{ width: 40, height: 40, mr: 2 }}
           >
-            <MenuIcon />
-          </IconButton>
+            {getAvatarFallback(currentUser)}
+          </Avatar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Groups
+            {currentUser?.full_name || currentUser?.username || 'User'}
           </Typography>
-          <IconButton color="inherit" onClick={fetchNotifications} aria-label="refresh notifications">
-            <Badge badgeContent={notifications?.length} color="error">
-              <NotificationsIcon />
-            </Badge>
+          
+          {/* Settings Icon */}
+          <IconButton 
+            color="inherit" 
+            onClick={() => navigate('/profile')}
+            aria-label="settings"
+            sx={{ mr: 1 }}
+          >
+            <SettingsIcon />
+          </IconButton>
+          
+          {/* Logout Icon */}
+          <IconButton 
+            color="inherit" 
+            onClick={handleLogout}
+            aria-label="logout"
+          >
+            <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
 
-      <Drawer anchor="left" open={openDrawer} onClose={() => setOpenDrawer(false)}>
-        <Box 
-          sx={{ 
-            width: 280,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column'
-          }} 
-          role="presentation"
-        >
-          <List sx={{ pt: 2 }}>
-            {/* User Profile Header */}
-            <ListItem 
-              sx={{ 
-                mb: 1,
-                px: 3,
-                py: 2
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar 
-                  src={getAvatarContent(currentUser)}
-                  sx={{ 
-                    width: 56, 
-                    height: 56,
-                    border: '2px solid',
-                    borderColor: 'primary.main'
-                  }}
-                >
-                  {getAvatarFallback(currentUser)}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Typography variant="subtitle1" fontWeight="600">
-                    {`${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'User'}
-                  </Typography>
-                }
-                secondary={
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {currentUser?.email}
-                  </Typography>
-                }
-                sx={{ ml: 2 }}
-              />
-            </ListItem>
-            
-            <Divider sx={{ my: 1 }} />
-            
-            {/* Navigation Items */}
-            <ListItem 
-              onClick={() => { setOpenDrawer(false); navigate('/'); }}
-              sx={{ 
-                px: 3,
-                py: 1.5,
-                cursor: 'pointer',
-                '&:hover': { 
-                  bgcolor: 'action.hover',
-                  '& .MuiAvatar-root': {
-                    bgcolor: 'primary.main'
-                  }
-                }
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar sx={{ bgcolor: 'action.selected', width: 40, height: 40 }}>
-                  <GroupIcon />
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText 
-                primary={
-                  <Typography variant="body1" fontWeight="500">
-                    Groups
-                  </Typography>
-                }
-                sx={{ ml: 1 }}
-              />
-            </ListItem>
-            
-            <ListItem 
-              onClick={() => { setOpenDrawer(false); navigate('/profile'); }}
-              sx={{ 
-                px: 3,
-                py: 1.5,
-                cursor: 'pointer',
-                '&:hover': { 
-                  bgcolor: 'action.hover',
-                  '& .MuiAvatar-root': {
-                    bgcolor: 'primary.main'
-                  }
-                }
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar sx={{ bgcolor: 'action.selected', width: 40, height: 40 }}>
-                  <AccountCircleIcon />
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText 
-                primary={
-                  <Typography variant="body1" fontWeight="500">
-                    Profile
-                  </Typography>
-                }
-                sx={{ ml: 1 }}
-              />
-            </ListItem>
-            
-            <Divider sx={{ my: 1 }} />
-            
-            {/* Logout */}
-            <ListItem 
-              onClick={() => { setOpenDrawer(false); handleLogout(); }}
-              sx={{ 
-                px: 3,
-                py: 1.5,
-                cursor: 'pointer',
-                '&:hover': { 
-                  bgcolor: 'error.dark',
-                  '& .MuiAvatar-root': {
-                    bgcolor: 'error.main'
-                  },
-                  '& .MuiTypography-root': {
-                    color: 'error.contrastText'
-                  }
-                }
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar sx={{ bgcolor: 'action.selected', width: 40, height: 40 }}>
-                  <LogoutIcon />
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText 
-                primary={
-                  <Typography variant="body1" fontWeight="500">
-                    Logout
-                  </Typography>
-                }
-                sx={{ ml: 1 }}
-              />
-            </ListItem>
-          </List>
-        </Box>
-      </Drawer>
 
       <Container component="main" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
