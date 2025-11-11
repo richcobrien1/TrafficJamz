@@ -392,6 +392,27 @@ router.post('/sessions/:sessionId/music/playlist',
 );
 
 /**
+ * @route DELETE /api/audio/sessions/:sessionId/music/playlist/clear
+ * @desc Clear all tracks from session playlist
+ * @access Private
+ */
+router.delete('/sessions/:sessionId/music/playlist/clear',
+  passport.authenticate('jwt', { session: false }),
+  [
+    param('sessionId').isMongoId().withMessage('Valid session ID is required'),
+    validate
+  ],
+  async (req, res) => {
+    try {
+      await audioService.clearPlaylist(req.params.sessionId, req.user.user_id);
+      res.json({ success: true, message: 'Playlist cleared' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+);
+
+/**
  * @route POST /api/audio/sessions/:sessionId/music/control
  * @desc Control music playback
  * @access Private
