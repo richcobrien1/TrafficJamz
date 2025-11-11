@@ -55,14 +55,23 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
 
   // Load platform statuses and playlists on mount
   useEffect(() => {
-    loadPlatformStatuses();
-    loadPlaylists();
+    const init = async () => {
+      await loadPlatformStatuses();
+      await loadPlaylists();
+    };
+    init();
   }, [activeTab]);
 
   const loadPlatformStatuses = async () => {
     try {
+      console.log('🔍 [PlaylistImport] Checking platform authentication...');
+      
       // Check Spotify token
       const spotifyConnected = spotifyClient.isAuthenticated();
+      console.log('🎵 [Spotify] isAuthenticated():', spotifyConnected);
+      console.log('🎵 [Spotify] Access token exists:', !!localStorage.getItem('spotify_access_token'));
+      console.log('🎵 [Spotify] Token expiry:', localStorage.getItem('spotify_token_expiry'));
+      console.log('🎵 [Spotify] Current time:', Date.now());
       
       // Check Apple Music token  
       const appleMusicConnected = appleMusicClient.isAuthenticated();
@@ -70,13 +79,16 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
       // Check YouTube token
       const youtubeConnected = youtubeClient.isAuthenticated();
       
-      setPlatformStatuses({
+      const newStatuses = {
         spotify: { connected: spotifyConnected },
         appleMusic: { connected: appleMusicConnected },
         youtube: { connected: youtubeConnected }
-      });
+      };
+      
+      console.log('🔍 [PlaylistImport] Updated platform statuses:', newStatuses);
+      setPlatformStatuses(newStatuses);
     } catch (err) {
-      console.error('Error loading platform statuses:', err);
+      console.error('❌ [PlaylistImport] Error loading platform statuses:', err);
     }
   };
 
