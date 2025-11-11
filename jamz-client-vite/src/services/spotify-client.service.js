@@ -234,8 +234,10 @@ class SpotifyClientService {
         `/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}&fields=items(track(id,name,artists,album,duration_ms,preview_url)),next`
       );
 
+      const totalItems = data.items.filter(item => item.track).length;
       const tracks = data.items
         .filter(item => item.track)
+        .filter(item => item.track.preview_url) // Only include tracks with preview URLs
         .map(item => ({
           source: 'spotify',
           id: item.track.id,
@@ -247,6 +249,10 @@ class SpotifyClientService {
           albumArt: item.track.album.images[0]?.url || null,
           spotifyPreviewUrl: item.track.preview_url,
         }));
+
+      if (tracks.length < totalItems) {
+        console.log(`⚠️ [Spotify] Filtered out ${totalItems - tracks.length} tracks without preview URLs`);
+      }
 
       allTracks = allTracks.concat(tracks);
       hasMore = !!data.next;
