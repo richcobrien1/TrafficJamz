@@ -14,7 +14,10 @@ import {
   DialogTitle,
   DialogContent,
   CircularProgress,
-  Fade
+  Fade,
+  LinearProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -155,45 +158,62 @@ const MusicPlayerPage = () => {
 
     try {
       const uploadedTracks = [];
+      const totalFiles = filesToUpload.length;
 
-      for (let i = 0; i < filesToUpload.length; i++) {
+      for (let i = 0; i < totalFiles; i++) {
         const file = filesToUpload[i];
-        console.log(`📤 Uploading file ${i + 1}/${filesToUpload.length}: ${file.name}`);
+        console.log(`📤 Uploading file ${i + 1}/${totalFiles}: ${file.name}`);
 
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/upload-music`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: formData
+        // Use XMLHttpRequest for progress tracking
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          // Track cumulative upload progress across all files
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              // Calculate: (completed files + current file progress) / total files
+              const currentFileProgress = (e.loaded / e.total);
+              const totalProgress = ((i + currentFileProgress) / totalFiles) * 100;
+              setUploadProgress(Math.round(totalProgress));
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const result = JSON.parse(xhr.responseText);
+              console.log('✅ Upload response:', result);
+              uploadedTracks.push(result.track);
+              resolve();
+            } else {
+              reject(new Error(`Upload failed for ${file.name}: ${xhr.statusText}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            reject(new Error(`Network error uploading ${file.name}`));
+          });
+
+          xhr.open('POST', `${API_URL}/api/audio/sessions/${sessionId}/upload-music`);
+          xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('token')}`);
+          xhr.send(formData);
         });
-
-        if (!response.ok) {
-          throw new Error(`Upload failed for ${file.name}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('✅ Upload response:', result);
-        uploadedTracks.push(result.track);
-
-        // Update progress
-        setUploadProgress(((i + 1) / filesToUpload.length) * 100);
       }
 
       console.log('✅ All files uploaded successfully:', uploadedTracks);
+      setUploadProgress(100);
 
-      // The backend already added tracks to the database playlist
-      // Reload the page to sync the playlist (simplest solution)
-      console.log('🔄 Reloading page to sync playlist...');
-      window.location.reload();
+      // Wait a moment to show 100% completion, then reset
+      setTimeout(() => {
+        setUploading(false);
+        setUploadProgress(0);
+      }, 800);
 
     } catch (error) {
       console.error('❌ Upload failed:', error);
       setUploadError(`Upload failed: ${error.message}`);
-    } finally {
       setUploading(false);
       setUploadProgress(0);
     }
@@ -299,7 +319,37 @@ const MusicPlayerPage = () => {
             Music Player
           </Typography>
         </Toolbar>
+        {/* Discrete Upload Progress Bar */}
+        {uploading && (
+          <LinearProgress 
+            variant="determinate" 
+            value={uploadProgress} 
+            sx={{ 
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: '#4caf50'
+              }
+            }} 
+          />
+        )}
       </AppBar>
+
+      {/* Upload Success/Error Snackbar */}
+      <Snackbar
+        open={!!uploadError}
+        autoHideDuration={6000}
+        onClose={() => setUploadError('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setUploadError('')}>
+          {uploadError}
+        </Alert>
+      </Snackbar>
 
       {/* Loading State */}
       {isInitializing ? (
