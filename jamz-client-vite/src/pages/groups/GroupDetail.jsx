@@ -901,18 +901,18 @@ const GroupDetail = () => {
                     </AccordionDetails>
                   </Accordion>
 
-                  {/* Location Accordion - Full Bar Color */}
+                  {/* Location Accordion - Full Bar Color (Pink/Magenta) */}
                   <Accordion
                     sx={{
-                      bgcolor: isLocationWatchActive ? 'info.main' : 'background.paper',
-                      color: isLocationWatchActive ? 'info.contrastText' : 'inherit',
+                      bgcolor: isLocationWatchActive ? '#e91e63' : 'background.paper',
+                      color: isLocationWatchActive ? '#fff' : 'inherit',
                       '&:before': { display: 'none' }
                     }}
                   >
                     <AccordionSummary 
-                      expandIcon={<ExpandMoreIcon sx={{ color: isLocationWatchActive ? 'info.contrastText' : 'inherit' }} />}
+                      expandIcon={<ExpandMoreIcon sx={{ color: isLocationWatchActive ? '#fff' : 'inherit' }} />}
                       sx={{
-                        bgcolor: isLocationWatchActive ? 'info.main' : 'background.paper',
+                        bgcolor: isLocationWatchActive ? '#e91e63' : 'background.paper',
                         '& .MuiAccordionSummary-content': {
                           alignItems: 'center'
                         }
@@ -928,7 +928,7 @@ const GroupDetail = () => {
                                 width: 8, 
                                 height: 8, 
                                 borderRadius: '50%', 
-                                bgcolor: 'success.main',
+                                bgcolor: '#4caf50',
                                 ml: 'auto',
                                 animation: 'pulse 2s infinite',
                                 '@keyframes pulse': {
@@ -945,20 +945,30 @@ const GroupDetail = () => {
                         )}
                       </Box>
                     </AccordionSummary>
-                    <AccordionDetails sx={{ bgcolor: isLocationWatchActive ? 'info.dark' : 'background.paper' }}>
-                      <Typography variant="body2" color={isLocationWatchActive ? 'info.contrastText' : 'text.secondary'} paragraph>
+                    <AccordionDetails sx={{ bgcolor: isLocationWatchActive ? '#c2185b' : 'background.paper' }}>
+                      <Typography variant="body2" color={isLocationWatchActive ? '#fff' : 'text.secondary'} paragraph>
                         Share your location and track group members on the map
                       </Typography>
                       <Button
                         variant={isLocationWatchActive ? "outlined" : "contained"}
-                        color="info"
                         fullWidth
                         startIcon={<LocationIcon />}
                         onClick={() => navigate(`/location-tracking/${groupId}`)}
                         sx={isLocationWatchActive ? { 
-                          color: 'info.contrastText', 
-                          borderColor: 'info.contrastText' 
-                        } : {}}
+                          color: '#fff', 
+                          borderColor: '#fff',
+                          bgcolor: '#c2185b',
+                          '&:hover': {
+                            bgcolor: '#ad1457',
+                            borderColor: '#fff'
+                          }
+                        } : {
+                          bgcolor: '#e91e63',
+                          color: '#fff',
+                          '&:hover': {
+                            bgcolor: '#c2185b'
+                          }
+                        }}
                       >
                         {isLocationWatchActive ? 'View Map' : 'Start Location Sharing'}
                       </Button>
