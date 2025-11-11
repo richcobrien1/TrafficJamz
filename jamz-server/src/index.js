@@ -33,8 +33,9 @@ app.locals.rateLimitMetrics = {
   musicSync: 0
 };
 
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+// Parse JSON and URL-encoded bodies with increased size limits for file uploads
+app.use(express.json({ limit: '100mb' })); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true, limit: '100mb' })); // Parse URL-encoded bodies
 
 // Create HTTP server for WebSocket support
 const server = http.createServer(app);
