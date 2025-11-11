@@ -231,31 +231,6 @@ const Dashboard = () => {
                       {group.description}
                     </Typography>
                   )}
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<MicIcon />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/audio-session/${group.id}`);
-                      }}
-                    >
-                      Join Audio
-                    </Button>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<LocationIcon />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/location-tracking/${group.id}`);
-                      }}
-                    >
-                      Location
-                    </Button>
-                  </Box>
                 </Paper>
               </Grid>
             ))}
