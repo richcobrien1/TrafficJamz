@@ -412,7 +412,8 @@ router.delete('/sessions/:sessionId/music/playlist/clear',
   ],
   async (req, res) => {
     try {
-      await audioService.clearPlaylist(req.params.sessionId, req.user.user_id);
+      const userId = req.user.user_id || req.user.id;
+      await audioService.clearPlaylist(req.params.sessionId, userId);
       res.json({ success: true, message: 'Playlist cleared' });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
