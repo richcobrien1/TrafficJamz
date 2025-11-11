@@ -391,7 +391,12 @@ router.post('/sessions/:sessionId/music/playlist',
         req.params.sessionId,
         track,
         req.user.user_id
-```
+      );
+      res.json({ success: true, playlist });
+    } catch (error) {
+      res.status(400).json({ success: false, errors: [{ msg: error.message }] });
+    }
+  }
 );
 
 /**
