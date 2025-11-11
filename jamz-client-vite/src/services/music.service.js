@@ -91,7 +91,26 @@ class MusicService {
   async loadTrack(track) {
     this.currentTrack = track;
     
-    // Check if this is a platform track (Spotify, YouTube, Apple Music)
+    // Check if this is a Spotify preview URL - treat as regular audio file
+    if (track.source === 'spotify' && track.previewUrl) {
+      console.log('🎵 Loading Spotify preview:', track.title);
+      this.platformMode = false;
+      
+      if (!this.audioElement) {
+        this.initialize();
+      }
+      
+      this.audioElement.src = track.previewUrl;
+      
+      if (this.onTrackChange) {
+        this.onTrackChange(track);
+      }
+      
+      console.log('✅ Spotify preview loaded:', track.title);
+      return;
+    }
+    
+    // Check if this is a platform track (Spotify with full access, YouTube, Apple Music)
     if (track.source && ['spotify', 'youtube', 'appleMusic'].includes(track.source)) {
       console.log('🎵 Loading platform track:', track.title, 'from', track.source);
       this.platformMode = true;
