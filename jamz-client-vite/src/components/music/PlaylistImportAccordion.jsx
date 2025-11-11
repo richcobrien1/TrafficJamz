@@ -85,7 +85,7 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
     
     if (platform === 'spotify') {
       try {
-        localStorage.setItem('spotify_auth_return', window.location.pathname);
+        localStorage.setItem('spotify_return_to', window.location.pathname);
         await spotifyClient.authorize();
       } catch (err) {
         console.error('Spotify auth error:', err);
