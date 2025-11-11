@@ -57,8 +57,49 @@ const MusicPlayerPage = () => {
     loadAndPlay: musicLoadAndPlay,
     takeControl: takeMusicControl,
     releaseControl: releaseMusicControl,
-    changeVolume: changeMusicVolume
+    changeVolume: changeMusicVolume,
+    initializeSession
   } = useMusic();
+
+  /**
+   * Initialize music session when component mounts
+   */
+  React.useEffect(() => {
+    const initMusic = async () => {
+      if (!groupId) {
+        console.error('No groupId provided');
+        return;
+      }
+
+      try {
+        // Fetch or create an active audio session for this group
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/audio/sessions/group/${groupId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch audio session');
+        }
+
+        const data = await response.json();
+        const audioSessionId = data.session?._id || data.session?.id;
+
+        if (audioSessionId) {
+          console.log('🎵 Initializing music session:', audioSessionId);
+          initializeSession(audioSessionId, groupId);
+        } else {
+          console.error('No active audio session found for group:', groupId);
+        }
+      } catch (error) {
+        console.error('Error initializing music session:', error);
+      }
+    };
+
+    initMusic();
+  }, [groupId, initializeSession]);
 
   /**
    * Handle file selection and upload
