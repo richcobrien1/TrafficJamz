@@ -66,6 +66,7 @@ const MusicPlayer = ({
    */
   const handleSeekChange = (event, newValue) => {
     if (onSeek && isController) {
+      console.log('🎵 [MusicPlayer] Seeking to:', newValue);
       onSeek(newValue);
     }
   };
@@ -75,6 +76,7 @@ const MusicPlayer = ({
    */
   const handleVolumeChange = (event, newValue) => {
     if (onVolumeChange) {
+      console.log('🎵 [MusicPlayer] Volume change:', newValue / 100);
       onVolumeChange(newValue / 100);
     }
   };
@@ -83,13 +85,41 @@ const MusicPlayer = ({
    * Toggle play/pause
    */
   const handlePlayPause = () => {
-    if (!isController) return;
+    if (!isController) {
+      console.warn('🎵 [MusicPlayer] Not controller - cannot play/pause');
+      return;
+    }
     
+    console.log('🎵 [MusicPlayer] Play/Pause clicked - isPlaying:', isPlaying);
     if (isPlaying) {
       onPause?.();
     } else {
       onPlay?.();
     }
+  };
+
+  /**
+   * Handle previous track
+   */
+  const handlePrevious = () => {
+    if (!isController) {
+      console.warn('🎵 [MusicPlayer] Not controller - cannot go to previous');
+      return;
+    }
+    console.log('🎵 [MusicPlayer] Previous clicked');
+    onPrevious?.();
+  };
+
+  /**
+   * Handle next track
+   */
+  const handleNext = () => {
+    if (!isController) {
+      console.warn('🎵 [MusicPlayer] Not controller - cannot go to next');
+      return;
+    }
+    console.log('🎵 [MusicPlayer] Next clicked');
+    onNext?.();
   };
 
   if (!currentTrack) {
@@ -203,18 +233,23 @@ const MusicPlayer = ({
 
         {/* Progress Bar */}
         <Box sx={{ mb: 2 }}>
-          <Slider
-            value={currentTime || 0}
-            max={duration || 100}
-            onChange={handleSeekChange}
-            disabled={!isController || disabled}
-            sx={{ 
-              color: isController ? 'primary.main' : 'grey.400',
-              '& .MuiSlider-thumb': {
-                display: isController ? 'block' : 'none'
-              }
-            }}
-          />
+          <Tooltip title={isController ? "Drag to seek" : "Take control to seek"} placement="top">
+            <Slider
+              value={currentTime || 0}
+              max={duration || 100}
+              onChange={handleSeekChange}
+              disabled={!isController || disabled}
+              sx={{ 
+                color: isController ? 'primary.main' : 'grey.400',
+                '& .MuiSlider-thumb': {
+                  display: isController ? 'block' : 'none'
+                },
+                '&:hover .MuiSlider-thumb': {
+                  boxShadow: isController ? '0px 0px 0px 8px rgba(25, 118, 210, 0.16)' : 'none'
+                }
+              }}
+            />
+          </Tooltip>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: -1 }}>
             <Typography variant="caption" color="text.secondary">
               {formatTime(currentTime)}
@@ -227,40 +262,52 @@ const MusicPlayer = ({
 
         {/* Controls */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2 }}>
-          <IconButton
-            onClick={onPrevious}
-            disabled={!isController || disabled}
-            size="large"
-          >
-            <PrevIcon />
-          </IconButton>
+          <Tooltip title={!isController ? "Take control to use this" : "Previous track"}>
+            <span>
+              <IconButton
+                onClick={handlePrevious}
+                disabled={!isController || disabled}
+                size="large"
+              >
+                <PrevIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
           
-          <IconButton
-            onClick={handlePlayPause}
-            disabled={!isController || disabled}
-            size="large"
-            sx={{ 
-              bgcolor: isController ? 'primary.main' : 'grey.300',
-              color: isController ? 'white' : 'grey.600',
-              '&:hover': {
-                bgcolor: isController ? 'primary.dark' : 'grey.400'
-              },
-              '&:disabled': {
-                bgcolor: 'grey.200',
-                color: 'grey.500'
-              }
-            }}
-          >
-            {isPlaying ? <PauseIcon /> : <PlayIcon />}
-          </IconButton>
+          <Tooltip title={!isController ? "Take control to use this" : (isPlaying ? "Pause" : "Play")}>
+            <span>
+              <IconButton
+                onClick={handlePlayPause}
+                disabled={!isController || disabled}
+                size="large"
+                sx={{ 
+                  bgcolor: isController ? 'primary.main' : 'grey.300',
+                  color: isController ? 'white' : 'grey.600',
+                  '&:hover': {
+                    bgcolor: isController ? 'primary.dark' : 'grey.400'
+                  },
+                  '&:disabled': {
+                    bgcolor: 'grey.200',
+                    color: 'grey.500'
+                  }
+                }}
+              >
+                {isPlaying ? <PauseIcon /> : <PlayIcon />}
+              </IconButton>
+            </span>
+          </Tooltip>
           
-          <IconButton
-            onClick={onNext}
-            disabled={!isController || disabled}
-            size="large"
-          >
-            <NextIcon />
-          </IconButton>
+          <Tooltip title={!isController ? "Take control to use this" : "Next track"}>
+            <span>
+              <IconButton
+                onClick={handleNext}
+                disabled={!isController || disabled}
+                size="large"
+              >
+                <NextIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Box>
 
         {/* Status Messages */}
