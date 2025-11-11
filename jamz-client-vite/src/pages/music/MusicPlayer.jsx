@@ -53,9 +53,9 @@ const MusicPlayerPage = () => {
   } = useMusic();
 
   return (
-    <Container maxWidth="lg" sx={{ pb: 4 }}>
+    <Box sx={{ width: '100%', minHeight: '100vh' }}>
       {/* App Bar - Simple header */}
-      <AppBar position="static" color="secondary" sx={{ mb: 3 }}>
+      <AppBar position="static" color="secondary">
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
             <ArrowBackIcon />
@@ -66,6 +66,8 @@ const MusicPlayerPage = () => {
         </Toolbar>
       </AppBar>
 
+      {/* Content Area */}
+      <Box sx={{ p: 2 }}>
       {/* Music Player - Always Visible */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <MusicPlayer
@@ -216,7 +218,8 @@ const MusicPlayerPage = () => {
           />
         </Paper>
       )}
-    </Container>
+      </Box>
+    </Box>
   );
 };
 
