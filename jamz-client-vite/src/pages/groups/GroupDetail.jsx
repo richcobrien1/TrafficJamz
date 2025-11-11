@@ -775,7 +775,6 @@ const GroupDetail = () => {
                 <Paper elevation={2} sx={{ mb: 3 }}>
                   {/* Voice Accordion - Full Bar Color */}
                   <Accordion 
-                    defaultExpanded
                     sx={{
                       bgcolor: audioSessionActive ? 'primary.main' : 'background.paper',
                       color: audioSessionActive ? 'primary.contrastText' : 'inherit',
