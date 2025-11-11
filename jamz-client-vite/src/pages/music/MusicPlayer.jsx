@@ -264,7 +264,6 @@ const MusicPlayerPage = () => {
 
     try {
       await musicClearPlaylist();
-      setShowPlaylist(false);
       console.log('✅ Playlist cleared successfully');
     } catch (error) {
       console.error('❌ Failed to clear playlist:', error);
