@@ -119,6 +119,7 @@ const MusicPlayerPage = () => {
         }
 
         const result = await response.json();
+        console.log('✅ Upload response:', result);
         uploadedTracks.push(result.track);
 
         // Update progress
@@ -127,15 +128,10 @@ const MusicPlayerPage = () => {
 
       console.log('✅ All files uploaded successfully:', uploadedTracks);
 
-      // Add tracks to playlist
-      for (const track of uploadedTracks) {
-        await musicAddTrack(track);
-      }
-
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      // The backend already added tracks to the database playlist
+      // Reload the page to sync the playlist (simplest solution)
+      console.log('🔄 Reloading page to sync playlist...');
+      window.location.reload();
 
     } catch (error) {
       console.error('❌ Upload failed:', error);
