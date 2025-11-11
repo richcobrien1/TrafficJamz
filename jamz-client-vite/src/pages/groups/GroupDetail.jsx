@@ -53,11 +53,13 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../../contexts/AuthContext';
+import { useMusic } from '../../contexts/MusicContext';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const GroupDetail = () => {
   // Force rebuild - ensure equal panel widths
   const { groupId } = useParams();
+  const { isPlaying: musicIsPlaying } = useMusic();
   const [group, setGroup] = useState(null);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
@@ -771,18 +773,53 @@ const GroupDetail = () => {
                 
                 {/* Session Controls Accordion - Mobile Responsive */}
                 <Paper elevation={2} sx={{ mb: 3 }}>
-                  <Accordion defaultExpanded>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <VolumeUpIcon color="primary" />
+                  {/* Voice Accordion - Full Bar Color */}
+                  <Accordion 
+                    defaultExpanded
+                    sx={{
+                      bgcolor: audioSessionActive ? 'primary.main' : 'background.paper',
+                      color: audioSessionActive ? 'primary.contrastText' : 'inherit',
+                      '&:before': { display: 'none' }
+                    }}
+                  >
+                    <AccordionSummary 
+                      expandIcon={<ExpandMoreIcon sx={{ color: audioSessionActive ? 'primary.contrastText' : 'inherit' }} />}
+                      sx={{
+                        bgcolor: audioSessionActive ? 'primary.main' : 'background.paper',
+                        '& .MuiAccordionSummary-content': {
+                          alignItems: 'center'
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <VolumeUpIcon />
                         <Typography variant="h6">Voice</Typography>
                         {audioSessionActive && (
-                          <Chip label="Active" color="primary" size="small" />
+                          <>
+                            <Box 
+                              sx={{ 
+                                width: 8, 
+                                height: 8, 
+                                borderRadius: '50%', 
+                                bgcolor: 'success.main',
+                                ml: 'auto',
+                                animation: 'pulse 2s infinite',
+                                '@keyframes pulse': {
+                                  '0%': { opacity: 1 },
+                                  '50%': { opacity: 0.5 },
+                                  '100%': { opacity: 1 }
+                                }
+                              }} 
+                            />
+                            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                              ACTIVE
+                            </Typography>
+                          </>
                         )}
                       </Box>
                     </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography variant="body2" color="text.secondary" paragraph>
+                    <AccordionDetails sx={{ bgcolor: audioSessionActive ? 'primary.dark' : 'background.paper' }}>
+                      <Typography variant="body2" color={audioSessionActive ? 'primary.contrastText' : 'text.secondary'} paragraph>
                         Real-time voice communication with group members
                       </Typography>
                       <Button
@@ -790,47 +827,126 @@ const GroupDetail = () => {
                         fullWidth
                         startIcon={<MicIcon />}
                         onClick={() => navigate(`/audio-settings/${groupId}`)}
+                        sx={audioSessionActive ? { 
+                          color: 'primary.contrastText', 
+                          borderColor: 'primary.contrastText' 
+                        } : {}}
                       >
                         {audioSessionActive ? 'Join Voice Session' : 'Start Voice Session'}
                       </Button>
                     </AccordionDetails>
                   </Accordion>
 
-                  <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <MusicNoteIcon color="secondary" />
+                  {/* Music Accordion - Full Bar Color */}
+                  <Accordion
+                    sx={{
+                      bgcolor: musicIsPlaying ? 'secondary.main' : 'background.paper',
+                      color: musicIsPlaying ? 'secondary.contrastText' : 'inherit',
+                      '&:before': { display: 'none' }
+                    }}
+                  >
+                    <AccordionSummary 
+                      expandIcon={<ExpandMoreIcon sx={{ color: musicIsPlaying ? 'secondary.contrastText' : 'inherit' }} />}
+                      sx={{
+                        bgcolor: musicIsPlaying ? 'secondary.main' : 'background.paper',
+                        '& .MuiAccordionSummary-content': {
+                          alignItems: 'center'
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <MusicNoteIcon />
                         <Typography variant="h6">Music</Typography>
+                        {musicIsPlaying && (
+                          <>
+                            <Box 
+                              sx={{ 
+                                width: 8, 
+                                height: 8, 
+                                borderRadius: '50%', 
+                                bgcolor: 'success.main',
+                                ml: 'auto',
+                                animation: 'pulse 2s infinite',
+                                '@keyframes pulse': {
+                                  '0%': { opacity: 1 },
+                                  '50%': { opacity: 0.5 },
+                                  '100%': { opacity: 1 }
+                                }
+                              }} 
+                            />
+                            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                              PLAYING
+                            </Typography>
+                          </>
+                        )}
                       </Box>
                     </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography variant="body2" color="text.secondary" paragraph>
+                    <AccordionDetails sx={{ bgcolor: musicIsPlaying ? 'secondary.dark' : 'background.paper' }}>
+                      <Typography variant="body2" color={musicIsPlaying ? 'secondary.contrastText' : 'text.secondary'} paragraph>
                         Share and control music playback for the group
                       </Typography>
                       <Button
                         variant="contained"
-                        color="secondary"
+                        color={musicIsPlaying ? 'inherit' : 'secondary'}
                         fullWidth
                         startIcon={<MusicNoteIcon />}
-                        onClick={() => navigate(`/audio-settings/${groupId}`, { state: { tab: 1 } })}
+                        onClick={() => navigate(`/music/${groupId}`)}
+                        sx={musicIsPlaying ? { 
+                          bgcolor: 'secondary.light',
+                          '&:hover': { bgcolor: 'secondary.main' }
+                        } : {}}
                       >
                         Open Music Player
                       </Button>
                     </AccordionDetails>
                   </Accordion>
 
-                  <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <LocationIcon color="info" />
+                  {/* Location Accordion - Full Bar Color */}
+                  <Accordion
+                    sx={{
+                      bgcolor: isLocationWatchActive ? 'info.main' : 'background.paper',
+                      color: isLocationWatchActive ? 'info.contrastText' : 'inherit',
+                      '&:before': { display: 'none' }
+                    }}
+                  >
+                    <AccordionSummary 
+                      expandIcon={<ExpandMoreIcon sx={{ color: isLocationWatchActive ? 'info.contrastText' : 'inherit' }} />}
+                      sx={{
+                        bgcolor: isLocationWatchActive ? 'info.main' : 'background.paper',
+                        '& .MuiAccordionSummary-content': {
+                          alignItems: 'center'
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <LocationIcon />
                         <Typography variant="h6">Location</Typography>
                         {isLocationWatchActive && (
-                          <Chip label="Sharing" color="info" size="small" />
+                          <>
+                            <Box 
+                              sx={{ 
+                                width: 8, 
+                                height: 8, 
+                                borderRadius: '50%', 
+                                bgcolor: 'success.main',
+                                ml: 'auto',
+                                animation: 'pulse 2s infinite',
+                                '@keyframes pulse': {
+                                  '0%': { opacity: 1 },
+                                  '50%': { opacity: 0.5 },
+                                  '100%': { opacity: 1 }
+                                }
+                              }} 
+                            />
+                            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                              SHARING
+                            </Typography>
+                          </>
                         )}
                       </Box>
                     </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography variant="body2" color="text.secondary" paragraph>
+                    <AccordionDetails sx={{ bgcolor: isLocationWatchActive ? 'info.dark' : 'background.paper' }}>
+                      <Typography variant="body2" color={isLocationWatchActive ? 'info.contrastText' : 'text.secondary'} paragraph>
                         Share your location and track group members on the map
                       </Typography>
                       <Button
@@ -839,6 +955,10 @@ const GroupDetail = () => {
                         fullWidth
                         startIcon={<LocationIcon />}
                         onClick={() => navigate(`/location-tracking/${groupId}`)}
+                        sx={isLocationWatchActive ? { 
+                          color: 'info.contrastText', 
+                          borderColor: 'info.contrastText' 
+                        } : {}}
                       >
                         {isLocationWatchActive ? 'View Map' : 'Start Location Sharing'}
                       </Button>
