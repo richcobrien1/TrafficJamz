@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container,
+  Box,
   Typography,
   Paper,
   AppBar,
@@ -19,9 +19,9 @@ const AudioSettings = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="lg">
+    <Box sx={{ width: '100%', minHeight: '100vh' }}>
       {/* App Bar */}
-      <AppBar position="static" color="primary" sx={{ mb: 3 }}>
+      <AppBar position="static" color="primary">
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
             <ArrowBackIcon />
@@ -33,6 +33,8 @@ const AudioSettings = () => {
         </Toolbar>
       </AppBar>
 
+      {/* Content Area */}
+      <Box sx={{ p: 2 }}>
       {/* Audio Settings - Clean and simple */}
       <Grid container spacing={3}>
         <Grid item xs={12}>
@@ -50,7 +52,8 @@ const AudioSettings = () => {
           </Paper>
         </Grid>
       </Grid>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 
