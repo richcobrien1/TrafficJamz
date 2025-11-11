@@ -366,6 +366,10 @@ router.post('/sessions/:sessionId/music/playlist',
     body('duration').optional().isNumeric().withMessage('Duration must be a number'),
     body('fileUrl').optional().isString().withMessage('File URL must be a string'),
     body('uploadedBy').optional(),
+    body('source').optional().isIn(['local', 'spotify', 'youtube', 'apple_music']).withMessage('Invalid source'),
+    body('spotifyId').optional().isString(),
+    body('spotifyPreviewUrl').optional().isString(),
+    body('albumArt').optional().isString(),
     validate
   ],
   async (req, res) => {
@@ -376,19 +380,18 @@ router.post('/sessions/:sessionId/music/playlist',
         album: req.body.album,
         duration: req.body.duration,
         fileUrl: req.body.fileUrl,
-        uploadedBy: req.body.uploadedBy
+        uploadedBy: req.body.uploadedBy,
+        source: req.body.source,
+        spotifyId: req.body.spotifyId,
+        spotifyPreviewUrl: req.body.spotifyPreviewUrl,
+        albumArt: req.body.albumArt
       };
 
       const playlist = await audioService.addMusicToPlaylist(
         req.params.sessionId,
         track,
         req.user.user_id
-      );
-      res.status(201).json({ success: true, playlist });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
+```
 );
 
 /**
