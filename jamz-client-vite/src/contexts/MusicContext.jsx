@@ -370,12 +370,12 @@ export const MusicProvider = ({ children }) => {
     });
     
     // Position sync updates (from DJ every 5 seconds)
-    socket.on('music-position-sync', (data) => {
+    socket.on('music-position-sync', async (data) => {
       if (isControllerRef.current) return;
       
       // Only sync if we're playing and not too far off
       if (musicService.isPlaying) {
-        const currentPos = musicService.getCurrentTime();
+        const currentPos = await musicService.getCurrentTime();
         const targetPos = data.position || 0;
         const drift = Math.abs(currentPos - targetPos);
         
@@ -586,7 +586,7 @@ export const MusicProvider = ({ children }) => {
     await musicService.play();
     
     if (isController) {
-      const position = musicService.getCurrentTime();
+      const position = await musicService.getCurrentTime();
       const timestamp = Date.now();
       
       console.log('🎵 [MusicContext] Broadcasting play - position:', position, 'timestamp:', timestamp);
@@ -605,12 +605,12 @@ export const MusicProvider = ({ children }) => {
   /**
    * Pause music
    */
-  const pause = () => {
+  const pause = async () => {
     console.log('🎵 [MusicContext] Pause');
     musicService.pause();
     
     if (isController) {
-      const position = musicService.getCurrentTime();
+      const position = await musicService.getCurrentTime();
       const timestamp = Date.now();
       
       console.log('🎵 [MusicContext] Broadcasting pause - position:', position);
@@ -770,8 +770,8 @@ export const MusicProvider = ({ children }) => {
     if (isController && isPlaying && currentTrack) {
       console.log('🎵 [MusicContext] Starting position sync broadcast (every 5s)');
       
-      syncInterval = setInterval(() => {
-        const position = musicService.getCurrentTime();
+      syncInterval = setInterval(async () => {
+        const position = await musicService.getCurrentTime();
         const timestamp = Date.now();
         
         console.log('🎵 [MusicContext] Broadcasting position sync:', position.toFixed(2));
