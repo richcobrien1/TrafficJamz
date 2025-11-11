@@ -43,8 +43,13 @@ class PlatformMusicService {
 
   /**
    * Load Spotify Web Playback SDK
+   * DISABLED - We only use preview URLs, not full playback SDK
    */
   async loadSpotifySDK() {
+    console.log('⚠️ Spotify SDK loading disabled - using preview URLs only');
+    return Promise.resolve();
+    
+    /* DISABLED - Causes app to freeze
     return new Promise((resolve) => {
       if (window.Spotify) {
         resolve();
@@ -61,12 +66,18 @@ class PlatformMusicService {
       script.async = true;
       document.body.appendChild(script);
     });
+    */
   }
 
   /**
    * Initialize Spotify player with access token
+   * DISABLED - We only use preview URLs, not full playback SDK
    */
   async initializeSpotifyPlayer(accessToken) {
+    console.log('⚠️ Spotify player initialization disabled - using preview URLs only');
+    return Promise.resolve();
+    
+    /* DISABLED - Not needed for preview URLs
     if (this.spotifyPlayer) {
       return;
     }
@@ -130,6 +141,7 @@ class PlatformMusicService {
 
     await player.connect();
     this.spotifyPlayer = player;
+    */
   }
 
   /**
