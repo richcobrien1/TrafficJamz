@@ -9,25 +9,33 @@ import {
   Typography,
   Box,
   Button,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   CloudUpload as UploadIcon,
-  Link as LinkIcon
+  Link as LinkIcon,
+  MusicNote as MusicIcon
 } from '@mui/icons-material';
 import { useMusic } from '../../contexts/MusicContext';
-import MusicUpload from '../../components/music/MusicUpload';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
 import MusicPlayer from '../../components/music/MusicPlayer';
+import PlaylistImportAccordion from '../../components/music/PlaylistImportAccordion';
 
 const MusicPlayerPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  const [showUpload, setShowUpload] = React.useState(false);
   const [showPlaylist, setShowPlaylist] = React.useState(false);
+  const [showPlaylistImport, setShowPlaylistImport] = React.useState(false);
   const fileInputRef = React.useRef(null);
   const [uploading, setUploading] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [uploadError, setUploadError] = React.useState('');
+  
+  const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
   
   // Music context
   const {
@@ -51,6 +59,163 @@ const MusicPlayerPage = () => {
     releaseControl: releaseMusicControl,
     changeVolume: changeMusicVolume
   } = useMusic();
+
+  /**
+   * Handle file selection and upload
+   */
+  const handleFileSelect = async (event) => {
+    const files = Array.from(event.target.files);
+    
+    // Filter audio files only
+    const audioFiles = files.filter(file => {
+      const isAudio = file.type.startsWith('audio/');
+      const hasAudioExtension = /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name);
+      return isAudio || hasAudioExtension;
+    });
+
+    if (audioFiles.length !== files.length) {
+      setUploadError('Some files were skipped because they are not audio files');
+    } else {
+      setUploadError('');
+    }
+
+    if (audioFiles.length === 0) {
+      setUploadError('Please select valid audio files');
+      return;
+    }
+
+    // Upload the files
+    await uploadFiles(audioFiles);
+  };
+
+  /**
+   * Upload files to server
+   */
+  const uploadFiles = async (filesToUpload) => {
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadError('');
+
+    try {
+      const uploadedTracks = [];
+
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        console.log(`📤 Uploading file ${i + 1}/${filesToUpload.length}: ${file.name}`);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/upload-music`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed for ${file.name}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        uploadedTracks.push(result.track);
+
+        // Update progress
+        setUploadProgress(((i + 1) / filesToUpload.length) * 100);
+      }
+
+      console.log('✅ All files uploaded successfully:', uploadedTracks);
+
+      // Add tracks to playlist
+      for (const track of uploadedTracks) {
+        await musicAddTrack(track);
+      }
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+    } catch (error) {
+      console.error('❌ Upload failed:', error);
+      setUploadError(`Upload failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  /**
+   * Handle playlist import
+   */
+  const handlePlaylistImport = async (tracks) => {
+    setShowPlaylistImport(false);
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadError('');
+
+    try {
+      console.log(`📥 Importing ${tracks.length} tracks from playlist`);
+      
+      const uploadedTracks = [];
+      
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        console.log(`📤 Processing track ${i + 1}/${tracks.length}: ${track.title}`);
+
+        const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/import-track`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            track: {
+              title: track.title,
+              artist: track.artist,
+              album: track.album,
+              duration: track.duration,
+              albumArt: track.albumArt,
+              source: track.source,
+              externalId: track.id,
+              previewUrl: track.previewUrl,
+              streamUrl: track.streamUrl
+            }
+          })
+        });
+
+        if (!response.ok) {
+          console.warn(`⚠️ Failed to import ${track.title}: ${response.statusText}`);
+          continue;
+        }
+
+        const result = await response.json();
+        uploadedTracks.push(result.track);
+
+        // Update progress
+        setUploadProgress(((i + 1) / tracks.length) * 100);
+      }
+
+      console.log('✅ Playlist import completed:', uploadedTracks);
+
+      // Add tracks to playlist
+      for (const track of uploadedTracks) {
+        await musicAddTrack(track);
+      }
+
+      if (uploadedTracks.length < tracks.length) {
+        setUploadError(`Imported ${uploadedTracks.length} of ${tracks.length} tracks. Some tracks may not be available.`);
+      }
+
+    } catch (error) {
+      console.error('❌ Playlist import failed:', error);
+      setUploadError(`Import failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh' }}>
@@ -91,6 +256,15 @@ const MusicPlayerPage = () => {
 
       {/* Upload and Playlist Icons Panel */}
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        {/* Title */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'center' }}>
+          <MusicIcon sx={{ mr: 1, color: 'primary.main' }} />
+          <Typography variant="h6">
+            Add Music to Session
+          </Typography>
+        </Box>
+
+        {/* Icons */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'center', 
@@ -103,10 +277,7 @@ const MusicPlayerPage = () => {
               type="file"
               multiple
               accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
-              onChange={(e) => {
-                setShowUpload(true);
-                // The MusicUpload component will handle the actual upload
-              }}
+              onChange={handleFileSelect}
               style={{ display: 'none' }}
               disabled={!sessionId || uploading}
             />
@@ -142,7 +313,7 @@ const MusicPlayerPage = () => {
           <Box sx={{ textAlign: 'center' }}>
             <Tooltip title="Link Playlist from Spotify/YouTube/Apple Music" arrow>
               <IconButton
-                onClick={() => setShowUpload(true)}
+                onClick={() => setShowPlaylistImport(true)}
                 disabled={!sessionId || uploading}
                 sx={{
                   width: 80,
@@ -181,21 +352,21 @@ const MusicPlayerPage = () => {
         </Box>
       </Paper>
 
-      {/* Upload Section - Toggleable */}
-      {showUpload && (
-        <Box sx={{ mb: 3 }}>
-          <MusicUpload
+      {/* Playlist Import Dialog */}
+      <Dialog 
+        open={showPlaylistImport} 
+        onClose={() => setShowPlaylistImport(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Link Playlist</DialogTitle>
+        <DialogContent>
+          <PlaylistImportAccordion
             sessionId={sessionId}
-            onTracksAdded={async (tracks) => {
-              for (const track of tracks) {
-                await musicAddTrack(track);
-              }
-              setShowUpload(false); // Auto-close after upload
-            }}
-            disabled={!sessionId}
+            onImport={handlePlaylistImport}
           />
-        </Box>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Playlist Section - Toggleable */}
       {showPlaylist && (
