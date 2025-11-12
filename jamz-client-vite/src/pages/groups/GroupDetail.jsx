@@ -852,8 +852,8 @@ const GroupDetail = () => {
                   {/* Music Bar - Clickable */}
                   <Box
                     sx={{
-                      bgcolor: musicIsPlaying ? '#2196f3' : 'background.paper',
-                      color: musicIsPlaying ? '#fff' : 'inherit',
+                      bgcolor: '#2196f3',
+                      color: '#fff',
                       p: 2,
                       display: 'flex',
                       alignItems: 'center',
@@ -861,7 +861,7 @@ const GroupDetail = () => {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: musicIsPlaying ? '#1976d2' : 'action.hover'
+                        bgcolor: '#1976d2'
                       },
                       borderBottom: '1px solid',
                       borderColor: 'divider'
