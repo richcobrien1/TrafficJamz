@@ -1,21 +1,33 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const AWS = require('aws-sdk');
 const path = require('path');
 
-// Initialize R2 client
-const r2Client = process.env.R2_ACCESS_KEY && process.env.R2_SECRET_KEY
-  ? new S3Client({
-      region: process.env.R2_REGION || 'auto',
-      endpoint: process.env.R2_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY,
-        secretAccessKey: process.env.R2_SECRET_KEY,
-      },
+// Initialize R2 client using AWS SDK v2 (already installed)
+const s3 = process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY
+  ? new AWS.S3({
+      endpoint: process.env.R2_ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      signatureVersion: 'v4',
+      region: 'auto'
     })
   : null;
 
 // Check if R2 is configured
 const isR2Configured = () => {
-  return !!(process.env.R2_ACCESS_KEY && process.env.R2_SECRET_KEY && process.env.R2_ENDPOINT);
+  const hasAccessKey = !!process.env.R2_ACCESS_KEY_ID;
+  const hasSecretKey = !!process.env.R2_SECRET_ACCESS_KEY;
+  const hasEndpointOrAccount = !!(process.env.R2_ENDPOINT || process.env.R2_ACCOUNT_ID);
+  
+  console.log('R2 Configuration Check:', {
+    R2_ACCESS_KEY_ID: hasAccessKey ? 'SET' : 'NOT SET',
+    R2_SECRET_ACCESS_KEY: hasSecretKey ? 'SET' : 'NOT SET',
+    R2_ENDPOINT: process.env.R2_ENDPOINT || 'NOT SET',
+    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || 'NOT SET',
+    hasEndpointOrAccount,
+    result: hasAccessKey && hasSecretKey && hasEndpointOrAccount
+  });
+  
+  return !!(process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && (process.env.R2_ENDPOINT || process.env.R2_ACCOUNT_ID));
 };
 
 /**
@@ -45,21 +57,20 @@ const uploadToR2 = async (fileBuffer, originalFilename, mimetype, userId) => {
       bucket: process.env.R2_BUCKET_MUSIC || process.env.R2_BUCKET_PUBLIC 
     });
 
-    // Upload to R2 with public-read ACL
-    const command = new PutObjectCommand({
+    // Upload to R2 using AWS SDK v2
+    const params = {
       Bucket: process.env.R2_BUCKET_MUSIC || process.env.R2_BUCKET_PUBLIC,
       Key: filePath,
       Body: fileBuffer,
       ContentType: mimetype,
       CacheControl: 'public, max-age=31536000',
-      // Add metadata to help with CORS and public access
       Metadata: {
         'uploaded-by': userId,
         'original-name': originalFilename
       }
-    });
+    };
 
-    const uploadResult = await r2Client.send(command);
+    const uploadResult = await s3.upload(params).promise();
     console.log('R2 upload result:', uploadResult);
 
     // Use the Public Development URL (R2.dev subdomain) 
@@ -95,12 +106,12 @@ const deleteFromR2 = async (fileUrl) => {
       return false;
     }
 
-    const command = new DeleteObjectCommand({
+    const params = {
       Bucket: process.env.R2_BUCKET_MUSIC || process.env.R2_BUCKET_PUBLIC,
       Key: fileKey,
-    });
+    };
 
-    await r2Client.send(command);
+    await s3.deleteObject(params).promise();
     console.log('Successfully deleted file from R2:', fileKey);
     return true;
   } catch (error) {
