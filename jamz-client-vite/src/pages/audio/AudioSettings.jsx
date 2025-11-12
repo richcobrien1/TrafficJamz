@@ -39,22 +39,38 @@ const AudioSettings = () => {
   }, [groupId]);
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', display: 'flex' }}>
-      {/* Vertical Group Name Bar - Lime Green */}
-      {group && (
+    <Box sx={{ width: '100%', minHeight: '100vh' }}>
+      {/* Main Content */}
+      <Box sx={{ flexGrow: 1 }}>
+        {/* App Bar - Chartreuse/Olive Green */}
+        <AppBar position="static" sx={{ bgcolor: '#7CB342' }}>
+          <Toolbar>
+            <IconButton edge="start" sx={{ color: '#fff' }} onClick={() => navigate(`/groups/${groupId}`)}>
+              <ArrowBackIcon />
+            </IconButton>
+            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#fff' }} />
+            <Typography variant="h6" sx={{ flexGrow: 1, color: '#fff' }}>
+              Voice
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
+        {/* Vertical Group Name Panel - Chartreuse/Olive Green */}
         <Box
           sx={{
-            width: '32px',
-            bgcolor: '#76ff03',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             position: 'fixed',
             left: 0,
-            top: 0,
+            top: 64, // Below AppBar
             bottom: 0,
-            zIndex: 1000,
-            boxShadow: 2
+            zIndex: 10,
+            bgcolor: '#7CB342', // Chartreuse/olive green for Voice
+            backdropFilter: 'blur(2px)',
+            padding: '16px 4px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            boxShadow: 2,
           }}
         >
           <Typography
@@ -63,34 +79,15 @@ const AudioSettings = () => {
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               transform: 'rotate(180deg)',
-              color: '#000',
+              color: '#fff',
               fontWeight: 'bold',
               fontStyle: 'italic',
               letterSpacing: '0.1em',
-              padding: '16px 4px',
-              whiteSpace: 'nowrap',
-              userSelect: 'none'
             }}
           >
-            {group.name}
+            {group?.name || 'Voice Settings'}
           </Typography>
         </Box>
-      )}
-
-      {/* Main Content */}
-      <Box sx={{ flexGrow: 1, ml: group ? '32px' : 0 }}>
-        {/* App Bar - Lime Green */}
-        <AppBar position="static" sx={{ bgcolor: '#76ff03' }}>
-          <Toolbar>
-            <IconButton edge="start" sx={{ color: '#000' }} onClick={() => navigate(`/groups/${groupId}`)}>
-              <ArrowBackIcon />
-            </IconButton>
-            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
-            <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
-              Voice
-            </Typography>
-          </Toolbar>
-        </AppBar>
 
         {/* Content Area */}
         <Box sx={{ p: 2 }}>
@@ -98,7 +95,7 @@ const AudioSettings = () => {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}>
-                <VolumeUpIcon sx={{ fontSize: 64, color: '#76ff03', mb: 2 }} />
+                <VolumeUpIcon sx={{ fontSize: 64, color: '#7CB342', mb: 2 }} />
                 <Typography variant="h5" gutterBottom>
                   Voice Settings
                 </Typography>
