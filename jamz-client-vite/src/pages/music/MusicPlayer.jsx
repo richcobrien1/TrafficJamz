@@ -360,6 +360,7 @@ const MusicPlayerPage = () => {
           position: 'sticky',
           left: 0,
           top: 0, // Stick to top of viewport when scrolling
+          width: '32px',
           height: '100vh', // Always full viewport height
           zIndex: 10,
           bgcolor: '#2196f3', // Blue to match Music category
@@ -367,10 +368,11 @@ const MusicPlayerPage = () => {
           padding: '16px 4px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           justifyContent: 'flex-start',
           boxShadow: 2,
           marginTop: '-64px', // Offset to align with AppBar initially
+          float: 'left',
         }}
       >
         <Typography
