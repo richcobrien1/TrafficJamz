@@ -1833,6 +1833,7 @@ const AudioSession = () => {
             top: 64, // Below AppBar
             bottom: 0,
             zIndex: 10,
+            opacity: 1,
             bgcolor: '#7CB342', // Chartreuse/olive green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
@@ -1854,7 +1855,6 @@ const AudioSession = () => {
               fontWeight: 'bold',
               fontStyle: 'italic',
               letterSpacing: '0.1em',
-              whiteSpace: 'nowrap',
             }}
           >
             {group?.name || 'Voice Session'}

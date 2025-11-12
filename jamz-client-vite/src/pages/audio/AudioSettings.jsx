@@ -63,6 +63,7 @@ const AudioSettings = () => {
             top: 64, // Below AppBar
             bottom: 0,
             zIndex: 10,
+            opacity: 1,
             bgcolor: '#7CB342', // Chartreuse/olive green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
@@ -70,6 +71,7 @@ const AudioSettings = () => {
             flexDirection: 'column',
             alignItems: 'flex-end',
             justifyContent: 'flex-start',
+            transition: 'all 0.3s ease',
             boxShadow: 2,
           }}
         >

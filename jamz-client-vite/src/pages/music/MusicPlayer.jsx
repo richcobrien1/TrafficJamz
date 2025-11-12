@@ -362,6 +362,7 @@ const MusicPlayerPage = () => {
           top: 64,
           bottom: 0,
           zIndex: 10,
+          opacity: 1,
           bgcolor: '#2196f3', // Blue for Music
           backdropFilter: 'blur(2px)',
           padding: '16px 4px',
@@ -383,7 +384,6 @@ const MusicPlayerPage = () => {
             fontWeight: 'bold',
             fontStyle: 'italic',
             letterSpacing: '0.1em',
-            whiteSpace: 'nowrap',
           }}
         >
           {group?.name || 'Music Player'}
