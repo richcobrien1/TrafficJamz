@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { io } from 'socket.io-client';
 import musicService from '../services/music.service';
 import { useAuth } from './AuthContext';
+import { 
+  loadPlaylistFromCache, 
+  savePlaylistToCache, 
+  clearPlaylistCache,
+  addTrackToCache 
+} from '../utils/playlistCache';
 
 const MusicContext = createContext();
 
@@ -48,6 +54,14 @@ export const MusicProvider = ({ children }) => {
     if (activeSessionId === sessionId && socketRef.current?.connected) {
       console.log('🎵 [MusicContext] Already connected to this session');
       return;
+    }
+    
+    // Load playlist from cache immediately for instant display
+    const cachedPlaylist = loadPlaylistFromCache(sessionId);
+    if (cachedPlaylist && cachedPlaylist.length > 0) {
+      console.log('⚡ [MusicContext] Loaded playlist from cache immediately:', cachedPlaylist.length, 'tracks');
+      setPlaylist(cachedPlaylist);
+      musicService.playlist = cachedPlaylist;
     }
     
     // Clean up previous session if different
@@ -174,6 +188,12 @@ export const MusicProvider = ({ children }) => {
         
         setPlaylist(deduplicatedPlaylist);
         musicService.playlist = deduplicatedPlaylist;
+        
+        // Save to cache for instant loading next time
+        if (activeSessionId) {
+          savePlaylistToCache(activeSessionId, deduplicatedPlaylist);
+        }
+        
         console.log('🎵 [MusicContext] ✅ Playlist state updated successfully with', deduplicatedPlaylist.length, 'tracks');
       } else {
         console.warn('🎵 [MusicContext] ⚠️ No valid playlist in music-session-state event');
@@ -282,6 +302,11 @@ export const MusicProvider = ({ children }) => {
         
         setPlaylist(deduplicatedPlaylist);
         musicService.playlist = deduplicatedPlaylist;
+        
+        // Save to cache
+        if (activeSessionId) {
+          savePlaylistToCache(activeSessionId, deduplicatedPlaylist);
+        }
         
         if (deduplicatedPlaylist.length !== data.playlist.length) {
           console.warn('🎵 [MusicContext] ⚠️ Removed', data.playlist.length - deduplicatedPlaylist.length, 'duplicates from received playlist');
@@ -516,6 +541,12 @@ export const MusicProvider = ({ children }) => {
     const updatedPlaylist = [...musicService.playlist];
     setPlaylist(updatedPlaylist);
     
+    // Save to cache immediately (optimistic update)
+    if (activeSessionId) {
+      savePlaylistToCache(activeSessionId, updatedPlaylist);
+      console.log('⚡ [MusicContext] Cached playlist updated instantly');
+    }
+    
     // Persist to database
     try {
       const response = await fetch(
@@ -622,6 +653,12 @@ export const MusicProvider = ({ children }) => {
     musicService.playlist = [];
     setPlaylist([]);
     
+    // Clear cache
+    if (activeSessionId) {
+      clearPlaylistCache(activeSessionId);
+      console.log('🗑️ [MusicContext] Cache cleared');
+    }
+    
     try {
       const response = await fetch(
         `${API_URL}/api/audio/sessions/${activeSessionId}/music/playlist/clear`,
@@ -664,6 +701,20 @@ export const MusicProvider = ({ children }) => {
    */
   const play = async () => {
     console.log('🎵 [MusicContext] Play');
+    
+    // If no track is loaded, auto-load the first track in playlist
+    if (!currentTrack && playlist.length > 0) {
+      console.log('🎵 [MusicContext] No track loaded - auto-loading first track');
+      await loadAndPlay(playlist[0]);
+      return;
+    }
+    
+    // If still no track (empty playlist), do nothing
+    if (!currentTrack) {
+      console.warn('🎵 [MusicContext] Cannot play - no track loaded and playlist is empty');
+      return;
+    }
+    
     await musicService.play();
     
     if (isController) {
