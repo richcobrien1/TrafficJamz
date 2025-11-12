@@ -324,7 +324,7 @@ const MusicPlayerPage = () => {
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
       {/* App Bar - Blue to match Music category */}
-      <AppBar position="static" sx={{ bgcolor: '#2196f3' }}>
+      <AppBar position="static" sx={{ bgcolor: '#2196f3', backgroundColor: '#2196f3' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
             <ArrowBackIcon />
