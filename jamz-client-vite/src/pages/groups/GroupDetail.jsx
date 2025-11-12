@@ -793,8 +793,8 @@ const GroupDetail = () => {
                   {/* Voice Bar - Clickable */}
                   <Box 
                     sx={{
-                      bgcolor: audioSessionActive ? 'primary.main' : 'background.paper',
-                      color: audioSessionActive ? 'primary.contrastText' : 'inherit',
+                      bgcolor: audioSessionActive ? '#76ff03' : 'background.paper',
+                      color: audioSessionActive ? '#000' : 'inherit',
                       p: 2,
                       display: 'flex',
                       alignItems: 'center',
@@ -802,7 +802,7 @@ const GroupDetail = () => {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: audioSessionActive ? 'primary.dark' : 'action.hover'
+                        bgcolor: audioSessionActive ? '#66dd00' : 'action.hover'
                       },
                       borderBottom: '1px solid',
                       borderColor: 'divider'
@@ -852,8 +852,8 @@ const GroupDetail = () => {
                   {/* Music Bar - Clickable */}
                   <Box
                     sx={{
-                      bgcolor: musicIsPlaying ? 'secondary.main' : 'background.paper',
-                      color: musicIsPlaying ? 'secondary.contrastText' : 'inherit',
+                      bgcolor: musicIsPlaying ? '#2196f3' : 'background.paper',
+                      color: musicIsPlaying ? '#fff' : 'inherit',
                       p: 2,
                       display: 'flex',
                       alignItems: 'center',
@@ -861,7 +861,7 @@ const GroupDetail = () => {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: musicIsPlaying ? 'secondary.dark' : 'action.hover'
+                        bgcolor: musicIsPlaying ? '#1976d2' : 'action.hover'
                       },
                       borderBottom: '1px solid',
                       borderColor: 'divider'
