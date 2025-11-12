@@ -252,13 +252,23 @@ class MusicService {
    */
   async play(position = null) {
     if (!this.currentTrack) {
-      console.warn('⚠️ No track loaded');
+      console.warn('⚠️ [music.service] No track loaded');
       return;
     }
+    
+    console.log('🎵 [music.service] play() called:', {
+      track: this.currentTrack.title,
+      position,
+      platformMode: this.platformMode,
+      hasAudioElement: !!this.audioElement,
+      audioSrc: this.audioElement?.src
+    });
 
     try {
       if (this.platformMode) {
         // Platform streaming
+        console.log('🎵 [music.service] Using platform mode (Spotify/YouTube)');
+        
         if (position !== null) {
           await platformMusicService.seekTo(position);
         }
@@ -274,9 +284,16 @@ class MusicService {
       } else {
         // File-based playback
         if (!this.audioElement) {
-          console.warn('⚠️ Audio element not initialized');
+          console.error('❌ [music.service] Audio element not initialized');
           return;
         }
+        
+        if (!this.audioElement.src) {
+          console.error('❌ [music.service] Audio element has no src');
+          return;
+        }
+        
+        console.log('🎵 [music.service] Playing audio file:', this.audioElement.src);
 
         if (position !== null) {
           this.audioElement.currentTime = position;
@@ -300,10 +317,10 @@ class MusicService {
         }
         
         await this.audioElement.play();
-        console.log('▶️ Playing:', this.currentTrack.title, isIOS ? '(iOS)' : '');
+        console.log('✅ [music.service] Playing:', this.currentTrack.title, isIOS ? '(iOS)' : '');
       }
     } catch (error) {
-      console.error('❌ Playback failed:', error.name, error.message);
+      console.error('❌ [music.service] Playback failed:', error.name, error.message);
       
       // iOS-specific error handling (applies to ALL browsers on iOS)
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);

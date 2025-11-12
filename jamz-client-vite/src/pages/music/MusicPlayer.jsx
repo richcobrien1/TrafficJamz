@@ -33,6 +33,7 @@ import PlaylistImportAccordion from '../../components/music/PlaylistImportAccord
 const MusicPlayerPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const [group, setGroup] = React.useState(null);
   const [showPlaylistImport, setShowPlaylistImport] = React.useState(false);
   const fileInputRef = React.useRef(null);
   const [uploading, setUploading] = React.useState(false);
@@ -88,8 +89,21 @@ const MusicPlayerPage = () => {
       initializationRef.current = true;
       
       try {
-        // Fetch or create an active audio session for this group
         const token = localStorage.getItem('token');
+        
+        // Fetch group details
+        const groupResponse = await fetch(`${API_URL}/api/groups/${groupId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (groupResponse.ok) {
+          const groupData = await groupResponse.json();
+          setGroup(groupData.group);
+        }
+        
+        // Fetch or create an active audio session for this group
         const response = await fetch(`${API_URL}/api/audio/sessions/group/${groupId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
