@@ -103,6 +103,91 @@ This file tracks all work sessions, changes, and next steps across the project.
 ### Git Commits
 - dafd855c: "Fix: Match AppBar colors to vertical bars - Voice pages now use lime green #76ff03"
 - 536dc590: "Feature: Add MP3 metadata extraction with album artwork support"
+- 734c709c: "Update PROJECT_LOG.md with AppBar colors and MP3 metadata work"
+- da13803a: "Fix: Resolve black screen caused by duplicate Spotify SDK loading"
+- e6712ff5: "Debug: Add background color and console logging to GroupDetail"
+- 9fe25f5b: "Fix: Update production API URL to DigitalOcean backend (157.230.165.156:10000)"
+- 8f89ad10: "Fix: Use HTTPS domain for production API (trafficjamz.v2u.us with Nginx SSL)"
+
+---
+
+## Session: November 12, 2025 (Production Infrastructure Fix)
+
+### Work Completed
+- **Fixed black screen issue** - Root cause: Frontend trying to connect to wrong backend URL
+- **Identified production architecture**:
+  - Frontend: Vercel at `https://jamz.v2u.us`
+  - Backend: DigitalOcean at `https://trafficjamz.v2u.us`
+  - Database: Local MongoDB on DigitalOcean (switched from MongoDB Atlas)
+- **Backend Migration: Render → DigitalOcean**:
+  - Rebuilt Docker image with updated R2 code
+  - Fixed MongoDB connection (switched from dead Atlas cluster to local instance)
+  - Configured DNS servers (8.8.8.8, 8.8.4.4) for container
+  - Verified Nginx SSL proxy configuration with Let's Encrypt certificates
+- **Database Migration: MongoDB Atlas → Local**:
+  - Old Atlas cluster `cluster0.xnzfb.mongodb.net` no longer resolving (NXDOMAIN)
+  - Switched to local MongoDB container linked to backend
+  - **Impact**: All previous data lost (users, groups, music tracks, sessions)
+  - **Benefit**: Fresh start with correct R2 URLs, no need to migrate old incorrect URLs
+- **Frontend Environment Configuration**:
+  - Updated `.env.production` to use `https://trafficjamz.v2u.us` (correct HTTPS domain)
+  - Removed incorrect HTTP IP-based URLs
+  - Verified Vercel auto-deployment from GitHub
+- **SSL/HTTPS Setup Verification**:
+  - Confirmed Nginx reverse proxy with Let's Encrypt SSL active
+  - Backend accessible at `https://trafficjamz.v2u.us/api/v1/health`
+  - CORS configured for `https://jamz.v2u.us` frontend
+  - WebSocket support configured for Socket.IO
+
+### Files Changed
+- `jamz-client-vite/.env.production` (modified - corrected API URLs to HTTPS domain)
+- `docs/PRODUCTION_DEPLOYMENT.md` (created - comprehensive deployment guide)
+- `PROJECT_LOG.md` (updated)
+
+### Infrastructure Details
+- **DigitalOcean Server**: 157.230.165.156
+- **Backend Container**: `trafficjamz` (port 10000, MongoDB linked)
+- **MongoDB Container**: `mongodb` (local Docker network)
+- **R2 Bucket**: `trafficjamz-music` (correct hash: pub-c4cf281613c744fabfa8830d27954687)
+- **SSL**: Let's Encrypt certificates for `trafficjamz.v2u.us`
+
+### Issues Resolved
+1. ✅ Black screen on frontend - incorrect API URL configuration
+2. ✅ MongoDB connection failures - switched from Atlas to local instance
+3. ✅ Mixed content errors - configured HTTPS domain with SSL
+4. ✅ Backend deployment with correct R2 code
+5. ✅ CORS configuration for Vercel frontend
+
+### Current Status
+- **Backend**: Running on DigitalOcean with MongoDB connected, all services operational
+- **Frontend**: Deploying on Vercel with correct HTTPS API endpoint
+- **Database**: Fresh MongoDB instance (requires user re-registration)
+- **Storage**: R2 configured with correct public URL hash
+- **Ready for**: User registration, group creation, music upload testing
+
+### Next Steps (Priority Order)
+1. **Monitor Vercel deployment** - Verify black screen resolved after redeployment
+2. **Test end-to-end flow**: Register user → Create group → Upload music → Verify R2 URLs
+3. **Test music playback** - Confirm tracks use correct R2 URL and play successfully
+4. Link Playlist to Now Playing tracks
+5. Move upload progress bar to bottom of panel
+6. Replace/remove Clear All alert popup
+7. Rename Voice Controls to Voice Settings
+8. Fix page refresh on music import
+
+### Documentation Created
+- `docs/PRODUCTION_DEPLOYMENT.md` - Complete production deployment guide including:
+  - Infrastructure overview (Vercel + DigitalOcean architecture)
+  - DNS configuration
+  - Nginx SSL setup
+  - Docker container configuration
+  - Deployment procedures
+  - Troubleshooting guide
+  - Migration notes (Render→DO, Atlas→Local MongoDB)
+
+### Git Commits
+- dafd855c: "Fix: Match AppBar colors to vertical bars - Voice pages now use lime green #76ff03"
+- 536dc590: "Feature: Add MP3 metadata extraction with album artwork support"
 
 ### Current Status
 - AppBar colors now consistent across all pages
