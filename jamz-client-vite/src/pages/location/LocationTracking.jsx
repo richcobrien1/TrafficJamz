@@ -3401,7 +3401,7 @@ const LocationTracking = () => {
           bottom: 0,
           zIndex: 10,
           opacity: controlsOpacity,
-          bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0,0,0,0.7)',
+          bgcolor: sharingLocation ? '#e91e63' : 'rgba(0,0,0,0.7)', // Pink/magenta for Location
           backdropFilter: 'blur(2px)',
           padding: '16px 4px',
           display: showMembersList ? 'none' : 'flex',
@@ -3409,7 +3409,7 @@ const LocationTracking = () => {
           alignItems: 'flex-end',
           justifyContent: 'flex-start',
           transition: 'all 0.3s ease',
-          elevation: sharingLocation ? 3 : 0,
+          boxShadow: sharingLocation ? 2 : 0,
         }}
       >
         <Typography

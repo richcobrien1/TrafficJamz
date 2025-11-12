@@ -308,7 +308,7 @@ const MusicPlayerPage = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
       {/* App Bar - Simple header */}
       <AppBar position="static" color="secondary">
         <Toolbar>
@@ -316,7 +316,7 @@ const MusicPlayerPage = () => {
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
-            Music Player
+            {group?.name || 'Music Player'}
           </Typography>
         </Toolbar>
         {/* Discrete Upload Progress Bar */}
@@ -338,6 +338,40 @@ const MusicPlayerPage = () => {
           />
         )}
       </AppBar>
+
+      {/* Vertical Group Name Panel - Blue */}
+      <Box
+        sx={{
+          position: 'fixed',
+          left: 0,
+          top: 64, // Below AppBar
+          bottom: 0,
+          zIndex: 10,
+          bgcolor: '#2196f3', // Blue to match Music category
+          backdropFilter: 'blur(2px)',
+          padding: '16px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          justifyContent: 'flex-start',
+          boxShadow: 2,
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            transform: 'rotate(180deg)',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontStyle: 'italic',
+            letterSpacing: '0.1em',
+          }}
+        >
+          {group?.name || 'Music Player'}
+        </Typography>
+      </Box>
 
       {/* Upload Success/Error Snackbar */}
       <Snackbar

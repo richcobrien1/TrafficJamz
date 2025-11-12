@@ -1805,7 +1805,7 @@ const AudioSession = () => {
   const safeUser = user || {};
 
   return (
-      <Container maxWidth="md">
+      <Container maxWidth="md" sx={{ position: 'relative' }}>
         {/* Traffic Jam App Bar */}
         <AppBar position="static" color="primary" sx={{ mb: 2 }}>
           <Toolbar>
@@ -1813,7 +1813,7 @@ const AudioSession = () => {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              {group ? `${group.name} - Audio Session` : 'Audio Session'}
+              {group?.name || 'Audio Session'}
             </Typography>
             <IconButton color="inherit" onClick={() => setOpenMusicDialog(true)}>
               <MusicNoteIcon />
@@ -1823,6 +1823,40 @@ const AudioSession = () => {
             </IconButton>
           </Toolbar>
         </AppBar>
+
+        {/* Vertical Group Name Panel - Lime Green */}
+        <Box
+          sx={{
+            position: 'fixed',
+            left: 0,
+            top: 64, // Below AppBar
+            bottom: 0,
+            zIndex: 10,
+            bgcolor: '#76ff03', // Lime green for Voice
+            backdropFilter: 'blur(2px)',
+            padding: '16px 4px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            boxShadow: 2,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              transform: 'rotate(180deg)',
+              color: '#000', // Dark text on lime green
+              fontWeight: 'bold',
+              fontStyle: 'italic',
+              letterSpacing: '0.1em',
+            }}
+          >
+            {group?.name || 'Voice Session'}
+          </Typography>
+        </Box>
 
         {/* iOS Audio Prompt for Listeners */}
         {showIOSAudioPrompt && (
