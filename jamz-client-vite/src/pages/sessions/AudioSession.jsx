@@ -1825,7 +1825,7 @@ const AudioSession = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Vertical Group Name Panel - Lime Green */}
+        {/* Vertical Group Name Panel - Chartreuse/Olive Green */}
         <Box
           sx={{
             position: 'fixed',
@@ -1833,7 +1833,7 @@ const AudioSession = () => {
             top: 64, // Below AppBar
             bottom: 0,
             zIndex: 10,
-            bgcolor: '#76ff03', // Lime green for Voice
+            bgcolor: '#7CB342', // Chartreuse/olive green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
             display: 'flex',
@@ -1849,7 +1849,7 @@ const AudioSession = () => {
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               transform: 'rotate(180deg)',
-              color: '#000', // Dark text on lime green
+              color: '#fff',
               fontWeight: 'bold',
               fontStyle: 'italic',
               letterSpacing: '0.1em',
