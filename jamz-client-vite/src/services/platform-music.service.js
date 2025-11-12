@@ -62,6 +62,7 @@ class PlatformMusicService {
         return;
       }
 
+      // Set up SDK ready callback with error handling
       window.onSpotifyWebPlaybackSDKReady = () => {
         console.log('✅ Spotify Web Playback SDK loaded successfully');
         resolve();
@@ -70,11 +71,32 @@ class PlatformMusicService {
       const script = document.createElement('script');
       script.src = 'https://sdk.scdn.co/spotify-player.js';
       script.async = true;
+      
+      // Add timeout to resolve anyway if SDK takes too long
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ Spotify SDK load timeout - continuing without SDK');
+        resolve(); // Don't block on SDK timeout
+      }, 5000); // 5 second timeout
+      
       script.onerror = () => {
+        clearTimeout(timeout);
         console.warn('⚠️ Failed to load Spotify SDK - will use preview URLs only');
         resolve(); // Don't block on SDK failure
       };
-      document.body.appendChild(script);
+      
+      script.onload = () => {
+        clearTimeout(timeout);
+        // Script loaded, waiting for SDK ready callback
+        console.log('📦 Spotify SDK script loaded, waiting for SDK ready...');
+      };
+      
+      try {
+        document.body.appendChild(script);
+      } catch (error) {
+        clearTimeout(timeout);
+        console.error('❌ Error appending Spotify SDK script:', error);
+        resolve(); // Continue anyway
+      }
     });
   }
 
