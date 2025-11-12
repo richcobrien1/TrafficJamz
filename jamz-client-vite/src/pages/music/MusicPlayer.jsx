@@ -354,15 +354,15 @@ const MusicPlayerPage = () => {
         )}
       </AppBar>
 
-      {/* Vertical Group Name Panel - Blue */}
+      {/* Vertical Group Name Panel */}
       <Box
         sx={{
-          position: 'fixed',
+          position: 'absolute',
           left: 0,
-          top: 64, // Below AppBar
+          top: 64,
           bottom: 0,
           zIndex: 10,
-          bgcolor: '#2196f3', // Blue to match Music category
+          bgcolor: '#2196f3', // Blue for Music
           backdropFilter: 'blur(2px)',
           padding: '16px 4px',
           display: 'flex',
