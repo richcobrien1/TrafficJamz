@@ -793,8 +793,8 @@ const GroupDetail = () => {
                   {/* Voice Bar - Clickable */}
                   <Box 
                     sx={{
-                      bgcolor: audioSessionActive ? '#76ff03' : 'background.paper',
-                      color: audioSessionActive ? '#000' : 'inherit',
+                      bgcolor: audioSessionActive ? '#7CB342' : 'background.paper',
+                      color: audioSessionActive ? '#fff' : 'inherit',
                       p: 2,
                       display: 'flex',
                       alignItems: 'center',
@@ -802,7 +802,7 @@ const GroupDetail = () => {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: audioSessionActive ? '#66dd00' : 'action.hover'
+                        bgcolor: audioSessionActive ? '#689F38' : 'action.hover'
                       },
                       borderBottom: '1px solid',
                       borderColor: 'divider'
