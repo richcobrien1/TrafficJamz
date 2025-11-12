@@ -665,8 +665,22 @@ const GroupDetail = () => {
   const isOwner = group?.owner_id === user?.id;
   const isMenuOpen = Boolean(anchorEl);
   
+  // Debug: Log render state
+  console.log('🎨 GroupDetail rendering:', { 
+    loading, 
+    error, 
+    hasGroup: !!group, 
+    groupName: group?.name,
+    tabValue 
+  });
+  
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh',
+      bgcolor: 'background.default' // Ensure background is visible
+    }}>
       <AppBar position="static" sx={{ 
         paddingTop: 'env(safe-area-inset-top)',
         paddingLeft: 'env(safe-area-inset-left)',
