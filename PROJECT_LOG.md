@@ -206,6 +206,65 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 12, 2025 (MP3 Metadata & Deployment Preparation)
+
+### Work Completed
+- **Located TrafficJamz project on DigitalOcean server**: Found existing repository at `~/TrafficJamz`
+- **Pulled latest code**: Updated server with MP3 metadata extraction implementation
+- **Retrieved production environment variables**: Located JWT_SECRET and SUPABASE_SERVICE_ROLE_KEY from .env files
+- **Obtained R2 storage credentials**: Retrieved correct Access Key ID and Secret Access Key from Cloudflare R2 dashboard
+- **Optimized Docker build performance**: Updated `Dockerfile.prod` to use `npm ci --omit=dev --no-audit --no-fund` for faster builds
+- **Prepared deployment command**: Compiled complete docker run command with all required environment variables for MP3 metadata extraction
+
+### Files Changed
+- `jamz-server/Dockerfile.prod` (optimized - faster npm installs with npm ci)
+- `PROJECT_LOG.md` (updated with deployment preparation progress)
+
+### Current Status
+- Backend code with MP3 metadata extraction ready for deployment
+- R2 storage credentials configured correctly
+- Docker build optimization implemented for future deployments
+- Deployment command prepared and ready to execute on DigitalOcean server
+
+### Next Steps (Priority Order)
+1. **Execute backend deployment** - Run the prepared docker command on DigitalOcean server
+2. **Test MP3 metadata extraction** - Upload MP3 files and verify title/artist/album/artwork extraction
+3. **Verify R2 storage functionality** - Confirm music files upload and play correctly
+4. Link Playlist to Now Playing tracks
+5. Move upload progress bar to bottom of panel
+6. Fix page refresh on music import
+7. Replace/remove Clear All alert popup with Material-UI dialog
+8. Rename Voice Controls to Voice Settings
+
+---
+
+## Session: November 12, 2025 (Server Access Issue - Power Cycle Required)
+
+### Work Completed
+- **MP3 metadata extraction fully implemented**: Backend code ready with music-metadata package
+- **R2 storage credentials obtained**: Access Key ID and Secret Access Key retrieved
+- **Docker build initiated**: Build was at 8/10 steps when server became unresponsive
+- **Optimized Dockerfile committed**: Future builds will use faster npm ci
+
+### Current Status
+- **CRITICAL**: Server access lost - both console and SSH unresponsive
+- **CAUSE**: Likely Docker build consumed all server resources (1vCPU, 2GB RAM)
+- **ACTION**: Power cycling droplet to restore access
+- **GOAL**: Complete Docker build and deploy MP3 metadata feature
+
+### Next Steps (Priority Order)
+1. **Power cycle DigitalOcean droplet** - Restore server access
+2. **Check Docker build status** - Verify if build completed before crash
+3. **Complete deployment** - Run container with MP3 metadata extraction
+4. **Test MP3 upload** - Verify metadata extraction and artwork display
+5. Link Playlist to Now Playing tracks
+6. Move upload progress bar to bottom of panel
+7. Fix page refresh on music import
+8. Replace/remove Clear All alert popup with Material-UI dialog
+9. Rename Voice Controls to Voice Settings
+
+---
+
 ## How to Use This Log
 
 At the end of each session, update this file with:
@@ -216,3 +275,75 @@ At the end of each session, update this file with:
 5. **Next Steps** - What needs to be done next
 
 This ensures continuity across all chat sessions.
+
+---
+
+## Session: November 12, 2025 (Database Investigation - Groups Data Visibility Issue)
+
+### Work Completed
+- **Connected to local MongoDB instance**: Successfully accessed trafficjamz database on localhost:27017
+- **Verified groups collection exists**: Found 2 active groups in the database
+- **Confirmed data integrity**: Groups contain complete member profiles, invitations, and settings
+- **Documented group details**:
+  - Group 1: "Warriors" (ID: 68e944da482cc178aacffb95) - Skiing/Snowboard friends group
+  - Group 2: "My People" (ID: 68efcf2c39d1d802c07957be) - Family and Friends group
+  - Both groups owned by user richcobrien (ID: 2f089fec-0f70-47c2-b485-fa83ec034e0f)
+  - Groups have active members and pending invitations
+
+### Database Findings
+- **Database**: trafficjamz (local MongoDB instance)
+- **Collections**: audiosessions, groups, locations, notifications, places, proximityalerts
+- **Groups Count**: 2 documents
+- **Data Status**: All group data present and properly structured
+- **Members**: Groups contain owner profiles with complete user information
+- **Invitations**: Multiple pending and accepted invitations with proper timestamps
+
+### Files Changed
+- `PROJECT_LOG.md` (updated with database investigation results)
+
+### Current Status
+- **Database**: MongoDB contains valid group data (2 groups, members, invitations)
+- **Issue Confirmed**: Frontend not displaying existing groups despite data being present
+- **Root Cause**: Likely frontend authentication, API calls, or caching issue (not database problem)
+- **Backend Services**: Running and connected to MongoDB successfully
+
+---
+
+## Session: November 12, 2025 (Groups API Authentication Bypass & Server Stability)
+
+### Work Completed
+- **Temporarily bypassed JWT authentication** in groups routes to isolate API response issues
+- **Modified groups.routes.js**: Commented out authentication middleware and hardcoded user_id for testing
+- **Resolved server termination issues**: Identified MongoDB connection stability problems causing premature exits
+- **Successfully started backend server**: All services now running (MongoDB, PostgreSQL, InfluxDB, Socket.IO)
+- **Verified database connectivity**: MongoDB connected successfully with trafficjamz database accessible
+
+### Technical Details
+- **Authentication Bypass**: Temporarily disabled `authenticateToken` middleware in GET /api/groups route
+- **Hardcoded User ID**: Set `req.user.id = '2f089fec-0f70-47c2-b485-fa83ec034e0f'` for testing
+- **Server Stability**: Resolved MongoDB disconnection issues that were terminating the process
+- **Database Status**: Local MongoDB instance running with 2 groups containing complete member data
+
+### Files Changed
+- `jamz-server/src/routes/groups.routes.js` (modified - authentication temporarily bypassed)
+- `PROJECT_LOG.md` (updated with current session work)
+
+### Current Status
+- **Backend Server**: Running successfully on port 10000 with all database connections established
+- **Groups API**: Authentication bypassed, ready for testing to verify data return
+- **Database**: Contains 2 valid groups with complete member and invitation data
+- **Next Step**: Test groups API endpoint to confirm it returns data instead of empty arrays
+
+### Next Steps (Priority Order)
+1. **Test groups API endpoint** - Verify GET /api/groups returns group data with authentication bypass
+2. **Re-enable authentication** - Restore JWT middleware once API functionality confirmed
+3. **Test frontend groups display** - Verify groups appear in dashboard after API fix
+4. **Address frontend black screening** - Resolve endless looping issues in groups functionality
+5. Test MP3 upload functionality - Verify metadata extraction works with R2 storage
+6. Link Playlist to Now Playing tracks
+7. Move upload progress bar to bottom of panel
+8. Fix page refresh on music import
+9. Replace/remove Clear All alert popup with Material-UI dialog
+10. Rename Voice Controls to Voice Settings
+
+---
