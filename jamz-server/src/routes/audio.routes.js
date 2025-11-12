@@ -5,6 +5,7 @@ const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
 const s3Service = require('../services/s3.service');
 const path = require('path');
+const { parseBuffer } = require('music-metadata');
 
 // Middleware to validate request
 const validate = (req, res, next) => {
@@ -572,6 +573,29 @@ router.post('/sessions/:sessionId/upload-music',
         mimetype: req.file.mimetype
       });
       
+      // Extract MP3 metadata (ID3 tags) before uploading
+      let metadata = null;
+      let albumArt = null;
+      try {
+        metadata = await parseBuffer(req.file.buffer, req.file.mimetype);
+        console.log('Extracted metadata:', {
+          title: metadata.common.title,
+          artist: metadata.common.artist,
+          album: metadata.common.album,
+          duration: metadata.format.duration
+        });
+        
+        // Extract album artwork if available
+        if (metadata.common.picture && metadata.common.picture.length > 0) {
+          const picture = metadata.common.picture[0];
+          const base64 = picture.data.toString('base64');
+          albumArt = `data:${picture.format};base64,${base64}`;
+          console.log('Extracted album artwork:', picture.format, 'size:', picture.data.length);
+        }
+      } catch (metadataError) {
+        console.warn('Failed to extract metadata, using defaults:', metadataError.message);
+      }
+      
       // Upload to Cloudflare R2
       
       const publicUrl = await uploadToR2(
@@ -583,11 +607,18 @@ router.post('/sessions/:sessionId/upload-music',
       
       console.log('Music file uploaded successfully to R2:', publicUrl);
       
+      // Prepare track data with extracted metadata
+      const extension = path.extname(req.file.originalname);
+      const filenameWithoutExt = req.file.originalname.replace(extension, '');
+      
       // Add to playlist
       const track = {
-        title: req.file.originalname.replace(extension, ''),
+        title: metadata?.common?.title || filenameWithoutExt,
+        artist: metadata?.common?.artist || 'Unknown Artist',
+        album: metadata?.common?.album || null,
+        duration: metadata?.format?.duration ? Math.round(metadata.format.duration) : 0,
+        albumArt: albumArt,
         fileUrl: publicUrl,
-        duration: 0, // Will be determined by client
         uploadedBy: req.user.user_id
       };
       
