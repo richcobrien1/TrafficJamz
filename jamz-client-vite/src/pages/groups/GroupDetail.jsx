@@ -897,8 +897,8 @@ const GroupDetail = () => {
                   {/* Location Bar - Clickable (Pink/Magenta) */}
                   <Box
                     sx={{
-                      bgcolor: isLocationWatchActive ? '#e91e63' : 'background.paper',
-                      color: isLocationWatchActive ? '#fff' : 'inherit',
+                      bgcolor: '#e91e63',
+                      color: '#fff',
                       p: 2,
                       display: 'flex',
                       alignItems: 'center',
@@ -906,7 +906,7 @@ const GroupDetail = () => {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: isLocationWatchActive ? '#c2185b' : 'action.hover'
+                        bgcolor: '#c2185b'
                       }
                     }}
                     onClick={() => navigate(`/location-tracking/${groupId}`)}
@@ -934,27 +934,6 @@ const GroupDetail = () => {
                           SHARING
                         </Typography>
                       </>
-                    )}
-                    {!isLocationWatchActive && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<LocationIcon />}
-                        sx={{ 
-                          ml: 'auto',
-                          borderColor: '#e91e63',
-                          color: '#e91e63',
-                          '&:hover': {
-                            borderColor: '#c2185b',
-                            bgcolor: 'rgba(233, 30, 99, 0.08)'
-                          }
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/location-tracking/${groupId}`);
-                        }}
-                      >
-                      </Button>
                     )}
                   </Box>
                 </Paper>
