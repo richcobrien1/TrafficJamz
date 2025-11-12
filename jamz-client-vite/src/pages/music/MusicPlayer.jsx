@@ -357,10 +357,10 @@ const MusicPlayerPage = () => {
       {/* Vertical Group Name Panel - Blue */}
       <Box
         sx={{
-          position: 'absolute',
+          position: 'sticky',
           left: 0,
-          top: 64, // Below AppBar (height of AppBar)
-          height: 'calc(100vh - 64px)', // Full viewport height minus AppBar
+          top: 0, // Stick to top of viewport when scrolling
+          height: '100vh', // Always full viewport height
           zIndex: 10,
           bgcolor: '#2196f3', // Blue to match Music category
           backdropFilter: 'blur(2px)',
@@ -370,6 +370,7 @@ const MusicPlayerPage = () => {
           alignItems: 'flex-end',
           justifyContent: 'flex-start',
           boxShadow: 2,
+          marginTop: '-64px', // Offset to align with AppBar initially
         }}
       >
         <Typography
