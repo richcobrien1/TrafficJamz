@@ -42,8 +42,8 @@ const AudioSettings = () => {
     <Box sx={{ width: '100%', minHeight: '100vh' }}>
       {/* Main Content */}
       <Box sx={{ flexGrow: 1 }}>
-        {/* App Bar - Chartreuse/Olive Green */}
-        <AppBar position="static" sx={{ bgcolor: '#76ff03' }}>
+        {/* App Bar - Lime Green */}
+        <AppBar position="static" sx={{ bgcolor: '#00FF00' }}>
           <Toolbar>
             <IconButton edge="start" sx={{ color: '#000' }} onClick={() => navigate(`/groups/${groupId}`)}>
               <ArrowBackIcon />
@@ -55,7 +55,7 @@ const AudioSettings = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Vertical Group Name Panel - Chartreuse/Olive Green */}
+        {/* Vertical Group Name Panel - Lime Green */}
         <Box
           sx={{
             position: 'absolute',
@@ -64,7 +64,7 @@ const AudioSettings = () => {
             bottom: 0,
             zIndex: 10,
             opacity: 1,
-            bgcolor: '#76ff03', // Lime green for Voice
+            bgcolor: '#00FF00', // Lime green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
             display: 'flex',
@@ -97,7 +97,7 @@ const AudioSettings = () => {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}>
-                <VolumeUpIcon sx={{ fontSize: 64, color: '#76ff03', mb: 2 }} />
+                <VolumeUpIcon sx={{ fontSize: 64, color: '#00FF00', mb: 2 }} />
                 <Typography variant="h5" gutterBottom>
                   Voice Settings
                 </Typography>
