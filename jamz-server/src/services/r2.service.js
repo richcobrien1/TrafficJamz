@@ -24,7 +24,7 @@ const isR2Configured = () => {
  * @param {string} originalFilename - Original filename
  * @param {string} mimetype - File mimetype
  * @param {string} userId - User ID uploading the file
- * @returns {Promise<string>} - Public URL of uploaded file
+ * @returns {Promise<string>} - Public R2.dev URL of uploaded file
  */
 const uploadToR2 = async (fileBuffer, originalFilename, mimetype, userId) => {
   if (!isR2Configured()) {
@@ -45,7 +45,7 @@ const uploadToR2 = async (fileBuffer, originalFilename, mimetype, userId) => {
       bucket: process.env.R2_BUCKET_MUSIC || process.env.R2_BUCKET_PUBLIC 
     });
 
-    // Upload to R2
+    // Upload to R2 with public-read ACL
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_MUSIC || process.env.R2_BUCKET_PUBLIC,
       Key: filePath,
@@ -62,11 +62,9 @@ const uploadToR2 = async (fileBuffer, originalFilename, mimetype, userId) => {
     const uploadResult = await r2Client.send(command);
     console.log('R2 upload result:', uploadResult);
 
-    // Generate public URL
-    // If you have a custom domain, use it, otherwise construct from endpoint
-    const publicUrl = process.env.R2_PUBLIC_URL 
-      ? `${process.env.R2_PUBLIC_URL}/${filePath}`
-      : `${process.env.R2_ENDPOINT.replace('.r2.cloudflarestorage.com', '.r2.dev')}/${filePath}`;
+    // Use the Public Development URL (R2.dev subdomain) 
+    // This is shown in your Cloudflare dashboard under Settings > Public Development URL
+    const publicUrl = `https://pub-c4cf281613c744fabfa8830a27954687.r2.dev/${filePath}`;
 
     console.log('Upload successful:', { filePath, publicUrl });
     return publicUrl;
