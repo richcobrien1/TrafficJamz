@@ -751,7 +751,7 @@ const GroupDetail = () => {
       </Menu>
       
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1, bgcolor: 'red', minHeight: '100vh' }}>
           <CircularProgress />
         </Box>
       ) : error ? (
