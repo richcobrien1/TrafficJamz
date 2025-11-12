@@ -1828,7 +1828,7 @@ const AudioSession = () => {
         {/* Vertical Group Name Panel - Chartreuse/Olive Green */}
         <Box
           sx={{
-            position: 'fixed',
+            position: 'absolute',
             left: 0,
             top: 64, // Below AppBar
             bottom: 0,
