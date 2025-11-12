@@ -807,8 +807,8 @@ const GroupDetail = () => {
                   {/* Voice Bar - Clickable */}
                   <Box 
                     sx={{
-                      bgcolor: audioSessionActive ? '#7CB342' : 'background.paper',
-                      color: audioSessionActive ? '#fff' : 'inherit',
+                      bgcolor: audioSessionActive ? '#00FF00' : 'background.paper',
+                      color: audioSessionActive ? '#000' : 'inherit',
                       p: 2,
                       display: 'flex',
                       alignItems: 'center',
@@ -816,7 +816,7 @@ const GroupDetail = () => {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
-                        bgcolor: audioSessionActive ? '#689F38' : 'action.hover'
+                        bgcolor: audioSessionActive ? '#00DD00' : 'action.hover'
                       },
                       borderBottom: '1px solid',
                       borderColor: 'divider'
@@ -842,24 +842,10 @@ const GroupDetail = () => {
                             }
                           }} 
                         />
-                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#000' }}>
                           ACTIVE
                         </Typography>
                       </>
-                    )}
-                    {!audioSessionActive && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<MicIcon />}
-                        sx={{ ml: 'auto' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/audio-settings/${groupId}`);
-                        }}
-                      >
-                        Start
-                      </Button>
                     )}
                   </Box>
 
@@ -905,20 +891,6 @@ const GroupDetail = () => {
                           PLAYING
                         </Typography>
                       </>
-                    )}
-                    {!musicIsPlaying && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<MusicNoteIcon />}
-                        sx={{ ml: 'auto' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/music/${groupId}`);
-                        }}
-                      >
-                        Open
-                      </Button>
                     )}
                   </Box>
 

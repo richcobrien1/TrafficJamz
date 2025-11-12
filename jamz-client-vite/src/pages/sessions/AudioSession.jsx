@@ -1807,7 +1807,7 @@ const AudioSession = () => {
   return (
       <Container maxWidth="md" sx={{ position: 'relative' }}>
         {/* Traffic Jam App Bar - Lime Green for Voice */}
-        <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
+        <AppBar position="static" sx={{ bgcolor: '#00FF00', color: '#000' }}>
           <Toolbar>
             <IconButton edge="start" sx={{ color: '#000' }} onClick={handleLeaveAudio}>
               <ArrowBackIcon />
@@ -1825,7 +1825,7 @@ const AudioSession = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Vertical Group Name Panel - Chartreuse/Olive Green */}
+        {/* Vertical Group Name Panel - Lime Green */}
         <Box
           sx={{
             position: 'absolute',
@@ -1834,7 +1834,7 @@ const AudioSession = () => {
             bottom: 0,
             zIndex: 10,
             opacity: 1,
-            bgcolor: '#76ff03', // Lime green for Voice
+            bgcolor: '#00FF00', // Lime green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
             display: 'flex',
