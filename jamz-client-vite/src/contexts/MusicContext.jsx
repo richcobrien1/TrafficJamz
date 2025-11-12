@@ -734,24 +734,47 @@ export const MusicProvider = ({ children }) => {
    * Load and play specific track
    */
   const loadAndPlay = async (track) => {
-    console.log('🎵 [MusicContext] Load and play:', track.title);
-    await musicService.loadTrack(track);
-    await musicService.play();
-    
-    if (isController) {
-      socketRef.current?.emit('music-control', {
-        sessionId: activeSessionId,
-        action: 'change-track',
-        track,
-        autoPlay: true,
-        position: 0
+    try {
+      console.log('🎵 [MusicContext] Load and play:', {
+        title: track.title,
+        url: track.url || track.fileUrl,
+        hasUrl: !!(track.url || track.fileUrl),
+        isController,
+        socketConnected: socketRef.current?.connected
       });
       
-      socketRef.current?.emit('music-track-change', {
-        sessionId: activeSessionId,
-        track,
-        autoPlay: true
-      });
+      if (!track.url && !track.fileUrl) {
+        console.error('🎵 [MusicContext] ❌ Track has no URL:', track);
+        alert(`Cannot play "${track.title}" - file URL is missing`);
+        return;
+      }
+      
+      await musicService.loadTrack(track);
+      console.log('🎵 [MusicContext] ✅ Track loaded, now playing...');
+      
+      await musicService.play();
+      console.log('🎵 [MusicContext] ✅ Playback started');
+      
+      if (isController) {
+        console.log('🎵 [MusicContext] Broadcasting track change to listeners...');
+        
+        socketRef.current?.emit('music-control', {
+          sessionId: activeSessionId,
+          action: 'change-track',
+          track,
+          autoPlay: true,
+          position: 0
+        });
+        
+        socketRef.current?.emit('music-track-change', {
+          sessionId: activeSessionId,
+          track,
+          autoPlay: true
+        });
+      }
+    } catch (error) {
+      console.error('🎵 [MusicContext] ❌ Error in loadAndPlay:', error);
+      alert(`Failed to play "${track.title}": ${error.message}`);
     }
   };
   
