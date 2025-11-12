@@ -97,7 +97,7 @@ const AudioSettings = () => {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}>
-                <VolumeUpIcon sx={{ fontSize: 64, color: '#7CB342', mb: 2 }} />
+                <VolumeUpIcon sx={{ fontSize: 64, color: '#76ff03', mb: 2 }} />
                 <Typography variant="h5" gutterBottom>
                   Voice Settings
                 </Typography>
