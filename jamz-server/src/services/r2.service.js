@@ -64,7 +64,7 @@ const uploadToR2 = async (fileBuffer, originalFilename, mimetype, userId) => {
 
     // Use the Public Development URL (R2.dev subdomain) 
     // This is shown in your Cloudflare dashboard under Settings > Public Development URL
-    const publicUrl = `https://pub-c4cf281613c744fabfa8830a27954687.r2.dev/${filePath}`;
+    const publicUrl = `https://pub-c4cf281613c744fabfa8830d27954687.r2.dev/${filePath}`;
 
     console.log('Upload successful:', { filePath, publicUrl });
     return publicUrl;
