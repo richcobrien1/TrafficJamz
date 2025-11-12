@@ -1834,7 +1834,7 @@ const AudioSession = () => {
             bottom: 0,
             zIndex: 10,
             opacity: 1,
-            bgcolor: '#7CB342', // Chartreuse/olive green for Voice
+            bgcolor: '#76ff03', // Lime green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
             display: 'flex',

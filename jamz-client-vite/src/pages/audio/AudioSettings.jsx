@@ -43,13 +43,13 @@ const AudioSettings = () => {
       {/* Main Content */}
       <Box sx={{ flexGrow: 1 }}>
         {/* App Bar - Chartreuse/Olive Green */}
-        <AppBar position="static" sx={{ bgcolor: '#7CB342' }}>
+        <AppBar position="static" sx={{ bgcolor: '#76ff03' }}>
           <Toolbar>
-            <IconButton edge="start" sx={{ color: '#fff' }} onClick={() => navigate(`/groups/${groupId}`)}>
+            <IconButton edge="start" sx={{ color: '#000' }} onClick={() => navigate(`/groups/${groupId}`)}>
               <ArrowBackIcon />
             </IconButton>
-            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#fff' }} />
-            <Typography variant="h6" sx={{ flexGrow: 1, color: '#fff' }}>
+            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
+            <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
               Voice
             </Typography>
           </Toolbar>
@@ -64,7 +64,7 @@ const AudioSettings = () => {
             bottom: 0,
             zIndex: 10,
             opacity: 1,
-            bgcolor: '#7CB342', // Chartreuse/olive green for Voice
+            bgcolor: '#76ff03', // Lime green for Voice
             backdropFilter: 'blur(2px)',
             padding: '16px 4px',
             display: 'flex',
