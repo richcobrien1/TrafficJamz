@@ -82,6 +82,45 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 12, 2025 (Continued)
+
+### Additional Work Completed
+- **Matched AppBar colors to vertical bars**: Voice pages (AudioSession & AudioSettings) now use consistent lime green (#76ff03)
+- **Implemented MP3 metadata extraction**:
+  - Installed `music-metadata` package for ID3 tag parsing
+  - Backend now extracts title, artist, album, and duration from uploaded MP3 files
+  - Album artwork extracted and converted to base64 data URLs for display
+  - Proper fallback to filename for title if metadata missing
+  - Artist defaults to "Unknown Artist" instead of leaving blank
+
+### Files Changed
+- `jamz-client-vite/src/pages/audio/AudioSettings.jsx` (modified - AppBar color to #76ff03)
+- `jamz-client-vite/src/pages/sessions/AudioSession.jsx` (modified - vertical bar color to #76ff03)
+- `jamz-server/package.json` (modified - added music-metadata dependency)
+- `jamz-server/src/routes/audio.routes.js` (modified - MP3 metadata extraction)
+- `PROJECT_LOG.md` (updated)
+
+### Git Commits
+- dafd855c: "Fix: Match AppBar colors to vertical bars - Voice pages now use lime green #76ff03"
+- 536dc590: "Feature: Add MP3 metadata extraction with album artwork support"
+
+### Current Status
+- AppBar colors now consistent across all pages
+- MP3 uploads now correctly extract and display metadata
+- Album artwork automatically extracted from MP3 files
+- **Backend needs deployment to production** for metadata extraction to work live
+
+### Next Steps (Priority Order)
+1. **Deploy backend to production** - Push MP3 metadata extraction feature live
+2. Test music upload/playback with full metadata and artwork
+3. Link Playlist to Now Playing tracks
+4. Move upload progress bar to bottom of panel
+5. Fix page refresh on music import
+6. Replace/remove Clear All alert popup with Material-UI dialog
+7. Rename Voice Controls to Voice Settings
+
+---
+
 ## How to Use This Log
 
 At the end of each session, update this file with:
