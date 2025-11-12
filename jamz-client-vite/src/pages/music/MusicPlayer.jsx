@@ -323,14 +323,15 @@ const MusicPlayerPage = () => {
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
-      {/* App Bar - Simple header */}
-      <AppBar position="static" color="secondary">
+      {/* App Bar - Blue to match Music category */}
+      <AppBar position="static" sx={{ bgcolor: '#2196f3' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
-            {group?.name || 'Music Player'}
+          <MusicIcon sx={{ ml: 1, mr: 1 }} />
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Music
           </Typography>
         </Toolbar>
         {/* Discrete Upload Progress Bar */}

@@ -157,24 +157,29 @@ Upload successful: { filePath: '...', publicUrl: 'https://...r2.dev/...' }
 - Should be `https://HASH.r2.dev` NOT `.r2.cloudflarestorage.com`
 - The `.cloudflarestorage.com` endpoint is for S3 API, not public access
 
-## Custom Domain (Optional)
+## Custom Domain (Recommended for Production)
 
-For production, use a custom domain:
+For production, use a custom domain like `public.v2u.us`:
 
 1. Go to R2 bucket settings
 2. Click **"Connect Domain"**
-3. Enter your domain: `music.trafficjamz.com`
-4. Add DNS records as shown
+3. Enter your domain: `public.v2u.us` (or `music.trafficjamz.com`)
+4. Add DNS records as shown (CNAME pointing to your bucket)
 5. Wait for SSL provisioning (~5 minutes)
 6. Update environment variable:
    ```bash
-   R2_PUBLIC_URL="https://music.trafficjamz.com"
+   R2_PUBLIC_URL="https://public.v2u.us"
    ```
 
 Benefits:
-- Professional URLs
-- Faster CDN routing
-- Better security
+- ✅ Professional URLs (no `.r2.dev` in URL)
+- ✅ Faster CDN routing
+- ✅ Better security
+- ✅ Custom branding
+- ✅ Same global performance as R2.dev
+
+**Production setup**: Use custom domain  
+**Development setup**: Use R2.dev subdomain
 
 ## Cost Estimate
 

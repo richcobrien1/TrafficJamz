@@ -1806,19 +1806,20 @@ const AudioSession = () => {
 
   return (
       <Container maxWidth="md" sx={{ position: 'relative' }}>
-        {/* Traffic Jam App Bar */}
-        <AppBar position="static" color="primary" sx={{ mb: 2 }}>
+        {/* Traffic Jam App Bar - Lime Green for Voice */}
+        <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
           <Toolbar>
-            <IconButton edge="start" color="inherit" onClick={handleLeaveAudio}>
+            <IconButton edge="start" sx={{ color: '#000' }} onClick={handleLeaveAudio}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              {group?.name || 'Audio Session'}
+            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
+            <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
+              Voice
             </Typography>
-            <IconButton color="inherit" onClick={() => setOpenMusicDialog(true)}>
+            <IconButton sx={{ color: '#000' }} onClick={() => setOpenMusicDialog(true)}>
               <MusicNoteIcon />
             </IconButton>
-            <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
+            <IconButton sx={{ color: '#000' }} onClick={() => setOpenLeaveDialog(true)}>
               <LeaveIcon />
             </IconButton>
           </Toolbar>
