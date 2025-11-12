@@ -529,8 +529,9 @@ router.patch('/sessions/:sessionId/enable-music',
 
 /**
  * @route POST /api/audio/sessions/:sessionId/upload-music
- * @desc Upload music file to session
+ * @desc Upload music file to session (uploads to Cloudflare R2, NOT Supabase)
  * @access Private
+ * @note Music files are stored in Cloudflare R2 bucket for free egress and CDN
  */
 router.post('/sessions/:sessionId/upload-music',
   passport.authenticate('jwt', { session: false }),
@@ -554,22 +555,17 @@ router.post('/sessions/:sessionId/upload-music',
         });
       }
       
-      // Check if Supabase is configured
-      if (!s3Service.isSupabaseConfigured()) {
+      // Check if R2 is configured
+      const { uploadToR2, isR2Configured } = require('../services/r2.service');
+      
+      if (!isR2Configured()) {
         return res.status(503).json({
           success: false,
-          message: 'Storage service not configured'
+          message: 'R2 storage not configured. Please set R2_ACCESS_KEY, R2_SECRET_KEY, and R2_ENDPOINT environment variables.'
         });
       }
       
-      // Generate unique filename for music file
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const extension = path.extname(req.file.originalname);
-      const filename = `music-${sessionId}-${uniqueSuffix}${extension}`;
-      const filePath = `session-music/${filename}`;
-      
-      console.log('Uploading music file:', { 
-        filePath, 
+      console.log('Uploading music file to R2:', { 
         sessionId, 
         originalName: req.file.originalname,
         size: req.file.buffer.length,
@@ -577,7 +573,6 @@ router.post('/sessions/:sessionId/upload-music',
       });
       
       // Upload to Cloudflare R2
-      const { uploadToR2 } = require('../services/r2.service');
       
       const publicUrl = await uploadToR2(
         req.file.buffer,

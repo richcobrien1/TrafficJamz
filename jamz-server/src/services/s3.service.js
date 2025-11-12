@@ -1,3 +1,16 @@
+/**
+ * S3/Supabase Storage Service
+ * 
+ * NOTE: Despite the name, this service handles:
+ * - Supabase Storage: Profile images ONLY
+ * - R2 Storage: Music files (MP3s) - handled in r2.service.js
+ * 
+ * The multer middleware here just buffers files to memory.
+ * Actual cloud uploads happen in route handlers:
+ * - Profile images → Supabase (uploadToSupabase function below)
+ * - Music files → Cloudflare R2 (uploadToR2 in r2.service.js)
+ */
+
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const path = require('path');
@@ -48,7 +61,9 @@ const upload = multer({
   fileFilter: imageFileFilter
 });
 
-// Create multer upload instance for audio files
+// Create multer upload instance for audio files (MP3s)
+// NOTE: This only handles the file upload to memory - actual storage is in R2, not Supabase
+// The uploaded file buffer is then sent to Cloudflare R2 in audio.routes.js
 const audioUpload = multer({
   storage: memoryStorage,
   limits: {
