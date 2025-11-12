@@ -8,7 +8,8 @@ const s3 = process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY
       accessKeyId: process.env.R2_ACCESS_KEY_ID,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
       signatureVersion: 'v4',
-      s3ForcePathStyle: true  // Required for R2 to prevent bucket name in hostname
+      s3ForcePathStyle: true,
+      region: 'us-east-1'  // R2 requires a region but ignores it
     })
   : null;
 
