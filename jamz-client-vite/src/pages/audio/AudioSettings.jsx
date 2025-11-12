@@ -58,10 +58,10 @@ const AudioSettings = () => {
         {/* Vertical Group Name Panel - Chartreuse/Olive Green */}
         <Box
           sx={{
-            position: 'fixed',
+            position: 'absolute',
             left: 0,
             top: 64, // Below AppBar
-            bottom: 0,
+            height: 'calc(100vh - 64px)', // Full viewport height minus AppBar
             zIndex: 10,
             bgcolor: '#7CB342', // Chartreuse/olive green for Voice
             backdropFilter: 'blur(2px)',
