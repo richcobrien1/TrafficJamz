@@ -562,7 +562,7 @@ router.post('/sessions/:sessionId/upload-music',
       if (!isR2Configured()) {
         return res.status(503).json({
           success: false,
-          message: 'R2 storage not configured. Please set R2_ACCESS_KEY, R2_SECRET_KEY, and R2_ENDPOINT environment variables.'
+          message: 'R2 storage not configured. Please set R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_ACCOUNT_ID or R2_ENDPOINT environment variables.'
         });
       }
       

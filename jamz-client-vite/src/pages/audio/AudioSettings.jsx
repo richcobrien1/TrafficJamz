@@ -81,7 +81,7 @@ const AudioSettings = () => {
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               transform: 'rotate(180deg)',
-              color: '#fff',
+              color: '#000',
               fontWeight: 'bold',
               fontStyle: 'italic',
               letterSpacing: '0.1em',
