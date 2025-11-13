@@ -466,7 +466,7 @@ class UserService {
    */
   async sendPasswordResetEmail(email, token) {
     try {
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
       
       await emailService.sendPasswordResetEmail(email, resetUrl);
       console.log('✅ Password reset email sent successfully to:', email);
@@ -474,6 +474,67 @@ class UserService {
       console.error('❌ Email sending error:', error);
       console.error('❌ Error details:', error.message);
       throw new Error('Failed to send password reset email');
+    }
+  }
+
+  /**
+   * Reset password with token
+   * @param {string} token - Reset token
+   * @param {string} email - User email
+   * @param {string} newPassword - New password
+   * @returns {Promise<void>}
+   */
+  async resetPassword(token, email, newPassword) {
+    try {
+      // Find the reset token
+      const resetToken = await PasswordResetToken.findOne({
+        where: {
+          token,
+          email,
+          used: false
+        }
+      });
+
+      if (!resetToken) {
+        throw new Error('Invalid or expired reset token');
+      }
+
+      // Check if token is expired
+      if (new Date() > new Date(resetToken.expires_at)) {
+        throw new Error('Reset token has expired');
+      }
+
+      // Find the user
+      const user = await User.findOne({
+        where: {
+          user_id: resetToken.user_id,
+          email: resetToken.email
+        }
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Hash the new password
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      // Update user password
+      await user.update({
+        password_hash: hashedPassword
+      });
+
+      // Mark token as used
+      await resetToken.update({
+        used: true
+      });
+
+      console.log('✅ Password reset successfully for user:', email);
+    } catch (error) {
+      console.error('❌ Password reset error:', error);
+      throw error;
     }
   }
 
