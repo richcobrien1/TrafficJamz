@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-  const response = await api.post('/auth/reset-password', { email });
+      const response = await api.post('/auth/forgot-password', { email });
       
       return response.data;
     } catch (error) {
