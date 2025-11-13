@@ -509,10 +509,11 @@ const Profile = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Update user data with new profile image URL
+        // Update user data with new profile image URL (add cache buster)
+        const imageUrlWithCacheBuster = `${data.image_url}?t=${Date.now()}`;
         setUser(prevUser => ({
           ...prevUser,
-          profile_image_url: data.image_url
+          profile_image_url: imageUrlWithCacheBuster
         }));
 
         setPersonalInfoSuccess('Profile photo updated successfully');
