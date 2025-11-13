@@ -609,14 +609,20 @@ router.post('/sessions/:sessionId/upload-music',
           // Debug the picture.data type
           console.log('Picture data type:', typeof picture.data);
           console.log('Picture data is Buffer:', Buffer.isBuffer(picture.data));
+          console.log('Picture data is Uint8Array:', picture.data instanceof Uint8Array);
           console.log('Picture data length:', picture.data.length);
           
-          const base64 = picture.data.toString('base64');
+          // Ensure picture.data is a Buffer and convert to base64
+          const dataBuffer = Buffer.isBuffer(picture.data) 
+            ? picture.data 
+            : Buffer.from(picture.data);
+          
+          const base64 = dataBuffer.toString('base64');
           console.log('Base64 type:', typeof base64);
           console.log('Base64 first 50 chars:', base64.substring(0, 50));
           
-          // Explicitly ensure it's a string
-          albumArt = String(`data:${picture.format};base64,${base64}`);
+          // Create the data URL
+          albumArt = `data:${picture.format};base64,${base64}`;
           console.log('Extracted album artwork:', picture.format, 'size:', picture.data.length);
           console.log('AlbumArt prefix (first 100 chars):', albumArt.substring(0, 100));
           console.log('AlbumArt type:', typeof albumArt, 'length:', albumArt.length);
