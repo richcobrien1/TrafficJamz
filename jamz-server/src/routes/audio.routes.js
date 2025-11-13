@@ -679,6 +679,18 @@ router.post('/sessions/:sessionId/upload-music',
         prefix: track.albumArt?.substring(0, 100)
       });
       
+      // Emit WebSocket event to notify all group members of playlist update
+      if (req.app.locals.io) {
+        const room = `audio-${sessionId}`;
+        req.app.locals.io.to(room).emit('playlist-update', {
+          playlist: playlist,
+          newTrack: track,
+          from: 'server',
+          timestamp: Date.now()
+        });
+        console.log(`🔔 Emitted playlist-update to room ${room} with ${playlist.length} tracks`);
+      }
+      
       res.json({
         success: true,
         fileUrl: publicUrl,
