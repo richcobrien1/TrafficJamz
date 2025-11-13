@@ -266,10 +266,20 @@ const MusicPlayerPage = () => {
       console.log(`📥 Importing ${tracks.length} tracks from playlist`);
       
       const uploadedTracks = [];
+      const skippedTracks = [];
       
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         console.log(`📤 Processing track ${i + 1}/${tracks.length}: ${track.title}`);
+
+        // Check if track has a playable URL
+        const hasPlayableUrl = track.url || track.previewUrl || track.spotifyPreviewUrl || track.youtubeUrl;
+        if (!hasPlayableUrl) {
+          console.warn(`⚠️ Skipping track without playable URL: ${track.title} by ${track.artist}`);
+          skippedTracks.push(track);
+          setUploadProgress(((i + 1) / tracks.length) * 100);
+          continue;
+        }
 
         const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/import-track`, {
           method: 'POST',
@@ -286,8 +296,12 @@ const MusicPlayerPage = () => {
               albumArt: track.albumArt,
               source: track.source,
               externalId: track.id,
-              previewUrl: track.previewUrl,
-              streamUrl: track.streamUrl
+              url: track.url,
+              previewUrl: track.previewUrl || track.spotifyPreviewUrl,
+              spotifyPreviewUrl: track.spotifyPreviewUrl,
+              streamUrl: track.streamUrl,
+              youtubeUrl: track.youtubeUrl,
+              youtubeId: track.youtubeId
             }
           })
         });
@@ -311,7 +325,14 @@ const MusicPlayerPage = () => {
         await musicAddTrack(track);
       }
 
-      if (uploadedTracks.length < tracks.length) {
+      // Show summary message
+      if (skippedTracks.length > 0) {
+        const skippedMessage = skippedTracks.length === 1
+          ? `1 track was skipped (no preview available): "${skippedTracks[0].title}"`
+          : `${skippedTracks.length} tracks were skipped (no preview available)`;
+        
+        setUploadError(`Imported ${uploadedTracks.length} of ${tracks.length} tracks. ${skippedMessage}`);
+      } else if (uploadedTracks.length < tracks.length) {
         setUploadError(`Imported ${uploadedTracks.length} of ${tracks.length} tracks. Some tracks may not be available.`);
       }
 
