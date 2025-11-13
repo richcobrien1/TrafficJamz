@@ -98,7 +98,7 @@ router.get('/sessions/:sessionId',
     });
     
     try {
-      const AudioSession = require('../models/AudioSession');
+      const AudioSession = require('../models/audio-session.model');
       const session = await AudioSession.findById(req.params.sessionId).lean();
       
       if (!session) {
