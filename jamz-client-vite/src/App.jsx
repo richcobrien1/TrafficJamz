@@ -99,6 +99,16 @@ function App() {
         main: '#dc004e',
       },
     },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            background: 'linear-gradient(135deg, #76ff03 0%, #2196f3 50%, #e91e63 100%)',
+            backgroundAttachment: 'fixed',
+          },
+        },
+      },
+    },
   });
 
   // Wake up backend on initial load only if not already ready
