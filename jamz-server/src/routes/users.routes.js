@@ -172,11 +172,22 @@ router.post('/upload-profile-image',
         return res.status(400).json({ success: false, message: 'No file uploaded' });
       }
 
-      // Upload to Supabase Storage
-      const filePath = await s3Service.uploadToSupabase(req.file, req.user.user_id);
-      
-      // Get the public URL
-      const imageUrl = s3Service.getFileUrl(filePath);
+      let imageUrl;
+      let storageType;
+
+      // Try R2 first (preferred), fallback to Supabase
+      if (s3Service.isR2Configured()) {
+        console.log('Using R2 storage for profile image');
+        imageUrl = await s3Service.uploadProfileToR2(req.file, req.user.user_id);
+        storageType = 'r2';
+      } else if (s3Service.isSupabaseConfigured()) {
+        console.log('Using Supabase storage for profile image');
+        const filePath = await s3Service.uploadToSupabase(req.file, req.user.user_id);
+        imageUrl = s3Service.getFileUrl(filePath);
+        storageType = 'supabase';
+      } else {
+        throw new Error('No storage configured - need either R2 or Supabase credentials');
+      }
 
       // Update user's profile image URL
       const updateData = {
@@ -190,7 +201,7 @@ router.post('/upload-profile-image',
         message: 'Profile image uploaded successfully',
         image_url: imageUrl,
         user,
-        storage_type: 'supabase'
+        storage_type: storageType
       });
     } catch (error) {
       console.error('Profile image upload error:', error);
@@ -209,10 +220,15 @@ router.get('/storage-config',
   (req, res) => {
     try {
       const config = {
+        isR2Configured: s3Service.isR2Configured(),
         isSupabaseConfigured: s3Service.isSupabaseConfigured(),
-        storageType: s3Service.isSupabaseConfigured() ? 'Supabase' : 'Not Configured',
+        storageType: s3Service.isR2Configured() ? 'R2' : s3Service.isSupabaseConfigured() ? 'Supabase' : 'Not Configured',
+        hasR2AccessKey: !!process.env.R2_ACCESS_KEY_ID,
+        hasR2SecretKey: !!process.env.R2_SECRET_ACCESS_KEY,
+        hasR2Endpoint: !!(process.env.R2_ENDPOINT || process.env.R2_ACCOUNT_ID),
         hasSupabaseUrl: !!process.env.SUPABASE_URL,
         hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        r2Endpoint: process.env.R2_ENDPOINT || 'NOT SET',
         supabaseUrl: process.env.SUPABASE_URL || 'NOT SET'
       };
 

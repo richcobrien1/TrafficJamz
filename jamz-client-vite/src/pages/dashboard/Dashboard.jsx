@@ -33,7 +33,6 @@ import {
   Group as GroupIcon,
   Mic as MicIcon,
   LocationOn as LocationIcon,
-  Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
   SmartToy as AIIcon
 } from '@mui/icons-material';
@@ -134,32 +133,38 @@ const Dashboard = () => {
         paddingRight: 'env(safe-area-inset-right)'
       }}>
         <Toolbar>
-          {/* User Avatar and Name */}
-          <Avatar 
-            src={getAvatarContent(currentUser)}
-            sx={{ width: 40, height: 40, mr: 2 }}
-          >
-            {getAvatarFallback(currentUser)}
-          </Avatar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {currentUser?.full_name || currentUser?.username || 'User'}
-          </Typography>
-          
-          {/* Settings Icon */}
-          <IconButton 
-            color="inherit" 
+          {/* User Avatar and Name - Click to open settings */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              flexGrow: 1,
+              cursor: 'pointer',
+              '&:hover': { opacity: 0.8 }
+            }}
             onClick={() => navigate('/profile')}
-            aria-label="settings"
-            sx={{ mr: 1 }}
           >
-            <SettingsIcon />
-          </IconButton>
+            <Avatar 
+              src={getAvatarContent(currentUser)}
+              sx={{ width: 40, height: 40, mr: 2 }}
+            >
+              {getAvatarFallback(currentUser)}
+            </Avatar>
+            <Typography variant="h6" component="div">
+              {currentUser?.full_name || currentUser?.username || 'User'}
+            </Typography>
+          </Box>
           
-          {/* Logout Icon */}
+          {/* Logout Icon - Bright Red */}
           <IconButton 
-            color="inherit" 
             onClick={handleLogout}
             aria-label="logout"
+            sx={{ 
+              color: '#ff1744',
+              '&:hover': { 
+                bgcolor: 'rgba(255, 23, 68, 0.08)'
+              }
+            }}
           >
             <LogoutIcon />
           </IconButton>
