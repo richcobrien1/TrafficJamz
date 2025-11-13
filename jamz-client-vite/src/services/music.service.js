@@ -59,6 +59,8 @@ class MusicService {
 
     this.audioElement.addEventListener('ended', () => {
       console.log('🎵 Track ended, playing next...');
+      console.log('🎵 Current track:', this.currentTrack?.title, 'ID:', this.currentTrack?.id);
+      console.log('🎵 Playlist length:', this.playlist.length);
       this.playNext();
     });
 
@@ -436,7 +438,15 @@ class MusicService {
     const nextIndex = (currentIndex + 1) % this.playlist.length;
     const nextTrack = this.playlist[nextIndex];
 
+    console.log('⏭️ [playNext] Current index:', currentIndex, 'Next index:', nextIndex);
+    console.log('⏭️ [playNext] Current track:', this.currentTrack.title, 'Next track:', nextTrack.title);
     console.log('⏭️ [playNext] Skipping to next track:', nextTrack.title, 'hasAlbumArt:', !!nextTrack.albumArt);
+    
+    // Check if we're actually changing tracks
+    if (nextTrack.id === this.currentTrack.id) {
+      console.warn('⚠️ [playNext] Next track is same as current - only 1 track in playlist?');
+    }
+    
     await this.loadTrack(nextTrack);
     await this.play();
   }
