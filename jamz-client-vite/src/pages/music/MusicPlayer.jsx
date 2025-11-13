@@ -377,8 +377,9 @@ const MusicPlayerPage = () => {
           padding: '16px 4px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           justifyContent: 'flex-start',
+          paddingTop: '8px',
           transition: 'all 0.3s ease',
           boxShadow: 2,
         }}
@@ -392,7 +393,9 @@ const MusicPlayerPage = () => {
             color: '#fff',
             fontWeight: 'bold',
             fontStyle: 'italic',
-            letterSpacing: '0.1em',
+            letterSpacing: '0.05em',
+            fontSize: '0.75rem',
+            whiteSpace: 'nowrap',
           }}
         >
           {group?.name || 'Music Player'}
