@@ -85,6 +85,7 @@ const AudioSettings = () => {
               fontWeight: 'bold',
               fontStyle: 'italic',
               letterSpacing: '0.1em',
+              whiteSpace: 'nowrap',
             }}
           >
             {group?.name || 'Voice Settings'}
