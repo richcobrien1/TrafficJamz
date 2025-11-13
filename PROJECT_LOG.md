@@ -1503,3 +1503,77 @@ if (req.app.locals.io) {
 4. Test with browser DevTools Network tab to see WebSocket frames
 
 ---
+
+## Session: November 13, 2025 (Late Afternoon) - Music Playback Fix
+
+### Work Completed
+
+#### Track Playback Fixed ✅
+- **Problem**: Tracks wouldn't play - "Track has no URL" errors in console
+- **Root cause**: Uploaded tracks saved with `fileUrl` field but frontend expects `url` field
+- **Solution**: 
+  1. Updated upload endpoint to set both `url` (primary) and `fileUrl` (backward compat)
+  2. Added `source: 'local'` field to identify uploaded tracks
+  3. Created migration script to fix 17 existing tracks in database
+  4. Cleared invalid `currently_playing` track with no URL
+
+#### WebSocket Playlist Sync Verified ✅
+- Confirmed WebSocket events broadcasting correctly:
+  - `music-change-track` - Track changes syncing
+  - `music-pause` - Pause/play state syncing
+  - `music-previous` - Previous track navigation
+- Backend logs show persistent state updates and room broadcasting working
+
+### Files Changed
+- ✅ `jamz-server/src/routes/audio.routes.js` - Added url/source fields to track object
+- ✅ `fix-track-urls.js` - Created migration script for existing playlists
+- ✅ `PROJECT_LOG.md` - Updated with playback fix details
+
+### Git Commits
+- 1d8297f4: "Fix: Add url field to uploaded music tracks for playback compatibility"
+- e0d1ecd6: "Add migration script to fix track URLs in existing playlists"
+
+### Technical Details
+
+**Track Object Structure (Fixed):**
+```javascript
+const track = {
+  title: metadata?.common?.title || filenameWithoutExt,
+  artist: metadata?.common?.artist || 'Unknown Artist',
+  album: metadata?.common?.album || null,
+  duration: metadata?.format?.duration ? Math.round(metadata.format.duration) : 0,
+  albumArt: albumArt,
+  url: publicUrl,          // PRIMARY - Required for playback
+  fileUrl: publicUrl,      // Backward compatibility
+  source: 'local',         // Track source identifier
+  uploadedBy: req.user.user_id
+};
+```
+
+**Migration Results:**
+- Fixed 17 tracks in session `6805c88621925c8fd767cd4d`
+- 5 YouTube tracks: Set `url` from `youtubeUrl`
+- 12 uploaded MP3s: Set `url` from `fileUrl`
+- Cleared 1 invalid `currently_playing` track
+- All tracks now playable
+
+### Current Status
+- ✅ Tracks playing successfully (both YouTube and uploaded MP3s)
+- ✅ WebSocket sync working (change-track, pause, previous events broadcasting)
+- ✅ Album artwork displaying correctly
+- ✅ Playlist persistence working across sessions
+- 🎵 Music playback fully functional!
+
+### Issues Resolved
+1. ✅ "Track has no URL" errors
+2. ✅ Tracks wouldn't play when clicked
+3. ✅ Invalid currently_playing state in database
+4. ✅ YouTube and local tracks both working
+
+### Key Learnings
+- **Field naming consistency critical**: Frontend and backend must agree on field names
+- **Migration scripts essential**: When changing data structure, existing data needs updating
+- **Source field useful**: Helps identify track type (local/youtube/spotify) for debugging
+- **WebSocket sync working**: Once tracks have URLs, all sync functionality works perfectly
+
+---
