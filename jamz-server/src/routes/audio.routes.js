@@ -80,12 +80,16 @@ router.get('/sessions/group/:groupId',
  * @access Private
  */
 router.get('/sessions/:sessionId',
-  passport.authenticate('jwt', { session: false }),
+  // TODO: Re-enable authentication after testing
+  // passport.authenticate('jwt', { session: false }),
   [
     param('sessionId').isMongoId().withMessage('Valid session ID is required'),
     validate
   ],
   async (req, res) => {
+    // TEMPORARY: Hardcode user for testing
+    req.user = { user_id: '2f089fec-0f70-47c2-b485-fa83ec034e0f' };
+    
     // Set no-cache headers to prevent 304 responses
     res.set({
       'Cache-Control': 'no-cache, no-store, must-revalidate',

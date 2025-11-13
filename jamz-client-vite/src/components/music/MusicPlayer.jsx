@@ -27,6 +27,7 @@ import {
  */
 const MusicPlayer = ({
   currentTrack,
+  playlist = [],
   isPlaying,
   currentTime,
   duration,
@@ -44,6 +45,9 @@ const MusicPlayer = ({
 }) => {
   // Remember previous volume for mute/unmute
   const previousVolumeRef = useRef(0.5);
+  
+  // Use currentTrack if available, otherwise show first track in playlist as preview
+  const displayTrack = currentTrack || (playlist && playlist.length > 0 ? playlist[0] : null);
   
   // Update previous volume when volume changes (but not to 0)
   useEffect(() => {
@@ -122,7 +126,7 @@ const MusicPlayer = ({
     onNext?.();
   };
 
-  if (!currentTrack) {
+  if (!displayTrack) {
     return (
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent sx={{ textAlign: 'center', py: 4 }}>
@@ -173,31 +177,62 @@ const MusicPlayer = ({
   }
 
   return (
-    <Card variant="outlined" sx={{ mb: 2 }}>
-      <CardContent>
+    <Card 
+      variant="outlined" 
+      sx={{ 
+        mb: 2,
+        position: 'relative',
+        overflow: 'hidden',
+        // Blurred background with album art if available
+        ...(displayTrack.albumArt && {
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${displayTrack.albumArt})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(40px) brightness(0.3)',
+            opacity: 0.2,
+            zIndex: 0
+          }
+        })
+      }}
+    >
+      <CardContent sx={{ position: 'relative', zIndex: 1 }}>
         {/* Track Info */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          {currentTrack.albumArt ? (
+          {displayTrack.albumArt ? (
             <Avatar 
-              src={currentTrack.albumArt} 
-              alt={currentTrack.album || currentTrack.title}
-              sx={{ mr: 2, width: 56, height: 56 }}
+              src={displayTrack.albumArt} 
+              alt={displayTrack.album || displayTrack.title}
+              sx={{ 
+                mr: 2, 
+                width: 64, 
+                height: 64,
+                boxShadow: 3,
+                border: '2px solid',
+                borderColor: 'background.paper'
+              }}
             />
           ) : (
-            <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 56, height: 56 }}>
+            <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 64, height: 64 }}>
               <MusicIcon />
             </Avatar>
           )}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="h6" noWrap>
-              {currentTrack.title}
+              {displayTrack.title || 'Unknown Track'}
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {currentTrack.artist || 'Unknown Artist'}
+              {displayTrack.artist || 'Unknown Artist'}
             </Typography>
-            {currentTrack.album && (
+            {displayTrack.album && (
               <Typography variant="caption" color="text.secondary" noWrap>
-                {currentTrack.album}
+                {displayTrack.album}
               </Typography>
             )}
           </Box>

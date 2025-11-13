@@ -436,6 +436,7 @@ const MusicPlayerPage = () => {
       <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
         <MusicPlayer
           currentTrack={currentTrack}
+          playlist={playlist}
           isPlaying={musicIsPlaying}
           currentTime={musicCurrentTime}
           duration={musicDuration}

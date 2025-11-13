@@ -137,6 +137,25 @@ const MusicPlaylist = ({
                     cursor: isController && !isCurrentTrack && !disabled ? 'pointer' : 'default',
                     transition: 'all 0.2s ease',
                     minHeight: { xs: 80, sm: 72 },
+                    position: 'relative',
+                    overflow: 'hidden',
+                    // Subtle blurred background with album art if available
+                    ...(track.albumArt && {
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: `url(${track.albumArt})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: 'blur(20px)',
+                        opacity: 0.15,
+                        zIndex: -1
+                      }
+                    }),
                     '&:hover': isController && !isCurrentTrack && !disabled ? {
                       bgcolor: 'primary.50',
                       borderColor: 'primary.light',
