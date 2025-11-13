@@ -608,6 +608,8 @@ router.post('/sessions/:sessionId/upload-music',
           const base64 = picture.data.toString('base64');
           albumArt = `data:${picture.format};base64,${base64}`;
           console.log('Extracted album artwork:', picture.format, 'size:', picture.data.length);
+          console.log('AlbumArt prefix (first 100 chars):', albumArt.substring(0, 100));
+          console.log('AlbumArt type:', typeof albumArt, 'length:', albumArt.length);
         }
       } catch (metadataError) {
         console.warn('Failed to extract metadata, using defaults:', metadataError.message);
@@ -652,6 +654,14 @@ router.post('/sessions/:sessionId/upload-music',
         hasAlbumArt: !!t.albumArt,
         albumArtLength: t.albumArt?.length
       }))));
+      
+      // Debug: Check track.albumArt before sending response
+      console.log('🖼️ Response track.albumArt:', {
+        hasAlbumArt: !!track.albumArt,
+        type: typeof track.albumArt,
+        length: track.albumArt?.length,
+        prefix: track.albumArt?.substring(0, 100)
+      });
       
       res.json({
         success: true,
