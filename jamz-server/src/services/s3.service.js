@@ -111,7 +111,7 @@ const uploadProfileToR2 = async (file, userId) => {
 
     // Upload to R2
     const params = {
-      Bucket: process.env.R2_BUCKET_PUBLIC || 'trafficjamz-public',
+      Bucket: process.env.R2_BUCKET_PUBLIC || process.env.R2_BUCKET_MUSIC || 'music',
       Key: filePath,
       Body: file.buffer,
       ContentType: file.mimetype,

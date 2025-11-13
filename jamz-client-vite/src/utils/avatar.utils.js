@@ -7,12 +7,14 @@
  * @returns {string|null} Avatar URL or null for fallback
  */
 export const getAvatarContent = (user) => {
-  // First priority: user's actual uploaded profile image from Supabase Storage
+  // First priority: user's actual uploaded profile image from Supabase Storage or R2
   // Only ignore old ui-avatars.com URLs (legacy placeholders)
   if (user?.profile_image_url && 
       !user.profile_image_url.includes('ui-avatars.com')) {
-    // Check if it's a real Supabase Storage URL (not a generated placeholder)
-    if (user.profile_image_url.includes('supabase.co/storage')) {
+    // Check if it's a real storage URL (Supabase or R2)
+    if (user.profile_image_url.includes('supabase.co/storage') ||
+        user.profile_image_url.includes('public.v2u.us') ||
+        user.profile_image_url.includes('.r2.cloudflarestorage.com')) {
       return user.profile_image_url;
     }
   }
