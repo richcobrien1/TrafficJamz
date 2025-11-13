@@ -4,18 +4,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { Op } = require('sequelize');
 const socialAvatarService = require('./social-avatar.service');
-const nodemailer = require('nodemailer');
-
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
+const emailService = require('./email.service');
 
 /**
  * User service for handling user-related operations
@@ -478,26 +467,8 @@ class UserService {
   async sendPasswordResetEmail(email, token) {
     try {
       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@trafficjamz.com',
-        to: email,
-        subject: 'Password Reset - TrafficJamz',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Reset Your Password</h2>
-            <p>You requested a password reset for your TrafficJamz account.</p>
-            <p>Click the link below to reset your password:</p>
-            <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this reset, please ignore this email.</p>
-            <hr style="border: none; border-top: 1px solid #eee;">
-            <p style="color: #666; font-size: 12px;">TrafficJamz Team</p>
-          </div>
-        `
-      };
-
-      await transporter.sendMail(mailOptions);
+      
+      await emailService.sendPasswordResetEmail(email, resetUrl);
       console.log('✅ Password reset email sent successfully to:', email);
     } catch (error) {
       console.error('❌ Email sending error:', error);

@@ -299,6 +299,117 @@ class EmailService {
       throw error;
     }
   }
+
+  async sendPasswordResetEmail(to, resetUrl) {
+    try {
+      await this.init();
+      console.log('📧 Sending password reset email to:', to);
+
+      const textBody = [
+        'Hello,',
+        '',
+        'You requested a password reset for your TrafficJamz account.',
+        '',
+        'Click the link below to reset your password:',
+        resetUrl,
+        '',
+        'This link will expire in 1 hour.',
+        '',
+        'If you didn\'t request this reset, please ignore this email.',
+        '',
+        'Best regards,',
+        'The TrafficJamz Team 🎧'
+      ].join('\n');
+
+      const htmlBody = `
+        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #FF0037FF, #FFAE00FF); color: #000; padding: 2em; border-radius: 12px;">
+          <h1 style="text-align: center; font-size: 2em; margin-bottom: 0.5em;">🔐 Reset Your Password</h1>
+          <div style="background: #fff; padding: 2em; border-radius: 8px; margin: 1.5em 0;">
+            <p style="font-size: 1.1em; line-height: 1.6; color: #333;">
+              You requested a password reset for your TrafficJamz account.
+            </p>
+            <p style="font-size: 1.1em; line-height: 1.6; color: #333;">
+              Click the button below to reset your password:
+            </p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #000; color: #ff9900; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
+            </p>
+            <p style="font-size: 0.9em; color: #666;">
+              Or copy and paste this link into your browser:
+            </p>
+            <p style="font-size: 0.9em; color: #007bff; word-break: break-all;">
+              ${resetUrl}
+            </p>
+            <p style="font-size: 1em; color: #d32f2f; margin-top: 20px;">
+              ⏰ This link will expire in 1 hour.
+            </p>
+            <p style="font-size: 0.9em; color: #666;">
+              If you didn't request this reset, please ignore this email. Your password will remain unchanged.
+            </p>
+          </div>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid rgba(255,255,255,0.3);">
+          <p style="color: #000; font-size: 12px; text-align: center;">Best regards,<br/>The TrafficJamz Team</p>
+        </div>
+      `;
+
+      // Use Resend if configured
+      if (this.useResend && this.resendClient) {
+        console.log('📧 Sending password reset email via Resend...');
+        
+        const resendOptions = {
+          from: process.env.RESEND_FROM_EMAIL || 'TrafficJamz <onboarding@resend.dev>',
+          to: [to],
+          subject: 'Reset Your Password - TrafficJamz',
+          html: htmlBody,
+          text: textBody
+        };
+
+        const data = await this.resendClient.emails.send(resendOptions);
+        
+        console.log('✅ Password reset email sent successfully via Resend');
+        console.log('Email ID:', data.id);
+        
+        return {
+          messageId: data.id,
+          provider: 'resend'
+        };
+      }
+
+      // Fallback to SMTP (nodemailer)
+      const mailOptions = {
+        from: this.testAccount 
+          ? `"TrafficJamz" <${this.testAccount.user}>`
+          : `"TrafficJamz" <${process.env.SMTP_USER || 'noreply@trafficjamz.com'}>`,
+        to,
+        subject: 'Reset Your Password - TrafficJamz',
+        text: textBody,
+        html: htmlBody
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      
+      console.log('✅ Password reset email sent successfully via SMTP');
+      console.log('Message ID:', info.messageId);
+
+      if (this.testAccount) {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        console.log('Preview URL:', previewUrl);
+        return {
+          messageId: info.messageId,
+          previewUrl,
+          provider: 'ethereal'
+        };
+      }
+
+      return {
+        messageId: info.messageId,
+        provider: 'smtp'
+      };
+    } catch (error) {
+      console.error('❌ Error sending password reset email:', error);
+      throw error;
+    }
+  }
 }
 
 // At the bottom of your email.service.js file
