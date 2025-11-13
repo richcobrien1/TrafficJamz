@@ -275,6 +275,7 @@ export const MusicProvider = ({ children }) => {
     // Playlist updates
     socket.on('playlist-update', (data) => {
       console.log('🎵 [MusicContext] Playlist update received:', data.playlist?.length || 0, 'tracks');
+      console.log('🎵 [MusicContext] Tracks with albumArt:', data.playlist?.filter(t => t.albumArt).length || 0);
       if (data.playlist && Array.isArray(data.playlist)) {
         // Deduplicate and normalize received playlist
         const deduplicatedPlaylist = [];
@@ -302,6 +303,7 @@ export const MusicProvider = ({ children }) => {
         
         setPlaylist(deduplicatedPlaylist);
         musicService.playlist = deduplicatedPlaylist;
+        console.log('🎵 [MusicContext] Playlist state updated. Tracks with albumArt:', deduplicatedPlaylist.filter(t => t.albumArt).length);
         
         // Save to cache
         if (activeSessionId) {
@@ -522,7 +524,7 @@ export const MusicProvider = ({ children }) => {
    * Add track to playlist
    */
   const addTrack = async (track) => {
-    console.log('🎵 [MusicContext] Adding track:', track.title);
+    console.log('🎵 [MusicContext] Adding track:', track.title, 'hasAlbumArt:', !!track.albumArt, 'albumArtLength:', track.albumArt?.length);
     
     // Check for duplicates before adding (compare by fileUrl or title+artist)
     const isDuplicate = musicService.playlist.some(t => 
@@ -924,8 +926,9 @@ export const MusicProvider = ({ children }) => {
     
     // Explicitly update local state to ensure UI reflects the change
     if (musicService.currentTrack) {
-      setCurrentTrack(musicService.currentTrack);
-      console.log('🎵 [MusicContext] Next track loaded:', musicService.currentTrack.title);
+      const trackWithArt = { ...musicService.currentTrack };
+      console.log('🎵 [MusicContext] Next track loaded:', trackWithArt.title, 'hasAlbumArt:', !!trackWithArt.albumArt, 'albumArtLength:', trackWithArt.albumArt?.length);
+      setCurrentTrack(trackWithArt);
     }
     
     if (isController && musicService.currentTrack) {
@@ -949,8 +952,9 @@ export const MusicProvider = ({ children }) => {
     
     // Explicitly update local state to ensure UI reflects the change
     if (musicService.currentTrack) {
-      setCurrentTrack(musicService.currentTrack);
-      console.log('🎵 [MusicContext] Previous track loaded:', musicService.currentTrack.title);
+      const trackWithArt = { ...musicService.currentTrack };
+      console.log('🎵 [MusicContext] Previous track loaded:', trackWithArt.title, 'hasAlbumArt:', !!trackWithArt.albumArt, 'albumArtLength:', trackWithArt.albumArt?.length);
+      setCurrentTrack(trackWithArt);
     }
     
     if (isController && musicService.currentTrack) {
@@ -1051,6 +1055,7 @@ export const MusicProvider = ({ children }) => {
       const freshPlaylist = data.session?.music?.playlist || [];
       
       console.log('🎵 [MusicContext] Playlist refreshed:', freshPlaylist.length, 'tracks');
+      console.log('🎵 [MusicContext] Tracks with albumArt:', freshPlaylist.filter(t => t.albumArt).length);
       setPlaylist(freshPlaylist);
       
       // Update cache
