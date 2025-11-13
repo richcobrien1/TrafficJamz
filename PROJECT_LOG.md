@@ -1577,3 +1577,96 @@ const track = {
 - **WebSocket sync working**: Once tracks have URLs, all sync functionality works perfectly
 
 ---
+
+## Session: November 13, 2025 (Evening) - UI Polish & Duration Display Fix
+
+### Work Completed
+
+#### Voice Vertical Bar Text Wrapping Fix ✅
+- **Problem**: Group name "Snow Warriors" wrapping to multiple lines on Voice Settings page
+- **Root cause**: Missing `whiteSpace: 'nowrap'` CSS property
+- **Solution**: Added `whiteSpace: 'nowrap'` to match Music and Location pages exactly
+- **Verified**: AudioSession already had the property, only AudioSettings was missing it
+
+#### Track Duration Display Fix ✅
+- **Problem**: Player showing incorrect remaining time (0:00 instead of actual duration)
+- **Root cause**: Audio element's `duration` property is 0/NaN before metadata loads
+- **Example issue**: Track "Left Me Like Summer" shows 4:45 in playlist but player shows 2:38/0:00
+- **Solution**: Use track's stored duration from database as fallback
+  - Slider max: `duration || currentTrack?.duration || 100`
+  - Time display: `duration || currentTrack?.duration || 0`
+- **Result**: Player now shows correct total duration even before audio metadata loads
+
+#### Asset Cache Issue Resolved ✅
+- **Problem**: Browser trying to load old `MusicPlayer-CrNVuK6X.js` causing "Failed to fetch" errors
+- **Solution**: Cleared all old asset files from server and redeployed fresh build
+- **Prevention**: Full asset directory cleanup before deployment
+
+### Files Changed
+- ✅ `jamz-client-vite/src/pages/audio/AudioSettings.jsx` - Added whiteSpace: nowrap
+- ✅ `jamz-client-vite/src/components/music/MusicPlayer.jsx` - Duration fallback logic
+- ✅ Frontend assets cleaned and redeployed
+- ✅ `PROJECT_LOG.md` - Updated with evening session details
+
+### Git Commits
+- 846ba3e2: "Fix: Add whiteSpace nowrap to Voice vertical bar to prevent text wrapping"
+- 87d57e96: "Fix: Use track duration from database as fallback when audio element duration is not available"
+
+### Technical Details
+
+**CSS Fix for Vertical Bar:**
+```jsx
+// AudioSettings.jsx - Typography component
+sx={{
+  writingMode: 'vertical-rl',
+  textOrientation: 'mixed',
+  transform: 'rotate(180deg)',
+  color: '#000',
+  fontWeight: 'bold',
+  fontStyle: 'italic',
+  letterSpacing: '0.1em',
+  whiteSpace: 'nowrap',  // ADDED - prevents wrapping
+}}
+```
+
+**Duration Fallback Logic:**
+```jsx
+// MusicPlayer.jsx - Slider component
+<Slider
+  value={currentTime || 0}
+  max={duration || currentTrack?.duration || 100}  // Fallback chain
+  onChange={handleSeekChange}
+/>
+
+// Time display
+<Typography variant="caption" color="text.secondary">
+  {formatTime(duration || currentTrack?.duration || 0)}  // Shows stored duration
+</Typography>
+```
+
+### Deployment Process
+1. **Asset cleanup**: `rm -rf /var/www/html/assets/*` on server
+2. **Fresh build**: `npm run build` in jamz-client-vite
+3. **Deploy**: `scp -r dist/* root@157.230.165.156:/var/www/html/`
+4. **Cache clear**: Users instructed to hard refresh (Ctrl+Shift+R)
+
+### Current Status
+- ✅ Voice vertical bar displays group name on single line
+- ✅ Track duration shows correctly in player (4:45 for "Left Me Like Summer")
+- ✅ Slider max value matches actual track duration
+- ✅ No more cache-related "Failed to fetch" errors
+- ✅ All vertical bars consistent across Voice, Music, and Location pages
+
+### Issues Resolved
+1. ✅ Group name wrapping to multiple lines on Voice page
+2. ✅ Player showing 0:00 for remaining time instead of actual duration
+3. ✅ Slider range incorrect when audio metadata not loaded
+4. ✅ Asset cache mismatch causing module load failures
+
+### Session Summary
+Quick polish session fixing UI consistency and playback display issues. All three critical issues resolved and deployed:
+- Visual consistency restored across all pages
+- Duration display now accurate and reliable
+- Asset deployment pipeline cleaned up
+
+---
