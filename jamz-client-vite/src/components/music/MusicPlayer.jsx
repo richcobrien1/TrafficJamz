@@ -276,7 +276,7 @@ const MusicPlayer = ({
         <Box sx={{ mb: 1 }}>
           <Slider
             value={currentTime || 0}
-            max={duration || 100}
+            max={duration || currentTrack?.duration || 100}
             onChange={handleSeekChange}
             disabled={!isController || disabled}
             sx={{ 
@@ -294,7 +294,7 @@ const MusicPlayer = ({
               {formatTime(currentTime)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {formatTime(duration)}
+              {formatTime(duration || currentTrack?.duration || 0)}
             </Typography>
           </Box>
         </Box>
