@@ -46,19 +46,17 @@ const MusicPlayer = ({
   // Remember previous volume for mute/unmute
   const previousVolumeRef = useRef(0.5);
   
-  // Debug: Log props on mount and when they change
+  // Debug: Log displayTrack to see albumArt
   useEffect(() => {
-    console.log('🎵 [MusicPlayer Component] Props:', {
-      hasOnNext: typeof onNext === 'function',
-      hasOnPrevious: typeof onPrevious === 'function',
-      hasOnPlay: typeof onPlay === 'function',
-      hasOnPause: typeof onPause === 'function',
-      isController,
-      disabled,
-      hasCurrentTrack: !!currentTrack,
-      playlistLength: playlist?.length || 0
+    console.log('🎵 [MusicPlayer Component] displayTrack:', {
+      hasTrack: !!displayTrack,
+      title: displayTrack?.title,
+      hasAlbumArt: !!displayTrack?.albumArt,
+      albumArtLength: displayTrack?.albumArt?.length,
+      albumArtPrefix: displayTrack?.albumArt?.substring(0, 50),
+      allKeys: Object.keys(displayTrack || {})
     });
-  }, [onNext, onPrevious, onPlay, onPause, isController, disabled, currentTrack, playlist]);
+  }, [displayTrack]);
   
   // Use currentTrack if available, otherwise show first track in playlist as preview
   const displayTrack = currentTrack || (playlist && playlist.length > 0 ? playlist[0] : null);
