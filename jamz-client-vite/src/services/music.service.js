@@ -98,6 +98,8 @@ class MusicService {
       spotifyPreviewUrl: track.spotifyPreviewUrl,
       url: track.url,
       fileUrl: track.fileUrl,
+      hasAlbumArt: !!track.albumArt,
+      albumArtLength: track.albumArt?.length,
       hasPreviewUrl: !!(track.previewUrl || track.spotifyPreviewUrl || track.fileUrl)
     });
     
@@ -432,6 +434,7 @@ class MusicService {
     const nextIndex = (currentIndex + 1) % this.playlist.length;
     const nextTrack = this.playlist[nextIndex];
 
+    console.log('⏭️ [playNext] Loading next track:', nextTrack.title, 'hasAlbumArt:', !!nextTrack.albumArt);
     await this.loadTrack(nextTrack);
     await this.play();
   }
@@ -449,6 +452,7 @@ class MusicService {
     const prevIndex = (currentIndex - 1 + this.playlist.length) % this.playlist.length;
     const prevTrack = this.playlist[prevIndex];
 
+    console.log('⏮️ [playPrevious] Loading previous track:', prevTrack.title, 'hasAlbumArt:', !!prevTrack.albumArt);
     await this.loadTrack(prevTrack);
     await this.play();
   }
