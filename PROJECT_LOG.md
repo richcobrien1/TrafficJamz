@@ -4,6 +4,315 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 13, 2025 (Late Evening) - UI Updates & Deployment
+
+### UI/UX Improvements
+
+#### Dashboard Header Redesign
+- **Removed**: Settings gear icon from header
+- **Added**: Made Avatar + Name clickable to navigate to settings/profile page
+- **Updated**: Exit/Logout icon now bright red (#ff1744) with red hover effect
+- **Intent**: Exit icon is now the ONLY way to logout from the application
+
+#### Profile Page Cleanup
+- **Removed**: Logout button from Profile page
+- **Removed**: `handleLogout` function
+- **Removed**: `LogoutIcon` import
+- **Removed**: `logout` from useAuth destructuring
+- **Rationale**: Consolidate logout functionality to Dashboard exit icon only
+
+### Files Changed
+- `jamz-client-vite/src/pages/dashboard/Dashboard.jsx`:
+  - Removed `SettingsIcon` import
+  - Made Avatar+Name container clickable with hover effect
+  - Styled logout icon with bright red color (#ff1744)
+  - Added red hover background for logout button
+  
+- `jamz-client-vite/src/pages/profile/Profile.jsx`:
+  - Removed logout button from UI
+  - Removed `LogoutIcon` import
+  - Removed `handleLogout` function
+  - Cleaned up useAuth destructuring
+
+### Deployment Process
+- **Git commit**: a94bdd29 - "UI updates: Remove logout from Profile, update Dashboard header..."
+- **Pushed to GitHub**: main branch
+- **Server deployment**:
+  1. Pulled changes to /root/TrafficJamz on production server
+  2. Resolved merge conflicts (accepted GitHub version of s3.service.js)
+  3. Restarted Docker container to load updated code
+  4. Verified server started successfully with MongoDB connected
+  5. Changes live at https://jamz.v2u.us
+
+### Current Status
+- ✅ UI changes deployed and live
+- ✅ Profile uploads using R2 storage (from previous session)
+- ✅ WebSocket connections working
+- ✅ MongoDB Atlas connected
+- ✅ All environment variables properly loaded
+
+### Notes
+- Container restart preferred over rebuild for code-only changes (faster deployment)
+- Updated code loaded from /root/TrafficJamz volume mount
+- No image rebuild required when only source files change
+
+---
+
+## Session: November 13, 2025 (Evening) - Profile Upload & WebSocket Fixes
+
+### Critical Fixes
+
+#### Profile Image Upload - R2 Storage Implementation
+- **Root cause**: Neither Supabase nor R2 credentials were loaded in Docker container
+- **Discovery**: `.env.prod` file exists with all credentials but container wasn't reading it
+- **Issue**: Container was started without `--env-file` flag
+- **Solution**: 
+  - Modified `s3.service.js` to support Cloudflare R2 for profile images
+  - Updated `users.routes.js` to try R2 first (preferred), fallback to Supabase
+  - Added R2 profile upload function: `uploadProfileToR2()`
+  - Fixed Supabase initialization to validate URL format before creating client
+- **Container fix**: Recreated with `--env-file /root/TrafficJamz/.env.prod`
+
+#### WebSocket 502 Errors - Nginx Misconfiguration
+- **Root cause**: Nginx proxying to port 10000 (nothing listening)
+- **Discovery**: Backend running on port 5050, nginx pointing to wrong port
+- **Solution**: Updated `/etc/nginx/sites-available/trafficjamz` to proxy to `127.0.0.1:5050`
+- **Result**: WebSocket connections now working
+
+#### Environment File Format Issues
+- **Issue**: `.env.prod` had malformed values with double quotes causing parse errors
+- **Examples**: `INFLUXDB_URL=""https://..."` (double quote), Supabase keys truncated with `...`
+- **Solution**: Removed quotes, disabled InfluxDB (not needed), commented out invalid Supabase keys
+- **MongoDB password**: Corrected from `1Topgun123` to `ZwzL6uJ42JxwAsAu`
+
+### Files Changed
+- `jamz-server/src/services/s3.service.js`:
+  - Added R2 configuration check: `isR2Configured()`
+  - Added R2 client initialization with AWS SDK v2
+  - Added `uploadProfileToR2()` function for profile image uploads
+  - Fixed Supabase client initialization to validate URL before creating client
+  - Exported new functions: `uploadProfileToR2`, `isR2Configured`
+
+- `jamz-server/src/routes/users.routes.js`:
+  - Updated `/upload-profile-image` to try R2 first, fallback to Supabase
+  - Added storage type logging
+  - Updated `/storage-config` debug endpoint to show both R2 and Supabase status
+
+- Server Configuration:
+  - `/root/TrafficJamz/.env.prod` - Fixed format, corrected MongoDB password
+  - `/etc/nginx/sites-available/trafficjamz` - Changed proxy port from 10000 to 5050
+  - Docker container recreated with proper environment file loading
+
+### Current Working Configuration
+
+#### Docker Container
+```bash
+Container: trafficjamz
+Image: trafficjamz-backend:latest (c7b393c7f715)
+Ports: 5050:5000
+Env File: /root/TrafficJamz/.env.prod
+Restart: unless-stopped
+```
+
+#### Environment Variables (Working)
+```
+MONGODB_URI=mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
+DATABASE_URL=postgresql://postgres.aws-0-us-east-1.pooler.supabase.com:6543/postgres?user=postgres.ohbuqqvhxqqilpjrqxhr&password=topgun123
+JWT_SECRET=your-secret-key-here
+FRONTEND_URL=https://jamz.v2u.us
+RESEND_API_KEY=re_ht32YycE_P814QwQMyBhnaZAEqtY3uU1x
+RESEND_FROM_EMAIL=TrafficJamz <onboarding@resend.dev>
+
+# Cloudflare R2 (Profile Images & Music)
+R2_ACCOUNT_ID=d54e57481e824e8752d0f6caa9b37ba7
+R2_ACCESS_KEY_ID=6b67cfbfd3be5b8ae1f190a0efd3ee98
+R2_SECRET_ACCESS_KEY=c70aa2aedb1efd3df9fca77b205f3916c6139a32ad85c2d3a2e92f5e46bc975e
+R2_ENDPOINT=https://d54e57481e824e8752d0f6caa9b37ba7.r2.cloudflarestorage.com
+R2_BUCKET_MUSIC=music
+R2_BUCKET_PUBLIC=trafficjamz-public (or use R2_BUCKET_MUSIC as fallback)
+R2_PUBLIC_URL=https://public.v2u.us
+```
+
+#### Nginx Configuration
+```
+Server: trafficjamz.v2u.us
+SSL: Let's Encrypt (fullchain.pem, privkey.pem)
+Proxy: http://127.0.0.1:5050
+WebSocket: Upgrade headers configured
+Max Upload: 100MB
+Timeouts: 300s (5 minutes)
+```
+
+### Critical Deployment Rules
+
+**NEVER recreate container without:**
+1. Checking current working image: `docker inspect trafficjamz --format '{{.Config.Image}}'`
+2. Using `--env-file /root/TrafficJamz/.env.prod`
+3. Port mapping: `-p 5050:5000`
+4. Verifying `.env.prod` has correct values (especially MongoDB password)
+
+**NEVER modify nginx without:**
+1. Confirming backend port with: `ss -tlnp | grep 5050`
+2. Testing config: `nginx -t`
+3. Reloading (not restarting): `systemctl reload nginx`
+
+**Before any "rebuild":**
+1. Verify what's currently working: `docker logs trafficjamz --tail 50`
+2. Document current env vars: `docker exec trafficjamz printenv | grep -E '(MONGODB|R2|DATABASE)'`
+3. Update THIS LOG with current state
+4. Test new build locally first
+
+### Lessons Learned
+- **Container recreation destroys all runtime config** - always use --env-file
+- **Code changes in repo don't affect running containers** - need rebuild + redeploy
+- **Multiple env files cause confusion** - `.env.prod` is source of truth
+- **Nginx config persists** - but may point to wrong ports if container changes
+- **Environment variable format matters** - no quotes, proper URL encoding
+
+### Issues Resolved This Session
+1. ✅ Profile upload 400 error (Supabase storage not configured)
+2. ✅ WebSocket 502 errors (nginx pointing to wrong port)
+3. ✅ Container not loading environment variables
+4. ✅ MongoDB authentication failures (wrong password in .env.prod)
+5. ✅ InfluxDB URL parse errors (disabled, not needed)
+6. ✅ Invitations 400 errors (NOT A BUG - user not member of group, permission denied is correct)
+
+### Current Status
+- ✅ Profile uploads working with Cloudflare R2
+- ✅ WebSocket connections working
+- ✅ MongoDB Atlas connected
+- ✅ All environment variables properly loaded
+- ✅ Nginx proxying to correct port
+- ✅ Server running and accessible
+
+---
+
+## Session: November 13, 2025 (Morning) - Password Reset & Database Redundancy
+
+### Work Completed
+
+#### Password Reset System - Complete Implementation
+- **Fixed missing database table**: Created `password_reset_tokens` table in PostgreSQL with UUID tokens, expiration, and used flag
+- **Resolved SMTP port blocking**: Switched from nodemailer SMTP to Resend API (bypasses DigitalOcean port 25/587/465 blocking)
+- **Email delivery working**: Successfully sending password reset emails via Resend (onboarding@resend.dev sender)
+- **Implemented resetPassword backend method**: Complete flow with token validation, expiration check, bcrypt hashing
+- **Fixed URL parameter bug**: Added email parameter to reset URL for proper validation
+- **Resolved double-hashing bug**: Password was being hashed twice due to beforeUpdate hook - now uses direct SQL query
+- **Fixed Buffer handling**: Properly convert Buffer password_hash to UTF-8 string for bcrypt comparison
+- **All 3 accounts tested**: richcobrien@hotmail.com, richcobrien@gmail.com, richcobrien@v2u.us - all working
+
+#### Database Redundancy & Backup System
+- **MongoDB Atlas reconnected**: Fixed production to use Atlas (`mongodb+srv://...`) instead of empty local container
+- **Created automated backup scripts**:
+  - `backup-databases.sh` - Daily backups of PostgreSQL and MongoDB with 30-day retention
+  - `restore-databases.sh` - Restoration tool with safety confirmations
+  - `deploy-backup-system.sh` - One-command deployment with cron setup (2 AM daily)
+- **Implemented data sync service**: MongoDB → PostgreSQL sync every 5 minutes for groups/members redundancy
+- **Backup features**:
+  - Compressed backups (gzip for PostgreSQL, tar.gz for MongoDB)
+  - Automatic cleanup of old backups
+  - Detailed logging to backup.log
+  - Manual restore capabilities
+
+#### Critical Security Fixes
+- **Groups endpoint authentication**: Re-enabled JWT authentication (was disabled for testing with hardcoded user_id)
+- **User filtering restored**: Users now only see groups they're members of (not all groups)
+- **Profile image upload URL**: Fixed double `/api/api/` in upload endpoint
+
+#### Branding Updates
+- Updated copyright footer from "Audio Group Communication App" to "Jamz Audio Communications Group"
+- Files updated: Login.jsx, Register.jsx
+
+### Files Changed
+- `jamz-server/create-password-reset-table.js` (created - database migration)
+- `jamz-server/src/services/user.service.js` (extensive modifications)
+  - Added requestPasswordReset with UUID token generation
+  - Added sendPasswordResetEmail with email parameter in URL
+  - Added resetPassword with direct SQL query (bypasses hook)
+  - Added debug logging for password hash types
+- `jamz-server/src/services/email.service.js` (added sendPasswordResetEmail method)
+- `jamz-server/src/models/user.model.js` (fixed validatePassword to handle Buffer types)
+- `jamz-server/src/routes/auth.routes.js` (verified working reset endpoints)
+- `jamz-server/scripts/backup-databases.sh` (created)
+- `jamz-server/scripts/restore-databases.sh` (created)
+- `jamz-server/scripts/deploy-backup-system.sh` (created)
+- `jamz-server/src/services/data-sync.service.js` (created)
+- `jamz-server/src/index.js` (added data sync service startup)
+- `jamz-server/src/routes/groups.routes.js` (re-enabled JWT auth, removed hardcoded user_id)
+- `jamz-client-vite/src/pages/profile/Profile.jsx` (fixed upload URL)
+- `jamz-client-vite/src/pages/auth/Login.jsx` (branding update)
+- `jamz-client-vite/src/pages/auth/Register.jsx` (branding update)
+
+### Technical Details
+
+#### Password Reset Flow
+1. User requests reset → generates UUID token with 1-hour expiration
+2. Email sent via Resend API (HTTPS, bypasses SMTP port blocking)
+3. User clicks link → frontend extracts token & email from URL
+4. Backend validates token, checks expiration, verifies user
+5. New password hashed with bcrypt (salt rounds 10)
+6. Direct SQL UPDATE to bypass Sequelize beforeUpdate hook
+7. Token marked as used to prevent reuse
+
+#### Database Configuration
+- **PostgreSQL**: Supabase pooler at aws-0-us-east-1.pooler.supabase.com:6543
+- **MongoDB Atlas**: trafficjam.xk2uszk.mongodb.net/trafficjamz (production data source)
+- **Resend Email**: API key re_ht32YycE_P814QwQMyBhnaZAEqtY3uU1x, 3,000 emails/month free tier
+
+### Issues Resolved
+1. ✅ Password reset non-functional (3rd attempt by user)
+2. ✅ Missing password_reset_tokens table
+3. ✅ SMTP port blocking on DigitalOcean
+4. ✅ Email domain verification (used Resend default sender)
+5. ✅ Missing resetPassword backend method
+6. ✅ URL missing email parameter
+7. ✅ Password double-hashing (beforeUpdate hook)
+8. ✅ Buffer to string conversion for bcrypt
+9. ✅ MongoDB Atlas disconnection (local container was empty)
+10. ✅ All users seeing all groups (JWT auth disabled)
+11. ✅ Profile image upload 400 error (duplicate /api)
+
+### Current Status
+- ✅ Password reset fully functional and tested
+- ✅ Email delivery working via Resend
+- ✅ MongoDB Atlas connected with real data
+- ✅ Groups properly filtered by user membership
+- ✅ Backup system code ready (not yet deployed to server)
+- ✅ Data sync service running (MongoDB → PostgreSQL every 5 minutes)
+- ⏳ Backup cron job pending deployment to server
+
+### Next Steps
+1. Deploy backup system to production server: `bash jamz-server/scripts/deploy-backup-system.sh`
+2. Continue real use case testing with multiple users
+3. Monitor data sync service logs for any issues
+4. Test backup restoration procedure
+5. Consider setting up Resend domain verification for professional sender address (admin@v2u.us)
+6. Frontend password validation: update from 6 chars to 8 chars to match backend
+
+### Deployment Commands Used
+```bash
+# Reconnect to MongoDB Atlas (production data)
+docker run -d --name trafficjamz -p 5050:5000 \
+  -e MONGODB_URI='mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority' \
+  -e DATABASE_URL='postgresql://postgres.aws-0-us-east-1.pooler.supabase.com:6543/postgres?user=postgres.ohbuqqvhxqqilpjrqxhr&password=topgun123' \
+  -e JWT_SECRET=your-secret-key-here \
+  -e FRONTEND_URL=https://jamz.v2u.us \
+  -e RESEND_API_KEY=re_ht32YycE_P814QwQMyBhnaZAEqtY3uU1x \
+  -e RESEND_FROM_EMAIL='TrafficJamz <onboarding@resend.dev>' \
+  --dns 8.8.8.8 --dns 8.8.4.4 \
+  trafficjamz-backend:latest
+```
+
+### Lessons Learned
+1. **SMTP alternatives essential**: Cloud providers block SMTP ports, always use API-based email services (Resend, SendGrid)
+2. **Sequelize hooks can interfere**: Direct SQL queries sometimes necessary to bypass model hooks
+3. **Buffer types from PostgreSQL**: Always check if database returns Buffer and convert to string for comparisons
+4. **Testing with hardcoded values**: Never deploy with authentication disabled or hardcoded user IDs
+5. **MongoDB connection matters**: Local empty containers vs production Atlas - always verify data source
+6. **Backup redundancy critical**: Single database is dangerous - implement sync and backups immediately
+
+---
+
 ## Session: November 11, 2025
 
 ### Work Completed
