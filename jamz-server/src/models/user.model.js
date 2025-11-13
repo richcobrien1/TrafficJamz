@@ -122,18 +122,27 @@ const User = sequelize.define('users', {
 // Instance methods - FIXED VERSION
 User.prototype.validatePassword = async function(password) {
   try {
-    // Convert Buffer to string if needed
-    const hashString = Buffer.isBuffer(this.password_hash) 
-      ? this.password_hash.toString() 
-      : this.password_hash;
+    // Convert Buffer to UTF-8 string if needed
+    let hashString = this.password_hash;
     
-    // Remove the \x prefix if it exists (from hex format)
-    const cleanHash = hashString.startsWith('\\x') 
-      ? hashString.substring(2) 
-      : hashString;
+    if (Buffer.isBuffer(hashString)) {
+      // Convert Buffer to UTF-8 string
+      hashString = hashString.toString('utf8');
+    }
+    
+    // If the hash starts with \x, it's in hex format - convert it
+    if (typeof hashString === 'string' && hashString.startsWith('\\x')) {
+      // Remove \x prefix and convert from hex
+      const hexString = hashString.substring(2);
+      hashString = Buffer.from(hexString, 'hex').toString('utf8');
+    }
+    
+    console.log('🔑 Final hash for comparison:', hashString.substring(0, 29) + '...');
     
     // Use proper bcrypt compare
-    return await bcrypt.compare(password, cleanHash);
+    const result = await bcrypt.compare(password, hashString);
+    console.log('🔑 bcrypt.compare result:', result);
+    return result;
   } catch (error) {
     console.error('Password validation error:', error);
     // Return false instead of throwing to prevent exposing error details
