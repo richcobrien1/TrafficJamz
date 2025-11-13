@@ -730,6 +730,18 @@ router.post('/sessions/:sessionId/import-track',
         source: track.source
       });
       
+      // Determine the playable URL from various possible sources
+      const playableUrl = track.url || track.fileUrl || track.previewUrl || track.spotifyPreviewUrl || track.streamUrl || track.youtubeUrl;
+      
+      // Skip tracks without any playable URL
+      if (!playableUrl) {
+        console.warn(`⚠️ Skipping track without playable URL: ${track.title} by ${track.artist}`);
+        return res.status(400).json({
+          success: false,
+          message: `Track "${track.title}" has no playable URL - may not have Spotify preview available`
+        });
+      }
+      
       // Create track object for playlist
       const importedTrack = {
         id: track.externalId || `${track.source}-${Date.now()}`,
@@ -740,8 +752,12 @@ router.post('/sessions/:sessionId/import-track',
         albumArt: track.albumArt || null,
         source: track.source, // 'spotify', 'youtube', 'appleMusic'
         externalId: track.externalId,
-        previewUrl: track.previewUrl || null,
+        url: playableUrl, // Use the determined playable URL
+        previewUrl: track.previewUrl || playableUrl,
+        spotifyPreviewUrl: track.spotifyPreviewUrl || null,
         streamUrl: track.streamUrl || null,
+        youtubeUrl: track.youtubeUrl || null,
+        youtubeId: track.youtubeId || null,
         uploadedBy: req.user.user_id,
         importedAt: new Date()
       };
