@@ -51,14 +51,22 @@ const MusicPlayer = ({
   
   // Debug: Log displayTrack to see albumArt
   useEffect(() => {
-    console.log('🎵 [MusicPlayer Component] displayTrack:', {
-      hasTrack: !!displayTrack,
-      title: displayTrack?.title,
-      hasAlbumArt: !!displayTrack?.albumArt,
-      albumArtLength: displayTrack?.albumArt?.length,
-      albumArtPrefix: displayTrack?.albumArt?.substring(0, 50),
-      allKeys: Object.keys(displayTrack || {})
-    });
+    if (displayTrack?.albumArt) {
+      const artType = typeof displayTrack.albumArt;
+      const isString = artType === 'string';
+      const first50 = isString ? displayTrack.albumArt.substring(0, 50) : 'NOT A STRING';
+      
+      console.log('🎵 [MusicPlayer Component] displayTrack:', {
+        hasTrack: !!displayTrack,
+        title: displayTrack?.title,
+        hasAlbumArt: !!displayTrack?.albumArt,
+        albumArtType: artType,
+        isString: isString,
+        albumArtLength: displayTrack?.albumArt?.length,
+        albumArtFirst50: first50,
+        allKeys: Object.keys(displayTrack || {})
+      });
+    }
   }, [displayTrack]);
   
   // Update previous volume when volume changes (but not to 0)
