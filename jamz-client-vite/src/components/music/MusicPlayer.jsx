@@ -66,6 +66,9 @@ const MusicPlayer = ({
         albumArtFirst50: first50,
         allKeys: Object.keys(displayTrack || {})
       });
+      
+      // Separate log for the actual string
+      console.log('🖼️ AlbumArt first 100 chars:', first50);
     }
   }, [displayTrack]);
   
