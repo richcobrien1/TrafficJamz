@@ -653,7 +653,9 @@ router.post('/sessions/:sessionId/upload-music',
         album: metadata?.common?.album || null,
         duration: metadata?.format?.duration ? Math.round(metadata.format.duration) : 0,
         albumArt: albumArt,
-        fileUrl: publicUrl,
+        url: publicUrl,          // Primary URL field for playback
+        fileUrl: publicUrl,      // Kept for backward compatibility
+        source: 'local',         // Track source type
         uploadedBy: req.user.user_id
       };
       
