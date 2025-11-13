@@ -790,15 +790,28 @@ export const MusicProvider = ({ children }) => {
     try {
       console.log('🎵 [MusicContext] Load and play:', {
         title: track.title,
+        source: track.source,
         url: track.url || track.fileUrl,
-        hasUrl: !!(track.url || track.fileUrl),
+        youtubeId: track.youtubeId,
+        spotifyPreviewUrl: track.spotifyPreviewUrl,
+        hasUrl: !!(track.url || track.fileUrl || track.youtubeId || track.spotifyPreviewUrl),
         isController,
         socketConnected: socketRef.current?.connected
       });
       
-      if (!track.url && !track.fileUrl) {
-        console.error('🎵 [MusicContext] ❌ Track has no URL:', track);
-        alert(`Cannot play "${track.title}" - file URL is missing`);
+      // Check if track has any playable source
+      const hasPlayableSource = !!(
+        track.url || 
+        track.fileUrl || 
+        track.youtubeId || 
+        track.spotifyPreviewUrl || 
+        track.previewUrl ||
+        track.youtubeUrl
+      );
+      
+      if (!hasPlayableSource) {
+        console.error('🎵 [MusicContext] ❌ Track has no playable source:', track);
+        alert(`Cannot play "${track.title}" - no playable source available`);
         return;
       }
       
