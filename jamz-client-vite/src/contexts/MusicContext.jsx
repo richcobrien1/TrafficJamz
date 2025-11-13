@@ -1011,6 +1011,48 @@ export const MusicProvider = ({ children }) => {
     };
   }, []);
   
+  /**
+   * Refresh playlist from backend
+   */
+  const refreshPlaylist = async () => {
+    if (!activeSessionId) {
+      console.warn('🎵 [MusicContext] Cannot refresh playlist - no active session');
+      return;
+    }
+    
+    try {
+      console.log('🎵 [MusicContext] Refreshing playlist from backend...');
+      const response = await fetch(
+        `${API_URL}/api/audio/sessions/${activeSessionId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch session');
+      }
+      
+      const data = await response.json();
+      const freshPlaylist = data.session?.playlist || [];
+      
+      console.log('🎵 [MusicContext] Playlist refreshed:', freshPlaylist.length, 'tracks');
+      setPlaylist(freshPlaylist);
+      
+      // Update cache
+      if (activeSessionId) {
+        savePlaylistToCache(activeSessionId, freshPlaylist);
+      }
+      
+      return freshPlaylist;
+    } catch (error) {
+      console.error('🎵 [MusicContext] Failed to refresh playlist:', error);
+      throw error;
+    }
+  };
+  
   const value = {
     // State
     currentTrack,
@@ -1030,6 +1072,7 @@ export const MusicProvider = ({ children }) => {
     addTrack,
     removeTrack,
     clearPlaylist,
+    refreshPlaylist,
     play,
     pause,
     seekTo,
