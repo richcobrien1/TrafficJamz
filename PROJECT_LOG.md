@@ -717,3 +717,96 @@ const base64 = dataBuffer.toString('base64');
 - **Result**: Music player now looks awesome and functions perfectly! 🎵✨
 
 ---
+
+## Session: November 13, 2025 (Password Reset & Database Schema Issues)
+
+### Work Completed
+- **Investigated password reset email functionality**: User reported forgot password not sending emails
+- **Fixed password reset endpoint**: Changed AuthContext from calling `/auth/reset-password` to `/auth/forgot-password`
+- **Configured SMTP for email sending**: Added Microsoft Outlook SMTP credentials to Docker container
+  - SMTP_HOST: smtp.mail.outlook.com
+  - SMTP_PORT: 587
+  - SMTP_USER: richcobrien@v2u.us
+  - SMTP_PASS: (app password provided)
+  - EMAIL_FROM: richcobrien@v2u.us
+- **Added comprehensive debug logging**: Enhanced user.service.js with emoji-based logging (📧, ✅, ❌)
+- **Discovered root cause**: Database table `password_reset_tokens` does not exist
+  - Error: `relation "password_reset_tokens" does not exist` (PostgreSQL error code 42P01)
+  - Backend successfully finds user and generates token
+  - INSERT statement fails before email sending code is reached
+  - Route handler swallows error and returns 200 success (security measure)
+
+### Technical Details
+**Error Sequence:**
+1. Frontend calls `/api/auth/forgot-password` with email
+2. Backend finds user in database successfully
+3. Backend generates UUID token for password reset
+4. Backend attempts to INSERT into `password_reset_tokens` table
+5. PostgreSQL returns error: `relation "password_reset_tokens" does not exist`
+6. Sequelize throws SequelizeDatabaseError
+7. Route handler catches error, returns 200 success anyway (to not reveal user existence)
+8. Frontend shows success message, but no email sent and no token stored
+
+**Missing Table Schema:**
+```sql
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  token UUID NOT NULL UNIQUE,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+```
+
+### Files Changed
+- `jamz-client-vite/src/contexts/AuthContext.jsx` (fixed - endpoint URL)
+- `jamz-server/src/services/user.service.js` (enhanced - debug logging)
+- `PROJECT_LOG.md` (updated)
+
+### Git Commits
+- 5a22ba00: "Add logging to debug password reset email sending"
+
+### Current Status
+- ❌ Password reset failing due to missing database table
+- ✅ SMTP configuration completed and ready
+- ✅ Email logging code deployed and active
+- ✅ Backend creating tokens correctly (logic works)
+- ⏳ Need to create `password_reset_tokens` table in PostgreSQL
+
+### Lessons Learned
+- **Security vs Debugging**: Route handlers that always return success (to hide user existence) make debugging difficult
+  - Pro: Prevents user enumeration attacks
+  - Con: Hides real errors from developers
+  - Solution: Add comprehensive logging that appears in server logs but not in API responses
+- **Database Migrations**: Missing tables can go unnoticed if:
+  - Error handling swallows exceptions
+  - Frontend receives success responses regardless of actual outcome
+  - No migration system or schema validation on startup
+- **The Real Problem**: This wasn't an email configuration issue at all - it was a database schema issue
+  - Email code never ran because database INSERT failed first
+  - SMTP configuration was a red herring (though needed eventually)
+  - Debug logging revealed the true error hidden by the route handler
+
+### Next Steps (Priority Order)
+1. **Create password_reset_tokens table** - Run CREATE TABLE statement in PostgreSQL
+2. **Test password reset flow** - Verify token creation and email sending work end-to-end
+3. **Verify email delivery** - Confirm reset emails arrive with working links
+4. **Re-enable JWT authentication** - Restore auth middleware on other routes
+5. **Add database migration system** - Prevent missing table issues in future
+6. Link Playlist to Now Playing tracks
+7. Move upload progress bar to bottom of panel
+8. Fix page refresh on music import
+9. Replace/remove Clear All alert popup with Material-UI dialog
+10. Rename Voice Controls to Voice Settings
+
+### Notes
+- User attempted password reset 3 times before reporting issue
+- Frontend showed success each time (misleading UX)
+- Backend logs clearly showed database error on every attempt
+- SMTP credentials were configured but never used (code path never reached)
+- **Key Insight**: Always check database schema before investigating application logic errors
+
+---
