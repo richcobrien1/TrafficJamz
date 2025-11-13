@@ -2,7 +2,8 @@ const User = require('../models/user.model');
 const PasswordResetToken = require('../models/password-reset-token.model');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 const socialAvatarService = require('./social-avatar.service');
 const emailService = require('./email.service');
 
@@ -533,7 +534,7 @@ class UserService {
         'UPDATE users SET password_hash = $1, "updatedAt" = NOW() WHERE user_id = $2',
         {
           bind: [hashedPassword, user.user_id],
-          type: sequelize.QueryTypes.UPDATE
+          type: QueryTypes.UPDATE
         }
       );
 
