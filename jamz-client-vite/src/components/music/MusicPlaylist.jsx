@@ -155,7 +155,7 @@ const MusicPlaylist = ({
                     minHeight: { xs: 80, sm: 72 },
                     position: 'relative',
                     overflow: 'hidden',
-                    // Full background with album art for currently playing track
+                    // Full background with album art for currently playing track - BRIGHT!
                     ...(isCurrentTrack && track.albumArt && {
                       '&::before': {
                         content: '""',
@@ -167,7 +167,7 @@ const MusicPlaylist = ({
                         backgroundImage: `url(${track.albumArt})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
-                        filter: 'blur(8px) brightness(0.3)',
+                        filter: 'blur(8px) brightness(0.6)',  // INCREASED from 0.3 to 0.6
                         zIndex: 0
                       }
                     }),

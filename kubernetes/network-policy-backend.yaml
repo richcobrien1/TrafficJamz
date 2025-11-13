@@ -1,0 +1,48 @@
+# Network policy for TrafficJamz backend
+# Only allows traffic from frontend pods and blocks everything else
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: trafficjamz-backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from frontend pods
+  - from:
+    - podSelector:
+        matchLabels:
+          app: trafficjamz-frontend
+    ports:
+    - protocol: TCP
+      port: 5050
+  # Allow traffic from nginx ingress
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 5050
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow external API calls (MongoDB Atlas, Cloudflare R2, etc.)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 27017  # MongoDB
