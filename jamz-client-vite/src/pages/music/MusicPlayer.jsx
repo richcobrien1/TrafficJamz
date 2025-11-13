@@ -62,6 +62,7 @@ const MusicPlayerPage = () => {
     addTrack: musicAddTrack,
     removeTrack: musicRemoveTrack,
     clearPlaylist: musicClearPlaylist,
+    refreshPlaylist: musicRefreshPlaylist,
     loadAndPlay: musicLoadAndPlay,
     takeControl: takeMusicControl,
     releaseControl: releaseMusicControl,
@@ -218,6 +219,14 @@ const MusicPlayerPage = () => {
 
       console.log('✅ All files uploaded successfully:', uploadedTracks);
       setUploadProgress(100);
+
+      // Refresh playlist from backend to show newly uploaded tracks
+      try {
+        await musicRefreshPlaylist();
+        console.log('✅ Playlist refreshed after upload');
+      } catch (refreshError) {
+        console.error('Failed to refresh playlist:', refreshError);
+      }
 
       // Wait a moment to show 100% completion, then reset
       setTimeout(() => {
