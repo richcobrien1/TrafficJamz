@@ -32,6 +32,8 @@ app.locals.rateLimitMetrics = {
   candidates: 0,
   musicSync: 0
 };
+// Expose io to routes (will be set after Socket.IO initialization)
+app.locals.io = null;
 
 // Parse JSON and URL-encoded bodies with increased size limits for file uploads
 app.use(express.json({ limit: '100mb' })); // Parse JSON bodies
@@ -322,6 +324,9 @@ const io = socketIo(server, {
   allowEIO3: true,
   transports: ["polling", "websocket"],
 });
+
+// Expose io to routes via app.locals
+app.locals.io = io;
 
 app.get("/health/socketio", (req, res) => res.send("socketio-ok"));
 
