@@ -35,7 +35,6 @@ import {
   Notifications as NotificationsIcon,
   Security as SecurityIcon,
   Help as HelpIcon,
-  Logout as LogoutIcon,
   Edit as EditIcon,
   Facebook as FacebookIcon,
   LinkedIn as LinkedInIcon,
@@ -50,7 +49,7 @@ import api from '../../services/api';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Profile = () => {
-  const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, logout, setUser } = useAuth();
+  const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, setUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -416,11 +415,6 @@ const Profile = () => {
       handleSendChatMessage();
     }
   };
-  
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   // Social account management
   const handleLinkSocialAccount = (provider) => {
@@ -763,12 +757,6 @@ const Profile = () => {
                   <ListItemText 
                     primary="Help & Support" 
                     secondary="Get assistance" 
-                  />
-                </ListItem>
-                <Divider />
-                <ListItem button onClick={handleLogout} sx={{ borderRadius: 1, bgcolor: 'error.main', color: 'white', mt: 2, '&:hover': { bgcolor: 'error.dark' } }}>
-                  <ListItemText 
-                    primary="LOGOUT"
                   />
                 </ListItem>
               </List>
