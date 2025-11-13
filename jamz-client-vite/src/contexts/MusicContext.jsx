@@ -1036,7 +1036,7 @@ export const MusicProvider = ({ children }) => {
       }
       
       const data = await response.json();
-      const freshPlaylist = data.session?.playlist || [];
+      const freshPlaylist = data.session?.music?.playlist || [];
       
       console.log('🎵 [MusicContext] Playlist refreshed:', freshPlaylist.length, 'tracks');
       setPlaylist(freshPlaylist);
