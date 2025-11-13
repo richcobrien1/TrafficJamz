@@ -490,6 +490,68 @@ The issue was that a previous "revert" commit brought back hardcoded `region: 'u
 - ✅ Code changes deployed to production
 - ⏳ Ready for music upload testing
 
+### Working R2 Configuration (Reference)
+**CRITICAL: Always use these settings for R2 to work correctly**
+
+**Required Environment Variables:**
+```bash
+R2_ACCOUNT_ID="d54e57481e824e8752d0f6caa9b37ba7"
+R2_ACCESS_KEY_ID="6b67cfbfd3be5b8ae1f190a0efd3ee98"
+R2_SECRET_ACCESS_KEY="c70aa2aedb1efd3df9fca77b205f3916c6139a32ad85c2d3a2e92f5e46bc975e"
+R2_BUCKET_MUSIC="music"
+R2_PUBLIC_URL="https://public.v2u.us"
+R2_REGION="auto"  # MUST be "auto" for Cloudflare R2, never "us-east-1"
+```
+
+**Code Configuration in r2.service.js:**
+```javascript
+const s3 = new AWS.S3({
+  endpoint: process.env.R2_ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  accessKeyId: process.env.R2_ACCESS_KEY_ID,
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  signatureVersion: 'v4',
+  s3ForcePathStyle: true,
+  region: process.env.R2_REGION || 'auto'  // MUST read from env, fallback to 'auto'
+});
+```
+
+**Docker Deployment Command:**
+```bash
+docker run -d --name trafficjamz \
+  --link mongodb:mongodb \
+  -p 10000:10000 \
+  -e NODE_ENV=production \
+  -e PORT=10000 \
+  -e MONGODB_URI="mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority" \
+  -e JWT_SECRET="eyJhbGciOiJIUzI1NiJ9..." \
+  -e SUPABASE_URL="https://nrlaqkpojtvvheosnpaz.supabase.co" \
+  -e SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -e R2_ACCOUNT_ID="d54e57481e824e8752d0f6caa9b37ba7" \
+  -e R2_ACCESS_KEY_ID="6b67cfbfd3be5b8ae1f190a0efd3ee98" \
+  -e R2_SECRET_ACCESS_KEY="c70aa2aedb1efd3df9fca77b205f3916c6139a32ad85c2d3a2e92f5e46bc975e" \
+  -e R2_BUCKET_MUSIC="music" \
+  -e R2_PUBLIC_URL="https://public.v2u.us" \
+  -e R2_REGION="auto" \
+  --dns 8.8.8.8 \
+  --dns 8.8.4.4 \
+  trafficjamz-backend:latest
+```
+
+**Common Mistakes to Avoid:**
+- ❌ Never hardcode `region: 'us-east-1'` in r2.service.js
+- ❌ Never use the OLD account ID: `f1ab47d5e2a3a5b70ba8cbcd00e5c2df`
+- ❌ Never omit R2_REGION from Docker container environment
+- ❌ Never revert code changes without checking R2 configuration
+- ✅ Always use `region: process.env.R2_REGION || 'auto'`
+- ✅ Always verify R2 env vars with: `docker exec trafficjamz env | grep R2`
+- ✅ Always test R2 config with: Check logs for "UnknownEndpoint" errors
+
+**Verification Steps:**
+1. Check running container env: `docker exec trafficjamz env | grep R2`
+2. Verify code in container: `docker exec trafficjamz cat src/services/r2.service.js | grep region`
+3. Expected region line: `region: process.env.R2_REGION || 'auto'`
+4. All 6 R2 variables must be present in container environment
+
 ### Next Steps (Priority Order)
 1. **Test music upload** - Upload an MP3 file to verify R2 connection works
 2. **Verify metadata extraction** - Confirm MP3 metadata (title, artist, album art) extracts correctly
