@@ -14,6 +14,8 @@ class MusicService {
     this.onTimeUpdate = null;
     this.syncThreshold = 2.0; // seconds - sync if off by more than this
     this.platformMode = false; // Are we using platform streaming?
+    this.lastPreviousClick = 0; // Track previous button clicks for double-tap detection
+    this.previousClickThreshold = 2000; // ms - time window for double-click to previous track
   }
 
   /**
@@ -422,7 +424,7 @@ class MusicService {
   }
 
   /**
-   * Play next track in playlist
+   * Play next track in playlist (always skips forward)
    */
   async playNext() {
     if (!this.currentTrack || this.playlist.length === 0) {
@@ -434,13 +436,16 @@ class MusicService {
     const nextIndex = (currentIndex + 1) % this.playlist.length;
     const nextTrack = this.playlist[nextIndex];
 
-    console.log('⏭️ [playNext] Loading next track:', nextTrack.title, 'hasAlbumArt:', !!nextTrack.albumArt);
+    console.log('⏭️ [playNext] Skipping to next track:', nextTrack.title, 'hasAlbumArt:', !!nextTrack.albumArt);
     await this.loadTrack(nextTrack);
     await this.play();
   }
 
   /**
    * Play previous track in playlist
+   * Behavior: 
+   * - If current time > 3 seconds OR single click: Restart current track
+   * - If current time <= 3 seconds AND clicked within 2s of last click: Go to previous track
    */
   async playPrevious() {
     if (!this.currentTrack || this.playlist.length === 0) {
@@ -448,6 +453,30 @@ class MusicService {
       return;
     }
 
+    const currentTime = this.getCurrentTime();
+    const now = Date.now();
+    const timeSinceLastClick = now - this.lastPreviousClick;
+    
+    // If we're more than 3 seconds into the track, just restart it
+    if (currentTime > 3) {
+      console.log('⏮️ [playPrevious] Restarting current track (>3s played)');
+      await this.seek(0);
+      this.lastPreviousClick = now;
+      return;
+    }
+    
+    // If at beginning but not a double-click, restart current track
+    if (timeSinceLastClick > this.previousClickThreshold) {
+      console.log('⏮️ [playPrevious] Restarting current track (single click)');
+      await this.seek(0);
+      this.lastPreviousClick = now;
+      return;
+    }
+    
+    // Double-click detected - go to previous track
+    console.log('⏮️ [playPrevious] Double-click detected, going to previous track');
+    this.lastPreviousClick = 0; // Reset after using
+    
     const currentIndex = this.playlist.findIndex(t => t.id === this.currentTrack.id);
     const prevIndex = (currentIndex - 1 + this.playlist.length) % this.playlist.length;
     const prevTrack = this.playlist[prevIndex];
