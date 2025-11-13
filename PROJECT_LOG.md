@@ -563,3 +563,53 @@ docker run -d --name trafficjamz \
 8. Replace/remove Clear All alert popup with Material-UI dialog
 9. Rename Voice Controls to Voice Settings
 
+---
+
+## Session: November 12, 2025 (Late Night - Playlist Persistence Bug Fix)
+
+### Work Completed
+- **Fixed critical playlist persistence bug**: Frontend was reading from wrong data path
+- **Root cause identified**: Backend returns `data.session.music.playlist` but frontend was looking for `data.session.playlist`
+- **Backend verified working correctly**: Logs showed 2 tracks successfully saved to MongoDB and returned in GET request
+- **Frontend fix deployed**: Updated MusicContext.jsx to read from correct path `data.session.music.playlist`
+- **Issue resolution**: Playlist was saving correctly, just not displaying due to incorrect data path
+
+### Technical Details
+**The Bug:**
+- Backend response structure: `{ success: true, session: { music: { playlist: [...] } } }`
+- Frontend was accessing: `data.session.playlist` → `undefined` → defaults to `[]`
+- Should access: `data.session.music.playlist` → correct array with tracks
+
+**Backend Logs Showed:**
+```
+✅ Track added to playlist. Total tracks: 2
+📋 Playlist: [{"title":"Northern Lights","artist":"Shaun Baker"},{"title":"Don't Cha","artist":"The Pussycat Dolls"}]
+📖 GET session: 6805c88621925c8fd767cd4d Playlist tracks: 2
+📋 Session playlist: [{"title":"Northern Lights","artist":"Shaun Baker"},{"title":"Don't Cha","artist":"The Pussycat Dolls"}]
+```
+
+### Files Changed
+- `jamz-client-vite/src/contexts/MusicContext.jsx` (fixed - correct playlist path)
+- `PROJECT_LOG.md` (updated)
+
+### Git Commits
+- 0e652061: "Fix: Correct playlist path from data.session.playlist to data.session.music.playlist"
+
+### Current Status
+- ✅ Backend successfully saving playlist to MongoDB
+- ✅ Backend returning correct playlist data with 2 tracks
+- ✅ Frontend fix deployed to Vercel (auto-deploying)
+- ✅ Debug logging confirmed data flow working correctly
+- ⏳ Ready for testing with new upload
+
+### Next Steps (Priority Order)
+1. **Test playlist refresh** - Verify frontend now displays all tracks correctly
+2. **Test multiple uploads** - Confirm tracks persist and accumulate properly
+3. **Re-enable JWT authentication** - Restore auth middleware once functionality confirmed
+4. **Reduce MusicPlayer height** - Match panel height to other components
+5. Link Playlist to Now Playing tracks
+6. Move upload progress bar to bottom of panel
+7. Fix page refresh on music import
+8. Replace/remove Clear All alert popup with Material-UI dialog
+9. Rename Voice Controls to Voice Settings
+

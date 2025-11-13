@@ -129,29 +129,23 @@ const MusicPlayer = ({
   if (!displayTrack) {
     return (
       <Card variant="outlined" sx={{ mb: 2 }}>
-        <CardContent sx={{ textAlign: 'center', py: 4 }}>
-          <MusicIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+        <CardContent sx={{ textAlign: 'center', py: 2 }}>
+          <MusicIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
             No music playing
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            {isController 
-              ? "Upload tracks below, then click a track in the playlist to play it"
-              : "You need to take control to play music"
-            }
           </Typography>
           
           {/* Show prominent Take Control button when not controller */}
           {!isController && (
             <Button
               variant="contained"
-              size="large"
+              size="medium"
               startIcon={<RadioIcon />}
               onClick={onTakeControl}
               disabled={disabled}
-              sx={{ mt: 2, mb: 2 }}
+              sx={{ mt: 1 }}
             >
-              Take Control of Music
+              Take Control
             </Button>
           )}
           
@@ -161,16 +155,9 @@ const MusicPlayer = ({
               icon={<RadioIcon />}
               label="You are the DJ"
               color="primary"
-              sx={{ mt: 2, mb: 2 }}
+              sx={{ mt: 1 }}
             />
           )}
-          
-          <Typography variant="caption" color="text.secondary" display="block">
-            {isController 
-              ? "Upload tracks below to get started"
-              : "Only one person can control music at a time"
-            }
-          </Typography>
         </CardContent>
       </Card>
     );
