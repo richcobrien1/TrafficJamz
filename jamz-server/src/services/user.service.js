@@ -459,6 +459,7 @@ class UserService {
       });
 
       // Send reset email
+      console.log('📧 Attempting to send password reset email to:', email);
       await this.sendPasswordResetEmail(email, resetToken);
 
       return true;
@@ -497,8 +498,10 @@ class UserService {
       };
 
       await transporter.sendMail(mailOptions);
+      console.log('✅ Password reset email sent successfully to:', email);
     } catch (error) {
-      console.error('Email sending error:', error);
+      console.error('❌ Email sending error:', error);
+      console.error('❌ Error details:', error.message);
       throw new Error('Failed to send password reset email');
     }
   }
