@@ -528,13 +528,16 @@ class UserService {
       console.log('🔑 Hash type:', typeof hashedPassword);
       console.log('🔑 Hash length:', hashedPassword.length);
 
-      // Update user password
-      await user.update({
-        password_hash: hashedPassword
-      });
+      // Update user password (skip beforeUpdate hook by using direct query)
+      await sequelize.query(
+        'UPDATE users SET password_hash = $1, "updatedAt" = NOW() WHERE user_id = $2',
+        {
+          bind: [hashedPassword, user.user_id],
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
 
-      console.log('🔑 Password hash after update:', user.password_hash);
-      console.log('🔑 Hash type after update:', typeof user.password_hash);
+      console.log('🔑 Password updated directly in database');
 
       // Mark token as used
       await resetToken.update({
