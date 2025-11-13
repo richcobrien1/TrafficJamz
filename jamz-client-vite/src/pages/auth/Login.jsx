@@ -172,7 +172,7 @@ const Login = () => {
         <Typography variant="body2" color="text.secondary" align="center">
           {"Copyright © "}
           <Link color="inherit" href="#">
-            Audio Group Communication App
+            Jamz Audio Communications Group
           </Link>{" "}
           {new Date().getFullYear()}
           {"."}
