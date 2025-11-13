@@ -116,7 +116,12 @@ router.get('/sessions/:sessionId',
       
       console.log('📖 GET session:', req.params.sessionId, 'Playlist tracks:', session.music?.playlist?.length || 0);
       if (session.music?.playlist) {
-        console.log('📋 Session playlist:', JSON.stringify(session.music.playlist.map(t => ({ title: t.title, artist: t.artist }))));
+        console.log('📋 Session playlist:', JSON.stringify(session.music.playlist.map(t => ({ 
+          title: t.title, 
+          artist: t.artist,
+          hasAlbumArt: !!t.albumArt,
+          albumArtLength: t.albumArt?.length 
+        }))));
       }
       
       res.json({ success: true, session });
@@ -641,7 +646,12 @@ router.post('/sessions/:sessionId/upload-music',
       );
       
       console.log('✅ Track added to playlist. Total tracks:', playlist.length);
-      console.log('📋 Playlist:', JSON.stringify(playlist.map(t => ({ title: t.title, artist: t.artist }))));
+      console.log('📋 Playlist:', JSON.stringify(playlist.map(t => ({ 
+        title: t.title, 
+        artist: t.artist,
+        hasAlbumArt: !!t.albumArt,
+        albumArtLength: t.albumArt?.length
+      }))));
       
       res.json({
         success: true,
