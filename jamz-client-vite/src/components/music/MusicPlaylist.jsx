@@ -28,6 +28,7 @@ const MusicPlaylist = ({
   isController,
   onPlayTrack,
   onRemoveTrack,
+  onClearPlaylist,
   disabled = false
 }) => {
   /**
@@ -90,16 +91,34 @@ const MusicPlaylist = ({
     <Card variant="outlined">
       <CardContent>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <PlaylistIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">
-            Playlist
-          </Typography>
-          <Chip 
-            label={`${playlist.length} track${playlist.length !== 1 ? 's' : ''}`}
-            size="small"
-            sx={{ ml: 2 }}
-          />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <PlaylistIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="h6">
+              Playlist
+            </Typography>
+            <Chip 
+              label={`${playlist.length} track${playlist.length !== 1 ? 's' : ''}`}
+              size="small"
+              sx={{ 
+                ml: 2,
+                bgcolor: 'primary.main',
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+            />
+          </Box>
+          {onClearPlaylist && (
+            <Button
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={onClearPlaylist}
+              disabled={!isController}
+            >
+              CLEAR ALL
+            </Button>
+          )}
         </Box>
 
         <Divider sx={{ mb: 2 }} />
@@ -130,7 +149,7 @@ const MusicPlaylist = ({
                     display: 'flex',
                     alignItems: 'center',
                     p: 2,
-                    bgcolor: isCurrentTrack ? 'primary.50' : 'background.paper',
+                    bgcolor: 'background.paper',
                     borderRadius: 2,
                     border: '2px solid',
                     borderColor: isCurrentTrack ? 'primary.main' : 'divider',
@@ -139,8 +158,24 @@ const MusicPlaylist = ({
                     minHeight: { xs: 80, sm: 72 },
                     position: 'relative',
                     overflow: 'hidden',
-                    // Subtle blurred background with album art if available
-                    ...(track.albumArt && {
+                    // Full background with album art for currently playing track
+                    ...(isCurrentTrack && track.albumArt && {
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: `url(${track.albumArt})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: 'blur(8px) brightness(0.3)',
+                        zIndex: 0
+                      }
+                    }),
+                    // Subtle blurred background for non-playing tracks
+                    ...(!isCurrentTrack && track.albumArt && {
                       '&::before': {
                         content: '""',
                         position: 'absolute',
@@ -153,7 +188,7 @@ const MusicPlaylist = ({
                         backgroundPosition: 'center',
                         filter: 'blur(20px)',
                         opacity: 0.15,
-                        zIndex: -1
+                        zIndex: 0
                       }
                     }),
                     '&:hover': isController && !isCurrentTrack && !disabled ? {
@@ -178,11 +213,13 @@ const MusicPlaylist = ({
                         mr: 2, 
                         width: { xs: 72, sm: 64 },
                         height: { xs: 72, sm: 64 },
-                        border: isCurrentTrack ? '3px solid' : '2px solid',
-                        borderColor: isCurrentTrack ? 'primary.main' : 'rgba(255,255,255,0.1)',
+                        border: '2px solid',
+                        borderColor: 'rgba(255,255,255,0.1)',
                         flexShrink: 0,
                         boxShadow: 2,
-                        borderRadius: 2
+                        borderRadius: 2,
+                        position: 'relative',
+                        zIndex: 1
                       }}
                     />
                   ) : (
@@ -194,7 +231,9 @@ const MusicPlaylist = ({
                         height: { xs: 72, sm: 64 },
                         bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400',
                         flexShrink: 0,
-                        borderRadius: 2
+                        borderRadius: 2,
+                        position: 'relative',
+                        zIndex: 1
                       }}
                     >
                       <MusicIcon sx={{ fontSize: { xs: 36, sm: 32 } }} />
@@ -202,13 +241,13 @@ const MusicPlaylist = ({
                   )}
 
                   {/* Track Info - Takes remaining space */}
-                  <Box sx={{ flex: 1, minWidth: 0, pr: isController ? 6 : 0 }}>
+                  <Box sx={{ flex: 1, minWidth: 0, pr: isController ? 6 : 0, position: 'relative', zIndex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Typography 
                         variant="body1" 
                         sx={{ 
                           fontWeight: isCurrentTrack ? 'bold' : '600',
-                          color: isCurrentTrack ? 'primary.main' : 'text.primary',
+                          color: isCurrentTrack ? 'white' : 'text.primary',
                           fontSize: { xs: '1rem', sm: '0.95rem' },
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -221,7 +260,7 @@ const MusicPlaylist = ({
                     
                     <Typography 
                       variant="body2" 
-                      color="text.secondary"
+                      color={isCurrentTrack ? 'rgba(255,255,255,0.8)' : 'text.secondary'}
                       sx={{ 
                         mb: 0.5,
                         overflow: 'hidden',
@@ -233,21 +272,19 @@ const MusicPlaylist = ({
                     </Typography>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                      {isCurrentTrack && (
-                        <Chip 
-                          label="Now Playing" 
-                          size="small" 
-                          color="primary"
-                          variant="filled"
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      )}
                       {track.duration && (
                         <Chip 
                           label={formatDuration(track.duration)} 
                           size="small" 
                           variant="outlined"
-                          sx={{ height: 20, fontSize: '0.7rem' }}
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.7rem',
+                            ...(isCurrentTrack && {
+                              borderColor: 'rgba(255,255,255,0.5)',
+                              color: 'white'
+                            })
+                          }}
                         />
                       )}
                     </Box>
@@ -271,14 +308,14 @@ const MusicPlaylist = ({
                       color: 'white',
                       width: { xs: 40, sm: 36 },
                       height: { xs: 40, sm: 36 },
+                      zIndex: 2,
                       '&:hover': {
                         bgcolor: 'error.dark'
                       },
                       '&:disabled': {
                         bgcolor: 'action.disabledBackground',
                         color: 'action.disabled'
-                      },
-                      zIndex: 1
+                      }
                     }}
                     aria-label="Remove track"
                   >
