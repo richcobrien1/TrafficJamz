@@ -114,6 +114,11 @@ router.get('/sessions/:sessionId',
         return res.status(403).json({ success: false, message: 'Not a participant in this session' });
       }
       
+      console.log('📖 GET session:', req.params.sessionId, 'Playlist tracks:', session.music?.playlist?.length || 0);
+      if (session.music?.playlist) {
+        console.log('📋 Session playlist:', JSON.stringify(session.music.playlist.map(t => ({ title: t.title, artist: t.artist }))));
+      }
+      
       res.json({ success: true, session });
     } catch (error) {
       console.error('Error fetching audio session:', error);
@@ -634,6 +639,9 @@ router.post('/sessions/:sessionId/upload-music',
         track,
         req.user.user_id
       );
+      
+      console.log('✅ Track added to playlist. Total tracks:', playlist.length);
+      console.log('📋 Playlist:', JSON.stringify(playlist.map(t => ({ title: t.title, artist: t.artist }))));
       
       res.json({
         success: true,
