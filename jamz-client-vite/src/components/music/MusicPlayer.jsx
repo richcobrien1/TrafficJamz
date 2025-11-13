@@ -106,11 +106,12 @@ const MusicPlayer = ({
    * Handle previous track
    */
   const handlePrevious = () => {
+    console.log('🎵 [MusicPlayer] Previous button clicked. isController:', isController, 'disabled:', disabled);
     if (!isController) {
       console.warn('🎵 [MusicPlayer] Not controller - cannot go to previous');
       return;
     }
-    console.log('🎵 [MusicPlayer] Previous clicked');
+    console.log('🎵 [MusicPlayer] Calling onPrevious');
     onPrevious?.();
   };
 
@@ -118,11 +119,12 @@ const MusicPlayer = ({
    * Handle next track
    */
   const handleNext = () => {
+    console.log('🎵 [MusicPlayer] Next button clicked. isController:', isController, 'disabled:', disabled);
     if (!isController) {
       console.warn('🎵 [MusicPlayer] Not controller - cannot go to next');
       return;
     }
-    console.log('🎵 [MusicPlayer] Next clicked');
+    console.log('🎵 [MusicPlayer] Calling onNext');
     onNext?.();
   };
 
