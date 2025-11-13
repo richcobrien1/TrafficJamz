@@ -95,14 +95,10 @@ const MusicPlaylist = ({
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <PlaylistIcon sx={{ mr: 1, color: 'primary.main' }} />
-            <Typography variant="h6">
-              Playlist
-            </Typography>
             <Chip 
               label={`${playlist.length} track${playlist.length !== 1 ? 's' : ''}`}
               size="small"
               sx={{ 
-                ml: 2,
                 bgcolor: 'primary.main',
                 color: 'white',
                 fontWeight: 'bold'
