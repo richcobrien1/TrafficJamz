@@ -448,3 +448,56 @@ This ensures continuity across all chat sessions.
 - Backend code changes not deploying due to Docker layer caching
 - User requested curl test before continuing frontend attempts
 
+---
+
+## Session: November 12, 2025 (Late Night - R2 Configuration Fix & Deployment)
+
+### Work Completed
+- **Identified root cause of R2 failures**: Container had wrong credentials and missing R2_REGION environment variable
+- **Fixed r2.service.js**: Changed hardcoded `region: 'us-east-1'` to `region: process.env.R2_REGION || 'auto'`
+- **Updated .env.prod**: Added missing R2_ACCOUNT_ID extracted from endpoint URL
+- **Discovered credential mismatch**:
+  - Production container had OLD account ID: `f1ab47d5e2a3a5b70ba8cbcd00e5c2df` (causing UnknownEndpoint errors)
+  - Correct account ID from .env.prod: `d54e57481e824e8752d0f6caa9b37ba7`
+- **Rebuilt and redeployed backend**: 
+  - Pulled latest code to DigitalOcean server
+  - Rebuilt Docker image with updated r2.service.js
+  - Started new container with correct R2 credentials and R2_REGION=auto
+  - Verified all R2 environment variables are properly set
+
+### Files Changed
+- `jamz-server/src/services/r2.service.js` (modified - use R2_REGION env var)
+- `.env.prod` (modified - added R2_ACCOUNT_ID)
+- `jamz-client-vite/src/components/music/MusicPlayer.jsx` (modified - reduced height)
+- `PROJECT_LOG.md` (updated)
+
+### Git Commits
+- b8afe8ec: "Fix: Use R2_REGION env var and add R2_ACCOUNT_ID to .env.prod"
+
+### Technical Details
+**Root Cause Analysis:**
+The issue was that a previous "revert" commit brought back hardcoded `region: 'us-east-1'` which doesn't work with Cloudflare R2. Additionally, the production container was using OLD R2 credentials with the wrong account ID, causing "UnknownEndpoint: Inaccessible host" errors.
+
+**Environment Variable Comparison:**
+- Before: R2_ACCOUNT_ID=f1ab47d5e2a3a5b70ba8cbcd00e5c2df (WRONG)
+- After: R2_ACCOUNT_ID=d54e57481e824e8752d0f6caa9b37ba7 (CORRECT)
+- Added: R2_REGION=auto (was missing entirely)
+
+### Current Status
+- ✅ Backend running on DigitalOcean with CORRECT R2 configuration
+- ✅ R2 service using 'auto' region from environment variable
+- ✅ All R2 credentials properly set in container
+- ✅ Code changes deployed to production
+- ⏳ Ready for music upload testing
+
+### Next Steps (Priority Order)
+1. **Test music upload** - Upload an MP3 file to verify R2 connection works
+2. **Verify metadata extraction** - Confirm MP3 metadata (title, artist, album art) extracts correctly
+3. **Test playback** - Confirm tracks play from R2 public URL
+4. **Re-enable JWT authentication** - Restore auth middleware once functionality confirmed
+5. Link Playlist to Now Playing tracks
+6. Move upload progress bar to bottom of panel
+7. Fix page refresh on music import
+8. Replace/remove Clear All alert popup with Material-UI dialog
+9. Rename Voice Controls to Voice Settings
+
