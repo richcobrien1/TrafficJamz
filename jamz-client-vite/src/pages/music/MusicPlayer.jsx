@@ -545,26 +545,13 @@ const MusicPlayerPage = () => {
       {/* Playlist Section - Always Visible */}
       {playlist.length > 0 && (
         <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">
-              Playlist ({playlist.length} tracks)
-            </Typography>
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              onClick={handleClearPlaylist}
-              disabled={!isMusicController}
-            >
-              Clear All
-            </Button>
-          </Box>
           <MusicPlaylist
             playlist={playlist}
             currentTrack={currentTrack}
             isController={isMusicController}
             onPlayTrack={(track) => musicLoadAndPlay(track)}
             onRemoveTrack={(trackId) => musicRemoveTrack(trackId)}
+            onClearPlaylist={handleClearPlaylist}
             disabled={!sessionId}
           />
         </Paper>
