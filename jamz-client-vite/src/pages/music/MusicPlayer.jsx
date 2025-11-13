@@ -353,6 +353,35 @@ const MusicPlayerPage = () => {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Music
           </Typography>
+          
+          {/* Upload and Link Icons - Right aligned */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+            disabled={!sessionId || uploading}
+          />
+          <Tooltip title="Link Playlist from Spotify/YouTube/Apple Music" arrow>
+            <IconButton
+              color="inherit"
+              onClick={() => setShowPlaylistImport(true)}
+              disabled={!sessionId || uploading}
+            >
+              <LinkIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Upload Music Files" arrow>
+            <IconButton
+              color="inherit"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!sessionId || uploading}
+            >
+              <UploadIcon />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
         {/* Discrete Upload Progress Bar */}
         {uploading && (
@@ -464,93 +493,6 @@ const MusicPlayerPage = () => {
           onReleaseControl={releaseMusicControl}
           disabled={!sessionId}
         />
-      </Paper>
-
-      {/* Upload and Playlist Icons Panel */}
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        {/* Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'center' }}>
-          <MusicIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">
-            Add Music to Session
-          </Typography>
-        </Box>
-
-        {/* Icons */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          gap: 4 
-        }}>
-          {/* Upload Files Icon */}
-          <Box sx={{ textAlign: 'center' }}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
-              onChange={handleFileSelect}
-              style={{ display: 'none' }}
-              disabled={!sessionId || uploading}
-            />
-            <Tooltip title="Upload Music Files" arrow>
-              <IconButton
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!sessionId || uploading}
-                sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: 'primary.dark',
-                  },
-                  '&.Mui-disabled': {
-                    bgcolor: 'action.disabledBackground',
-                  }
-                }}
-              >
-                <UploadIcon sx={{ fontSize: 40 }} />
-              </IconButton>
-            </Tooltip>
-            <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
-              Upload Files
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              MP3, WAV, M4A, etc.
-            </Typography>
-          </Box>
-
-          {/* Link Playlist Icon */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Tooltip title="Link Playlist from Spotify/YouTube/Apple Music" arrow>
-              <IconButton
-                onClick={() => setShowPlaylistImport(true)}
-                disabled={!sessionId || uploading}
-                sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: 'secondary.main',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: 'secondary.dark',
-                  },
-                  '&.Mui-disabled': {
-                    bgcolor: 'action.disabledBackground',
-                  }
-                }}
-              >
-                <LinkIcon sx={{ fontSize: 40 }} />
-              </IconButton>
-            </Tooltip>
-            <Typography variant="body2" sx={{ mt: 1, fontWeight: 500 }}>
-              Link Playlist
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Spotify, YouTube, Apple
-            </Typography>
-          </Box>
-        </Box>
       </Paper>
 
       {/* Playlist Import Dialog */}
