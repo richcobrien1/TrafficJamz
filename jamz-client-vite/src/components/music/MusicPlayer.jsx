@@ -195,7 +195,7 @@ const MusicPlayer = ({
         mb: 2,
         position: 'relative',
         overflow: 'hidden',
-        // Blurred background with album art if available
+        // Album art background with dark filter
         ...(displayTrack.albumArt && {
           '&::before': {
             content: '""',
@@ -207,8 +207,7 @@ const MusicPlayer = ({
             backgroundImage: `url(${displayTrack.albumArt})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(40px) brightness(0.3)',
-            opacity: 0.2,
+            filter: 'brightness(0.5)',
             zIndex: 0
           }
         })
