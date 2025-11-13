@@ -87,6 +87,12 @@ const MusicUpload = ({ onTracksAdded, sessionId, disabled = false }) => {
         }
 
         const result = await response.json();
+        console.log('📤 Upload response for', file.name, ':', {
+          hasTrack: !!result.track,
+          hasAlbumArt: !!result.track?.albumArt,
+          albumArtLength: result.track?.albumArt?.length,
+          trackKeys: Object.keys(result.track || {})
+        });
         uploadedTracks.push(result.track);
 
         // Update progress
