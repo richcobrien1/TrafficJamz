@@ -922,6 +922,12 @@ export const MusicProvider = ({ children }) => {
   const playNext = async () => {
     await musicService.playNext();
     
+    // Explicitly update local state to ensure UI reflects the change
+    if (musicService.currentTrack) {
+      setCurrentTrack(musicService.currentTrack);
+      console.log('🎵 [MusicContext] Next track loaded:', musicService.currentTrack.title);
+    }
+    
     if (isController && musicService.currentTrack) {
       console.log('🎵 [MusicContext] Broadcasting next track:', musicService.currentTrack.title);
       socketRef.current?.emit('music-control', {
@@ -940,6 +946,12 @@ export const MusicProvider = ({ children }) => {
    */
   const playPrevious = async () => {
     await musicService.playPrevious();
+    
+    // Explicitly update local state to ensure UI reflects the change
+    if (musicService.currentTrack) {
+      setCurrentTrack(musicService.currentTrack);
+      console.log('🎵 [MusicContext] Previous track loaded:', musicService.currentTrack.title);
+    }
     
     if (isController && musicService.currentTrack) {
       console.log('🎵 [MusicContext] Broadcasting previous track:', musicService.currentTrack.title);
