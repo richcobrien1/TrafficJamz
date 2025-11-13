@@ -173,6 +173,7 @@ const MusicPlaylist = ({
                     <Avatar 
                       src={track.albumArt}
                       alt={track.album || track.title}
+                      variant="rounded"
                       sx={{ 
                         mr: 2, 
                         width: { xs: 72, sm: 64 },
@@ -180,17 +181,20 @@ const MusicPlaylist = ({
                         border: isCurrentTrack ? '3px solid' : '2px solid',
                         borderColor: isCurrentTrack ? 'primary.main' : 'rgba(255,255,255,0.1)',
                         flexShrink: 0,
-                        boxShadow: 2
+                        boxShadow: 2,
+                        borderRadius: 2
                       }}
                     />
                   ) : (
                     <Avatar 
+                      variant="rounded"
                       sx={{ 
                         mr: 2, 
                         width: { xs: 72, sm: 64 },
                         height: { xs: 72, sm: 64 },
                         bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        borderRadius: 2
                       }}
                     >
                       <MusicIcon sx={{ fontSize: { xs: 36, sm: 32 } }} />
