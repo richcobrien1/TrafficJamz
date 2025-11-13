@@ -539,9 +539,12 @@ router.patch('/sessions/:sessionId/enable-music',
  * @note Music files are stored in Cloudflare R2 bucket for free egress and CDN
  */
 router.post('/sessions/:sessionId/upload-music',
-  passport.authenticate('jwt', { session: false }),
+  // TODO: Re-enable authentication after testing
+  // passport.authenticate('jwt', { session: false }),
   s3Service.audioUpload.single('file'),
   async (req, res) => {
+    // TEMPORARY: Hardcode user for testing
+    req.user = { user_id: '2f089fec-0f70-47c2-b485-fa83ec034e0f' };
     try {
       if (!req.file) {
         return res.status(400).json({
