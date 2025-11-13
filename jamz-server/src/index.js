@@ -1611,6 +1611,16 @@ async function startApplication() {
     
     if (mongoConnected) {
       console.log('MongoDB connected successfully. Starting server with full functionality.');
+      
+      // Start MongoDB → PostgreSQL data sync service
+      try {
+        const dataSyncService = require('./services/data-sync.service');
+        console.log('🔄 Starting data sync service...');
+        dataSyncService.startPeriodicSync(5); // Sync every 5 minutes
+        console.log('✅ Data sync service started');
+      } catch (error) {
+        console.error('❌ Failed to start data sync service:', error.message);
+      }
     } else {
       console.warn('Failed to connect to MongoDB. Starting server with limited functionality.');
     }
