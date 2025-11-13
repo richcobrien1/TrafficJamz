@@ -135,6 +135,9 @@ class UserService {
 
       // Validate password
       console.log('Validating password...');
+      console.log('🔑 Stored hash from DB:', user.password_hash);
+      console.log('🔑 Stored hash type:', typeof user.password_hash);
+      console.log('🔑 Is Buffer?:', Buffer.isBuffer(user.password_hash));
       const isPasswordValid = await user.validatePassword(password);
       console.log('Password validation result:', isPasswordValid ? 'Valid' : 'Invalid');
       
@@ -521,10 +524,17 @@ class UserService {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
+      console.log('🔑 New password hash:', hashedPassword);
+      console.log('🔑 Hash type:', typeof hashedPassword);
+      console.log('🔑 Hash length:', hashedPassword.length);
+
       // Update user password
       await user.update({
         password_hash: hashedPassword
       });
+
+      console.log('🔑 Password hash after update:', user.password_hash);
+      console.log('🔑 Hash type after update:', typeof user.password_hash);
 
       // Mark token as used
       await resetToken.update({
