@@ -4,6 +4,173 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 13, 2025 (Critical Fixes) - Avatar Real-Time Update & R2 Signed URLs
+
+### Critical Issue: Avatar Not Updating in Real-Time After Upload
+
+#### Problem Evolution
+1. **Initial**: Avatar showed initials after uploading profile image to R2
+   - Root cause: `avatar.utils.js` didn't recognize R2 URLs
+   - Fixed by adding R2 domain support
+
+2. **Second Issue**: R2 public URLs returned 405 Method Not Allowed
+   - Problem: R2 bucket "music" not configured for public access
+   - No "Public Access" or "Connect Domain" options in Cloudflare dashboard
+   - Custom domain `public.v2u.us` not properly connected
+
+3. **Switched to Signed URLs**: Implemented AWS SDK presigned URLs
+   - Error: "Presigning does not support expiry time greater than a week with SigV4"
+   - Fixed expiry from 1 year (31536000) to 7 days (604800 seconds)
+
+4. **Database Column Too Short**: Signed URLs very long with query parameters
+   - Error: VARCHAR(255) too small for signed URLs
+   - Fixed: `ALTER TABLE users ALTER COLUMN profile_image_url TYPE VARCHAR(1000);`
+   - Updated model: `DataTypes.STRING(1000)`
+
+5. **Current Issue**: Upload succeeds BUT avatar doesn't update in real-time
+   - ✅ File uploaded to R2 successfully
+   - ✅ Database updated with signed URL
+   - ✅ Backend returns 200 OK with correct URL
+   - ✅ Frontend calls `setUser()` with new image_url
+   - ❌ Avatar component doesn't re-render
+   - ⚠️ Sometimes updates on page refresh, sometimes doesn't
+
+#### Root Cause Discovery
+- Git history shows avatar implementation has been modified 50+ times
+- Previous implementations used different storage (S3, Supabase Storage)
+- Compared with `refreshPlaylist()` pattern from MusicContext (commit 8bfd0a4a)
+- Found missing pattern: **No `refreshUser()` function in AuthContext**
+
+#### Solution Implemented
+Added `refreshUser()` function to AuthContext (similar to MusicContext pattern):
+
+**jamz-client-vite/src/contexts/AuthContext.jsx**:
+```javascript
+// Refresh user profile from backend
+const refreshUser = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.warn('[AuthContext] Cannot refresh user - no token');
+    return;
+  }
+
+  try {
+    console.log('[AuthContext] Refreshing user profile from backend...');
+    const response = await api.get('/users/profile');
+    
+    if (response.data) {
+      const userData = response.data.user || response.data;
+      setUser(userData);
+      console.log('[AuthContext] User profile refreshed successfully');
+      return userData;
+    }
+  } catch (error) {
+    console.error('[AuthContext] Failed to refresh user:', error);
+    throw error;
+  }
+};
+
+// Added to context value
+const value = {
+  // ... existing properties
+  refreshUser,  // NEW
+  isAuthenticated: !!user
+};
+```
+
+**jamz-client-vite/src/pages/profile/Profile.jsx**:
+```javascript
+// OLD: Manual state update with cache busting
+if (data.success) {
+  const imageUrlWithCacheBuster = `${data.image_url}?t=${Date.now()}`;
+  setUser(prevUser => ({
+    ...prevUser,
+    profile_image_url: imageUrlWithCacheBuster
+  }));
+  setPersonalInfoSuccess('Profile photo updated successfully');
+}
+
+// NEW: Refresh user from backend (like refreshPlaylist pattern)
+if (data.success) {
+  console.log('🖼️ Profile upload success, refreshing user from backend...');
+  await refreshUser();
+  setPersonalInfoSuccess('Profile photo updated successfully');
+}
+```
+
+### R2 Signed URLs Implementation
+
+**jamz-server/src/services/s3.service.js**:
+```javascript
+const uploadProfileToR2 = async (file, userId) => {
+  const params = {
+    Bucket: process.env.R2_BUCKET_PUBLIC || process.env.R2_BUCKET_MUSIC || 'music',
+    Key: filePath,
+    Body: file.buffer,
+    ContentType: file.mimetype
+  };
+  
+  const uploadResult = await s3.upload(params).promise();
+  
+  // Generate signed URL with 7-day expiry (max for SigV4)
+  const signedUrl = s3.getSignedUrl('getObject', {
+    Bucket: params.Bucket,
+    Key: filePath,
+    Expires: 604800 // 7 days in seconds
+  });
+  
+  return signedUrl;
+};
+```
+
+### Database Schema Update
+```sql
+ALTER TABLE users ALTER COLUMN profile_image_url TYPE VARCHAR(1000);
+```
+
+**user.model.js**:
+```javascript
+profile_image_url: {
+  type: DataTypes.STRING(1000),  // Was STRING (255)
+  allowNull: true
+}
+```
+
+### Files Changed
+- ✅ `jamz-client-vite/src/contexts/AuthContext.jsx` - Added refreshUser()
+- ✅ `jamz-client-vite/src/pages/profile/Profile.jsx` - Call refreshUser() after upload
+- ✅ `jamz-client-vite/src/utils/avatar.utils.js` - Support R2 URLs
+- ✅ `jamz-server/src/services/s3.service.js` - Generate signed URLs with 7-day expiry
+- ✅ `jamz-server/src/models/user.model.js` - Expand column to VARCHAR(1000)
+- ✅ Database - ALTER TABLE executed
+
+### Build & Deployment Status
+- ✅ Frontend built with `npm run build` (refreshUser implementation)
+- ⏳ **Awaiting deployment to container** (Docker not accessible from bash)
+- 📝 Created `deploy-frontend-hotfix.bat` for Windows Command Prompt deployment
+
+### Current Outstanding Issues
+1. ⏳ **Avatar Fix Not Deployed**: Need to run from Windows CMD:
+   ```cmd
+   cd C:\Users\richc\Projects\TrafficJamz
+   docker cp jamz-client-vite\dist\. jamz-frontend-1:/usr/share/nginx/html/
+   ```
+   OR restart container: `docker restart jamz-frontend-1`
+
+2. 🔴 **Music Not Showing in Members Group**: User reported:
+   - "Music is not showing up in the Members Group"
+   - "My playlist is not loading into another member in the same group"
+   - Likely WebSocket sync issue or playlist propagation problem
+   - **STATUS**: Not yet investigated
+
+### Testing & Verification (Pending Deployment)
+- ⏳ Verify avatar updates immediately after upload
+- ⏳ Test across multiple avatar display locations (Profile, Dashboard, Group Members)
+- ⏳ Verify signed URLs work for 7 days
+- ⏳ Test with different image formats and sizes
+
+---
+
 ## Session: November 13, 2025 (Late Night) - Avatar Display Fix & R2 Integration
 
 ### Critical Fix: Avatar Not Updating After Upload

@@ -49,7 +49,7 @@ import api from '../../services/api';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Profile = () => {
-  const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, setUser } = useAuth();
+  const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, setUser, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -509,25 +509,11 @@ const Profile = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Update user data with new profile image URL (add cache buster)
-        const imageUrlWithCacheBuster = `${data.image_url}?t=${Date.now()}`;
-        console.log('🖼️ Profile upload success:', {
-          originalUrl: data.image_url,
-          urlWithCacheBuster: imageUrlWithCacheBuster,
-          fullUserData: data.user
-        });
+        console.log('🖼️ Profile upload success, refreshing user from backend...');
         
-        setUser(prevUser => {
-          console.log('🔄 Updating user state:', { 
-            oldUrl: prevUser?.profile_image_url, 
-            newUrl: imageUrlWithCacheBuster 
-          });
-          return {
-            ...prevUser,
-            profile_image_url: imageUrlWithCacheBuster
-          };
-        });
-
+        // Refresh user profile from backend to get updated data
+        await refreshUser();
+        
         setPersonalInfoSuccess('Profile photo updated successfully');
       } else {
         setPersonalInfoError(data.message || 'Failed to upload profile photo');
