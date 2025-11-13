@@ -4,6 +4,101 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 13, 2025 (Late Night) - Avatar Display Fix & R2 Integration
+
+### Critical Fix: Avatar Not Updating After Upload
+
+#### Problem
+- Profile images uploaded successfully to R2 storage
+- Database updated with new image URL
+- Backend returned 200 OK
+- **BUT**: Avatar did not update in UI after upload
+
+#### Root Cause
+- Frontend `avatar.utils.js` only recognized Supabase URLs (`supabase.co/storage`)
+- New R2 URLs (`public.v2u.us` and `.r2.cloudflarestorage.com`) were ignored
+- Avatar fell back to social platform images or gender-based defaults
+
+#### Solution
+Updated `jamz-client-vite/src/utils/avatar.utils.js`:
+```javascript
+// OLD: Only accepted Supabase URLs
+if (user.profile_image_url.includes('supabase.co/storage')) {
+  return user.profile_image_url;
+}
+
+// NEW: Accepts both Supabase and R2 URLs
+if (user.profile_image_url.includes('supabase.co/storage') ||
+    user.profile_image_url.includes('public.v2u.us') ||
+    user.profile_image_url.includes('.r2.cloudflarestorage.com')) {
+  return user.profile_image_url;
+}
+```
+
+### R2 Bucket Configuration Issues
+- **Issue**: Container restarts loaded old Docker image without R2 bucket fallback fix
+- **Problem**: Code referenced non-existent `trafficjamz-public` bucket
+- **Solution**: Fixed bucket fallback in `s3.service.js`:
+  ```javascript
+  Bucket: process.env.R2_BUCKET_PUBLIC || process.env.R2_BUCKET_MUSIC || 'music'
+  ```
+- **Deployment**: Used `docker cp` to update running container (faster than rebuild)
+- **Result**: Profile uploads now successfully use existing `music` R2 bucket
+
+### Deployment Challenges
+- **Container Restart Issue**: Restarts load image from disk, losing `docker cp` changes
+- **Workflow**: After each restart, must re-copy updated files with `docker cp`
+- **Reason**: Docker image built from old code, source changes not included in image
+- **Future Fix**: Need to rebuild image or set up volume mount for hot-reload
+
+### Files Changed
+- `jamz-client-vite/src/utils/avatar.utils.js`:
+  - Added R2 URL recognition for profile images
+  - Supports: `public.v2u.us` and `.r2.cloudflarestorage.com` domains
+  
+- `jamz-server/src/services/s3.service.js`:
+  - Fixed bucket fallback: `R2_BUCKET_PUBLIC || R2_BUCKET_MUSIC || 'music'`
+  - Kept public URL generation (not signed URLs - waiting on R2 public access config)
+
+### Deployment Process
+- **Frontend**:
+  1. Built with `npm run build`
+  2. Deployed to `/var/www/html/` via SCP
+  3. Changes live immediately (no cache issues)
+  
+- **Backend**:
+  1. Updated local `s3.service.js`
+  2. Copied to server: `scp s3.service.js root@157.230.165.156:/tmp/`
+  3. Copied into container: `docker cp /tmp/s3.service.js trafficjamz:/app/src/services/`
+  4. Container restart required to clear Node module cache
+  5. Re-copy file after restart (restart loads old image)
+
+- **Git commit**: cfde6ac0 - "Fix avatar display: Support R2 storage URLs in avatar utils"
+- **Pushed to GitHub**: main branch
+
+### Testing & Verification
+- ✅ Profile image upload to R2 bucket 'music' successful
+- ✅ Database `profile_image_url` updated correctly
+- ✅ Avatar displays immediately after upload
+- ✅ R2 bucket 'music' verified accessible via AWS SDK test
+- ✅ URL format: `https://public.v2u.us/profiles/profile-{userId}-{timestamp}.jpg`
+
+### Current Status
+- ✅ Avatar updates immediately after profile image upload
+- ✅ R2 storage working for profile images
+- ✅ Frontend recognizes R2 URLs in avatar display
+- ✅ Backend correctly stores files in 'music' R2 bucket
+- ⚠️ R2 public URLs (public.v2u.us) return 405 errors - need to configure bucket public access or custom domain mapping
+- ⚠️ Container restart workflow requires manual file re-copy
+
+### Next Steps
+1. Configure R2 bucket for public access OR map custom domain properly
+2. Rebuild Docker image with latest code changes to avoid docker cp workflow
+3. Test signed URLs as alternative to public access (more secure)
+4. Consider automated deployment pipeline to avoid manual file copying
+
+---
+
 ## Session: November 13, 2025 (Late Evening) - UI Updates & Deployment
 
 ### UI/UX Improvements
