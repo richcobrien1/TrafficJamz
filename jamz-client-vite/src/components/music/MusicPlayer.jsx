@@ -222,15 +222,17 @@ const MusicPlayer = ({
               src={displayTrack.albumArt} 
               alt={displayTrack.album || displayTrack.title}
               sx={{ 
-                mr: 1.5, 
-                width: 48, 
-                height: 48,
-                boxShadow: 2
+                mr: 2, 
+                width: 72, 
+                height: 72,
+                boxShadow: 3,
+                border: '2px solid',
+                borderColor: 'primary.main'
               }}
             />
           ) : (
-            <Avatar sx={{ bgcolor: 'primary.main', mr: 1.5, width: 48, height: 48 }}>
-              <MusicIcon />
+            <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 72, height: 72 }}>
+              <MusicIcon sx={{ fontSize: 36 }} />
             </Avatar>
           )}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>

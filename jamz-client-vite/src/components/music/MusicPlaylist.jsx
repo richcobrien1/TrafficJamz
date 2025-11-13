@@ -175,24 +175,25 @@ const MusicPlaylist = ({
                       alt={track.album || track.title}
                       sx={{ 
                         mr: 2, 
-                        width: { xs: 56, sm: 48 },
-                        height: { xs: 56, sm: 48 },
-                        border: isCurrentTrack ? '3px solid' : 'none',
-                        borderColor: isCurrentTrack ? 'primary.main' : 'transparent',
-                        flexShrink: 0
+                        width: { xs: 72, sm: 64 },
+                        height: { xs: 72, sm: 64 },
+                        border: isCurrentTrack ? '3px solid' : '2px solid',
+                        borderColor: isCurrentTrack ? 'primary.main' : 'rgba(255,255,255,0.1)',
+                        flexShrink: 0,
+                        boxShadow: 2
                       }}
                     />
                   ) : (
                     <Avatar 
                       sx={{ 
                         mr: 2, 
-                        width: { xs: 56, sm: 48 },
-                        height: { xs: 56, sm: 48 },
+                        width: { xs: 72, sm: 64 },
+                        height: { xs: 72, sm: 64 },
                         bgcolor: isCurrentTrack ? 'primary.main' : 'grey.400',
                         flexShrink: 0
                       }}
                     >
-                      <MusicIcon sx={{ fontSize: { xs: 28, sm: 24 } }} />
+                      <MusicIcon sx={{ fontSize: { xs: 36, sm: 32 } }} />
                     </Avatar>
                   )}
 
