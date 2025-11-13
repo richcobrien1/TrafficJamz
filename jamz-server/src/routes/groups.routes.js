@@ -36,12 +36,16 @@ const checkMongoDBConnection = (req, res, next) => {
 
 // Update the GET route for fetching all groups
 router.get('/',
-  // passport.authenticate('jwt', { session: false }), // TEMPORARILY DISABLED FOR TESTING
+  passport.authenticate('jwt', { session: false }),
   checkMongoDBConnection, // Add MongoDB connection check
   async (req, res) => {
     try {
-      // TEMP: Use hardcoded user_id for testing
-      const user_id = '2f089fec-0f70-47c2-b485-fa83ec034e0f';
+      // Get authenticated user ID from JWT token
+      const user_id = req.user.user_id;
+      
+      if (!user_id) {
+        return res.status(401).json({ success: false, message: 'User not authenticated' });
+      }
       
       const filters = {
         status: req.query.status,
