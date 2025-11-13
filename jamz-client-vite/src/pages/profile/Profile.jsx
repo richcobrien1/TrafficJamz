@@ -511,10 +511,22 @@ const Profile = () => {
       if (data.success) {
         // Update user data with new profile image URL (add cache buster)
         const imageUrlWithCacheBuster = `${data.image_url}?t=${Date.now()}`;
-        setUser(prevUser => ({
-          ...prevUser,
-          profile_image_url: imageUrlWithCacheBuster
-        }));
+        console.log('🖼️ Profile upload success:', {
+          originalUrl: data.image_url,
+          urlWithCacheBuster: imageUrlWithCacheBuster,
+          fullUserData: data.user
+        });
+        
+        setUser(prevUser => {
+          console.log('🔄 Updating user state:', { 
+            oldUrl: prevUser?.profile_image_url, 
+            newUrl: imageUrlWithCacheBuster 
+          });
+          return {
+            ...prevUser,
+            profile_image_url: imageUrlWithCacheBuster
+          };
+        });
 
         setPersonalInfoSuccess('Profile photo updated successfully');
       } else {
