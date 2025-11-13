@@ -8,8 +8,8 @@ const s3 = process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY
       accessKeyId: process.env.R2_ACCESS_KEY_ID,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
       signatureVersion: 'v4',
-      s3ForcePathStyle: false,  // R2 uses virtual-hosted-style
-      region: 'auto'  // R2 requires 'auto' as the region
+      s3ForcePathStyle: true,
+      region: 'wnam'  // Use wnam (Western North America) for R2
     })
   : null;
 
