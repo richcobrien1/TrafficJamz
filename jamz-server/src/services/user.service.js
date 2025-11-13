@@ -3,7 +3,7 @@ const PasswordResetToken = require('../models/password-reset-token.model');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { Op, QueryTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
 const socialAvatarService = require('./social-avatar.service');
 const emailService = require('./email.service');
 
