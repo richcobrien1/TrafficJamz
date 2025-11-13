@@ -3399,11 +3399,10 @@ const LocationTracking = () => {
           left: 0,
           top: showMembersList ? -400 : (showControls ? 64 : 0),
           bottom: 0,
+          width: '32px',
           zIndex: 10,
           opacity: controlsOpacity,
-          bgcolor: sharingLocation ? '#e91e63' : 'rgba(0,0,0,0.7)', // Pink/magenta for Location
-          backdropFilter: 'blur(2px)',
-          padding: '16px 4px',
+          bgcolor: sharingLocation ? '#e91e63' : 'rgba(0,0,0,0.7)',
           display: showMembersList ? 'none' : 'flex',
           flexDirection: 'column',
           alignItems: 'center',

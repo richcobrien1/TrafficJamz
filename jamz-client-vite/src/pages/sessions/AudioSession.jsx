@@ -1830,13 +1830,11 @@ const AudioSession = () => {
           sx={{
             position: 'absolute',
             left: 0,
-            top: 64, // Below AppBar
+            top: 64,
             bottom: 0,
+            width: '32px',
             zIndex: 10,
-            opacity: 1,
-            bgcolor: '#00FF00', // Lime green for Voice
-            backdropFilter: 'blur(2px)',
-            padding: '16px 4px',
+            bgcolor: '#00FF00',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',

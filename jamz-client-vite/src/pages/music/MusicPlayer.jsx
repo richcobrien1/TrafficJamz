@@ -381,11 +381,9 @@ const MusicPlayerPage = () => {
           left: 0,
           top: 64,
           bottom: 0,
+          width: '32px',
           zIndex: 10,
-          opacity: 1,
-          bgcolor: '#2196f3', // Blue for Music
-          backdropFilter: 'blur(2px)',
-          padding: '16px 4px',
+          bgcolor: '#2196f3',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
