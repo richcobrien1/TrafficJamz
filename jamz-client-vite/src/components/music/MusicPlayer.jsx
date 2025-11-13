@@ -46,6 +46,9 @@ const MusicPlayer = ({
   // Remember previous volume for mute/unmute
   const previousVolumeRef = useRef(0.5);
   
+  // Use currentTrack if available, otherwise show first track in playlist as preview
+  const displayTrack = currentTrack || (playlist && playlist.length > 0 ? playlist[0] : null);
+  
   // Debug: Log displayTrack to see albumArt
   useEffect(() => {
     console.log('🎵 [MusicPlayer Component] displayTrack:', {
@@ -57,9 +60,6 @@ const MusicPlayer = ({
       allKeys: Object.keys(displayTrack || {})
     });
   }, [displayTrack]);
-  
-  // Use currentTrack if available, otherwise show first track in playlist as preview
-  const displayTrack = currentTrack || (playlist && playlist.length > 0 ? playlist[0] : null);
   
   // Update previous volume when volume changes (but not to 0)
   useEffect(() => {
