@@ -221,17 +221,19 @@ const MusicPlayer = ({
             <Avatar 
               src={displayTrack.albumArt} 
               alt={displayTrack.album || displayTrack.title}
+              variant="rounded"
               sx={{ 
                 mr: 2, 
                 width: 72, 
                 height: 72,
                 boxShadow: 3,
                 border: '2px solid',
-                borderColor: 'primary.main'
+                borderColor: 'primary.main',
+                borderRadius: 2
               }}
             />
           ) : (
-            <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 72, height: 72 }}>
+            <Avatar variant="rounded" sx={{ bgcolor: 'primary.main', mr: 2, width: 72, height: 72, borderRadius: 2 }}>
               <MusicIcon sx={{ fontSize: 36 }} />
             </Avatar>
           )}
