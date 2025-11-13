@@ -504,7 +504,7 @@ const Profile = () => {
       formData.append('profile_image', file);
 
       // Use the API service instead of direct fetch to ensure correct base URL
-      const response = await fetch(`${api.defaults.baseURL}/api/users/upload-profile-image`, {
+      const response = await fetch(`${api.defaults.baseURL}/users/upload-profile-image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
