@@ -202,72 +202,63 @@ const MusicPlayer = ({
         })
       }}
     >
-      <CardContent sx={{ position: 'relative', zIndex: 1 }}>
+      <CardContent sx={{ position: 'relative', zIndex: 1, py: 1.5, '&:last-child': { pb: 1.5 } }}>
         {/* Track Info */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           {displayTrack.albumArt ? (
             <Avatar 
               src={displayTrack.albumArt} 
               alt={displayTrack.album || displayTrack.title}
               sx={{ 
-                mr: 2, 
-                width: 64, 
-                height: 64,
-                boxShadow: 3,
-                border: '2px solid',
-                borderColor: 'background.paper'
+                mr: 1.5, 
+                width: 48, 
+                height: 48,
+                boxShadow: 2
               }}
             />
           ) : (
-            <Avatar sx={{ bgcolor: 'primary.main', mr: 2, width: 64, height: 64 }}>
+            <Avatar sx={{ bgcolor: 'primary.main', mr: 1.5, width: 48, height: 48 }}>
               <MusicIcon />
             </Avatar>
           )}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography variant="h6" noWrap>
+            <Typography variant="subtitle1" noWrap sx={{ fontWeight: 500, lineHeight: 1.3 }}>
               {displayTrack.title || 'Unknown Track'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
+            <Typography variant="body2" color="text.secondary" noWrap sx={{ lineHeight: 1.2 }}>
               {displayTrack.artist || 'Unknown Artist'}
             </Typography>
-            {displayTrack.album && (
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {displayTrack.album}
-              </Typography>
-            )}
           </Box>
           
           {/* Controller Status */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {isController ? (
-              <Tooltip title="You are controlling playback">
-                <Chip
-                  icon={<RadioIcon />}
-                  label="DJ Mode"
-                  color="primary"
-                  size="small"
-                  onClick={onReleaseControl}
-                  clickable
-                />
-              </Tooltip>
-            ) : (
-              <Tooltip title="Take control of playback">
-                <Chip
-                  icon={<RadioIcon />}
-                  label="Take Control"
-                  variant="outlined"
-                  size="small"
-                  onClick={onTakeControl}
-                  clickable
-                  disabled={disabled}
-                />
-              </Tooltip>
-            )}
-          </Box>
+          {isController ? (
+            <Tooltip title="You are controlling playback">
+              <Chip
+                icon={<RadioIcon />}
+                label="DJ"
+                color="primary"
+                size="small"
+                onClick={onReleaseControl}
+                clickable
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip title="Take control of playback">
+              <Chip
+                icon={<RadioIcon />}
+                label="Take Control"
+                variant="outlined"
+                size="small"
+                onClick={onTakeControl}
+                clickable
+                disabled={disabled}
+              />
+            </Tooltip>
+          )}
         </Box>
 
         {/* Progress Bar */}
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 1 }}>
           <Tooltip title={isController ? "Drag to seek" : "Take control to seek"} placement="top">
             <Slider
               value={currentTime || 0}
@@ -296,13 +287,12 @@ const MusicPlayer = ({
         </Box>
 
         {/* Controls */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
           <Tooltip title={!isController ? "Take control to use this" : "Previous track"}>
             <span>
               <IconButton
                 onClick={handlePrevious}
                 disabled={!isController || disabled}
-                size="large"
               >
                 <PrevIcon />
               </IconButton>
@@ -314,7 +304,6 @@ const MusicPlayer = ({
               <IconButton
                 onClick={handlePlayPause}
                 disabled={!isController || disabled}
-                size="large"
                 sx={{ 
                   bgcolor: isController ? 'primary.main' : 'grey.300',
                   color: isController ? 'white' : 'grey.600',
@@ -337,25 +326,12 @@ const MusicPlayer = ({
               <IconButton
                 onClick={handleNext}
                 disabled={!isController || disabled}
-                size="large"
               >
                 <NextIcon />
               </IconButton>
             </span>
           </Tooltip>
         </Box>
-
-        {/* Status Messages */}
-        {!isController && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1, border: '1px solid', borderColor: 'warning.main' }}>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-              🎧 Listening Mode
-            </Typography>
-            <Typography variant="caption" color="text.secondary" display="block">
-              Another member is controlling playback. Click "Take Control" above to become the DJ and control the music.
-            </Typography>
-          </Box>
-        )}
       </CardContent>
     </Card>
   );

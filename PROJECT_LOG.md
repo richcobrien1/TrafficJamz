@@ -395,3 +395,56 @@ This ensures continuity across all chat sessions.
 8. Fix page refresh on music import
 
 ---
+
+## Session: November 12, 2025 (Late Night - Music Upload R2 Configuration Issues)
+
+### Work Completed
+- **Fixed album artwork display**: Reduced MusicPlayer component height by ~40-50%, removed duplication
+- **Identified R2 upload failures**: Backend returning 500 errors with "UnknownEndpoint: Inaccessible host"
+- **Root cause identified**: R2 endpoint `.r2.cloudflarestorage.com` with region `us-east-1` not working
+- **Attempted fixes**:
+  1. Changed R2 region from `us-east-1` to `auto` in r2.service.js
+  2. Added R2_BUCKET_MUSIC environment variable set to `music` (correct bucket name)
+  3. Verified R2 credentials in container (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY)
+- **Docker image caching issue**: Build shows CACHED for all steps, changes not applied to running container
+- **Files confirmed in R2**: 11+ MP3 files already uploaded to bucket under `session-music/` folder
+
+### Technical Details
+- **Error**: `UnknownEndpoint: Inaccessible host: 'f1ab47d5e2a3a5b70ba8cbcd00e5c2df.r2.cloudflarestorage.com'`
+- **R2 Configuration**:
+  - Account ID: f1ab47d5e2a3a5b70ba8cbcd00e5c2df
+  - Bucket Name: music
+  - Public URL: https://pub-c4cf281613c744fabfa8830d27954687.r2.dev
+- **Session ID Tested**: 6805c88621925c8fd767cd4d
+- **Playlist Status**: Empty in MongoDB despite files in R2 bucket
+
+### Files Changed
+- `jamz-server/src/services/r2.service.js` (modified - changed region to 'auto')
+- `jamz-client-vite/src/components/music/MusicPlayer.jsx` (modified - reduced height)
+- `jamz-server/src/routes/audio.routes.js` (modified - fixed AudioSession import, bypassed auth)
+
+### Current Status
+- ❌ Music uploads failing with R2 endpoint errors
+- ❌ Docker image cache preventing new code from deploying
+- ✅ Files successfully stored in R2 bucket (proof uploads CAN work)
+- ⏳ Need to force Docker rebuild without cache
+
+### Issues Blocking Progress
+1. **Docker Image Caching**: All build steps showing CACHED, new code not applied
+2. **R2 Endpoint Configuration**: Region 'us-east-1' causing "Inaccessible host" errors
+3. **CORS Policy**: R2 CORS only allows GET/HEAD, missing POST/PUT
+4. **Code Deployment Gap**: Changes to r2.service.js not reflected in running container
+
+### Next Steps (Priority Order)
+1. **Force Docker rebuild** - Use `docker build --no-cache` to apply changes
+2. **Test curl upload** - Direct R2 upload test from backend server
+3. **Check R2 CORS policy** - Verify POST/PUT methods added in Cloudflare
+4. **Add R2_ENDPOINT env var** - Set explicit endpoint instead of deriving
+5. **Re-enable authentication** - Once uploads work, restore JWT middleware
+
+### Notes
+- Files ARE reaching R2 successfully (11+ MP3s visible in bucket)
+- CORS policy on R2 bucket missing POST method is likely the real root cause
+- Backend code changes not deploying due to Docker layer caching
+- User requested curl test before continuing frontend attempts
+

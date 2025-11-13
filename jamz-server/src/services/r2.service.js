@@ -9,7 +9,7 @@ const s3 = process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
       signatureVersion: 'v4',
       s3ForcePathStyle: true,
-      region: 'us-east-1'  // R2 requires a region but ignores it
+      region: process.env.R2_REGION || 'auto'  // R2 requires 'auto' as the region
     })
   : null;
 
