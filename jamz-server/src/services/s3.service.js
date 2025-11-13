@@ -16,18 +16,20 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Initialize Supabase client for storage
-const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+// Check if Supabase Storage is configured
+const isSupabaseConfigured = () => {
+  const hasUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http');
+  const hasKey = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY.length > 20;
+  return !!(hasUrl && hasKey);
+};
+
+// Initialize Supabase client for storage (only if properly configured)
+const supabase = isSupabaseConfigured()
   ? createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     )
   : null;
-
-// Check if Supabase Storage is configured
-const isSupabaseConfigured = () => {
-  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-};
 
 // Use memory storage - files will be uploaded to Supabase from memory
 const memoryStorage = multer.memoryStorage();
@@ -72,7 +74,68 @@ const audioUpload = multer({
   fileFilter: audioFileFilter
 });
 
-// Upload file to Supabase Storage
+// Check if R2 is configured
+const isR2Configured = () => {
+  const hasAccessKey = !!process.env.R2_ACCESS_KEY_ID;
+  const hasSecretKey = !!process.env.R2_SECRET_ACCESS_KEY;
+  const hasEndpointOrAccount = !!(process.env.R2_ENDPOINT || process.env.R2_ACCOUNT_ID);
+  return hasAccessKey && hasSecretKey && hasEndpointOrAccount;
+};
+
+// Initialize R2 client using AWS SDK v2 (for profile images)
+const AWS = require('aws-sdk');
+const s3 = isR2Configured()
+  ? new AWS.S3({
+      endpoint: process.env.R2_ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      signatureVersion: 'v4',
+      s3ForcePathStyle: true
+    })
+  : null;
+
+// Upload profile image to R2 Storage
+const uploadProfileToR2 = async (file, userId) => {
+  if (!isR2Configured()) {
+    throw new Error('R2 storage is not configured');
+  }
+
+  try {
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    const filename = `profile-${userId}-${uniqueSuffix}${extension}`;
+    const filePath = `profiles/${filename}`;
+
+    console.log('Uploading profile to R2:', { filePath, size: file.buffer.length, type: file.mimetype });
+
+    // Upload to R2
+    const params = {
+      Bucket: process.env.R2_BUCKET_PUBLIC || 'trafficjamz-public',
+      Key: filePath,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      CacheControl: 'public, max-age=31536000',
+      Metadata: {
+        'uploaded-by': userId,
+        'original-name': file.originalname
+      }
+    };
+
+    const uploadResult = await s3.upload(params).promise();
+    console.log('R2 upload result:', uploadResult);
+
+    // Return public URL
+    const publicUrl = `${process.env.R2_PUBLIC_URL || 'https://public.v2u.us'}/${filePath}`;
+    console.log('Profile upload successful:', { filePath, publicUrl });
+    return publicUrl;
+  } catch (error) {
+    console.error('R2 upload exception:', error);
+    throw error;
+  }
+};
+
+// Upload file to Supabase Storage (fallback)
 const uploadToSupabase = async (file, userId) => {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase storage is not configured');
@@ -148,7 +211,9 @@ module.exports = {
   upload,
   audioUpload,
   uploadToSupabase,
+  uploadProfileToR2,
   getFileUrl,
   deleteFile,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  isR2Configured
 };
