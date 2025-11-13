@@ -384,6 +384,30 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('token');
   };
 
+  // Refresh user profile from backend
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('[AuthContext] Cannot refresh user - no token');
+      return;
+    }
+
+    try {
+      console.log('[AuthContext] Refreshing user profile from backend...');
+      const response = await api.get('/users/profile');
+      
+      if (response.data) {
+        const userData = response.data.user || response.data;
+        setUser(userData);
+        console.log('[AuthContext] User profile refreshed successfully');
+        return userData;
+      }
+    } catch (error) {
+      console.error('[AuthContext] Failed to refresh user:', error);
+      throw error;
+    }
+  };
+
   // Value object that will be shared with components that use this context
   const value = {
     user,
@@ -403,6 +427,7 @@ export const AuthProvider = ({ children }) => {
     disable2FA,
     getToken,
     setUser,
+    refreshUser,
     isAuthenticated: !!user
   };
 
