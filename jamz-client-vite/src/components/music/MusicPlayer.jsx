@@ -46,6 +46,20 @@ const MusicPlayer = ({
   // Remember previous volume for mute/unmute
   const previousVolumeRef = useRef(0.5);
   
+  // Debug: Log props on mount and when they change
+  useEffect(() => {
+    console.log('🎵 [MusicPlayer Component] Props:', {
+      hasOnNext: typeof onNext === 'function',
+      hasOnPrevious: typeof onPrevious === 'function',
+      hasOnPlay: typeof onPlay === 'function',
+      hasOnPause: typeof onPause === 'function',
+      isController,
+      disabled,
+      hasCurrentTrack: !!currentTrack,
+      playlistLength: playlist?.length || 0
+    });
+  }, [onNext, onPrevious, onPlay, onPause, isController, disabled, currentTrack, playlist]);
+  
   // Use currentTrack if available, otherwise show first track in playlist as preview
   const displayTrack = currentTrack || (playlist && playlist.length > 0 ? playlist[0] : null);
   

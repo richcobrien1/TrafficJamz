@@ -70,6 +70,17 @@ const MusicPlayerPage = () => {
     initializeSession
   } = useMusic();
 
+  // Debug: Log the functions to verify they exist
+  React.useEffect(() => {
+    console.log('🎵 [MusicPlayer Page] Music functions:', {
+      hasPlayNext: typeof musicNext === 'function',
+      hasPrev: typeof musicPrevious === 'function',
+      hasPlay: typeof musicPlay === 'function',
+      hasPause: typeof musicPause === 'function',
+      isController: isMusicController
+    });
+  }, [musicNext, musicPrevious, musicPlay, musicPause, isMusicController]);
+
   /**
    * Initialize music session when component mounts
    */
