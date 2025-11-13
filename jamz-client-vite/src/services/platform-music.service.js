@@ -369,8 +369,17 @@ class PlatformMusicService {
       throw new Error('YouTube player not initialized');
     }
 
+    // Use youtubeId if available, fallback to externalId
+    const videoId = track.youtubeId || track.externalId;
+    
+    if (!videoId) {
+      throw new Error('Track has no YouTube video ID');
+    }
+    
+    console.log('🎵 Loading YouTube video:', videoId, 'for track:', track.title);
+
     // Load and play video by ID
-    this.youtubePlayer.loadVideoById(track.externalId);
+    this.youtubePlayer.loadVideoById(videoId);
     this.isPlaying = true;
   }
 

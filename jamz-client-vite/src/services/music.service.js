@@ -275,15 +275,34 @@ class MusicService {
         // Platform streaming
         console.log('🎵 [music.service] Using platform mode (Spotify/YouTube)');
         
+        // Determine the external ID based on source
+        const currentExternalId = this.currentTrack.source === 'youtube' 
+          ? this.currentTrack.youtubeId 
+          : this.currentTrack.externalId || this.currentTrack.spotifyId || this.currentTrack.id;
+          
+        const platformCurrentId = platformMusicService.currentTrack?.source === 'youtube'
+          ? platformMusicService.currentTrack?.youtubeId
+          : platformMusicService.currentTrack?.externalId || platformMusicService.currentTrack?.spotifyId || platformMusicService.currentTrack?.id;
+        
+        console.log('🎵 [music.service] Track comparison:', {
+          currentSource: this.currentTrack.source,
+          currentId: currentExternalId,
+          platformSource: platformMusicService.currentTrack?.source,
+          platformId: platformCurrentId,
+          isNewTrack: platformCurrentId !== currentExternalId
+        });
+        
         if (position !== null) {
           await platformMusicService.seekTo(position);
         }
         
-        if (platformMusicService.currentTrack?.externalId !== this.currentTrack.externalId) {
+        if (platformCurrentId !== currentExternalId) {
           // New track - load and play
+          console.log('🎵 [music.service] Loading new track:', this.currentTrack.title);
           await platformMusicService.playTrack(this.currentTrack);
         } else {
           // Resume existing track
+          console.log('▶️ Resuming playback');
           await platformMusicService.play();
         }
         
