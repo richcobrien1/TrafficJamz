@@ -727,7 +727,9 @@ router.post('/sessions/:sessionId/import-track',
         sessionId, 
         title: track.title,
         artist: track.artist,
-        source: track.source
+        source: track.source,
+        youtubeId: track.youtubeId,
+        hasYoutubeId: !!track.youtubeId
       });
       
       // Determine the playable URL from various possible sources
@@ -761,6 +763,14 @@ router.post('/sessions/:sessionId/import-track',
         uploadedBy: req.user.user_id,
         importedAt: new Date()
       };
+      
+      console.log('✅ Created importedTrack:', {
+        title: importedTrack.title,
+        source: importedTrack.source,
+        hasUrl: !!importedTrack.url,
+        hasYoutubeId: !!importedTrack.youtubeId,
+        youtubeId: importedTrack.youtubeId
+      });
       
       // Add to playlist
       const playlist = await audioService.addMusicToPlaylist(

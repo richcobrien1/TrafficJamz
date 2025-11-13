@@ -40,7 +40,7 @@ class PlatformMusicService {
     
     // Load YouTube SDK and initialize player
     await this.loadYouTubeSDK();
-    this.initializeYouTubePlayer('youtube-player');
+    await this.initializeYouTubePlayer('youtube-player');
     
     // Apple MusicKit is loaded separately when user connects
     
@@ -205,55 +205,67 @@ class PlatformMusicService {
   /**
    * Initialize YouTube player
    */
-  initializeYouTubePlayer(containerId) {
+  async initializeYouTubePlayer(containerId) {
     if (this.youtubePlayer) {
+      console.log('✅ YouTube player already initialized');
       return;
     }
 
-    this.youtubePlayer = new window.YT.Player(containerId, {
-      height: '0',
-      width: '0',
-      playerVars: {
-        autoplay: 0,
-        controls: 0,
-        disablekb: 1,
-        modestbranding: 1,
-        playsinline: 1
-      },
-      events: {
-        onReady: () => {
-          console.log('✅ YouTube player ready');
-          this.youtubePlayer.setVolume(this.volume * 100);
-        },
-        onStateChange: (event) => {
-          // YouTube states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
-          if (event.data === 1) {
-            this.isPlaying = true;
-            if (this.onPlayStateChange) this.onPlayStateChange(true);
-          } else if (event.data === 2) {
-            this.isPlaying = false;
-            if (this.onPlayStateChange) this.onPlayStateChange(false);
-          } else if (event.data === 0) {
-            console.log('🎵 YouTube track ended');
-            if (this.onTrackChange) this.onTrackChange('next');
-          }
-        },
-        onError: (event) => {
-          console.error('YouTube player error:', event.data);
-          if (this.onError) this.onError('youtube', `Error code: ${event.data}`);
-        }
-      }
-    });
+    // Make sure YT API is loaded
+    if (!window.YT || !window.YT.Player) {
+      console.error('❌ YouTube API not loaded yet');
+      throw new Error('YouTube API not loaded');
+    }
 
-    // Time update polling for YouTube
-    this.youtubeTimeUpdateInterval = setInterval(() => {
-      if (this.youtubePlayer && this.youtubePlayer.getCurrentTime && this.isPlaying) {
-        const currentTime = this.youtubePlayer.getCurrentTime();
-        if (this.onTimeUpdate && currentTime) {
-          this.onTimeUpdate(currentTime);
+    console.log('🎵 Creating YouTube player...');
+
+    return new Promise((resolve) => {
+      this.youtubePlayer = new window.YT.Player(containerId, {
+        height: '0',
+        width: '0',
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          modestbranding: 1,
+          playsinline: 1
+        },
+        events: {
+          onReady: () => {
+            console.log('✅ YouTube player ready');
+            this.youtubePlayer.setVolume(this.volume * 100);
+            resolve();
+          },
+          onStateChange: (event) => {
+            // YouTube states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+            if (event.data === 1) {
+              this.isPlaying = true;
+              if (this.onPlayStateChange) this.onPlayStateChange(true);
+            } else if (event.data === 2) {
+              this.isPlaying = false;
+              if (this.onPlayStateChange) this.onPlayStateChange(false);
+            } else if (event.data === 0) {
+              console.log('🎵 YouTube track ended');
+              if (this.onTrackChange) this.onTrackChange('next');
+            }
+          },
+          onError: (event) => {
+            console.error('YouTube player error:', event.data);
+            if (this.onError) this.onError('youtube', `Error code: ${event.data}`);
+          }
         }
-      }
-    }, 100);
+      });
+
+      // Time update polling for YouTube
+      this.youtubeTimeUpdateInterval = setInterval(() => {
+        if (this.youtubePlayer && this.youtubePlayer.getCurrentTime && this.isPlaying) {
+          const currentTime = this.youtubePlayer.getCurrentTime();
+          if (this.onTimeUpdate && currentTime) {
+            this.onTimeUpdate(currentTime);
+          }
+        }
+      }, 100);
+    });
   }
 
   /**
