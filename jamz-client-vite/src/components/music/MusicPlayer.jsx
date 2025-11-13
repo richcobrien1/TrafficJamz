@@ -275,23 +275,21 @@ const MusicPlayer = ({
 
         {/* Progress Bar */}
         <Box sx={{ mb: 1 }}>
-          <Tooltip title={isController ? "Drag to seek" : "Take control to seek"} placement="top">
-            <Slider
-              value={currentTime || 0}
-              max={duration || 100}
-              onChange={handleSeekChange}
-              disabled={!isController || disabled}
-              sx={{ 
-                color: isController ? 'primary.main' : 'grey.400',
-                '& .MuiSlider-thumb': {
-                  display: isController ? 'block' : 'none'
-                },
-                '&:hover .MuiSlider-thumb': {
-                  boxShadow: isController ? '0px 0px 0px 8px rgba(25, 118, 210, 0.16)' : 'none'
-                }
-              }}
-            />
-          </Tooltip>
+          <Slider
+            value={currentTime || 0}
+            max={duration || 100}
+            onChange={handleSeekChange}
+            disabled={!isController || disabled}
+            sx={{ 
+              color: isController ? 'primary.main' : 'grey.400',
+              '& .MuiSlider-thumb': {
+                display: isController ? 'block' : 'none'
+              },
+              '&:hover .MuiSlider-thumb': {
+                boxShadow: isController ? '0px 0px 0px 8px rgba(25, 118, 210, 0.16)' : 'none'
+              }
+            }}
+          />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: -1 }}>
             <Typography variant="caption" color="text.secondary">
               {formatTime(currentTime)}
