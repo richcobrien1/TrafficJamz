@@ -444,8 +444,8 @@ class MusicService {
   /**
    * Play previous track in playlist
    * Behavior: 
-   * - If current time > 3 seconds OR single click: Restart current track
-   * - If current time <= 3 seconds AND clicked within 2s of last click: Go to previous track
+   * - If current time > 3 seconds: Restart current track
+   * - If current time <= 3 seconds: Go to previous track
    */
   async playPrevious() {
     if (!this.currentTrack || this.playlist.length === 0) {
@@ -454,28 +454,16 @@ class MusicService {
     }
 
     const currentTime = this.getCurrentTime();
-    const now = Date.now();
-    const timeSinceLastClick = now - this.lastPreviousClick;
     
-    // If we're more than 3 seconds into the track, just restart it
+    // If we're more than 3 seconds into the track, restart it
     if (currentTime > 3) {
       console.log('⏮️ [playPrevious] Restarting current track (>3s played)');
       await this.seek(0);
-      this.lastPreviousClick = now;
       return;
     }
     
-    // If at beginning but not a double-click, restart current track
-    if (timeSinceLastClick > this.previousClickThreshold) {
-      console.log('⏮️ [playPrevious] Restarting current track (single click)');
-      await this.seek(0);
-      this.lastPreviousClick = now;
-      return;
-    }
-    
-    // Double-click detected - go to previous track
-    console.log('⏮️ [playPrevious] Double-click detected, going to previous track');
-    this.lastPreviousClick = 0; // Reset after using
+    // At beginning of track - go to previous track
+    console.log('⏮️ [playPrevious] Going to previous track (<3s played)');
     
     const currentIndex = this.playlist.findIndex(t => t.id === this.currentTrack.id);
     const prevIndex = (currentIndex - 1 + this.playlist.length) % this.playlist.length;
