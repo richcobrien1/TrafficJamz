@@ -273,13 +273,37 @@ const MusicPlayerPage = () => {
         console.log(`📤 Processing track ${i + 1}/${tracks.length}: ${track.title}`);
 
         // Check if track has a playable URL
-        const hasPlayableUrl = track.url || track.previewUrl || track.spotifyPreviewUrl || track.youtubeUrl;
+        const hasPlayableUrl = track.url || track.previewUrl || track.spotifyPreviewUrl || track.youtubeUrl || track.youtubeId;
         if (!hasPlayableUrl) {
           console.warn(`⚠️ Skipping track without playable URL: ${track.title} by ${track.artist}`);
           skippedTracks.push(track);
           setUploadProgress(((i + 1) / tracks.length) * 100);
           continue;
         }
+
+        const trackPayload = {
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration,
+          albumArt: track.albumArt,
+          source: track.source,
+          externalId: track.id,
+          url: track.url,
+          previewUrl: track.previewUrl || track.spotifyPreviewUrl,
+          spotifyPreviewUrl: track.spotifyPreviewUrl,
+          streamUrl: track.streamUrl,
+          youtubeUrl: track.youtubeUrl,
+          youtubeId: track.youtubeId
+        };
+
+        console.log(`📦 Sending track data:`, {
+          title: trackPayload.title,
+          source: trackPayload.source,
+          hasYoutubeId: !!trackPayload.youtubeId,
+          youtubeId: trackPayload.youtubeId,
+          hasUrl: !!trackPayload.url
+        });
 
         const response = await fetch(`${API_URL}/api/audio/sessions/${sessionId}/import-track`, {
           method: 'POST',
@@ -288,21 +312,7 @@ const MusicPlayerPage = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            track: {
-              title: track.title,
-              artist: track.artist,
-              album: track.album,
-              duration: track.duration,
-              albumArt: track.albumArt,
-              source: track.source,
-              externalId: track.id,
-              url: track.url,
-              previewUrl: track.previewUrl || track.spotifyPreviewUrl,
-              spotifyPreviewUrl: track.spotifyPreviewUrl,
-              streamUrl: track.streamUrl,
-              youtubeUrl: track.youtubeUrl,
-              youtubeId: track.youtubeId
-            }
+            track: trackPayload
           })
         });
 
