@@ -12,7 +12,7 @@ const AppLoader = ({ message = 'Loading TrafficJamz...', error = null, onRetry =
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #76ff03 0%, #2196f3 50%, #e91e63 100%)',
         color: 'white',
         padding: 3
       }}
