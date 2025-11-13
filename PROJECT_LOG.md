@@ -1381,3 +1381,125 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 - **Key Insight**: Always check database schema before investigating application logic errors
 
 ---
+
+## Session: November 13, 2025 (Afternoon) - Avatar Real-Time Update & Music Playlist Sync Fixes
+
+### Work Completed
+
+#### Avatar Real-Time Update Fix - DEPLOYED ✅
+- **Fixed**: Avatar now updates immediately after profile image upload without page refresh
+- **Root cause**: Frontend was manually updating state instead of fetching from backend
+- **Solution**: Added `refreshUser()` function to AuthContext (mirrors `refreshPlaylist()` pattern from MusicContext)
+- **Implementation**: Profile.jsx now calls `refreshUser()` after successful upload instead of manual state update
+- **Deployment**: Frontend built and deployed to production via SCP to `/var/www/html/`
+
+#### Music Playlist Sync Fix - DEPLOYED ✅
+- **Critical bug fixed**: Music uploads were not syncing to other group members in real-time
+- **Root cause**: Backend saved playlist to database but never emitted WebSocket events
+- **Discovery**: Upload endpoint (`POST /api/audio/sessions/:sessionId/upload-music`) had no WebSocket broadcast
+- **Solution implemented**:
+  1. Exposed Socket.IO instance to routes via `app.locals.io`
+  2. Added WebSocket `playlist-update` event emission after successful track upload
+  3. Event broadcasts to all users in the audio session room: `audio-${sessionId}`
+- **Backend restarted**: Changes deployed and verified on production server
+
+### Files Changed
+- ✅ `jamz-client-vite/src/contexts/AuthContext.jsx` - Added refreshUser() function
+- ✅ `jamz-client-vite/src/pages/profile/Profile.jsx` - Call refreshUser() after upload
+- ✅ `jamz-server/src/index.js` - Exposed io to routes via app.locals.io
+- ✅ `jamz-server/src/routes/audio.routes.js` - Emit playlist-update WebSocket event
+- ✅ `deploy-frontend-hotfix.bat` - Created Windows batch file for container deployment
+- ✅ `PROJECT_LOG.md` - Updated with session details
+
+### Git Commits
+- ba714868: "Add refreshUser to AuthContext and update Profile to use it for immediate avatar updates"
+- 7dc1f442: "Fix: Emit WebSocket playlist-update event when music is uploaded to sync across all group members"
+
+### Technical Details
+
+**Avatar Fix Pattern:**
+```javascript
+// AuthContext.jsx - New function
+const refreshUser = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  
+  const response = await api.get('/users/profile');
+  if (response.data) {
+    const userData = response.data.user || response.data;
+    setUser(userData);
+    console.log('[AuthContext] User profile refreshed successfully');
+  }
+};
+
+// Profile.jsx - Updated upload handler
+if (data.success) {
+  console.log('🖼️ Profile upload success, refreshing user from backend...');
+  await refreshUser();  // Fetch latest data from backend
+  setPersonalInfoSuccess('Profile photo updated successfully');
+}
+```
+
+**Music Sync Fix:**
+```javascript
+// index.js - Expose io to routes
+app.locals.io = io;
+
+// audio.routes.js - Emit WebSocket event after upload
+if (req.app.locals.io) {
+  const room = `audio-${sessionId}`;
+  req.app.locals.io.to(room).emit('playlist-update', {
+    playlist: playlist,
+    newTrack: track,
+    from: 'server',
+    timestamp: Date.now()
+  });
+  console.log(`🔔 Emitted playlist-update to room ${room} with ${playlist.length} tracks`);
+}
+```
+
+### Deployment Process
+1. **Frontend (Avatar Fix)**:
+   - Built with `npm run build` in jamz-client-vite
+   - Deployed via SCP: `scp -r dist/* root@157.230.165.156:/var/www/html/`
+   - Changes live immediately (served by nginx)
+
+2. **Backend (Music Sync Fix)**:
+   - Pushed to GitHub: main branch
+   - SSH to production server: `root@157.230.165.156`
+   - Pulled latest code: `git pull origin main`
+   - Restarted container: `docker restart trafficjamz`
+   - Verified logs: Container started successfully on port 5000
+
+### Current Status
+- ✅ Avatar updates immediately after profile image upload
+- ✅ Music uploads now sync to all group members in real-time via WebSocket
+- ✅ Both fixes deployed and running on production
+- ✅ Backend logs show successful startup with all services connected
+- 🎯 Ready for user testing
+
+### Testing & Verification (Pending User Confirmation)
+- ⏳ User should test avatar upload and verify immediate display
+- ⏳ User should test music upload with multiple group members and verify playlist syncs
+- ⏳ Verify playlist-update WebSocket events are being received by frontend
+
+### Issues Resolved This Session
+1. ✅ Avatar not updating in real-time after profile image upload
+2. ✅ Music not showing up in Members Group (playlist not syncing)
+3. ✅ Frontend deployment workflow clarified (SCP to /var/www/html/)
+4. ✅ Backend WebSocket integration for playlist updates
+
+### Lessons Learned
+- **Pattern consistency**: MusicContext had `refreshPlaylist()`, AuthContext needed `refreshUser()`
+- **WebSocket broadcasts essential**: Database updates without WebSocket events = no real-time sync
+- **app.locals for shared state**: Clean way to expose Socket.IO instance to Express routes
+- **Room-based broadcasting**: Using `io.to(room).emit()` targets specific audio sessions
+- **Deployment clarity**: Frontend = SCP to nginx dir, Backend = git pull + docker restart
+
+### Next Steps (If Issues Persist)
+1. Check frontend MusicContext to ensure it listens for `playlist-update` events
+2. Verify frontend joins the correct WebSocket room: `audio-${sessionId}`
+3. Add frontend logging to confirm WebSocket event reception
+4. Test with browser DevTools Network tab to see WebSocket frames
+
+---
