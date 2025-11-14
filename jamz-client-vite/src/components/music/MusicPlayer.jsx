@@ -323,7 +323,7 @@ const MusicPlayer = ({
               {formatTime(seekingValue !== null ? seekingValue : currentTime)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {formatTime(duration || currentTrack?.duration || 0)}
+              -{formatTime((duration || currentTrack?.duration || 0) - (seekingValue !== null ? seekingValue : (currentTime || 0)))}
             </Typography>
           </Box>
         </Box>
