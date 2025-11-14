@@ -4,6 +4,87 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 14, 2025 (Morning) - Android Emulator Mobile Build Troubleshooting
+
+### Goal
+Update Android/iOS Capacitor builds with recent UI improvements (vibrant gradients, playlist polish, brighter playing track indicator).
+
+### Issues Encountered
+
+#### 1. Emulator Process Conflicts
+- **Problem**: "Phone is already running as process 15128" blocking new deployments
+- **Solution**: `taskkill //F //IM qemu-system-x86_64.exe` (Git Bash requires `//` syntax for Windows commands)
+
+#### 2. Backend 503 Service Unavailable
+- **Problem**: Backend container returning 503 on `/health` endpoint after extended uptime
+- **Solution**: `ssh root@157.230.165.156 "docker restart trafficjamz"` - container healthy after restart
+
+#### 3. App Loading from Wrong Protocol
+- **Problem**: App loading from `https://localhost/` instead of `capacitor://localhost`
+- **Root Cause**: `capacitor.config.json` had `server.cleartext` and `server.allowNavigation` config pointing to localhost
+- **Solution**: Removed server config to use default Capacitor protocol
+
+#### 4. Capacitor Detection Failing
+- **Problem**: `api.js` not detecting Capacitor environment, using `/api` instead of production URL
+- **Issue**: Vite dev proxy targeting `localhost:5000` (not running) instead of production backend
+- **Solution**: Set `VITE_BACKEND_URL=https://trafficjamz.v2u.us/api` environment variable for dev server
+
+#### 5. Android Emulator Network Isolation
+- **Problem**: Emulator cannot reach production server `trafficjamz.v2u.us` (DNS/network issue)
+- **Solution**: Configure Capacitor to load from local dev server with production backend proxy
+  - Dev server: `http://192.178.58.146:5175` (host network)
+  - Capacitor config: `server.url = "http://192.178.58.146:5175"`
+  - Vite proxy: Routes `/api` → `https://trafficjamz.v2u.us/api`
+
+### Configuration Changes
+
+**jamz-client-vite/capacitor.config.json** (temporary dev config):
+```json
+{
+  "server": {
+    "url": "http://192.178.58.146:5175",
+    "cleartext": true
+  }
+}
+```
+
+**Dev Server Command**:
+```bash
+VITE_BACKEND_URL=https://trafficjamz.v2u.us/api npm run dev -- --host --port 5175
+```
+
+### Enhanced Logging Added
+
+**jamz-client-vite/src/App.jsx** - Added detailed error logging:
+```javascript
+console.log('📍 API instance baseURL:', api.defaults.baseURL);
+console.log('🌐 Full health URL:', api.defaults.baseURL + '/health');
+// ... detailed error object logging
+```
+
+### Status
+- ✅ Web client working perfectly (Edge browser confirmed)
+- ✅ Backend healthy and responsive
+- ✅ Local dev server running with production backend proxy
+- ⏳ Android emulator configuration in progress
+- ⚠️ **Note**: Current setup is for development only. Production builds should remove `server` config from `capacitor.config.json` to use default Capacitor protocol and production API detection.
+
+### Lessons Learned
+1. Android emulator has isolated network - can't always reach production URLs directly
+2. Capacitor `server` config can override default protocol behavior
+3. Git Bash requires `//` syntax for Windows command flags (`taskkill //F //IM`)
+4. Vite dev server proxy is essential for local mobile development testing
+5. Multiple layers of API URL detection (Capacitor detection → environment variables → defaults) can cause confusion
+
+### Next Steps
+1. Verify Android emulator loads successfully from local dev server
+2. Test all features (auth, music player, location tracking) on emulator
+3. Document production build process (remove dev server config)
+4. Consider creating separate Capacitor config for dev vs production builds
+5. Update documentation with mobile development workflow
+
+---
+
 ## Session: November 13, 2025 (Critical Fixes) - Avatar Real-Time Update & R2 Signed URLs
 
 ### Critical Issue: Avatar Not Updating in Real-Time After Upload

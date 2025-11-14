@@ -46,6 +46,10 @@ const MusicPlayer = ({
   // Remember previous volume for mute/unmute
   const previousVolumeRef = useRef(0.5);
   
+  // Prevent rapid clicking on controls
+  const [controlsDisabled, setControlsDisabled] = React.useState(false);
+  const controlTimeoutRef = useRef(null);
+  
   // Use currentTrack if available, otherwise show first track in playlist as preview
   const displayTrack = currentTrack || (playlist && playlist.length > 0 ? playlist[0] : null);
   
@@ -142,10 +146,16 @@ const MusicPlayer = ({
    */
   const handlePrevious = () => {
     console.log('🎵 [MusicPlayer] Previous button clicked. isController:', isController, 'disabled:', disabled);
-    if (!isController) {
-      console.warn('🎵 [MusicPlayer] Not controller - cannot go to previous');
+    if (!isController || controlsDisabled) {
+      console.warn('🎵 [MusicPlayer] Not controller or controls disabled');
       return;
     }
+    
+    // Disable controls temporarily
+    setControlsDisabled(true);
+    clearTimeout(controlTimeoutRef.current);
+    controlTimeoutRef.current = setTimeout(() => setControlsDisabled(false), 1000);
+    
     console.log('🎵 [MusicPlayer] Calling onPrevious');
     onPrevious?.();
   };
@@ -155,10 +165,16 @@ const MusicPlayer = ({
    */
   const handleNext = () => {
     console.log('🎵 [MusicPlayer] Next button clicked. isController:', isController, 'disabled:', disabled);
-    if (!isController) {
-      console.warn('🎵 [MusicPlayer] Not controller - cannot go to next');
+    if (!isController || controlsDisabled) {
+      console.warn('🎵 [MusicPlayer] Not controller or controls disabled');
       return;
     }
+    
+    // Disable controls temporarily
+    setControlsDisabled(true);
+    clearTimeout(controlTimeoutRef.current);
+    controlTimeoutRef.current = setTimeout(() => setControlsDisabled(false), 1000);
+    
     console.log('🎵 [MusicPlayer] Calling onNext');
     onNext?.();
   };
@@ -318,7 +334,7 @@ const MusicPlayer = ({
             <span>
               <IconButton
                 onClick={handlePrevious}
-                disabled={!isController || disabled}
+                disabled={!isController || disabled || controlsDisabled}
               >
                 <PrevIcon />
               </IconButton>
@@ -329,7 +345,7 @@ const MusicPlayer = ({
             <span>
               <IconButton
                 onClick={handlePlayPause}
-                disabled={!isController || disabled}
+                disabled={!isController || disabled || controlsDisabled}
                 sx={{ 
                   bgcolor: isController ? 'primary.main' : 'grey.300',
                   color: isController ? 'white' : 'grey.600',
@@ -351,7 +367,7 @@ const MusicPlayer = ({
             <span>
               <IconButton
                 onClick={handleNext}
-                disabled={!isController || disabled}
+                disabled={!isController || disabled || controlsDisabled}
               >
                 <NextIcon />
               </IconButton>

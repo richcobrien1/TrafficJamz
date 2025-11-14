@@ -2,12 +2,6 @@
   "appId": "com.trafficjamz.app",
   "appName": "TrafficJamz",
   "webDir": "dist",
-  "server": {
-    "cleartext": true,
-    "allowNavigation": [
-      "trafficjamz.onrender.com"
-    ]
-  },
   "android": {
     "allowMixedContent": true,
     "webContentsDebuggingEnabled": true

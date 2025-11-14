@@ -466,6 +466,8 @@ class MusicService {
       console.warn('⚠️ [playNext] Next track is same as current - only 1 track in playlist?');
     }
     
+    // Stop current track completely before loading next
+    this.pause();
     await this.loadTrack(nextTrack);
     await this.play();
   }
@@ -499,6 +501,9 @@ class MusicService {
     const prevTrack = this.playlist[prevIndex];
 
     console.log('⏮️ [playPrevious] Loading previous track:', prevTrack.title, 'hasAlbumArt:', !!prevTrack.albumArt);
+    
+    // Stop current track completely before loading previous
+    this.pause();
     await this.loadTrack(prevTrack);
     await this.play();
   }
