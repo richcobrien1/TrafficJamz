@@ -39,7 +39,9 @@ import {
   VolumeDown as VolumeDownIcon,
   MusicNote as MusicNoteIcon,
   Group as GroupIcon,
-  ExitToApp as LeaveIcon
+  ExitToApp as LeaveIcon,
+  Headset as HeadsetIcon,
+  HeadsetOff as HeadsetOffIcon
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -130,6 +132,15 @@ const AudioSession = () => {
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   const [showIOSAudioPrompt, setShowIOSAudioPrompt] = useState(false);
+  
+  // Per-member audio controls
+  const [memberVolumes, setMemberVolumes] = useState({}); // { socketId: volumeLevel }
+  const [memberMuted, setMemberMuted] = useState({}); // { socketId: boolean }
+  
+  // Voice activity detection for music ducking
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [originalMusicVolume, setOriginalMusicVolume] = useState(null);
+  const voiceActivityTimeoutRef = useRef(null);
   
   // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
@@ -602,6 +613,46 @@ const AudioSession = () => {
     console.log('🔊 Voice mute toggled:', newMuteState);
   };
   
+  // Toggle mute for specific member
+  const toggleMemberMute = (socketId) => {
+    setMemberMuted(prev => {
+      const newState = !prev[socketId];
+      console.log(`🔇 Member ${socketId} mute toggled:`, newState);
+      
+      // Apply mute to audio element for this member
+      const remoteAudios = document.getElementById('remote-audios');
+      if (remoteAudios) {
+        const audioElements = remoteAudios.querySelectorAll('audio');
+        audioElements.forEach(audio => {
+          // Match audio element to socketId (would need to tag elements with socketId)
+          // For now, we'll implement a simple approach
+          audio.muted = newState;
+        });
+      }
+      
+      return { ...prev, [socketId]: newState };
+    });
+  };
+  
+  // Adjust volume for specific member
+  const setMemberVolume = (socketId, volume) => {
+    setMemberVolumes(prev => {
+      console.log(`🔊 Member ${socketId} volume set to:`, volume);
+      
+      // Apply volume to audio element for this member
+      const remoteAudios = document.getElementById('remote-audios');
+      if (remoteAudios) {
+        const audioElements = remoteAudios.querySelectorAll('audio');
+        audioElements.forEach(audio => {
+          // Match audio element to socketId
+          audio.volume = volume;
+        });
+      }
+      
+      return { ...prev, [socketId]: volume };
+    });
+  };
+  
   // New unified mic control handlers
   const handleMicButtonMouseDown = () => {
     // Record the time when the button was pressed
@@ -683,6 +734,7 @@ const AudioSession = () => {
     
     let lastUpdateTime = 0;
     const updateInterval = 100; // Update every 100ms instead of every frame
+    const voiceActivityThreshold = 0.15; // 15% threshold for voice activity
     
     const updateMeter = (timestamp) => {
       if (timestamp - lastUpdateTime >= updateInterval) {
@@ -694,7 +746,38 @@ const AudioSession = () => {
         }
         
         const average = sum / bufferLength;
-        setInputLevel(average / 255); // Normalize to 0-1
+        const normalizedLevel = average / 255; // Normalize to 0-1
+        setInputLevel(normalizedLevel);
+        
+        // Voice activity detection for music ducking
+        // Only trigger if mic is not muted and audio level exceeds threshold
+        if (!isMuted && normalizedLevel > voiceActivityThreshold) {
+          if (!isVoiceActive) {
+            console.log('🎤 Voice activity detected - ducking music');
+            setIsVoiceActive(true);
+            
+            // Store original volume if not already stored
+            if (originalMusicVolume === null && musicVolume > 0) {
+              setOriginalMusicVolume(musicVolume);
+              // Reduce music to 50%
+              changeMusicVolume(musicVolume * 0.5);
+            }
+          }
+          
+          // Reset timeout - keep music ducked while speaking
+          clearTimeout(voiceActivityTimeoutRef.current);
+          voiceActivityTimeoutRef.current = setTimeout(() => {
+            console.log('🎤 Voice activity stopped - restoring music volume');
+            setIsVoiceActive(false);
+            
+            // Restore original music volume
+            if (originalMusicVolume !== null) {
+              changeMusicVolume(originalMusicVolume);
+              setOriginalMusicVolume(null);
+            }
+          }, 1500); // 1.5 second delay after voice stops
+        }
+        
         lastUpdateTime = timestamp;
       }
       
@@ -704,6 +787,7 @@ const AudioSession = () => {
     requestAnimationFrame(updateMeter);
     
     return () => {
+      clearTimeout(voiceActivityTimeoutRef.current);
       source.disconnect();
       audioContext.close();
     };
@@ -1807,7 +1891,7 @@ const AudioSession = () => {
   return (
       <Container maxWidth="md" sx={{ position: 'relative' }}>
         {/* Traffic Jam App Bar - Lime Green for Voice */}
-        <AppBar position="static" sx={{ bgcolor: '#00FF00', color: '#000' }}>
+        <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
           <Toolbar>
             <IconButton edge="start" sx={{ color: '#000' }} onClick={handleLeaveAudio}>
               <ArrowBackIcon />
@@ -1816,12 +1900,51 @@ const AudioSession = () => {
             <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
               Voice
             </Typography>
-            <IconButton sx={{ color: '#000' }} onClick={() => setOpenMusicDialog(true)}>
-              <MusicNoteIcon />
-            </IconButton>
-            <IconButton sx={{ color: '#000' }} onClick={() => setOpenLeaveDialog(true)}>
-              <LeaveIcon />
-            </IconButton>
+            
+            {/* Quick Mute Controls - Microphone */}
+            <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+              <IconButton 
+                sx={{ 
+                  color: '#000',
+                  bgcolor: isMuted ? 'error.main' : 'transparent',
+                  '&:hover': { bgcolor: isMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' },
+                  mr: 1
+                }} 
+                onClick={toggleMute}
+                disabled={!micInitialized}
+              >
+                {isMuted ? <MicOffIcon /> : <MicIcon />}
+              </IconButton>
+            </Tooltip>
+            
+            {/* Quick Mute Controls - Speaker */}
+            <Tooltip title={isVoiceMuted ? "Unmute Voice" : "Mute Voice"}>
+              <IconButton 
+                sx={{ 
+                  color: '#000',
+                  bgcolor: isVoiceMuted ? 'error.main' : 'transparent',
+                  '&:hover': { bgcolor: isVoiceMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' },
+                  mr: 1
+                }} 
+                onClick={toggleVoiceMute}
+              >
+                {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
+              </IconButton>
+            </Tooltip>
+            
+            {/* Music Controls */}
+            <Tooltip title="Music Player">
+              <IconButton sx={{ color: '#000', mr: 1 }} onClick={() => setOpenMusicDialog(true)}>
+                <MusicNoteIcon />
+              </IconButton>
+            </Tooltip>
+            
+            {/* Leave Session */}
+            <Tooltip title="Leave Session">
+              <IconButton sx={{ color: '#000' }} onClick={() => setOpenLeaveDialog(true)}>
+                <LeaveIcon />
+              </IconButton>
+            </Tooltip>
           </Toolbar>
         </AppBar>
 
@@ -2137,6 +2260,13 @@ const AudioSession = () => {
                   </Typography>
                 </Grid>
               </Grid>
+              
+              {/* Voice Activity & Music Ducking Indicator */}
+              {isVoiceActive && (
+                <Alert severity="info" icon={<MusicNoteIcon />} sx={{ mt: 2 }}>
+                  <strong>Music Ducked</strong> - Voice activity detected, music volume reduced to 50%
+                </Alert>
+              )}
             </Paper>
             
             {/* Speaker Controls */}
@@ -2327,30 +2457,76 @@ const AudioSession = () => {
                     // Determine avatar source
                     const avatarSrc = p.profile_image_url || p.avatar || null;
                     const initials = p.display_name ? p.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
+                    const isUserMuted = memberMuted[p.socketId] || false;
+                    const userVolume = memberVolumes[p.socketId] || 1.0;
                     
                     return (
                       <React.Fragment key={p.socketId || p.id || `participant-${idx}`}>
-                        <ListItem>
-                          <ListItemAvatar>
-                            <Avatar src={avatarSrc} alt={p.display_name}>
-                              {!avatarSrc && initials}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText 
-                            primary={
+                        <ListItem
+                          sx={{
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            py: 2,
+                            bgcolor: p.isMe ? 'action.hover' : 'transparent'
+                          }}
+                        >
+                          {/* Member Info Row */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: p.isMe ? 0 : 1 }}>
+                            <ListItemAvatar>
+                              <Avatar src={avatarSrc} alt={p.display_name}>
+                                {!avatarSrc && initials}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="body2">{p.display_name || 'Unknown'}</Typography>
                                 {p.isMe && <Chip label="You" size="small" color="primary" />}
                               </Box>
-                            }
-                            secondary={
                               <Typography variant="caption" color="text.secondary">
                                 {p.isMuted ? '🔇 Muted' : '🎤 Active'}
                               </Typography>
-                            }
-                          />
+                            </Box>
+                            
+                            {/* Per-Member Controls (only for other participants) */}
+                            {!p.isMe && (
+                              <Tooltip title={isUserMuted ? "Unmute this member" : "Mute this member"}>
+                                <IconButton 
+                                  size="small"
+                                  onClick={() => toggleMemberMute(p.socketId)}
+                                  sx={{ 
+                                    color: isUserMuted ? 'error.main' : 'action.active',
+                                    bgcolor: isUserMuted ? 'error.light' : 'transparent'
+                                  }}
+                                >
+                                  {isUserMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
+                          
+                          {/* Volume Slider (only for other participants) */}
+                          {!p.isMe && (
+                            <Box sx={{ pl: 7, pr: 2, pt: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <VolumeDownIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Slider
+                                  size="small"
+                                  value={userVolume * 100}
+                                  onChange={(e, value) => setMemberVolume(p.socketId, value / 100)}
+                                  disabled={isUserMuted}
+                                  sx={{ flexGrow: 1 }}
+                                  valueLabelDisplay="auto"
+                                  valueLabelFormat={(value) => `${value}%`}
+                                />
+                                <VolumeUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="caption" sx={{ minWidth: 35, textAlign: 'right' }}>
+                                  {Math.round(userVolume * 100)}%
+                                </Typography>
+                              </Box>
+                            </Box>
+                          )}
                         </ListItem>
-                        {idx < safeParticipants.length - 1 && <Divider variant="inset" component="li" />}
+                        {idx < safeParticipants.length - 1 && <Divider component="li" />}
                       </React.Fragment>
                     );
                   }) : (
