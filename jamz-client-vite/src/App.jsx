@@ -117,15 +117,28 @@ function App() {
       const wakeUpBackend = async () => {
         try {
           console.log('🔄 Attempting to wake up backend... (attempt', wakeupAttempts + 1, ')');
+          console.log('📍 API instance baseURL:', api.defaults.baseURL);
+          console.log('🌐 Full health URL:', api.defaults.baseURL + '/health');
           setWakeupAttempts(prev => prev + 1);
-          await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
-          console.log('✅ Backend is ready!');
+          
+          const response = await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
+          console.log('✅ Backend is ready!', response.data);
           setBackendReady(true);
           localStorage.setItem('backendReady', 'true');
           localStorage.setItem('backendReadyTimestamp', Date.now().toString());
           setAppError(null);
         } catch (error) {
-          console.warn('⚠️ Backend wake-up attempt failed:', error.message);
+          console.error('⚠️ Backend wake-up attempt failed:', {
+            message: error.message,
+            code: error.code,
+            status: error.response?.status,
+            data: error.response?.data,
+            config: {
+              url: error.config?.url,
+              baseURL: error.config?.baseURL,
+              timeout: error.config?.timeout
+            }
+          });
           // Retry after 2 seconds if it fails (max 5 attempts)
           if (wakeupAttempts < 5) {
             setTimeout(wakeUpBackend, 2000);
@@ -249,13 +262,16 @@ function App() {
       <AuthProvider>
         <MusicProvider>
           <Suspense fallback={<AppLoader message="Loading page..." />}>
-          <AnimatePresence mode="wait">
+          {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
+          {/*<AnimatePresence mode="wait">*/}
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
+              style={{ minHeight: '100vh' }}
+              onAnimationComplete={() => console.log('✅ Page animation completed')}
             >
               <Routes>
                 {/* Public routes */}
@@ -326,7 +342,7 @@ function App() {
                 } />
               </Routes>
             </motion.div>
-          </AnimatePresence>
+          {/*</AnimatePresence>*/}
         </Suspense>
         </MusicProvider>
       </AuthProvider>
