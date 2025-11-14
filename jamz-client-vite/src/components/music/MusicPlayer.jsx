@@ -89,12 +89,24 @@ const MusicPlayer = ({
   };
 
   /**
-   * Handle seek slider change
+   * Handle seek slider drag (visual update only)
    */
+  const [seekingValue, setSeekingValue] = React.useState(null);
+  
   const handleSeekChange = (event, newValue) => {
+    if (isController) {
+      setSeekingValue(newValue);
+    }
+  };
+  
+  /**
+   * Handle seek slider release (commit the seek)
+   */
+  const handleSeekCommitted = (event, newValue) => {
     if (onSeek && isController) {
       console.log('🎵 [MusicPlayer] Seeking to:', newValue);
       onSeek(newValue);
+      setSeekingValue(null);
     }
   };
 
@@ -275,9 +287,10 @@ const MusicPlayer = ({
         {/* Progress Bar */}
         <Box sx={{ mb: 1 }}>
           <Slider
-            value={currentTime || 0}
+            value={seekingValue !== null ? seekingValue : (currentTime || 0)}
             max={duration || currentTrack?.duration || 100}
             onChange={handleSeekChange}
+            onChangeCommitted={handleSeekCommitted}
             disabled={!isController || disabled}
             sx={{ 
               color: isController ? 'primary.main' : 'grey.400',
@@ -291,7 +304,7 @@ const MusicPlayer = ({
           />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: -1 }}>
             <Typography variant="caption" color="text.secondary">
-              {formatTime(currentTime)}
+              {formatTime(seekingValue !== null ? seekingValue : currentTime)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {formatTime(duration || currentTrack?.duration || 0)}
