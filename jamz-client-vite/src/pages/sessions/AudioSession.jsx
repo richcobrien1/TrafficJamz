@@ -209,26 +209,19 @@ const AudioSession = () => {
           await NativeAudio.enableBackgroundAudio();
         }
 
-        // Only auto-initialize the microphone on non-iOS devices.
-        // iOS Safari requires a user gesture; forcing auto-init there causes
-        // the getUserMedia prompt to be blocked. For iOS we instead present
-        // a visible button the user must tap to enable the microphone.
-        if (!isIOS) {
-          console.log('🎤 Non-iOS detected — setting up auto-init timeout...');
-          setRequiresUserGesture(false);
-          setTimeout(() => {
-            console.log('🎤 Auto-init timeout triggered, calling initializeMicrophone...');
-            initializeMicrophone().then(() => {
-              console.log('🎤 Auto-init succeeded');
-            }).catch(error => {
-              console.log('🎤 Auto-init failed:', error.message, error.name);
-              setAudioError(`Microphone access failed: ${error.message}. Please check your browser permissions and refresh the page.`);
-            });
-          }, 1000); // Small delay to ensure component is ready
-        } else {
-          console.log('🎤 iOS detected — skipping auto-init. Showing enable-microphone button.');
-          setRequiresUserGesture(true);
-        }
+        // Auto-initialize the microphone immediately
+        // This triggers the browser's permission prompt automatically
+        console.log('🎤 Auto-initializing microphone...');
+        setRequiresUserGesture(false);
+        setTimeout(() => {
+          console.log('🎤 Calling initializeMicrophone...');
+          initializeMicrophone().then(() => {
+            console.log('🎤 Microphone initialized successfully');
+          }).catch(error => {
+            console.log('🎤 Microphone init failed:', error.message, error.name);
+            setAudioError(`Microphone access failed: ${error.message}. Please check your browser permissions and refresh the page.`);
+          });
+        }, 500); // Small delay to ensure component is ready
       } catch (error) {
         console.error('Error in component initialization:', error);
         if (isMounted) {
@@ -291,6 +284,12 @@ const AudioSession = () => {
 
       leaveSession();
     };
+  }, []);
+  
+  // Auto-initialize microphone on mount
+  useEffect(() => {
+    console.log('🎤 Auto-initializing microphone on component mount');
+    initializeMicrophone();
   }, []);
   
   // Audio level monitoring
@@ -2030,75 +2029,6 @@ const AudioSession = () => {
           </Alert>
         )}
         
-        {/* Show microphone initialization prompt if needed */}
-        {!micInitialized && (
-          <Paper variant="outlined" sx={{ p: 3, mb: 2, bgcolor: 'info.light' }}>
-            {console.log('🎤 Mic not initialized:', { micInitialized, requiresUserGesture, micInitializing, isIOS })}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <MicIcon sx={{ fontSize: 36, color: 'primary.main', mr: 2 }} />
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="h6">
-                  Microphone Not Initialized
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {requiresUserGesture ?
-                    'Click below to grant microphone access. Required for voice communication.' :
-                    'Initializing microphone...'
-                  }
-                </Typography>
-              </Box>
-            </Box>
-            {requiresUserGesture ? (
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                fullWidth
-                startIcon={<MicIcon />}
-                onClick={() => {
-                  console.log('🎤 User clicked Grant Microphone Access button');
-                  console.log('🎤 Current state:', { micInitialized, micInitializing, requiresUserGesture });
-                  initializeMicrophone();
-                }}
-                disabled={micInitializing}
-              >
-                {micInitializing ? (
-                  <>
-                    <CircularProgress size={20} sx={{ mr: 1 }} />
-                    Initializing...
-                  </>
-                ) : (
-                  'Grant Microphone Access'
-                )}
-              </Button>
-            ) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
-                <CircularProgress size={24} />
-                <Typography variant="body2">Requesting permission...</Typography>
-              </Box>
-            )}
-            {audioError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {audioError}
-                <Button
-                  variant="outlined"
-                  size="small"
-                  color="error"
-                  onClick={() => {
-                    console.log('🎤 User clicked Retry button');
-                    setAudioError(null);
-                    initializeMicrophone();
-                  }}
-                  disabled={micInitializing}
-                  sx={{ mt: 1, ml: 2 }}
-                >
-                  Retry
-                </Button>
-              </Alert>
-            )}
-          </Paper>
-        )}
-
         {/* Always show UI sections - just disable controls if mic not initialized */}
         <Box>
           {/* Simplified Mic controls */}
@@ -2111,7 +2041,7 @@ const AudioSession = () => {
               <Grid item>
                 <Tooltip title={
                   !micInitialized
-                    ? "Microphone not initialized - click Grant Microphone Access above"
+                    ? "Microphone initializing..."
                     : isPushToTalkActive 
                       ? "Push-to-Talk Active" 
                       : isMuted 
