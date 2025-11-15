@@ -598,15 +598,24 @@ const AudioSession = () => {
   const toggleMute = () => {
     if (localStream) {
       const newMuteState = !isMuted;
-      console.log('🔇 Toggle mute:', { currentMuted: isMuted, newMuteState });
+      console.log('🎤 Toggle microphone:', { currentMuted: isMuted, newMuteState });
+      
       localStream.getAudioTracks().forEach(track => {
-        console.log('🔇 Setting track enabled:', track.kind, 'from', track.enabled, 'to', !newMuteState);
         track.enabled = !newMuteState;
+        console.log(`🎤 Microphone track ${track.label}: enabled=${track.enabled}`);
       });
+      
       setIsMuted(newMuteState);
-      console.log('🔇 Mute state updated to:', newMuteState);
+      
+      // Clear visual feedback
+      if (newMuteState) {
+        console.log('🎤 ❌ MICROPHONE MUTED - Your voice will NOT be transmitted');
+      } else {
+        console.log('🎤 ✅ MICROPHONE ACTIVE - Your voice IS being transmitted');
+      }
     } else {
-      console.warn('🔇 Cannot toggle mute: no local stream available');
+      console.warn('🎤 ⚠️ Cannot toggle mute: no local stream available');
+      setAudioError('Microphone not initialized. Please allow microphone access.');
     }
   };
   
@@ -617,11 +626,30 @@ const AudioSession = () => {
     console.log('🎵 Music mute toggled:', newMuteState);
   };
   
-  // Toggle voice mute for listeners
+  // Toggle voice mute for listeners (speaker/headset output)
   const toggleVoiceMute = () => {
     const newMuteState = !isVoiceMuted;
     setIsVoiceMuted(newMuteState);
-    console.log('🔊 Voice mute toggled:', newMuteState);
+    
+    // Immediate feedback
+    const remoteAudios = document.getElementById('remote-audios');
+    if (remoteAudios) {
+      const audioElements = remoteAudios.querySelectorAll('audio');
+      console.log(`🎧 Toggle voice output: ${newMuteState ? 'MUTED' : 'ACTIVE'} (${audioElements.length} audio elements)`);
+      
+      audioElements.forEach((audio, index) => {
+        audio.muted = newMuteState;
+        console.log(`🎧 Audio element ${index}: muted=${audio.muted}, volume=${audio.volume}`);
+      });
+      
+      if (newMuteState) {
+        console.log('🎧 ❌ VOICE OUTPUT MUTED - You will NOT hear other participants');
+      } else {
+        console.log('🎧 ✅ VOICE OUTPUT ACTIVE - You CAN hear other participants');
+      }
+    } else {
+      console.log('🎧 Voice output toggled (no active participants yet):', newMuteState ? 'MUTED' : 'ACTIVE');
+    }
   };
   
   // Toggle mute for specific member
@@ -1974,7 +2002,7 @@ const AudioSession = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title={isVoiceMuted ? "Voice Muted" : "Voice Active"}>
+          <Tooltip title={isVoiceMuted ? "Voice Muted - Click to Unmute" : "Voice Active - Click to Mute"}>
             <IconButton 
               onClick={toggleVoiceMute}
               sx={{ 
@@ -1986,7 +2014,7 @@ const AudioSession = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title={isMuted ? "Microphone Muted" : "Microphone Active"}>
+          <Tooltip title={isMuted ? "Microphone Muted - Click to Unmute" : "Microphone Active - Click to Mute"}>
             <IconButton 
               onClick={toggleMute}
               disabled={!micInitialized}
