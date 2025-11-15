@@ -2,7 +2,7 @@
 # Remote deployment script for TrafficJamz backend
 # This script connects to the production server and restarts the backend container
 
-SERVER="139.144.79.247"
+SERVER="157.230.165.156"
 USER="root"
 
 echo "🚀 Deploying TrafficJamz backend to $SERVER"
