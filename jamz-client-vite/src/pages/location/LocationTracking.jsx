@@ -3632,7 +3632,7 @@ const LocationTracking = () => {
           }}
           onClick={() => setShowPlaces(!showPlaces)}
         >
-          {showPlaces ? <ExploreOffIcon sx={{ fontSize: 20 }} /> : <ExploreIcon sx={{ fontSize: 20 }} />}
+          {showPlaces ? <PinDropIcon sx={{ fontSize: 20 }} /> : <AddLocationIcon sx={{ fontSize: 20 }} />}
         </IconButton>
       </Tooltip>
 
