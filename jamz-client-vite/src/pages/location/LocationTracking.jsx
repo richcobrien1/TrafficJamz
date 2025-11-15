@@ -1301,21 +1301,6 @@ const LocationTracking = () => {
     fetchGroupDetails();
   }, []);
 
-  // Auto-join audio session on component mount
-  useEffect(() => {
-    // Only auto-join if not already in session
-    if (!isInSession && groupId && joinSession) {
-      const timer = setTimeout(() => {
-        console.log('🎧 Auto-joining audio session for group:', groupId);
-        joinSession().catch(err => {
-          console.warn('⚠️ Auto-join audio session failed (will retry on manual click):', err);
-        });
-      }, 1000); // Small delay to let component fully mount
-      
-      return () => clearTimeout(timer);
-    }
-  }, [groupId]); // Only run once on mount with groupId
-
   // Initialize rename input when dialog opens for a place
   useEffect(() => {
     if (openLocationDialog && selectedLocation && selectedLocation.place) {
@@ -3568,7 +3553,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 220, // Between Settings and Add Places
+            bottom: 260, // Increased spacing
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
@@ -3596,7 +3581,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 240, // Between Terrain and Settings
+            bottom: 310, // Increased spacing
             right: 10,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
