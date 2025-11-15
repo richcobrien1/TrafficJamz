@@ -3370,13 +3370,19 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
+          <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: showMusicPlayer ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
               }}
-              onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+              onClick={() => {
+                if (isPlaying) {
+                  musicPause();
+                } else {
+                  musicPlay();
+                }
+              }}
             >
               <MusicNoteOutlinedIcon />
             </IconButton>
