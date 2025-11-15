@@ -1891,70 +1891,78 @@ const AudioSession = () => {
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
       {/* App Bar - Lime Green for Voice */}
-      <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
-          <Toolbar>
-            <IconButton edge="start" sx={{ color: '#000' }} onClick={handleLeaveAudio}>
-              <ArrowBackIcon />
+      <AppBar 
+        position="absolute"
+        sx={{ 
+          bgcolor: '#76ff03',
+          color: '#000',
+          zIndex: 10
+        }}
+      >
+        <Toolbar>
+          <IconButton 
+            edge="start" 
+            sx={{ 
+              mr: 2,
+              color: '#000'
+            }}
+            onClick={handleLeaveAudio}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          
+          <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
+          <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
+            Voice
+          </Typography>
+            
+          {/* Quick Mute Controls - Microphone */}
+          <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+            <IconButton 
+              onClick={toggleMute}
+              disabled={!micInitialized}
+              sx={{ 
+                color: '#000',
+                bgcolor: isMuted ? 'error.main' : 'transparent',
+                '&:hover': { bgcolor: isMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' }
+              }}
+            >
+              {isMuted ? <MicOffIcon /> : <MicIcon />}
             </IconButton>
-            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
-            <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
-              Voice
-            </Typography>
-            
-            {/* Quick Mute Controls - Microphone */}
-            <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
-              <IconButton 
-                sx={{ 
-                  color: '#000',
-                  bgcolor: isMuted ? 'error.main' : 'transparent',
-                  '&:hover': { bgcolor: isMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' },
-                  mr: 1
-                }} 
-                onClick={toggleMute}
-                disabled={!micInitialized}
-              >
-                {isMuted ? <MicOffIcon /> : <MicIcon />}
-              </IconButton>
-            </Tooltip>
-            
-            {/* Quick Mute Controls - Speaker */}
-            <Tooltip title={isVoiceMuted ? "Unmute Voice" : "Mute Voice"}>
-              <IconButton 
-                sx={{ 
-                  color: '#000',
-                  bgcolor: isVoiceMuted ? 'error.main' : 'transparent',
-                  '&:hover': { bgcolor: isVoiceMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' },
-                  mr: 1
-                }} 
-                onClick={toggleVoiceMute}
-              >
-                {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
-              </IconButton>
-            </Tooltip>
-            
-            {/* Music Controls */}
-            <Tooltip title="Music Player">
-              <IconButton sx={{ color: '#000', mr: 1 }} onClick={() => setOpenMusicDialog(true)}>
-                <MusicNoteIcon />
-              </IconButton>
-            </Tooltip>
-            
-            {/* Leave Session */}
-            <Tooltip title="Leave Session">
-              <IconButton sx={{ color: '#000' }} onClick={() => setOpenLeaveDialog(true)}>
-                <LeaveIcon />
-              </IconButton>
-            </Tooltip>
-          </Toolbar>
-        </AppBar>
+          </Tooltip>
+          
+          {/* Quick Mute Controls - Speaker */}
+          <Tooltip title={isVoiceMuted ? "Unmute Voice" : "Mute Voice"}>
+            <IconButton 
+              onClick={toggleVoiceMute}
+              sx={{ 
+                color: '#000',
+                bgcolor: isVoiceMuted ? 'error.main' : 'transparent',
+                '&:hover': { bgcolor: isVoiceMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' }
+              }}
+            >
+              {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
+            </IconButton>
+          </Tooltip>
+          
+          {/* Music Controls */}
+          <Tooltip title="Music Player">
+            <IconButton 
+              sx={{ color: '#000' }} 
+              onClick={() => setOpenMusicDialog(true)}
+            >
+              <MusicNoteIcon />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      </AppBar>
 
-      <Container maxWidth="md" sx={{ position: 'relative', py: 3 }}>
       {/* Vertical Group Name Panel - Lime Green */}
       <Box
         sx={{
           position: 'absolute',
           left: 0,
-          top: -64,
+          top: 64,
           bottom: 0,
           width: '32px',
           zIndex: 10,
@@ -1963,7 +1971,7 @@ const AudioSession = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          paddingTop: '72px',
+          paddingTop: '8px',
           transition: 'all 0.3s ease',
           boxShadow: 2,
         }}
@@ -1979,12 +1987,14 @@ const AudioSession = () => {
             fontStyle: 'italic',
             letterSpacing: '0.05em',
             fontSize: '0.75rem',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {group?.name || 'Voice Session'}
-          </Typography>
-        </Box>
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {group?.name || 'Voice Session'}
+        </Typography>
+      </Box>
+
+      <Container maxWidth="md" sx={{ position: 'relative', py: 3, mt: 8 }}>
 
         {/* iOS Audio Prompt for Listeners */}
         {showIOSAudioPrompt && (
