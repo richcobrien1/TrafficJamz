@@ -3369,7 +3369,7 @@ const LocationTracking = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title={isInSession ? "Voice Active" : "Voice Off"}>
+          <Tooltip title={isInSession ? "Leave Voice Session" : "Join Voice Session"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
@@ -3381,7 +3381,7 @@ const LocationTracking = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title={isMuted ? "Microphone Muted" : "Microphone Active"}>
+          <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
             <IconButton 
               disabled={!isInSession}
               sx={{
@@ -3391,21 +3391,6 @@ const LocationTracking = () => {
               onClick={toggleMute}
             >
               {isMuted ? <MicOffIcon /> : <MicIcon />}
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
-            <IconButton 
-              onClick={toggleLocationSharing}
-              sx={{
-                color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                '&:hover': {
-                  bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)',
-                }
-              }}
-            >
-              {sharingLocation ? <LocationIcon /> : <LocationOffIcon />}
             </IconButton>
           </Tooltip>
 
@@ -3474,36 +3459,13 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Toggle Members List Button */}
-      <Tooltip title={showMembersList ? "Hide Members" : "Show Members"}>
-        <IconButton
-          sx={{
-            position: 'absolute',
-            top: showControls ? 72 : 16,
-            right: 76,
-            zIndex: 10,
-            display: showMembersList ? 'none' : undefined,
-            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: 'purple',
-            boxShadow: 2,
-            cursor: 'pointer',
-            '&:hover': {
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-            }
-          }}
-          onClick={toggleMembersList}
-        >
-          <PeopleIcon />
-        </IconButton>
-      </Tooltip>
-      
       {/* Center on My Location Button */}
       <Tooltip title="Center on My Location">
         <IconButton
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 136,
+            right: 76, // Moved from right: 136
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
@@ -3638,6 +3600,62 @@ const LocationTracking = () => {
           onClick={() => setShowPlaces(!showPlaces)}
         >
           {showPlaces ? <PlaceOffIcon sx={{ fontSize: 20 }} /> : <PlaceIcon sx={{ fontSize: 20 }} />}
+        </IconButton>
+      </Tooltip>
+
+      {/* Share Location Toggle Button - Bottom Right */}
+      <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            bottom: 140, // Above Settings button
+            right: 10,
+            zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
+            bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
+            boxShadow: 2,
+            borderRadius: '4px',
+            width: 29,
+            height: 29,
+            minWidth: 29,
+            padding: 0,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+            }
+          }}
+          onClick={toggleLocationSharing}
+        >
+          {sharingLocation ? <LocationIcon sx={{ fontSize: 20 }} /> : <LocationOffIcon sx={{ fontSize: 20 }} />}
+        </IconButton>
+      </Tooltip>
+
+      {/* Settings Button - Bottom Right */}
+      <Tooltip title="Settings">
+        <IconButton
+          sx={{
+            position: 'absolute',
+            bottom: 100, // Below Share Location, above map controls
+            right: 10,
+            zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
+            boxShadow: 2,
+            borderRadius: '4px',
+            width: 29,
+            height: 29,
+            minWidth: 29,
+            padding: 0,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
+            }
+          }}
+          onClick={() => navigate(`/groups/${groupId}/settings`)}
+        >
+          <SettingsIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </Tooltip>
 
