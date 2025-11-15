@@ -3403,21 +3403,11 @@ const LocationTracking = () => {
               {isMuted ? <MicOffIcon /> : <MicIcon />}
             </IconButton>
           </Tooltip>
-          
-          <Tooltip title="Map View">
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : 'inherit'
-              }}
-            >
-              <MapIcon />
-            </IconButton>
-          </Tooltip>
 
           <Box sx={{ flexGrow: 1 }} />
           
-          {/* Location Sharing Toggle - Right Side */}
-          <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
+          {/* Map Toggle - Turn Location Sharing On/Off */}
+          <Tooltip title={sharingLocation ? "Turn Map Off" : "Turn Map On"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
@@ -3425,7 +3415,7 @@ const LocationTracking = () => {
               }}
               onClick={toggleLocationSharing}
             >
-              {sharingLocation ? <LocationIcon /> : <LocationOffIcon />}
+              <MapIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
