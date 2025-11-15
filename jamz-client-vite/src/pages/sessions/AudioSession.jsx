@@ -41,7 +41,10 @@ import {
   Group as GroupIcon,
   ExitToApp as LeaveIcon,
   Headset as HeadsetIcon,
-  HeadsetOff as HeadsetOffIcon
+  HeadsetOff as HeadsetOffIcon,
+  People as PeopleIcon,
+  MusicNoteOutlined as MusicNoteOutlinedIcon,
+  LocationOn as MapIcon
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -1949,49 +1952,68 @@ const AudioSession = () => {
             <ArrowBackIcon />
           </IconButton>
           
-          <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
-          <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
-            Voice
-          </Typography>
-            
-          {/* Quick Mute Controls - Microphone */}
-          <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+          {/* Standard Icon Set - Left Justified */}
+          <Tooltip title="Group Members">
             <IconButton 
-              onClick={toggleMute}
-              disabled={!micInitialized}
-              sx={{ 
-                color: '#000',
-                bgcolor: isMuted ? 'error.main' : 'transparent',
-                '&:hover': { bgcolor: isMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' }
-              }}
+              sx={{ color: '#000' }}
+              onClick={() => {/* TODO: Navigate to members list */}}
             >
-              {isMuted ? <MicOffIcon /> : <MicIcon />}
+              <PeopleIcon />
             </IconButton>
           </Tooltip>
           
-          {/* Quick Mute Controls - Speaker */}
-          <Tooltip title={isVoiceMuted ? "Unmute Voice" : "Mute Voice"}>
+          <Tooltip title={isMusicEnabled ? "Music On" : "Music Off"}>
+            <IconButton 
+              sx={{ 
+                color: '#000',
+                bgcolor: isMusicEnabled ? 'rgba(0,0,0,0.1)' : 'transparent'
+              }}
+              onClick={() => setOpenMusicDialog(true)}
+            >
+              <MusicNoteOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title={isVoiceMuted ? "Voice Muted" : "Voice Active"}>
             <IconButton 
               onClick={toggleVoiceMute}
               sx={{ 
                 color: '#000',
-                bgcolor: isVoiceMuted ? 'error.main' : 'transparent',
-                '&:hover': { bgcolor: isVoiceMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' }
+                bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)'
               }}
             >
               {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
             </IconButton>
           </Tooltip>
           
-          {/* Music Controls */}
-          <Tooltip title="Music Player">
+          <Tooltip title={isMuted ? "Microphone Muted" : "Microphone Active"}>
             <IconButton 
-              sx={{ color: '#000' }} 
-              onClick={() => setOpenMusicDialog(true)}
+              onClick={toggleMute}
+              disabled={!micInitialized}
+              sx={{ 
+                color: '#000',
+                bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)'
+              }}
             >
-              <MusicNoteIcon />
+              {isMuted ? <MicOffIcon /> : <MicIcon />}
             </IconButton>
           </Tooltip>
+          
+          <Tooltip title="Location Tracking">
+            <IconButton 
+              sx={{ color: '#000' }}
+              onClick={() => navigate(`/groups/${groupId}/location`)}
+            >
+              <MapIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Box sx={{ flexGrow: 1 }} />
+          
+          <VolumeUpIcon sx={{ mr: 1, color: '#000' }} />
+          <Typography variant="h6" sx={{ color: '#000' }}>
+            Voice
+          </Typography>
         </Toolbar>
       </AppBar>
 
