@@ -1994,7 +1994,7 @@ const AudioSession = () => {
         </Typography>
       </Box>
 
-      <Container maxWidth="md" sx={{ position: 'relative', py: 3, mt: 8 }}>
+      <Container maxWidth="md" sx={{ position: 'relative', pt: 10, pb: 3 }}>
 
         {/* iOS Audio Prompt for Listeners */}
         {showIOSAudioPrompt && (
