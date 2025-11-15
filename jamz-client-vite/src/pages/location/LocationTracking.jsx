@@ -80,7 +80,16 @@ import {
   StopScreenShare as StopScreenShareIcon,
   Headset as HeadsetIcon,
   HeadsetOff as HeadsetOffIcon,
-  Map as MapIcon
+  Map as MapIcon,
+  // Additional Location/Map Icons for future use
+  Streetview as StreetviewIcon,
+  LocationCity as LocationCityIcon,
+  AddLocation as AddLocationIcon,
+  PinDrop as PinDropIcon,
+  ShareLocation as ShareLocationIcon,
+  LocationDisabled as LocationDisabledIcon,
+  GpsNotFixed as GpsNotFixedIcon,
+  GpsOff as GpsOffIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -3394,8 +3403,31 @@ const LocationTracking = () => {
               {isMuted ? <MicOffIcon /> : <MicIcon />}
             </IconButton>
           </Tooltip>
+          
+          <Tooltip title="Map View">
+            <IconButton 
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit'
+              }}
+            >
+              <MapIcon />
+            </IconButton>
+          </Tooltip>
 
           <Box sx={{ flexGrow: 1 }} />
+          
+          {/* Location Sharing Toggle - Right Side */}
+          <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
+            <IconButton 
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit',
+                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+              }}
+              onClick={toggleLocationSharing}
+            >
+              {sharingLocation ? <LocationIcon /> : <LocationOffIcon />}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       
@@ -3601,34 +3633,6 @@ const LocationTracking = () => {
           onClick={() => setShowPlaces(!showPlaces)}
         >
           {showPlaces ? <ExploreOffIcon sx={{ fontSize: 20 }} /> : <ExploreIcon sx={{ fontSize: 20 }} />}
-        </IconButton>
-      </Tooltip>
-
-      {/* Share Location Toggle Button - Bottom Right */}
-      <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
-        <IconButton
-          sx={{
-            position: 'absolute',
-            bottom: 240, // Up 100px
-            right: 10,
-            zIndex: 10,
-            display: showMembersList ? 'none' : undefined,
-            bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: 'purple',
-            boxShadow: 2,
-            borderRadius: '4px',
-            width: 29,
-            height: 29,
-            minWidth: 29,
-            padding: 0,
-            cursor: 'pointer',
-            '&:hover': {
-              bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-            }
-          }}
-          onClick={toggleLocationSharing}
-        >
-          {sharingLocation ? <LocationIcon sx={{ fontSize: 20 }} /> : <LocationOffIcon sx={{ fontSize: 20 }} />}
         </IconButton>
       </Tooltip>
 
