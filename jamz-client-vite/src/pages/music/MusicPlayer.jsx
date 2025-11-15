@@ -23,7 +23,14 @@ import {
   ArrowBack as ArrowBackIcon,
   CloudUpload as UploadIcon,
   Link as LinkIcon,
-  MusicNote as MusicIcon
+  MusicNote as MusicIcon,
+  People as PeopleIcon,
+  MusicNoteOutlined as MusicNoteOutlinedIcon,
+  Headset as HeadsetIcon,
+  HeadsetOff as HeadsetOffIcon,
+  Mic as MicIcon,
+  MicOff as MicOffIcon,
+  LocationOn as MapIcon
 } from '@mui/icons-material';
 import { useMusic } from '../../contexts/MusicContext';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
@@ -380,10 +387,61 @@ const MusicPlayerPage = () => {
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
             <ArrowBackIcon />
           </IconButton>
-          <MusicIcon sx={{ ml: 1, mr: 1 }} />
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          
+          {/* Standard Icon Set - Left Justified */}
+          <Tooltip title="Group Members">
+            <IconButton 
+              color="inherit"
+              onClick={() => {/* TODO: Navigate to members list */}}
+            >
+              <PeopleIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Music Player (Active)">
+            <IconButton 
+              color="inherit"
+              sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}
+            >
+              <MusicNoteOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Voice Audio Off">
+            <IconButton 
+              color="inherit"
+              onClick={() => {/* TODO: Toggle voice */}}
+            >
+              <HeadsetOffIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Microphone Off">
+            <IconButton 
+              color="inherit"
+              onClick={() => {/* TODO: Toggle mic */}}
+            >
+              <MicOffIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Location Tracking">
+            <IconButton 
+              color="inherit"
+              onClick={() => navigate(`/groups/${groupId}/location`)}
+            >
+              <MapIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Box sx={{ flexGrow: 1 }} />
+          
+          <MusicIcon sx={{ mr: 1 }} />
+          <Typography variant="h6">
             Music
           </Typography>
+          
+          <Box sx={{ flexGrow: 1 }} />
           
           {/* Upload and Link Icons - Right aligned */}
           <input

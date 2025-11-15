@@ -74,8 +74,12 @@ import {
   Mic as MicIcon,
   MicOff as MicOffIcon,
   MusicNote as MusicNoteIcon,
+  MusicNoteOutlined as MusicNoteOutlinedIcon,
   ScreenShare as ScreenShareIcon,
-  StopScreenShare as StopScreenShareIcon
+  StopScreenShare as StopScreenShareIcon,
+  Headset as HeadsetIcon,
+  HeadsetOff as HeadsetOffIcon,
+  Map as MapIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -3341,54 +3345,76 @@ const LocationTracking = () => {
             <ArrowBackIcon />
           </IconButton>
           
+          {/* Standard Icon Set - Left Justified */}
+          <Tooltip title="Group Members">
+            <IconButton 
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit'
+              }}
+              onClick={() => setShowMembersList(!showMembersList)}
+            >
+              <PeopleIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
+            <IconButton 
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit',
+                bgcolor: showMusicPlayer ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+              }}
+              onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+            >
+              <MusicNoteOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title={isInSession ? "Voice Active" : "Voice Off"}>
+            <IconButton 
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit',
+                bgcolor: isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+              }}
+              onClick={isInSession ? leaveSession : joinSession}
+            >
+              {isInSession ? <HeadsetIcon /> : <HeadsetOffIcon />}
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title={isMuted ? "Microphone Muted" : "Microphone Active"}>
+            <IconButton 
+              disabled={!isInSession}
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit',
+                bgcolor: isMuted ? 'error.main' : (isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent')
+              }}
+              onClick={toggleMute}
+            >
+              {isMuted ? <MicOffIcon /> : <MicIcon />}
+            </IconButton>
+          </Tooltip>
+          
           <Tooltip title={sharingLocation ? "Stop Sharing Location" : "Start Sharing Location"}>
             <IconButton 
               onClick={toggleLocationSharing}
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
                 '&:hover': {
-                  bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)',
                 }
               }}
             >
               {sharingLocation ? <LocationIcon /> : <LocationOffIcon />}
             </IconButton>
           </Tooltip>
+
+          <Box sx={{ flexGrow: 1 }} />
           
-
-          <Tooltip title="Settings">
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : 'inherit'
-              }}
-              onClick={() => setOpenSettingsDialog(true)}
-            >
-              <SettingsIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title={satelliteMode ? "Switch to Streets View" : "Switch to Satellite View"}>
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : (satelliteMode ? 'primary.main' : 'inherit')
-              }}
-              onClick={() => toggleSatelliteMode(!satelliteMode)}
-            >
-              <SatelliteIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : (showPlaces ? 'secondary.main' : 'inherit')
-              }}
-              onClick={() => setShowPlaces(!showPlaces)}
-            >
-              {showPlaces ? <PlaceOffIcon /> : <PlaceIcon />}
-            </IconButton>
-          </Tooltip>
+          <MapIcon sx={{ mr: 1, color: sharingLocation ? '#fff' : 'inherit' }} />
+          <Typography variant="h6" sx={{ color: sharingLocation ? '#fff' : 'inherit' }}>
+            Location
+          </Typography>
         </Toolbar>
       </AppBar>
       
@@ -3563,148 +3589,51 @@ const LocationTracking = () => {
           <PlaceIcon />
         </IconButton>
       </Tooltip>
-      
-      {/* Audio Call Button */}
-      <Tooltip title={isInSession ? `Leave Audio Call (${audioParticipants.length + 1} in call)` : "Join Audio Call"}>
-        <Badge 
-          badgeContent={isInSession ? audioParticipants.length + 1 : 0} 
-          color="success"
+
+      {/* Terrain/Satellite Toggle Button - Bottom Right */}
+      <Tooltip title={satelliteMode ? "Switch to Streets View" : "Switch to Satellite View"}>
+        <IconButton
           sx={{
             position: 'absolute',
-            top: showControls ? 72 : 16,
-            right: 256,
+            bottom: 110, // Above navigation controls
+            right: 16,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
+            bgcolor: satelliteMode ? 'rgba(33, 150, 243, 0.9)' : 'rgba(255, 255, 255, 0.8)',
+            color: satelliteMode ? '#fff' : 'inherit',
+            boxShadow: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: satelliteMode ? 'rgba(33, 150, 243, 1)' : 'rgba(255, 255, 255, 0.95)',
+            }
           }}
+          onClick={() => toggleSatelliteMode(!satelliteMode)}
         >
-          <IconButton
-            sx={{
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-              color: isInSession ? 'error.main' : 'purple',
-              boxShadow: 2,
-              cursor: 'pointer',
-              animation: isInSession ? 'pulse 2s infinite' : 'none',
-              '@keyframes pulse': {
-                '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
-                '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
-                '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
-              },
-              '&:hover': {
-                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-              }
-            }}
-            onClick={isInSession ? leaveSession : joinSession}
-          >
-            {isInSession ? <PhoneDisabledIcon /> : <PhoneIcon />}
-          </IconButton>
-        </Badge>
+          <SatelliteIcon />
+        </IconButton>
       </Tooltip>
 
-      {/* Mute/Unmute Button (only show when in session) */}
-      {isInSession && (
-        <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
-          <IconButton
-            sx={{
-              position: 'absolute',
-              top: showControls ? 72 : 16,
-              right: isSharingDesktopAudio ? 376 : 316,
-              zIndex: 10,
-              display: showMembersList ? 'none' : undefined,
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-              color: isMuted ? 'grey.500' : isSpeaking ? 'success.main' : 'purple',
-              boxShadow: 2,
-              cursor: 'pointer',
-              animation: isSpeaking ? 'speaking 1s infinite' : 'none',
-              '@keyframes speaking': {
-                '0%, 100%': { boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)' },
-                '50%': { boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)' }
-              },
-              '&:hover': {
-                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-              }
-            }}
-            onClick={toggleMute}
-          >
-            {isMuted ? <MicOffIcon /> : <MicIcon />}
-          </IconButton>
-        </Tooltip>
-      )}
-
-      {/* Desktop Audio Share Button (only show when in session) */}
-      {isInSession && (
-        <Tooltip title={isSharingDesktopAudio ? "Stop Sharing Desktop Audio" : "Share Desktop Audio (Music/Games)"}>
-          <IconButton
-            sx={{
-              position: 'absolute',
-              top: showControls ? 72 : 16,
-              right: 316,
-              zIndex: 10,
-              display: showMembersList ? 'none' : undefined,
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-              color: isSharingDesktopAudio ? 'error.main' : 'purple',
-              boxShadow: 2,
-              cursor: 'pointer',
-              animation: isSharingDesktopAudio ? 'pulse 2s infinite' : 'none',
-              '@keyframes pulse': {
-                '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
-                '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
-                '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
-              },
-              '&:hover': {
-                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-              }
-            }}
-            onClick={async () => {
-              if (isSharingDesktopAudio) {
-                await stopDesktopAudio();
-                setIsSharingDesktopAudio(false);
-              } else {
-                const success = await shareDesktopAudio();
-                if (success) {
-                  setIsSharingDesktopAudio(true);
-                }
-              }
-            }}
-          >
-            {isSharingDesktopAudio ? <StopScreenShareIcon /> : <ScreenShareIcon />}
-          </IconButton>
-        </Tooltip>
-      )}
-
-      {/* Music Player Button */}
-      <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
-        <Badge 
-          badgeContent={isPlaying ? '♪' : null} 
-          color="success"
+      {/* Places Toggle Button - Bottom Right */}
+      <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
+        <IconButton
           sx={{
             position: 'absolute',
-            top: showControls ? 72 : 16,
-            right: isInSession ? (isSharingDesktopAudio ? 436 : 376) : 316,
+            bottom: 50, // Below satellite button
+            right: 16,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
+            bgcolor: showPlaces ? 'rgba(233, 30, 99, 0.9)' : 'rgba(255, 255, 255, 0.8)',
+            color: showPlaces ? '#fff' : 'inherit',
+            boxShadow: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: showPlaces ? 'rgba(233, 30, 99, 1)' : 'rgba(255, 255, 255, 0.95)',
+            }
           }}
+          onClick={() => setShowPlaces(!showPlaces)}
         >
-          <IconButton
-            sx={{
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-              color: showMusicPlayer ? 'primary.main' : isPlaying ? 'success.main' : 'purple',
-              boxShadow: 2,
-              cursor: 'pointer',
-              animation: isPlaying ? 'pulse 2s infinite' : 'none',
-              '@keyframes pulse': {
-                '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
-                '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
-                '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
-              },
-              '&:hover': {
-                bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-              }
-            }}
-            onClick={() => setShowMusicPlayer(!showMusicPlayer)}
-          >
-            <MusicNoteIcon />
-          </IconButton>
-        </Badge>
+          {showPlaces ? <PlaceOffIcon /> : <PlaceIcon />}
+        </IconButton>
       </Tooltip>
 
       {/* Speaking Indicator (only show when speaking) */}
