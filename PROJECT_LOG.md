@@ -47,8 +47,12 @@ docker run -d --name trafficjamz -p 5050:5000 \
 **ALWAYS CHECK**: Remove ALL quotes from numeric and boolean values in `.env` files:
 - ✅ `PORT=5000`
 - ✅ `NODE_ENV=production`
+- ✅ `MONGODB_URI=mongodb+srv://user:pass@host/db?options` (NO QUOTES!)
 - ❌ `PORT="5000"`
 - ❌ `NODE_ENV="production"`
+- ❌ `MONGODB_URI="mongodb+srv://..."` (quotes break URI parsing!)
+
+**MongoDB Connection Errors**: If you see "Invalid scheme, expected connection string to start with mongodb:// or mongodb+srv://", check for quotes around MONGODB_URI in .env.prod file.
 
 ---
 
