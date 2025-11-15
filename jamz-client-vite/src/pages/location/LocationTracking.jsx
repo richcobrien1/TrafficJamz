@@ -3367,6 +3367,9 @@ const LocationTracking = () => {
             </IconButton>
           </Tooltip>
           
+          <Box sx={{ flexGrow: 1 }} />
+          
+          {/* Centered Audio Controls */}
           <Tooltip title={showMusicPlayer ? "Hide Music Player" : "Show Music Player"}>
             <IconButton 
               sx={{
