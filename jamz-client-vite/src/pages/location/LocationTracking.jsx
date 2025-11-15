@@ -3412,7 +3412,7 @@ const LocationTracking = () => {
               }}
               onClick={() => setShowPlaces(!showPlaces)}
             >
-              {showPlaces ? <PinDropIcon /> : <AddLocationIcon />}
+              {showPlaces ? <PlaceIcon /> : <PlaceIcon />}
             </IconButton>
           </Tooltip>
 
@@ -3564,6 +3564,53 @@ const LocationTracking = () => {
           onClick={() => toggleSatelliteMode(!satelliteMode)}
         >
           <SatelliteIcon sx={{ fontSize: 20 }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Add Place Button - Bottom Right */}
+      <Tooltip title={placeSelectionMode ? "Cancel Add Place" : "Add Place"}>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            bottom: 240, // Between Terrain and Settings
+            right: 10,
+            zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
+            bgcolor: placeSelectionMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+            color: placeSelectionMode ? 'secondary.main' : 'purple',
+            boxShadow: 2,
+            borderRadius: '4px',
+            width: 29,
+            height: 29,
+            minWidth: 29,
+            padding: 0,
+            cursor: 'pointer',
+            animation: placeSelectionMode ? 'pulse 2s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
+              '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
+              '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
+            },
+            '&:hover': {
+              bgcolor: placeSelectionMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+            }
+          }}
+          onClick={() => {
+            try {
+              if (overlayCreateMode && mapRef.current) {
+                const c = mapRef.current.getCenter();
+                createPlaceAtLocation(c.lat, c.lng, null);
+                setPlaceSelectionMode(false);
+              } else {
+                togglePlaceSelectionMode();
+              }
+            } catch (err) {
+              console.warn('Could not create place at center:', err);
+              togglePlaceSelectionMode();
+            }
+          }}
+        >
+          {placeSelectionMode ? <PinDropIcon sx={{ fontSize: 20 }} /> : <AddLocationIcon sx={{ fontSize: 20 }} />}
         </IconButton>
       </Tooltip>
 
