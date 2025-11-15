@@ -3403,7 +3403,10 @@ const LocationTracking = () => {
               {isMuted ? <MicOffIcon /> : <MicIcon />}
             </IconButton>
           </Tooltip>
+
+          <Box sx={{ flexGrow: 1 }} />
           
+          {/* Show/Hide Places Toggle */}
           <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
             <IconButton 
               sx={{
@@ -3415,8 +3418,6 @@ const LocationTracking = () => {
               {showPlaces ? <PlaceIcon /> : <PlaceIcon />}
             </IconButton>
           </Tooltip>
-
-          <Box sx={{ flexGrow: 1 }} />
           
           {/* Map Toggle - Turn Location Sharing On/Off */}
           <Tooltip title={sharingLocation ? "Turn Map Off" : "Turn Map On"}>
