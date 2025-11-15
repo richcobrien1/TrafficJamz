@@ -3403,6 +3403,18 @@ const LocationTracking = () => {
               {isMuted ? <MicOffIcon /> : <MicIcon />}
             </IconButton>
           </Tooltip>
+          
+          <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
+            <IconButton 
+              sx={{
+                color: sharingLocation ? '#fff' : 'inherit',
+                bgcolor: showPlaces ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+              }}
+              onClick={() => setShowPlaces(!showPlaces)}
+            >
+              {showPlaces ? <PinDropIcon /> : <AddLocationIcon />}
+            </IconButton>
+          </Tooltip>
 
           <Box sx={{ flexGrow: 1 }} />
           
@@ -3595,34 +3607,6 @@ const LocationTracking = () => {
           onClick={() => toggleSatelliteMode(!satelliteMode)}
         >
           <SatelliteIcon sx={{ fontSize: 20 }} />
-        </IconButton>
-      </Tooltip>
-
-      {/* Places Toggle Button - Bottom Right */}
-      <Tooltip title={showPlaces ? "Hide Places" : "Show Places"}>
-        <IconButton
-          sx={{
-            position: 'absolute',
-            bottom: 280, // Up 100px
-            right: 10, // Align with Mapbox controls
-            zIndex: 10,
-            display: showMembersList ? 'none' : undefined,
-            bgcolor: showPlaces ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: 'purple',
-            boxShadow: 2,
-            borderRadius: '4px', // Match Mapbox border radius
-            width: 29, // Match Mapbox button size
-            height: 29,
-            minWidth: 29,
-            padding: 0,
-            cursor: 'pointer',
-            '&:hover': {
-              bgcolor: showPlaces ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-            }
-          }}
-          onClick={() => setShowPlaces(!showPlaces)}
-        >
-          {showPlaces ? <PinDropIcon sx={{ fontSize: 20 }} /> : <AddLocationIcon sx={{ fontSize: 20 }} />}
         </IconButton>
       </Tooltip>
 
