@@ -3645,7 +3645,7 @@ const LocationTracking = () => {
               bgcolor: 'rgba(255, 255, 255, 0.3)',
             }
           }}
-          onClick={() => navigate(`/groups/${groupId}`)}
+          onClick={() => setOpenSettingsDialog(true)}
         >
           <SettingsIcon sx={{ fontSize: 20 }} />
         </IconButton>
