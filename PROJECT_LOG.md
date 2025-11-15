@@ -4,6 +4,147 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 15, 2025 (Morning) - Audio Feedback Fixes
+
+### Audio Feedback Issue Resolution
+
+#### 1. **Outbound Volume Control with Gain Node** ✅ COMPLETED
+- **Problem**: Input volume slider existed but didn't actually control outgoing audio volume
+- **Solution**: Implemented Web Audio API `GainNode` for real-time outbound volume control
+  - Created audio processing chain: `source → gainNode → destination`
+  - Applied gain value from `inputVolume` state (0.0 to 1.0)
+  - Stored `gainNode` reference in `window.__audioGainNode` for dynamic updates
+  - Added `useEffect` to update gain value when `inputVolume` changes
+- **Implementation**:
+  ```javascript
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioContext.createMediaStreamSource(localStream);
+  const gainNode = audioContext.createGain();
+  gainNode.gain.value = inputVolume;
+  const destination = audioContext.createMediaStreamDestination();
+  source.connect(gainNode);
+  gainNode.connect(destination);
+  const processedTrack = destination.stream.getAudioTracks()[0];
+  await sendTransport.produce({ track: processedTrack });
+  ```
+- **Files Modified**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+- **Result**: Owner's volume slider now controls broadcast volume ✅
+
+#### 2. **Fixed Member-Specific Audio Controls** ✅ COMPLETED
+- **Problem**: Volume and mute controls affected ALL audio elements instead of specific participants
+- **Solution**: 
+  - Tagged remote audio elements with `data-streamId` and `data-socketId` attributes
+  - Updated `toggleMemberMute()` to target specific audio element by socketId
+  - Updated `setMemberVolume()` to target specific audio element by socketId
+  - Proper matching via `audio.dataset.socketId === socketId`
+- **Files Modified**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+- **Result**: Individual participant controls now work correctly ✅
+
+#### 3. **Prevented Local Audio Monitoring Feedback** ✅ COMPLETED
+- **Problem**: Potential audio feedback loop if local stream played back through speakers
+- **Solution**: 
+  - Verified no `audioElement.srcObject = localStream` exists
+  - `localAudioMonitoring` state remains `false` (disabled)
+  - Remote audio elements explicitly set to `muted: false` to hear others
+  - Only remote participant audio is played back, never own microphone
+- **Files Modified**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+- **Result**: No local audio monitoring, preventing feedback ✅
+
+#### 4. **Proper Mute State Synchronization** ✅ COMPLETED
+- **Problem**: Needed to ensure mute toggle immediately affects audio transmission
+- **Solution**: 
+  - Mute directly controls `track.enabled` on local stream audio tracks
+  - Added comprehensive console logging for debugging
+  - Immediate effect with no relay delays
+- **Result**: Mute/unmute works instantly ✅
+
+### Build & Deployment
+- **Build Time**: ~41 seconds
+- **Bundle Impact**: AudioSession.js 56.79 KB (gzipped: 19.24 KB)
+- **Commit**: `45c929a2` - Fix audio feedback issues
+- **Deployment**: Pushed to GitHub main branch ✅
+
+### Future Considerations - Music Feature Enhancements
+
+#### Music Storage Strategy (To Be Decided)
+**Question**: Should we cache music in global storage (Cloudflare R2/S3)?
+
+**Option A: Cache in Global Storage**
+- ✅ Pros:
+  - Faster playback across all sessions
+  - Reduced bandwidth for repeated plays
+  - Better performance for popular tracks
+  - CDN distribution possible
+- ❌ Cons:
+  - Storage costs scale with library size
+  - Need cache invalidation strategy
+  - Licensing/copyright considerations for cached content
+  - Requires storage management/cleanup
+
+**Option B: Stream Directly (Current)**
+- ✅ Pros:
+  - No storage costs
+  - Always fresh content from source
+  - No cache management needed
+  - Simpler architecture
+- ❌ Cons:
+  - Higher bandwidth per play
+  - Dependent on third-party API availability
+  - Potentially slower initial playback
+
+**Recommendation**: Start with direct streaming, add caching later if:
+- Users frequently replay same tracks
+- API rate limits become issue
+- Performance metrics show significant benefit
+
+#### Multiple Playlists Feature (To Be Decided)
+**Question**: Should we support multiple playlists per group?
+
+**Option A: Multiple Playlists**
+- ✅ Pros:
+  - Users can organize music by mood/genre/activity
+  - "Road Trip" vs "Chill" vs "Party" playlists
+  - Better music management for long sessions
+  - Switch between playlists without losing tracks
+- ❌ Cons:
+  - More complex UI (playlist selector/switcher)
+  - Database schema changes needed
+  - More storage per group
+  - Potential confusion for casual users
+
+**Option B: Single Playlist (Current)**
+- ✅ Pros:
+  - Simple, easy to understand
+  - Minimal UI complexity
+  - Works well for single-purpose groups
+  - Lower storage requirements
+- ❌ Cons:
+  - Limited organization capabilities
+  - Have to clear/rebuild for different moods
+  - All tracks mixed together
+
+**Recommendation**: Add multiple playlists if:
+- User feedback indicates need for organization
+- Groups have long-term usage patterns
+- Users want to save/reuse playlists
+
+**Implementation Considerations**:
+- Schema: Add `playlist_id` field to tracks, `playlists` table for group
+- UI: Dropdown/tabs for playlist selection
+- Default: "Main Playlist" for backwards compatibility
+- API: Extend `/music/tracks` endpoints with `playlist_id` parameter
+
+### Next Steps for Voice/Audio
+1. ✅ Test audio feedback fixes with multiple participants
+2. Monitor console logs for gain node updates
+3. Verify member-specific controls work correctly
+4. Test mute/unmute responsiveness
+5. Consider adding acoustic echo cancellation (AEC) if physical feedback persists
+6. Add visual indicators for audio transmission state
+7. Test across browsers (Chrome, Firefox, Safari)
+
+---
+
 ## Session: November 14, 2025 (Evening) - Voice/Audio UI Simplification & Auto-Initialization
 
 ### Voice Communication Page Overhaul
