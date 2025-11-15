@@ -1889,9 +1889,9 @@ const AudioSession = () => {
   const safeUser = user || {};
 
   return (
-      <Container maxWidth="md" sx={{ position: 'relative' }}>
-        {/* Traffic Jam App Bar - Lime Green for Voice */}
-        <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
+      {/* App Bar - Lime Green for Voice */}
+      <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
           <Toolbar>
             <IconButton edge="start" sx={{ color: '#000' }} onClick={handleLeaveAudio}>
               <ArrowBackIcon />
@@ -1948,36 +1948,37 @@ const AudioSession = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Vertical Group Name Panel - Lime Green */}
-        <Box
+      <Container maxWidth="md" sx={{ position: 'relative', py: 3 }}>
+      {/* Vertical Group Name Panel - Lime Green */}
+      <Box
+        sx={{
+          position: 'absolute',
+          left: 0,
+          top: -64,
+          bottom: 0,
+          width: '32px',
+          zIndex: 10,
+          bgcolor: '#76ff03',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          paddingTop: '72px',
+          transition: 'all 0.3s ease',
+          boxShadow: 2,
+        }}
+      >
+        <Typography
+          variant="body2"
           sx={{
-            position: 'absolute',
-            left: 0,
-            top: 64,
-            bottom: 0,
-            width: '32px',
-            zIndex: 10,
-            bgcolor: '#00FF00',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            paddingTop: '8px',
-            transition: 'all 0.3s ease',
-            boxShadow: 2,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              writingMode: 'vertical-rl',
-              textOrientation: 'mixed',
-              transform: 'rotate(180deg)',
-              color: '#000',
-              fontWeight: 'bold',
-              fontStyle: 'italic',
-              letterSpacing: '0.05em',
-              fontSize: '0.75rem',
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            transform: 'rotate(180deg)',
+            color: '#000',
+            fontWeight: 'bold',
+            fontStyle: 'italic',
+            letterSpacing: '0.05em',
+            fontSize: '0.75rem',
               whiteSpace: 'nowrap',
             }}
           >
@@ -2638,7 +2639,8 @@ const AudioSession = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
