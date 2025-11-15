@@ -2031,103 +2031,25 @@ const AudioSession = () => {
         
         {/* Always show UI sections - just disable controls if mic not initialized */}
         <Box>
-          {/* Simplified Mic controls */}
-          <Paper variant="outlined" sx={{ p: 2, mb: 2, opacity: micInitialized ? 1 : 0.6 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Mic Controls {!micInitialized && <Chip label="Mic Not Ready" size="small" color="warning" sx={{ ml: 1 }} />}
-            </Typography>
-              
-            <Grid container spacing={2} alignItems="center">
-              <Grid item>
-                <Tooltip title={
-                  !micInitialized
-                    ? "Microphone initializing..."
-                    : isPushToTalkActive 
-                      ? "Push-to-Talk Active" 
-                      : isMuted 
-                        ? "Unmute Microphone (tap) or Push-to-Talk (hold)" 
-                        : "Mute Microphone"
-                }>
-                  <IconButton 
-                    color={isPushToTalkActive ? "secondary" : isMuted ? "default" : "primary"} 
-                    onMouseDown={handleMicButtonMouseDown}
-                    onMouseUp={handleMicButtonMouseUp}
-                    onMouseLeave={handleMicButtonMouseLeave}
-                    onTouchStart={handleMicButtonMouseDown}
-                    onTouchEnd={handleMicButtonMouseUp}
-                    aria-label={isMuted ? "Unmute" : "Mute"}
-                    disabled={!micInitialized}
-                    sx={{ 
-                      width: 56, 
-                      height: 56,
-                      transition: 'all 0.2s ease-in-out',
-                      transform: isPushToTalkActive ? 'scale(1.2)' : 'scale(1)',
-                      boxShadow: isPushToTalkActive ? '0 0 10px rgba(255,0,0,0.5)' : 'none'
-                    }}
-                  >
-                    {isPushToTalkActive ? <MicIcon /> : isMuted ? <MicOffIcon /> : <MicIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Grid>
-                
-                <Grid item xs>
-                  <Box sx={{ width: '100%' }}>
-                    {/* Mic Sensitivity Level Meter */}
-                    <Box sx={{ 
-                      height: 8, 
-                      bgcolor: 'grey.200', 
-                      borderRadius: 1, 
-                      overflow: 'hidden',
-                      mb: 1
-                    }}>
-                      <Box sx={{ 
-                        width: `${inputLevel * 100}%`, 
-                        height: '100%', 
-                        bgcolor: inputLevel > 0.5 ? 'success.main' : 'primary.main',
-                        transition: 'width 0.1s ease-in-out'
-                      }} />
-                    </Box>
-                    {/* Mic Sensitivity Slider */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                      <Typography variant="caption" color="textSecondary" sx={{ minWidth: 70 }}>
-                        Sensitivity:
-                      </Typography>
-                      <Slider
-                        size="small"
-                        value={micSensitivity * 100}
-                        onChange={(e, value) => setMicSensitivity(value / 100)}
-                        disabled={!micInitialized}
-                        min={10}
-                        max={200}
-                        valueLabelDisplay="auto"
-                        valueLabelFormat={(value) => `${value}%`}
-                        sx={{ flexGrow: 1 }}
-                      />
-                      <Typography variant="caption" color="textSecondary" sx={{ minWidth: 35 }}>
-                        {Math.round(micSensitivity * 100)}%
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-                
-                <Grid item>
-                  <Typography variant="caption" color="textSecondary">
-                    {isPushToTalkActive 
-                      ? "Speaking (Push-to-Talk)" 
-                      : isMuted 
-                        ? "Muted (Tap to unmute, hold for Push-to-Talk)" 
-                        : "Unmuted (Tap to mute)"}
-                  </Typography>
-                </Grid>
-              </Grid>
-              
-              {/* Voice Activity & Music Ducking Indicator */}
-              {isVoiceActive && (
-                <Alert severity="info" icon={<MusicNoteIcon />} sx={{ mt: 2 }}>
-                  <strong>Music Ducked</strong> - Voice activity detected, music volume reduced to 50%
-                </Alert>
-              )}
-            </Paper>
+          {/* Mic On By Default Toggle */}
+          <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.5 }}>
+              <Box>
+                <Typography variant="body1" sx={{ mb: 0, fontWeight: 500 }}>
+                  Turn Mic on by Default
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Receive notifications via email
+                </Typography>
+              </Box>
+              <Switch
+                checked={!isMuted}
+                onChange={toggleMute}
+                disabled={!micInitialized}
+                color="primary"
+              />
+            </Box>
+          </Paper>
             
             {/* Participants */}
             <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
@@ -2191,7 +2113,7 @@ const AudioSession = () => {
                               </Typography>
                             </Box>
                             
-                            {/* Per-Member Controls (only for other participants) */}
+                            {/* Per-Member Controls */}
                             {!p.isMe && (
                               <Tooltip title={isUserMuted ? "Unmute this member" : "Mute this member"}>
                                 <IconButton 
@@ -2208,9 +2130,32 @@ const AudioSession = () => {
                             )}
                           </Box>
                           
-                          {/* Volume Slider (only for other participants) */}
-                          {!p.isMe && (
-                            <Box sx={{ pl: 7, pr: 2, pt: 1 }}>
+                          {/* Mic Volume Level Meter for owner, Volume Slider for others */}
+                          <Box sx={{ pl: 7, pr: 2, pt: 1 }}>
+                            {p.isMe ? (
+                              /* Show mic level meter for owner */
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <MicIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Box sx={{ 
+                                  flexGrow: 1, 
+                                  height: 8, 
+                                  bgcolor: 'grey.200', 
+                                  borderRadius: 1, 
+                                  overflow: 'hidden'
+                                }}>
+                                  <Box sx={{ 
+                                    width: `${inputLevel * 100}%`, 
+                                    height: '100%', 
+                                    bgcolor: inputLevel > 0.5 ? 'success.main' : '#76ff03',
+                                    transition: 'width 0.1s ease-in-out'
+                                  }} />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 35, textAlign: 'right' }}>
+                                  {Math.round(inputLevel * 100)}%
+                                </Typography>
+                              </Box>
+                            ) : (
+                              /* Show volume slider for other participants */
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <VolumeDownIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                                 <Slider
@@ -2227,8 +2172,8 @@ const AudioSession = () => {
                                   {Math.round(userVolume * 100)}%
                                 </Typography>
                               </Box>
-                            </Box>
-                          )}
+                            )}
+                          </Box>
                         </ListItem>
                         {idx < safeParticipants.length - 1 && <Divider component="li" />}
                       </React.Fragment>
