@@ -2653,3 +2653,81 @@ if (!isMuted && normalizedLevel > voiceActivityThreshold) {
 
 ---
 
+## Session: November 15, 2025 (Afternoon) - Icon Standardization Across Pages
+
+### Work Completed
+
+#### Icon Standardization Project ✅
+- **Goal**: Normalize icons across all 3 pages (Voice, Music, Location) for consistent UX
+- **Approach**: Created standard 5-icon set for all page headers, left-justified layout
+
+**Standard Icon Set (All Pages)**:
+1. 👥 **People Icon** - Opens group members list
+2. 🎵 **Music Note Icon** - Toggles music player (highlighted when active)
+3. 🎧 **Headset Icon** - Toggles voice session (HeadsetOff when inactive)
+4. 🎤 **Mic Icon** - Mute/unmute microphone toggle (MicOff when muted)
+5. 📍 **Map Icon** - Toggles location tracking (highlighted when active)
+
+#### AudioSession.jsx (Voice Page) ✅
+- **Color Theme**: Lime green (#76ff03)
+- **Changes Made**:
+  1. Added icon imports: PeopleIcon, MusicNoteOutlinedIcon, MapIcon
+  2. Replaced header toolbar with standard 5-icon layout
+  3. Left-justified icons after back button
+  4. Voice icon and title moved to right side
+  5. Each icon opens its respective functionality
+- **Visual Feedback**: Headset icon highlights when in voice session
+
+#### MusicPlayer.jsx (Music Page) ✅
+- **Color Theme**: Blue (#2196f3)
+- **Changes Made**:
+  1. Added icon imports for standard set
+  2. Updated header toolbar with 5 standard icons
+  3. Music icon highlighted (bgcolor) to show active page
+  4. Upload and Link icons kept on far right
+
+#### LocationTracking.jsx (Location/Map Page) ✅
+- **Color Theme**: Pink/Magenta (#e91e63)
+- **Major Cleanup**:
+  1. Removed Settings, Satellite, Places from AppBar header
+  2. Added standard 5-icon set to header
+  3. **Removed floating overlay buttons**: Audio Call, Mute, Desktop Audio, Music Player (~160 lines)
+  4. **Added map controls to lower-right**:
+     - Terrain/Satellite toggle (bottom: 110px, blue when active)
+     - Places toggle (bottom: 50px, pink when active)
+  5. Kept Place Selection button at top-right
+
+### Files Changed
+- ✅ `jamz-client-vite/src/pages/sessions/AudioSession.jsx` (lines 33-45, 1927-2003)
+- ✅ `jamz-client-vite/src/pages/music/MusicPlayer.jsx` (lines 21-32, 378-451)
+- ✅ `jamz-client-vite/src/pages/location/LocationTracking.jsx` (lines 56-82, 3310-3394, removed 3590-3740)
+
+### Build & Deployment
+- **Build Status**: ✅ Successfully built in 46.00 seconds
+- **Bundle Size**: LocationTracking.js: 111.05 KB (gzipped: 31.56 kB)
+- **Changes**: 3 files modified, ~400 lines changed
+
+### Current Status
+- ✅ All three page headers standardized with 5-icon layout
+- ✅ LocationTracking map cleaned up (no floating overlay buttons)
+- ✅ Map controls (Terrain, Places) properly positioned in lower-right
+- ✅ Visual consistency: lime green (Voice), blue (Music), pink (Location)
+- ✅ Build successful with no errors
+
+### User Benefits
+1. **Consistency**: Same icon set and layout on every page
+2. **Muscle Memory**: Icons always in same position
+3. **Visual Clarity**: Active page highlighted with colored background
+4. **Cleaner Map**: No cluttered floating buttons
+5. **Intuitive Controls**: Map controls in standard location (lower-right)
+
+### Session Summary
+Major UI consistency overhaul completed:
+- 🎯 Standardized 5-icon header across all 3 main pages
+- 🧹 Removed 160+ lines of redundant floating buttons
+- 📍 Properly positioned map controls
+- ✅ Build successful, ready for deployment
+- 🚀 Dramatically improved UX consistency! 🎉
+
+---
+
