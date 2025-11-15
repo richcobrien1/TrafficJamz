@@ -12,7 +12,7 @@ export const useAudioSession = (groupId) => {
   // State
   const [isConnected, setIsConnected] = useState(false);
   const [isInSession, setIsInSession] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false); // Default unmuted
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
