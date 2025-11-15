@@ -4,6 +4,124 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## 🚨 CRITICAL TROUBLESHOOTING - CHECK THESE FIRST
+
+### Backend Server Won't Start / 502 Bad Gateway / "Server listening" but no response
+
+**ISSUE**: Server logs show "✅ Server successfully started and listening on port 5000" but returns 502 Bad Gateway or connection refused errors.
+
+**ROOT CAUSE**: Quotes in `.env.prod` file causing Node.js to try listening on STRING `"5000"` instead of NUMBER `5000`
+
+**ERROR SYMPTOMS**:
+```
+Error: listen EADDRINUSE: address already in use "5000"
+address: '"5000"'  <-- Notice the QUOTES in the error
+```
+
+**FIX**:
+```bash
+# Check .env.prod file for quoted PORT values
+cat /root/TrafficJamz/.env.prod | grep PORT
+
+# WRONG (has quotes):
+PORT="5000"
+
+# CORRECT (no quotes):
+PORT=5000
+
+# Fix the file:
+sed -i 's/^PORT="5000"/PORT=5000/' /root/TrafficJamz/.env.prod
+sed -i 's/^NODE_ENV="production"/NODE_ENV=production/' /root/TrafficJamz/.env.prod
+
+# Recreate container to reload env file:
+docker stop trafficjamz && docker rm trafficjamz
+docker run -d --name trafficjamz -p 5050:5000 \
+  --env-file /root/TrafficJamz/.env.prod \
+  --dns 8.8.8.8 --dns 8.8.4.4 \
+  -v /root/TrafficJamz/jamz-server/uploads:/app/uploads \
+  trafficjamz-backend:latest
+```
+
+**LESSON**: In `.env` files, quotes are LITERAL. `PORT="5000"` means the PORT is the string `"5000"`, not the number `5000`. Node's `server.listen("5000")` will fail silently or throw EADDRINUSE errors with the quoted address.
+
+**ALWAYS CHECK**: Remove ALL quotes from numeric and boolean values in `.env` files:
+- ✅ `PORT=5000`
+- ✅ `NODE_ENV=production`
+- ❌ `PORT="5000"`
+- ❌ `NODE_ENV="production"`
+
+---
+
+## Session: November 15, 2025 (Evening) - Backend Cold Start Fix & Critical .env Quote Issue
+
+### Critical Issues Resolved
+
+#### Backend 502 Bad Gateway - Root Cause Found ✅
+- **Problem**: Backend server claimed to be "listening on port 5000" but returned 502 errors
+- **Symptoms**: 
+  - Docker logs showed "✅ Server successfully started and listening on port 5000"
+  - curl from external, host, and even inside container all failed
+  - No HTTP requests were being accepted despite "success" messages
+  - Error: `listen EADDRINUSE: address already in use "5000"` with `address: '"5000"'` showing QUOTES
+- **Root Cause**: `.env.prod` file had `PORT="5000"` with QUOTES
+  - In .env files, quotes are LITERAL values
+  - Node.js received PORT as STRING `"5000"` not NUMBER `5000`
+  - `server.listen("5000", "0.0.0.0")` failed silently because port must be a number
+- **Solution**: Removed quotes from `.env.prod`:
+  - Changed `PORT="5000"` → `PORT=5000`
+  - Changed `NODE_ENV="production"` → `NODE_ENV=production`
+  - Recreated Docker container to reload environment
+- **Result**: Backend immediately started responding to HTTP requests ✅
+
+#### Frontend Serving Code Removal Issue ✅
+- **Problem**: Commit `5ff62827` "Remove frontend serving from backend" broke HTTP server
+- **Solution**: Reverted `jamz-server/src/index.js` to working version from commit `9107653e`
+- **Restored Code**: 
+  - Frontend catch-all route for serving static files
+  - Status endpoints (`/health`, `/api/health`, `/api/status`)
+  - 404 handler
+- **Deployment**: Pushed to GitHub, rebuilt Docker image on server
+
+### Files Changed
+- ✅ `jamz-server/src/index.js` - Restored working backend code from before frontend removal
+- ✅ `/root/TrafficJamz/.env.prod` - Removed quotes from PORT and NODE_ENV
+- ✅ `PROJECT_LOG.md` - Added critical troubleshooting section at top of document
+
+### Git Commits
+- `c5fbe64b`: "Restore working backend code from before frontend removal broke HTTP server"
+
+### Current Status
+- ✅ Backend responding to HTTP requests at https://trafficjamz.v2u.us
+- ✅ Health endpoint returns 200 OK
+- ✅ Server listening on port 5000 inside container
+- ✅ Nginx proxying correctly to port 5050
+- ✅ All services operational (MongoDB Atlas, PostgreSQL, mediasoup)
+
+### Lessons Learned
+1. **NEVER use quotes in .env files for numeric values** - quotes make them strings
+2. **Docker restart loads OLD image** - must rebuild or recreate container
+3. **server.listen() callback can execute even when listen fails** - log messages don't guarantee server works
+4. **Test from inside container first** - `docker exec` curl tests eliminate network/proxy issues
+5. **Git revert carefully** - "Remove frontend serving" commit had unintended side effects
+
+### Troubleshooting Time Investment
+- Total time: ~2-3 hours debugging
+- Issue discovered through systematic elimination:
+  1. Checked nginx configuration
+  2. Checked Docker port mappings
+  3. Checked server code for listen() calls
+  4. Checked environment variables → **FOUND IT**
+- **Key insight**: Error message `address: '"5000"'` showed quotes in the address field
+
+### Next Steps
+1. ✅ Backend is working - ready for production use
+2. Test music upload and playback
+3. Test audio session connectivity
+4. Monitor for any other .env quote issues
+5. Consider automated .env validation on deployment
+
+---
+
 ## Session: November 15, 2025 (Morning Part 2) - UI/UX Icon Standardization & Audio Controls
 
 ### Icon Standardization Across Pages ✅ COMPLETED
