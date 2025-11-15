@@ -94,11 +94,25 @@ docker run -d --name trafficjamz -p 5050:5000 \
 ### Git Commits
 - `c5fbe64b`: "Restore working backend code from before frontend removal broke HTTP server"
 
+### MongoDB Connection Issues Fixed ✅
+- **Problem**: Groups not loading, MongoDB connection failing with "Invalid scheme" error
+- **Root Cause**: Multiple quote issues in `.env.prod`:
+  - `MONGODB_URI="mongodb+srv://..."` - Quotes broke URI parsing
+  - Incorrect password: `1Topgun123` instead of `ZwzL6uJ42JxwAsAu`
+  - Missing database name in connection string
+- **Solution**: 
+  - Removed quotes: `MONGODB_URI=mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority&ssl=true&appName=trafficjam`
+  - Added database name: `/trafficjamz` in the URI
+  - Corrected password to match MongoDB Atlas credentials
+- **Result**: MongoDB Atlas connected successfully, groups now loading ✅
+
 ### Current Status
 - ✅ Backend responding to HTTP requests at https://trafficjamz.v2u.us
 - ✅ Health endpoint returns 200 OK
 - ✅ Server listening on port 5000 inside container
 - ✅ Nginx proxying correctly to port 5050
+- ✅ MongoDB Atlas connected with correct credentials
+- ✅ Groups loading for authenticated users
 - ✅ All services operational (MongoDB Atlas, PostgreSQL, mediasoup)
 
 ### Lessons Learned
