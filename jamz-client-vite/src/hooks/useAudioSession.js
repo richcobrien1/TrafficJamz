@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import audioService from '../services/audio.service';
 import { useAuth } from '../contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://trafficjamz.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
 
 export const useAudioSession = (groupId) => {
   const { user } = useAuth();

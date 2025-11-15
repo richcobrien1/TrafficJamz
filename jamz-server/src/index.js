@@ -196,9 +196,8 @@ app.use('/api/', limiter);
 // Initialize Passport
 app.use(passport.initialize());
 
-// ===== STATIC FILE SERVING FOR FRONTEND =====
-// Serve built React frontend from jamz-client-vite/dist
-// This allows the backend to serve the frontend on Render Standard
+// ===== FRONTEND SERVING DISABLED =====
+// Frontend is served separately by Vercel - this backend only serves API
 const path = require('path');
 const fs = require('fs');
 
@@ -249,29 +248,10 @@ if (frontendPath) {
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Catch-all handler: send back index.html for any non-API routes
-// This enables client-side routing for the React SPA
-app.get('*', (req, res, next) => {
-  // Skip API routes - let them be handled by the API routers
-  if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
-    return next();
-  }
+// FRONTEND SERVING DISABLED - Frontend is on Vercel
+// No catch-all handler - only API routes are served by this backend
 
-  console.log('🌐 Serving frontend for path:', req.path);
-
-  if (frontendPath) {
-    // Check if index.html exists before serving
-    const indexPath = path.join(frontendPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      console.log('❌ index.html not found at:', indexPath);
-      res.status(404).json({ error: 'Frontend not built yet' });
-    }
-  } else {
-    res.status(503).json({ error: 'Frontend not available - build in progress' });
-  }
-});// Mount debug routes early (router implemented in src/routes/debug.routes.js)
+// Mount debug routes early (router implemented in src/routes/debug.routes.js)
 const debugRoutes = require('./routes/debug.routes');
 app.use('/api/debug', debugRoutes);
 
