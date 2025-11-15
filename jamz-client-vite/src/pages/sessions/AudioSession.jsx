@@ -126,6 +126,7 @@ const AudioSession = () => {
   const [inputLevel, setInputLevel] = useState(0);
   const [inputVolume, setInputVolume] = useState(1.0);
   const [outputVolume, setOutputVolume] = useState(1.0);
+  const [micSensitivity, setMicSensitivity] = useState(1.0); // Mic sensitivity multiplier (0.1 to 2.0)
   const [localAudioMonitoring, setLocalAudioMonitoring] = useState(false); // Disable by default for actual audio testing
   
   // Listener mute controls
@@ -317,7 +318,7 @@ const AudioSession = () => {
         }
       }
     }
-  }, [localStream, peerReady]);
+  }, [localStream, peerReady, micSensitivity]);
   
   // Socket connection for music events
   useEffect(() => {
@@ -746,8 +747,8 @@ const AudioSession = () => {
         }
         
         const average = sum / bufferLength;
-        const normalizedLevel = average / 255; // Normalize to 0-1
-        setInputLevel(normalizedLevel);
+        const normalizedLevel = (average / 255) * micSensitivity; // Apply sensitivity multiplier
+        setInputLevel(Math.min(normalizedLevel, 1.0)); // Clamp to max 1.0
         
         // Voice activity detection for music ducking
         // Only trigger if mic is not muted and audio level exceeds threshold
@@ -2141,11 +2142,13 @@ const AudioSession = () => {
                 
                 <Grid item xs>
                   <Box sx={{ width: '100%' }}>
+                    {/* Mic Sensitivity Level Meter */}
                     <Box sx={{ 
                       height: 8, 
                       bgcolor: 'grey.200', 
                       borderRadius: 1, 
-                      overflow: 'hidden' 
+                      overflow: 'hidden',
+                      mb: 1
                     }}>
                       <Box sx={{ 
                         width: `${inputLevel * 100}%`, 
@@ -2153,6 +2156,26 @@ const AudioSession = () => {
                         bgcolor: inputLevel > 0.5 ? 'success.main' : 'primary.main',
                         transition: 'width 0.1s ease-in-out'
                       }} />
+                    </Box>
+                    {/* Mic Sensitivity Slider */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                      <Typography variant="caption" color="textSecondary" sx={{ minWidth: 70 }}>
+                        Sensitivity:
+                      </Typography>
+                      <Slider
+                        size="small"
+                        value={micSensitivity * 100}
+                        onChange={(e, value) => setMicSensitivity(value / 100)}
+                        disabled={!micInitialized}
+                        min={10}
+                        max={200}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value}%`}
+                        sx={{ flexGrow: 1 }}
+                      />
+                      <Typography variant="caption" color="textSecondary" sx={{ minWidth: 35 }}>
+                        {Math.round(micSensitivity * 100)}%
+                      </Typography>
                     </Box>
                   </Box>
                 </Grid>
