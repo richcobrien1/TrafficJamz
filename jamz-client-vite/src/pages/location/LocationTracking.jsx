@@ -1328,6 +1328,17 @@ const LocationTracking = () => {
     }
   }, [locationError]);
 
+  // Auto-clear audio error after 5 seconds
+  useEffect(() => {
+    if (audioError) {
+      const timer = setTimeout(() => {
+        // The error should auto-clear in the hook, but we can log it
+        console.log('Audio error displayed for 5 seconds, should auto-clear');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [audioError]);
+
   useEffect(() => {
     if (error) {
       showNotification(error, 'error');
@@ -3702,6 +3713,12 @@ const LocationTracking = () => {
       {audioError && (
         <Alert
           severity="error"
+          onClose={() => {
+            // Clear the error by leaving and rejoining if needed
+            if (isInSession) {
+              leaveSession();
+            }
+          }}
           sx={{
             position: 'absolute',
             top: 80,

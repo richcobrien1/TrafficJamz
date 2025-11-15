@@ -25,6 +25,16 @@ export const useAudioSession = (groupId) => {
   const analyserRef = useRef(null);
   const audioElementsRef = useRef(new Map()); // Map of userId -> audio element
   
+  // Auto-clear errors after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+  
   /**
    * Initialize Socket.IO connection
    */
