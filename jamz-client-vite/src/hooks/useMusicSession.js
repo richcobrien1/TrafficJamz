@@ -17,7 +17,7 @@ export const useMusicSession = (groupId, audioSessionId) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1.0);
   const [isController, setIsController] = useState(false);
-  const [isMusicEnabled, setIsMusicEnabled] = useState(false);
+  const [isMusicEnabled, setIsMusicEnabled] = useState(true); // Default enabled
   
   // Refs
   const socketRef = useRef(null);
