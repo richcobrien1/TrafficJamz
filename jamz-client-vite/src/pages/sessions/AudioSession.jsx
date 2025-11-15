@@ -318,6 +318,14 @@ const AudioSession = () => {
       }
     }
   }, [localStream, peerReady, micSensitivity]);
+
+  // Update gain node when inputVolume changes to control outbound volume
+  useEffect(() => {
+    if (window.__audioGainNode && inputVolume !== undefined) {
+      window.__audioGainNode.gain.value = inputVolume;
+      console.log('🎤 Input volume gain updated to:', inputVolume);
+    }
+  }, [inputVolume]);
   
   // Socket connection for music events
   useEffect(() => {
@@ -619,14 +627,16 @@ const AudioSession = () => {
       const newState = !prev[socketId];
       console.log(`🔇 Member ${socketId} mute toggled:`, newState);
       
-      // Apply mute to audio element for this member
+      // Apply mute to audio element for this specific member
       const remoteAudios = document.getElementById('remote-audios');
       if (remoteAudios) {
         const audioElements = remoteAudios.querySelectorAll('audio');
         audioElements.forEach(audio => {
-          // Match audio element to socketId (would need to tag elements with socketId)
-          // For now, we'll implement a simple approach
-          audio.muted = newState;
+          // Match audio element to socketId via data attribute
+          if (audio.dataset.socketId === socketId) {
+            audio.muted = newState;
+            console.log(`🔇 Audio element for ${socketId} muted:`, newState);
+          }
         });
       }
       
@@ -639,13 +649,16 @@ const AudioSession = () => {
     setMemberVolumes(prev => {
       console.log(`🔊 Member ${socketId} volume set to:`, volume);
       
-      // Apply volume to audio element for this member
+      // Apply volume to audio element for this specific member
       const remoteAudios = document.getElementById('remote-audios');
       if (remoteAudios) {
         const audioElements = remoteAudios.querySelectorAll('audio');
         audioElements.forEach(audio => {
-          // Match audio element to socketId
-          audio.volume = volume;
+          // Match audio element to socketId via data attribute
+          if (audio.dataset.socketId === socketId) {
+            audio.volume = volume;
+            console.log(`🔊 Audio element for ${socketId} volume set to:`, volume);
+          }
         });
       }
       
@@ -1449,13 +1462,20 @@ const AudioSession = () => {
     console.log('🎵 User agent:', navigator.userAgent);
     console.log('🎵 Platform:', NativeAudio.getPlatform(), 'Native:', NativeAudio.isNativeApp());
 
+    // IMPORTANT: Extract stream ID to identify which participant this belongs to
+    const streamId = stream.id;
+
     // Create audio element for remote stream
     const audioElement = new Audio();
     audioElement.srcObject = stream;
     audioElement.autoplay = true;
+    audioElement.dataset.streamId = streamId; // Tag audio element with stream ID
     
     // Configure audio element for platform (iOS/Android/Desktop)
-    NativeAudio.configureAudioElement(audioElement, outputVolume, isVoiceMuted);
+    // Start with outputVolume and NOT muted (isVoiceMuted should be false by default)
+    NativeAudio.configureAudioElement(audioElement, outputVolume, false);
+    audioElement.muted = false; // Explicitly ensure not muted
+    console.log('🎵 Remote audio element created - volume:', outputVolume, 'muted:', false);
 
     // Add event listeners to debug audio playback
     audioElement.onloadedmetadata = () => console.log('🎵 Audio element loaded metadata');
@@ -1630,12 +1650,30 @@ const AudioSession = () => {
       });
     });
 
-    // Produce audio track
+    // Produce audio track with gain control for input volume
     const track = localStream.getAudioTracks()[0];
     if (!track) return nativePublishFallback(signaling);
 
-    const producer = await sendTransport.produce({ track });
-    console.log('🎤 Mediasoup producer created:', producer.id);
+    // Apply input volume gain to outgoing audio
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(localStream);
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = inputVolume; // Apply current input volume
+    const destination = audioContext.createMediaStreamDestination();
+    
+    source.connect(gainNode);
+    gainNode.connect(destination);
+    
+    // Use the processed track with gain applied
+    const processedTrack = destination.stream.getAudioTracks()[0];
+    
+    // Store gainNode reference for dynamic updates
+    if (!window.__audioGainNode) {
+      window.__audioGainNode = gainNode;
+    }
+
+    const producer = await sendTransport.produce({ track: processedTrack });
+    console.log('🎤 Mediasoup producer created with gain control:', producer.id);
 
     // Create receive transport for consuming
     const recvTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
