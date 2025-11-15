@@ -3538,49 +3538,6 @@ const LocationTracking = () => {
           <MyLocationIcon />
         </IconButton>
       </Tooltip>
-      
-      {/* Place Selection Button */}
-          <Tooltip title="Select Location for Place">
-        <IconButton
-          sx={{
-            position: 'absolute',
-            top: showControls ? 72 : 16,
-            right: 196,
-            zIndex: 10,
-            display: showMembersList ? 'none' : undefined,
-            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: placeSelectionMode ? 'secondary.main' : 'purple',
-            boxShadow: 2,
-            cursor: 'pointer',
-            animation: placeSelectionMode ? 'pulse 2s infinite' : 'none',
-            '@keyframes pulse': {
-              '0%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0.7)' },
-              '70%': { boxShadow: '0 0 0 10px rgba(156, 39, 176, 0)' },
-              '100%': { boxShadow: '0 0 0 0 rgba(156, 39, 176, 0)' }
-            },
-            '&:hover': {
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-            }
-          }}
-          onClick={() => {
-            try {
-              if (overlayCreateMode && mapRef.current) {
-                const c = mapRef.current.getCenter();
-                createPlaceAtLocation(c.lat, c.lng, null);
-                // ensure selection mode is off
-                setPlaceSelectionMode(false);
-              } else {
-                togglePlaceSelectionMode();
-              }
-            } catch (err) {
-              console.warn('Could not create place at center:', err);
-              togglePlaceSelectionMode();
-            }
-          }}
-        >
-          <PlaceIcon />
-        </IconButton>
-      </Tooltip>
 
       {/* Terrain/Satellite Toggle Button - Bottom Right */}
       <Tooltip title={satelliteMode ? "Switch to Streets View" : "Switch to Satellite View"}>
