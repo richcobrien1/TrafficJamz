@@ -3590,12 +3590,12 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 170, // 50px above Mapbox controls (assuming ~120px for controls)
+            bottom: 220, // Up 50px from 170
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: satelliteMode ? 'secondary.main' : 'purple',
+            color: 'purple',
             boxShadow: 2,
             borderRadius: '4px', // Match Mapbox border radius
             width: 29, // Match Mapbox button size
@@ -3618,12 +3618,12 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 130, // Below satellite button
+            bottom: 180, // Up 50px from 130
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: showPlaces ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: showPlaces ? 'secondary.main' : 'purple',
+            color: 'purple',
             boxShadow: 2,
             borderRadius: '4px', // Match Mapbox border radius
             width: 29, // Match Mapbox button size
