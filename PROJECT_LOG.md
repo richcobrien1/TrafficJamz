@@ -4,6 +4,99 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 14, 2025 (Evening) - Voice/Audio UI Simplification & Auto-Initialization
+
+### Voice Communication Page Overhaul
+
+#### 1. **Simplified Mic Controls to Toggle Switch** ✅ COMPLETED
+- **Problem**: Complex mic controls panel with sensitivity slider, level meters, and multiple buttons was overwhelming
+- **Solution**: Replaced entire Mic Controls panel with simple "Turn Mic on by Default" toggle switch
+  - Clean, minimal interface matching design standards
+  - Single toggle to enable/disable microphone on session join
+  - Removed: Sensitivity slider, push-to-talk controls, level meter from controls panel
+- **Files Modified**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+- **Result**: Cleaner UI with single-purpose control ✅
+
+#### 2. **Unified Volume Sliders for All Participants** ✅ COMPLETED
+- **Previous Design**: 
+  - Owner had mic level meter (read-only visualization)
+  - Other participants had volume sliders (adjustable control)
+  - Inconsistent interface between owner and members
+- **New Design**:
+  - **All participants** (including owner) have same volume slider interface
+  - **Owner's slider**: Controls **outbound** microphone volume (how loud others hear you)
+  - **Other participants' sliders**: Controls **inbound** volume (how loud you hear them)
+  - **Individual volume control**: Each participant can be adjusted independently
+- **Benefits**:
+  - Consistent UI across all participants
+  - Fine-grained audio control (adjust loud people down, quiet people up)
+  - Owner can control their broadcast volume
+  - Listeners can customize their audio mix per person
+- **Implementation**:
+  - Unified slider component for all participants
+  - Conditional logic: `p.isMe ? inputVolume : memberVolumes[socketId]`
+  - VolumeDown/VolumeUp icons with percentage display
+- **Files Modified**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+- **Result**: Consistent interface with granular audio control ✅
+
+#### 3. **Auto-Initialize Microphone on Page Load** ✅ COMPLETED
+- **Problem**: Users had to click "Grant Microphone Access" button before mic would initialize
+- **Previous Behavior**:
+  - iOS-specific logic prevented auto-initialization
+  - Required user gesture (button tap) to trigger getUserMedia()
+  - Extra friction in voice communication flow
+- **Solution**:
+  - Removed iOS-specific conditional checks
+  - Auto-call `initializeMicrophone()` on component mount for all platforms
+  - Reduced delay from 1000ms to 500ms
+  - Browser's native permission dialog appears automatically
+- **Implementation**:
+  ```javascript
+  // Auto-initialize the microphone immediately
+  console.log('🎤 Auto-initializing microphone...');
+  setRequiresUserGesture(false);
+  setTimeout(() => {
+    initializeMicrophone().then(() => {
+      console.log('🎤 Microphone initialized successfully');
+    }).catch(error => {
+      console.log('🎤 Microphone init failed:', error.message);
+    });
+  }, 500);
+  ```
+- **Files Modified**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+- **Result**: Seamless permission flow, no manual "grant access" button needed ✅
+
+### Code Cleanup
+- **Removed**:
+  - Complex mic controls panel (~90 lines)
+  - Mic sensitivity slider and meter from controls
+  - Push-to-talk button and related UI
+  - iOS-specific initialization logic
+  - Manual "Grant Microphone Access" button flow
+  - Voice activity/music ducking alert display
+  - Conditional rendering for mic level meter vs volume slider
+- **Simplified**: AudioSession.jsx from 2351 lines to 2291 lines (-60 lines)
+- **Bundle Impact**: AudioSession.js reduced from 57.96 KB to 56.05 KB (gzipped: 19.64 KB → 19.05 KB)
+
+### Build & Deployment
+- **Build Time**: ~53-86 seconds
+- **Commits**:
+  1. `e489523e` - Auto-initialize microphone on mount for all platforms
+  2. `f2dff97b` - Replace Mic Controls with simple toggle, show mic volume for owner and volume control for other participants
+  3. `0edbb1a5` - Unified volume sliders - owner controls outbound volume, members control inbound volume
+- **Deployment**: Pushed to GitHub main branch ✅
+
+### Next Steps for Voice/Audio
+1. Test auto-initialization across browsers (Chrome, Firefox, Safari)
+2. Verify microphone permission flow on mobile devices (iOS/Android)
+3. Test individual volume controls with multiple participants
+4. Validate outbound volume adjustment affects all listeners
+5. Monitor for any audio feedback or echo issues
+6. Consider adding visual indicator when microphone is transmitting
+7. Add tooltips explaining outbound vs inbound volume controls
+
+---
+
 ## Session: November 14, 2025 (Morning Continued) - Production UI Bug Fixes
 
 ### Critical Production Bugs Fixed
