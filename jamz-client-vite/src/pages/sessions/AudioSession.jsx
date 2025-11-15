@@ -1889,27 +1889,26 @@ const AudioSession = () => {
   const safeUser = user || {};
 
   return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default', position: 'relative' }}>
-        <AppBar position="static" sx={{ 
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingLeft: 'env(safe-area-inset-left)',
-          paddingRight: 'env(safe-area-inset-right)'
-        }}>
+      <Container maxWidth="md" sx={{ position: 'relative' }}>
+        {/* Traffic Jam App Bar - Lime Green for Voice */}
+        <AppBar position="static" sx={{ bgcolor: '#76ff03', color: '#000' }}>
           <Toolbar>
-            <IconButton edge="start" color="inherit" onClick={handleLeaveAudio} sx={{ mr: 2 }}>
+            <IconButton edge="start" sx={{ color: '#000' }} onClick={handleLeaveAudio}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              {group?.name || 'Voice Session'}
+            <VolumeUpIcon sx={{ ml: 1, mr: 1, color: '#000' }} />
+            <Typography variant="h6" sx={{ flexGrow: 1, color: '#000' }}>
+              Voice
             </Typography>
             
             {/* Quick Mute Controls - Microphone */}
             <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
               <IconButton 
-                color="inherit"
                 sx={{ 
+                  color: '#000',
                   bgcolor: isMuted ? 'error.main' : 'transparent',
-                  '&:hover': { bgcolor: isMuted ? 'error.dark' : 'rgba(255,255,255,0.1)' }
+                  '&:hover': { bgcolor: isMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' },
+                  mr: 1
                 }} 
                 onClick={toggleMute}
                 disabled={!micInitialized}
@@ -1921,10 +1920,11 @@ const AudioSession = () => {
             {/* Quick Mute Controls - Speaker */}
             <Tooltip title={isVoiceMuted ? "Unmute Voice" : "Mute Voice"}>
               <IconButton 
-                color="inherit"
                 sx={{ 
+                  color: '#000',
                   bgcolor: isVoiceMuted ? 'error.main' : 'transparent',
-                  '&:hover': { bgcolor: isVoiceMuted ? 'error.dark' : 'rgba(255,255,255,0.1)' }
+                  '&:hover': { bgcolor: isVoiceMuted ? 'error.dark' : 'rgba(0,0,0,0.1)' },
+                  mr: 1
                 }} 
                 onClick={toggleVoiceMute}
               >
@@ -1934,31 +1934,30 @@ const AudioSession = () => {
             
             {/* Music Controls */}
             <Tooltip title="Music Player">
-              <IconButton color="inherit" onClick={() => setOpenMusicDialog(true)}>
+              <IconButton sx={{ color: '#000', mr: 1 }} onClick={() => setOpenMusicDialog(true)}>
                 <MusicNoteIcon />
               </IconButton>
             </Tooltip>
             
             {/* Leave Session */}
             <Tooltip title="Leave Session">
-              <IconButton color="inherit" onClick={() => setOpenLeaveDialog(true)}>
+              <IconButton sx={{ color: '#000' }} onClick={() => setOpenLeaveDialog(true)}>
                 <LeaveIcon />
               </IconButton>
             </Tooltip>
           </Toolbar>
         </AppBar>
 
-        <Container maxWidth="md" sx={{ position: 'relative', flexGrow: 1, py: 3 }}>
-        {/* Vertical Group Name Panel */}
+        {/* Vertical Group Name Panel - Lime Green */}
         <Box
           sx={{
             position: 'absolute',
             left: 0,
-            top: 0,
+            top: 64,
             bottom: 0,
             width: '32px',
             zIndex: 10,
-            bgcolor: 'primary.main',
+            bgcolor: '#00FF00',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -1974,7 +1973,7 @@ const AudioSession = () => {
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               transform: 'rotate(180deg)',
-              color: 'primary.contrastText',
+              color: '#000',
               fontWeight: 'bold',
               fontStyle: 'italic',
               letterSpacing: '0.05em',
@@ -2639,8 +2638,7 @@ const AudioSession = () => {
           </Button>
         </DialogActions>
       </Dialog>
-        </Container>
-      </Box>
+    </Container>
   );
 };
 
