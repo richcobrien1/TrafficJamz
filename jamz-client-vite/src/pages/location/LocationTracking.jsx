@@ -68,7 +68,8 @@ import {
   Close as CloseIcon,
   Satellite as SatelliteIcon,
   Place as PlaceIcon,
-  LocationOff as PlaceOffIcon,
+  Explore as ExploreIcon,
+  ExploreOff as ExploreOffIcon,
   Phone as PhoneIcon,
   PhoneDisabled as PhoneDisabledIcon,
   Mic as MicIcon,
@@ -3552,7 +3553,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 220, // Up 50px from 170
+            bottom: 320, // Up 100px - margin against Mapbox toolset
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
@@ -3580,7 +3581,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 180, // Up 50px from 130
+            bottom: 280, // Up 100px
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
@@ -3608,7 +3609,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 140, // Above Settings button
+            bottom: 240, // Up 100px
             right: 10,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
@@ -3636,7 +3637,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 100, // Below Share Location, above map controls
+            bottom: 200, // Up 100px
             right: 10,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
