@@ -2034,14 +2034,9 @@ const AudioSession = () => {
           {/* Mic On By Default Toggle */}
           <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.5 }}>
-              <Box>
-                <Typography variant="body1" sx={{ mb: 0, fontWeight: 500 }}>
-                  Turn Mic on by Default
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Receive notifications via email
-                </Typography>
-              </Box>
+              <Typography variant="body1" sx={{ mb: 0, fontWeight: 500 }}>
+                Turn Mic on by Default
+              </Typography>
               <Switch
                 checked={!isMuted}
                 onChange={toggleMute}
@@ -2130,49 +2125,30 @@ const AudioSession = () => {
                             )}
                           </Box>
                           
-                          {/* Mic Volume Level Meter for owner, Volume Slider for others */}
+                          {/* Volume Slider for all participants */}
                           <Box sx={{ pl: 7, pr: 2, pt: 1 }}>
-                            {p.isMe ? (
-                              /* Show mic level meter for owner */
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <MicIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Box sx={{ 
-                                  flexGrow: 1, 
-                                  height: 8, 
-                                  bgcolor: 'grey.200', 
-                                  borderRadius: 1, 
-                                  overflow: 'hidden'
-                                }}>
-                                  <Box sx={{ 
-                                    width: `${inputLevel * 100}%`, 
-                                    height: '100%', 
-                                    bgcolor: inputLevel > 0.5 ? 'success.main' : '#76ff03',
-                                    transition: 'width 0.1s ease-in-out'
-                                  }} />
-                                </Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 35, textAlign: 'right' }}>
-                                  {Math.round(inputLevel * 100)}%
-                                </Typography>
-                              </Box>
-                            ) : (
-                              /* Show volume slider for other participants */
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <VolumeDownIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Slider
-                                  size="small"
-                                  value={userVolume * 100}
-                                  onChange={(e, value) => setMemberVolume(p.socketId, value / 100)}
-                                  disabled={isUserMuted}
-                                  sx={{ flexGrow: 1 }}
-                                  valueLabelDisplay="auto"
-                                  valueLabelFormat={(value) => `${value}%`}
-                                />
-                                <VolumeUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                <Typography variant="caption" sx={{ minWidth: 35, textAlign: 'right' }}>
-                                  {Math.round(userVolume * 100)}%
-                                </Typography>
-                              </Box>
-                            )}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <VolumeDownIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                              <Slider
+                                size="small"
+                                value={p.isMe ? inputVolume * 100 : userVolume * 100}
+                                onChange={(e, value) => {
+                                  if (p.isMe) {
+                                    setInputVolume(value / 100);
+                                  } else {
+                                    setMemberVolume(p.socketId, value / 100);
+                                  }
+                                }}
+                                disabled={!p.isMe && isUserMuted}
+                                sx={{ flexGrow: 1 }}
+                                valueLabelDisplay="auto"
+                                valueLabelFormat={(value) => `${value}%`}
+                              />
+                              <VolumeUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                              <Typography variant="caption" sx={{ minWidth: 35, textAlign: 'right' }}>
+                                {p.isMe ? Math.round(inputVolume * 100) : Math.round(userVolume * 100)}%
+                              </Typography>
+                            </Box>
                           </Box>
                         </ListItem>
                         {idx < safeParticipants.length - 1 && <Divider component="li" />}
