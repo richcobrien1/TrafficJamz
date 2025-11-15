@@ -3590,14 +3590,18 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 140, // Above navigation controls with more margin
-            right: 70, // Less right margin to avoid blocking Mapbox controls
+            bottom: 120, // Above navigation controls
+            right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(33, 150, 243, 0.9)' : 'rgba(255, 255, 255, 0.8)',
             color: satelliteMode ? '#fff' : 'inherit',
-            boxShadow: 2,
-            borderRadius: 2, // Rounded square
+            boxShadow: '0 0 0 2px rgba(0,0,0,.1)', // Match Mapbox shadow
+            borderRadius: '4px', // Match Mapbox border radius
+            width: 29, // Match Mapbox button size
+            height: 29,
+            minWidth: 29,
+            padding: 0,
             cursor: 'pointer',
             '&:hover': {
               bgcolor: satelliteMode ? 'rgba(33, 150, 243, 1)' : 'rgba(255, 255, 255, 0.95)',
@@ -3605,7 +3609,7 @@ const LocationTracking = () => {
           }}
           onClick={() => toggleSatelliteMode(!satelliteMode)}
         >
-          <SatelliteIcon />
+          <SatelliteIcon sx={{ fontSize: 20 }} />
         </IconButton>
       </Tooltip>
 
@@ -3614,14 +3618,18 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 80, // Below satellite button with more bottom margin
-            right: 70, // Less right margin to avoid blocking Mapbox controls
+            bottom: 80, // Below satellite button
+            right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: showPlaces ? 'rgba(233, 30, 99, 0.9)' : 'rgba(255, 255, 255, 0.8)',
             color: showPlaces ? '#fff' : 'inherit',
-            boxShadow: 2,
-            borderRadius: 2, // Rounded square
+            boxShadow: '0 0 0 2px rgba(0,0,0,.1)', // Match Mapbox shadow
+            borderRadius: '4px', // Match Mapbox border radius
+            width: 29, // Match Mapbox button size
+            height: 29,
+            minWidth: 29,
+            padding: 0,
             cursor: 'pointer',
             '&:hover': {
               bgcolor: showPlaces ? 'rgba(233, 30, 99, 1)' : 'rgba(255, 255, 255, 0.95)',
@@ -3629,7 +3637,7 @@ const LocationTracking = () => {
           }}
           onClick={() => setShowPlaces(!showPlaces)}
         >
-          {showPlaces ? <PlaceOffIcon /> : <PlaceIcon />}
+          {showPlaces ? <PlaceOffIcon sx={{ fontSize: 20 }} /> : <PlaceIcon sx={{ fontSize: 20 }} />}
         </IconButton>
       </Tooltip>
 
