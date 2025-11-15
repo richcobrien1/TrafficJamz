@@ -3410,11 +3410,6 @@ const LocationTracking = () => {
           </Tooltip>
 
           <Box sx={{ flexGrow: 1 }} />
-          
-          <MapIcon sx={{ mr: 1, color: sharingLocation ? '#fff' : 'inherit' }} />
-          <Typography variant="h6" sx={{ color: sharingLocation ? '#fff' : 'inherit' }}>
-            Location
-          </Typography>
         </Toolbar>
       </AppBar>
       
@@ -3595,13 +3590,14 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 110, // Above navigation controls
-            right: 16,
+            bottom: 140, // Above navigation controls with more margin
+            right: 70, // Less right margin to avoid blocking Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(33, 150, 243, 0.9)' : 'rgba(255, 255, 255, 0.8)',
             color: satelliteMode ? '#fff' : 'inherit',
             boxShadow: 2,
+            borderRadius: 2, // Rounded square
             cursor: 'pointer',
             '&:hover': {
               bgcolor: satelliteMode ? 'rgba(33, 150, 243, 1)' : 'rgba(255, 255, 255, 0.95)',
@@ -3618,13 +3614,14 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 50, // Below satellite button
-            right: 16,
+            bottom: 80, // Below satellite button with more bottom margin
+            right: 70, // Less right margin to avoid blocking Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: showPlaces ? 'rgba(233, 30, 99, 0.9)' : 'rgba(255, 255, 255, 0.8)',
             color: showPlaces ? '#fff' : 'inherit',
             boxShadow: 2,
+            borderRadius: 2, // Rounded square
             cursor: 'pointer',
             '&:hover': {
               bgcolor: showPlaces ? 'rgba(233, 30, 99, 1)' : 'rgba(255, 255, 255, 0.95)',
