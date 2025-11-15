@@ -3590,7 +3590,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 120, // Above navigation controls
+            bottom: 320, // Move up to clear Mapbox controls
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
@@ -3618,7 +3618,7 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            bottom: 80, // Below satellite button
+            bottom: 280, // Below satellite button
             right: 10, // Align with Mapbox controls
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
