@@ -46,6 +46,7 @@ const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const GroupDetail = lazy(() => import('./pages/groups/GroupDetail'));
 const LocationTracking = lazy(() => import('./pages/location/LocationTracking'));
 const AudioSettings = lazy(() => import('./pages/audio/AudioSettings'));
+const AudioSession = lazy(() => import('./pages/sessions/AudioSession'));
 const MusicPlayer = lazy(() => import('./pages/music/MusicPlayer'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
 const SubscriptionPlans = lazy(() => import('./pages/misc/SubscriptionPlans'));
@@ -312,7 +313,7 @@ function App() {
                 } />
                 <Route path="/audio-settings/:groupId" element={
                   <ProtectedRoute>
-                    <AudioSettings />
+                    <AudioSession />
                   </ProtectedRoute>
                 } />
                 <Route path="/music/:groupId" element={
