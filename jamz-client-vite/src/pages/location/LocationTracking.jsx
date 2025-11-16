@@ -158,7 +158,7 @@ const LocationTracking = () => {
     seekTo: musicSeek,
     playNext,
     playPrevious,
-    setVolume,
+    changeVolume,
     addTrack,
     removeTrack,
     loadAndPlay
@@ -3521,13 +3521,13 @@ const LocationTracking = () => {
                 if (isMusicMuted) {
                   // Unmute: restore previous volume
                   console.log('🔊 Unmuting music, restoring volume to:', lastMusicVolume);
-                  setVolume(lastMusicVolume / 100);
+                  changeVolume(lastMusicVolume / 100);
                   setIsMusicMuted(false);
                 } else {
                   // Mute: save current volume and set to 0
                   console.log('🔇 Muting music, saving volume:', volume);
                   setLastMusicVolume(volume * 100);
-                  setVolume(0);
+                  changeVolume(0);
                   setIsMusicMuted(true);
                 }
               }}
@@ -4657,7 +4657,7 @@ const LocationTracking = () => {
           onNext={() => playNext()}
           onPrevious={() => playPrevious()}
           onSeek={(position) => musicSeek(position)}
-          onVolumeChange={(vol) => setVolume(vol)}
+          onVolumeChange={(vol) => changeVolume(vol)}
           onClose={() => setShowMusicPlayer(false)}
           onSelectTrack={(track) => loadAndPlay(track)}
         />
