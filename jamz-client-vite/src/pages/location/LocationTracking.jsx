@@ -636,6 +636,18 @@ const LocationTracking = () => {
     try { localStorage.setItem('screenThreshold', String(screenThreshold)); } catch (e) {}
   }, [screenThreshold]);
   
+  // Auto-join voice session when component mounts
+  useEffect(() => {
+    if (groupId && !isInSession) {
+      console.log('🎙️ Auto-joining voice session for group:', groupId);
+      // Small delay to ensure page is fully loaded
+      const timer = setTimeout(() => {
+        joinSession();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [groupId, joinSession]);
+  
   // Show drop notification
   const showNotification = (message, severity = 'info') => {
     setSnackbarMessage(message);
