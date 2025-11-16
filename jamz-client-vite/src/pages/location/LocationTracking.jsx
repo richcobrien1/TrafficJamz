@@ -3501,9 +3501,24 @@ const LocationTracking = () => {
                 })
               }}
               onClick={() => {
+                console.log('🎵 Music icon clicked');
+                console.log('isPlaying:', isPlaying);
+                console.log('currentTrack:', currentTrack);
+                console.log('playlist:', playlist);
+                console.log('playlist length:', playlist?.length);
+                
+                // If no playlist or tracks, open music player to let user add tracks
+                if (!playlist || playlist.length === 0) {
+                  console.log('📂 No playlist - opening music player');
+                  setShowMusicPlayer(true);
+                  return;
+                }
+                
                 if (isPlaying) {
+                  console.log('⏸️ Pausing music');
                   musicPause();
                 } else {
+                  console.log('▶️ Playing music');
                   musicPlay();
                 }
               }}
