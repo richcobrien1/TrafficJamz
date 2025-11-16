@@ -220,7 +220,7 @@ export const useAudioSession = (groupId) => {
       const sendTransportData = await sendTransportResponse.json();
 
       await audioService.createSendTransport(
-        sendTransportData,
+        sendTransportData.transport,
         async (transportId, dtlsParameters) => {
           // Connect transport on server
           await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport/${transportId}/connect`, {
@@ -272,7 +272,7 @@ export const useAudioSession = (groupId) => {
       const recvTransportData = await recvTransportResponse.json();
 
       await audioService.createRecvTransport(
-        recvTransportData,
+        recvTransportData.transport,
         async (transportId, dtlsParameters) => {
           // Connect transport on server
           await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport/${transportId}/connect`, {
