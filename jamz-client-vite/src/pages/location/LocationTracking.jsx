@@ -3639,7 +3639,7 @@ const LocationTracking = () => {
                 }
               }}
             >
-              <span style={{ fontSize: '24px', lineHeight: 1 }}>🎵</span>
+              <span style={{ fontSize: '20px', lineHeight: 1, filter: sharingLocation ? 'none' : 'grayscale(100%) brightness(0.7)' }}>🎵</span>
             </IconButton>
           </Tooltip>
           
