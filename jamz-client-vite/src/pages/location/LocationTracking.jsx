@@ -3656,7 +3656,7 @@ const LocationTracking = () => {
                 }
               }}
             >
-              {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
+              <span style={{ fontSize: '24px', lineHeight: 1 }}>🎵</span>
             </IconButton>
           </Tooltip>
           
