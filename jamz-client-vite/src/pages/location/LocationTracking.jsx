@@ -3494,25 +3494,15 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip 
-            title={
-              !playlist || playlist.length === 0 
-                ? "No Music - Click to Add Tracks" 
-                : isPlaying 
-                  ? "Music Playing - Click to Pause" 
-                  : currentTrack 
-                    ? "Music Paused - Click to Resume"
-                    : "Click to Play Music"
-            }
-          >
+          <Tooltip title={isMusicMuted ? "Unmute Music" : "Mute Music"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: isPlaying && !isMusicMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
-                ...(isPlaying && {
+                ...(isPlaying && !isMusicMuted && {
                   animation: 'musicPulse 1.5s ease-in-out infinite',
                   '@keyframes musicPulse': {
                     '0%, 100%': { 
@@ -3524,43 +3514,25 @@ const LocationTracking = () => {
                       opacity: 0.5
                     }
                   }
-                }),
-                // Dim the icon when no music available
-                opacity: (!playlist || playlist.length === 0) ? 0.5 : 1
+                })
               }}
               onClick={() => {
-                console.log('🎵 Music icon clicked');
-                console.log('isPlaying:', isPlaying);
-                console.log('currentTrack:', currentTrack);
-                console.log('playlist:', playlist);
-                console.log('playlist length:', playlist?.length);
-                
-                // If no playlist or tracks, open music player to let user add tracks
-                if (!playlist || playlist.length === 0) {
-                  console.log('📂 No playlist - opening music player');
-                  setShowMusicPlayer(true);
-                  return;
-                }
-                
-                // Toggle play/pause
-                if (isPlaying) {
-                  console.log('⏸️ Pausing music');
-                  musicPause();
+                console.log('🎵 Music mute toggle clicked');
+                if (isMusicMuted) {
+                  // Unmute: restore previous volume
+                  console.log('🔊 Unmuting music, restoring volume to:', lastMusicVolume);
+                  setVolume(lastMusicVolume / 100);
+                  setIsMusicMuted(false);
                 } else {
-                  console.log('▶️ Playing music');
-                  // If no current track but we have a playlist, load the first track
-                  if (!currentTrack && playlist.length > 0) {
-                    console.log('🎵 No current track, loading first track from playlist');
-                    musicService.loadTrack(playlist[0]).then(() => {
-                      musicPlay();
-                    });
-                  } else {
-                    musicPlay();
-                  }
+                  // Mute: save current volume and set to 0
+                  console.log('🔇 Muting music, saving volume:', volume);
+                  setLastMusicVolume(volume * 100);
+                  setVolume(0);
+                  setIsMusicMuted(true);
                 }
               }}
             >
-              {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
+              {isMusicMuted ? <MusicOffIcon /> : (isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />)}
             </IconButton>
           </Tooltip>
           
