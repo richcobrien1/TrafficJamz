@@ -3501,17 +3501,15 @@ const LocationTracking = () => {
                 })
               }}
               onClick={() => {
-                if (isPlaying) {
-                  if (isMusicMuted) {
-                    // Unmute
-                    setVolume(lastMusicVolume);
-                    setIsMusicMuted(false);
-                  } else {
-                    // Mute
-                    setLastMusicVolume(volume);
-                    setVolume(0);
-                    setIsMusicMuted(true);
-                  }
+                if (isMusicMuted) {
+                  // Unmute
+                  setVolume(lastMusicVolume);
+                  setIsMusicMuted(false);
+                } else {
+                  // Mute
+                  setLastMusicVolume(volume);
+                  setVolume(0);
+                  setIsMusicMuted(true);
                 }
               }}
             >
