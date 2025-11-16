@@ -2185,8 +2185,7 @@ const LocationTracking = () => {
     console.log('========================================');
     console.log('Map ref exists:', !!mapRef.current);
     console.log('locations array:', locations);
-    console.log('userLocation:', userLocation);
-    console.log('user?.id:', user?.id);
+    console.log('locations.length:', locations.length);
 
     if (!mapRef.current) {
       console.error('Map not initialized yet');
@@ -2195,23 +2194,27 @@ const LocationTracking = () => {
 
     // Get all member locations (excluding places)
     const allMemberLocations = locations.filter(loc => {
-      const isValid = loc && loc.latitude && loc.longitude && !loc.isPlace;
+      // Check if coordinates exist in the nested structure
+      const hasCoords = loc && loc.coordinates && 
+                       loc.coordinates.latitude && 
+                       loc.coordinates.longitude && 
+                       !loc.isPlace;
       console.log('Checking location:', {
         user_id: loc?.user_id,
         username: loc?.username,
-        lat: loc?.latitude,
-        lng: loc?.longitude,
+        lat: loc?.coordinates?.latitude,
+        lng: loc?.coordinates?.longitude,
         isPlace: loc?.isPlace,
-        isValid
+        hasCoords
       });
-      return isValid;
+      return hasCoords;
     });
 
     console.log('Filtered member locations:', allMemberLocations);
     console.log('Total member locations count:', allMemberLocations.length);
 
     if (allMemberLocations.length === 0) {
-      console.warn('No member locations to fit');
+      console.error('❌ No member locations to fit - check locations array structure');
       showNotification('No member locations available', 'info');
       return;
     }
@@ -2219,14 +2222,20 @@ const LocationTracking = () => {
     if (allMemberLocations.length === 1) {
       // Only one location - just center on it
       console.log('Only 1 location, centering on it');
-      centerMapOnLocation(allMemberLocations[0]);
+      const loc = allMemberLocations[0];
+      mapRef.current.flyTo({
+        center: [loc.coordinates.longitude, loc.coordinates.latitude],
+        zoom: 14,
+        duration: 1500
+      });
+      showNotification('Centered on member', 'success');
       return;
     }
 
     try {
       // Calculate bounds from all member locations
-      const lngs = allMemberLocations.map(loc => loc.longitude);
-      const lats = allMemberLocations.map(loc => loc.latitude);
+      const lngs = allMemberLocations.map(loc => loc.coordinates.longitude);
+      const lats = allMemberLocations.map(loc => loc.coordinates.latitude);
       
       const bounds = [
         [Math.min(...lngs), Math.min(...lats)], // Southwest
