@@ -3576,7 +3576,7 @@ const LocationTracking = () => {
               }}
               onClick={() => setShowPlaces(!showPlaces)}
             >
-              {showPlaces ? <PlaceIcon /> : <PlaceIcon />}
+              {showPlaces ? <PlaceIcon /> : <ExploreOffIcon />}
             </IconButton>
           </Tooltip>
           
