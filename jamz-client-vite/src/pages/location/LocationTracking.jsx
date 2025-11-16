@@ -3494,7 +3494,11 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={isMusicMuted ? "Unmute Music" : "Mute Music"}>
+          <Tooltip title={
+            !isPlaying && currentTrack ? "Play Music" :
+            !isPlaying && playlist?.length > 0 ? "Play Music" :
+            isMusicMuted ? "Unmute Music" : "Mute Music"
+          }>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
@@ -3516,19 +3520,59 @@ const LocationTracking = () => {
                   }
                 })
               }}
-              onClick={() => {
-                console.log('🎵 Music mute toggle clicked');
-                if (isMusicMuted) {
-                  // Unmute: restore previous volume
-                  console.log('🔊 Unmuting music, restoring volume to:', lastMusicVolume);
-                  changeVolume(lastMusicVolume / 100);
-                  setIsMusicMuted(false);
-                } else {
-                  // Mute: save current volume and set to 0
-                  console.log('🔇 Muting music, saving volume:', volume);
-                  setLastMusicVolume(volume * 100);
-                  changeVolume(0);
-                  setIsMusicMuted(true);
+              onClick={async () => {
+                console.log('🎵 Music icon clicked', { isPlaying, isMusicMuted, currentTrack: currentTrack?.title, playlistLength: playlist?.length });
+                
+                // If music is NOT playing, start playback (important for iOS users joining)
+                if (!isPlaying) {
+                  console.log('▶️ Starting music playback...');
+                  
+                  // If there's a current track, play it
+                  if (currentTrack) {
+                    console.log('▶️ Playing current track:', currentTrack.title);
+                    try {
+                      await musicPlay();
+                      setIsMusicMuted(false);
+                      if (volume === 0 || isMusicMuted) {
+                        changeVolume(lastMusicVolume > 0 ? lastMusicVolume / 100 : 0.5);
+                      }
+                    } catch (error) {
+                      console.error('❌ Failed to play:', error);
+                      alert('Could not start playback. On iOS, please make sure you tap the play button.');
+                    }
+                  }
+                  // If no current track but playlist exists, load and play first track
+                  else if (playlist && playlist.length > 0) {
+                    console.log('▶️ Loading and playing first track from playlist:', playlist[0].title);
+                    try {
+                      await loadAndPlay(playlist[0]);
+                      setIsMusicMuted(false);
+                      if (volume === 0 || isMusicMuted) {
+                        changeVolume(lastMusicVolume > 0 ? lastMusicVolume / 100 : 0.5);
+                      }
+                    } catch (error) {
+                      console.error('❌ Failed to load and play:', error);
+                      alert('Could not start playback. On iOS, please make sure you tap the play button.');
+                    }
+                  } else {
+                    console.warn('⚠️ No music to play - no current track or playlist');
+                    alert('No music available. Add tracks to the playlist first.');
+                  }
+                }
+                // If music IS playing, toggle mute/unmute
+                else {
+                  if (isMusicMuted) {
+                    // Unmute: restore previous volume
+                    console.log('🔊 Unmuting music, restoring volume to:', lastMusicVolume);
+                    changeVolume(lastMusicVolume / 100);
+                    setIsMusicMuted(false);
+                  } else {
+                    // Mute: save current volume and set to 0
+                    console.log('🔇 Muting music, saving volume:', volume);
+                    setLastMusicVolume(volume * 100);
+                    changeVolume(0);
+                    setIsMusicMuted(true);
+                  }
                 }
               }}
             >
