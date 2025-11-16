@@ -809,7 +809,7 @@ io.on("connection", (socket) => {
   socket.on('join-music-session', async (data) => {
     try {
       if (!audioSignalingEnabled) return;
-      const { sessionId, userId } = data;
+      const { sessionId, groupId, userId } = data;
       if (!sessionId) {
         console.warn('join-music-session missing sessionId from socket:', socket.id);
         return;
@@ -821,7 +821,48 @@ io.on("connection", (socket) => {
       
       // Send current music state to the newly joined user
       try {
-        const session = await audioService.getSession(sessionId);
+        let session = await audioService.getSession(sessionId);
+        
+        // If session doesn't exist, try to find or create one for this group
+        if (!session && groupId) {
+          console.log(`📝 Session ${sessionId} not found, checking for active session in group ${groupId}`);
+          try {
+            const AudioSession = require('./models/audio-session.model');
+            session = await AudioSession.findActiveByGroupId(groupId);
+            
+            if (!session) {
+              console.log(`📝 No active session found, creating new audio session for group ${groupId}`);
+              // Create a new audio session for music only
+              const Group = require('./models/group.model');
+              const group = await Group.findById(groupId);
+              
+              if (group && group.isMember(userId)) {
+                session = new AudioSession({
+                  group_id: groupId,
+                  creator_id: userId,
+                  session_type: 'voice_with_music',
+                  recording_enabled: false,
+                  participants: [{
+                    user_id: userId,
+                    joined_at: new Date(),
+                    device_type: 'web'
+                  }],
+                  music: {
+                    playlist: [],
+                    controller_id: null
+                  }
+                });
+                await session.save();
+                console.log(`📝 ✅ Created new audio session: ${session._id}`);
+              } else {
+                console.error(`❌ User ${userId} not a member of group ${groupId}`);
+              }
+            }
+          } catch (createError) {
+            console.error('Error creating audio session:', createError);
+          }
+        }
+        
         if (session && session.music) {
           console.log(`📝 ========================================`);
           console.log(`📝 SENDING MUSIC STATE TO NEW CLIENT`);
