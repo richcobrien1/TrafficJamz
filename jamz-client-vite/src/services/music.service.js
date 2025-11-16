@@ -58,9 +58,13 @@ class MusicService {
     });
 
     this.audioElement.addEventListener('ended', () => {
-      console.log('🎵 Track ended, playing next...');
+      console.log('🎵 ========================================');
+      console.log('🎵 TRACK ENDED EVENT FIRED');
+      console.log('🎵 ========================================');
       console.log('🎵 Current track:', this.currentTrack?.title, 'ID:', this.currentTrack?.id);
       console.log('🎵 Playlist length:', this.playlist.length);
+      console.log('🎵 Playlist tracks:', this.playlist.map(t => `${t.title} (${t.id})`));
+      console.log('🎵 Calling playNext()...');
       this.playNext();
     });
 
@@ -448,28 +452,51 @@ class MusicService {
    * Play next track in playlist (always skips forward)
    */
   async playNext() {
+    console.log('⏭️ ========================================');
+    console.log('⏭️ playNext() CALLED');
+    console.log('⏭️ ========================================');
+    console.log('⏭️ Current track:', this.currentTrack?.title, 'ID:', this.currentTrack?.id);
+    console.log('⏭️ Playlist length:', this.playlist.length);
+    console.log('⏭️ Playlist:', this.playlist.map(t => `${t.title} (${t.id})`));
+    
     if (!this.currentTrack || this.playlist.length === 0) {
-      console.log('⏭️ No next track');
+      console.log('⏭️ ❌ No next track - currentTrack:', !!this.currentTrack, 'playlist.length:', this.playlist.length);
       return;
     }
 
     const currentIndex = this.playlist.findIndex(t => t.id === this.currentTrack.id);
+    console.log('⏭️ Current index in playlist:', currentIndex);
+    
+    if (currentIndex === -1) {
+      console.warn('⚠️ [playNext] Current track NOT FOUND in playlist!');
+      console.warn('⚠️ Current track ID:', this.currentTrack.id);
+      console.warn('⚠️ Playlist IDs:', this.playlist.map(t => t.id));
+      // Just play the first track in the playlist
+      const nextTrack = this.playlist[0];
+      console.log('⏭️ Playing first track in playlist instead:', nextTrack.title);
+      this.pause();
+      await this.loadTrack(nextTrack);
+      await this.play();
+      return;
+    }
+    
     const nextIndex = (currentIndex + 1) % this.playlist.length;
     const nextTrack = this.playlist[nextIndex];
 
-    console.log('⏭️ [playNext] Current index:', currentIndex, 'Next index:', nextIndex);
-    console.log('⏭️ [playNext] Current track:', this.currentTrack.title, 'Next track:', nextTrack.title);
-    console.log('⏭️ [playNext] Skipping to next track:', nextTrack.title, 'hasAlbumArt:', !!nextTrack.albumArt);
+    console.log('⏭️ Next index:', nextIndex);
+    console.log('⏭️ Next track:', nextTrack.title, 'ID:', nextTrack.id);
+    console.log('⏭️ Skipping to next track:', nextTrack.title, 'hasAlbumArt:', !!nextTrack.albumArt);
     
     // Check if we're actually changing tracks
     if (nextTrack.id === this.currentTrack.id) {
-      console.warn('⚠️ [playNext] Next track is same as current - only 1 track in playlist?');
+      console.warn('⚠️ [playNext] Next track is same as current - only 1 track in playlist? Looping...');
     }
     
     // Stop current track completely before loading next
     this.pause();
     await this.loadTrack(nextTrack);
     await this.play();
+    console.log('⏭️ ✅ Successfully advanced to next track');
   }
 
   /**
