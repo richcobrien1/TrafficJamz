@@ -679,7 +679,8 @@ const GroupDetail = () => {
       display: 'flex', 
       flexDirection: 'column', 
       minHeight: '100vh',
-      bgcolor: 'background.default' // Ensure background is visible
+      background: 'linear-gradient(135deg, #76ff03 0%, #2196f3 50%, #e91e63 100%)',
+      backgroundAttachment: 'fixed'
     }}>
       <AppBar position="static" sx={{ 
         paddingTop: 'env(safe-area-inset-top)',

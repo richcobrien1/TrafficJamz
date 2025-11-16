@@ -126,7 +126,13 @@ const Dashboard = () => {
   const handleGroupClick = (groupId) => navigate(`/groups/${groupId}`);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #76ff03 0%, #2196f3 50%, #e91e63 100%)',
+      backgroundAttachment: 'fixed'
+    }}>
       <AppBar position="static" sx={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingLeft: 'env(safe-area-inset-left)',
