@@ -108,11 +108,14 @@ class MusicService {
    * @param {Object} track - Track object with url, title, artist, etc.
    */
   async loadTrack(track) {
+    console.log('🎵 [loadTrack] FULL Track object:', track);
+    console.log('🎵 [loadTrack] Track ID:', track.id);
     this.currentTrack = track;
     
     console.log('🎵 [loadTrack] Track object:', {
       source: track.source,
       title: track.title,
+      id: track.id,
       previewUrl: track.previewUrl,
       spotifyPreviewUrl: track.spotifyPreviewUrl,
       url: track.url,
