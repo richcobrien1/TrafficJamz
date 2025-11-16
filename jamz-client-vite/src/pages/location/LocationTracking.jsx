@@ -2180,8 +2180,13 @@ const LocationTracking = () => {
   
   // Fit map bounds to show all members
   const fitAllMembers = () => {
-    console.log('Fitting all members on map');
+    console.log('========================================');
+    console.log('FIT ALL MEMBERS CLICKED');
+    console.log('========================================');
     console.log('Map ref exists:', !!mapRef.current);
+    console.log('locations array:', locations);
+    console.log('userLocation:', userLocation);
+    console.log('user?.id:', user?.id);
 
     if (!mapRef.current) {
       console.error('Map not initialized yet');
@@ -2189,19 +2194,33 @@ const LocationTracking = () => {
     }
 
     // Get all member locations (including current user)
-    const allMemberLocations = locations.filter(loc => 
-      loc && loc.latitude && loc.longitude && !loc.isPlace
-    );
+    const allMemberLocations = locations.filter(loc => {
+      const isValid = loc && loc.latitude && loc.longitude && !loc.isPlace;
+      console.log('Checking location:', {
+        user_id: loc?.user_id,
+        username: loc?.username,
+        lat: loc?.latitude,
+        lng: loc?.longitude,
+        isPlace: loc?.isPlace,
+        isValid
+      });
+      return isValid;
+    });
+
+    console.log('Filtered member locations:', allMemberLocations);
 
     // Add current user location if available
     if (userLocation && userLocation.latitude && userLocation.longitude) {
       const currentUserExists = allMemberLocations.some(loc => loc.user_id === user?.id);
+      console.log('Current user exists in locations?', currentUserExists);
       if (!currentUserExists) {
+        console.log('Adding current user to allMemberLocations');
         allMemberLocations.push(userLocation);
       }
     }
 
-    console.log('All member locations count:', allMemberLocations.length);
+    console.log('Total member locations count:', allMemberLocations.length);
+    console.log('All member locations:', allMemberLocations);
 
     if (allMemberLocations.length === 0) {
       console.warn('No member locations to fit');
@@ -2211,6 +2230,7 @@ const LocationTracking = () => {
 
     if (allMemberLocations.length === 1) {
       // Only one location - just center on it
+      console.log('Only 1 location, centering on it');
       centerMapOnLocation(allMemberLocations[0]);
       return;
     }
@@ -2225,9 +2245,12 @@ const LocationTracking = () => {
         [Math.max(...lngs), Math.max(...lats)]  // Northeast
       ];
 
-      console.log('Fitting to bounds:', bounds);
+      console.log('Calculated bounds:', bounds);
+      console.log('Min lng:', Math.min(...lngs), 'Max lng:', Math.max(...lngs));
+      console.log('Min lat:', Math.min(...lats), 'Max lat:', Math.max(...lats));
 
       // Fit map to bounds with padding
+      console.log('Calling fitBounds on map...');
       mapRef.current.fitBounds(bounds, {
         padding: { top: 100, bottom: 100, left: 100, right: 100 },
         maxZoom: 16,
@@ -2235,9 +2258,10 @@ const LocationTracking = () => {
         duration: 1000
       });
 
+      console.log('✅ fitBounds called successfully');
       showNotification(`Showing ${allMemberLocations.length} member${allMemberLocations.length > 1 ? 's' : ''}`, 'success');
     } catch (error) {
-      console.error('Error fitting bounds:', error);
+      console.error('❌ Error fitting bounds:', error);
       showNotification('Failed to fit all members', 'error');
     }
   };
