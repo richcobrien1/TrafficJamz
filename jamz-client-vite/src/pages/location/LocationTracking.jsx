@@ -3614,45 +3614,28 @@ const LocationTracking = () => {
                 })
               }}
               onClick={async () => {
-                console.log('🎵 Music Note clicked - isPlaying:', isPlaying);
-                
-                if (isPlaying) {
-                  console.log('⏸️ Pausing music');
-                  musicPause();
-                } else {
-                  console.log('▶️ Starting music');
-                  
-                  try {
+                try {
+                  if (isPlaying) {
+                    await musicPause();
+                  } else {
                     // Take control if not already
                     if (!isController) {
-                      console.log('👑 Taking control');
-                      takeControl();
+                      await takeControl();
                       await new Promise(resolve => setTimeout(resolve, 100));
                     }
                     
                     // Play current track or first in playlist
                     if (currentTrack) {
-                      console.log('▶️ Playing current track:', currentTrack.title);
                       await musicPlay();
-                      console.log('✅ Play completed successfully');
                     } else if (playlist?.length > 0) {
-                      console.log('▶️ Loading first track:', playlist[0].title);
                       await loadAndPlay(playlist[0]);
-                      console.log('✅ LoadAndPlay completed successfully');
                     } else {
-                      console.log('❌ No tracks available');
                       showNotification('Add music tracks first!', 'info');
                       setShowMusicPlayer(true);
                     }
-                  } catch (error) {
-                    console.error('❌ Music playback error:', error);
-                    console.error('Error details:', {
-                      name: error.name,
-                      message: error.message,
-                      stack: error.stack
-                    });
-                    showNotification(`Failed to play music: ${error.message}`, 'error');
                   }
+                } catch (error) {
+                  showNotification(`Music error: ${error.message}`, 'error');
                 }
               }}
             >
