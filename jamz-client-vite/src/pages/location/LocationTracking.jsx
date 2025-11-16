@@ -3514,7 +3514,6 @@ const LocationTracking = () => {
                   }
                 }
               }}
-              disabled={!isPlaying}
             >
               {isPlaying && isMusicMuted ? <MusicOffIcon /> : <MusicNoteOutlinedIcon />}
             </IconButton>
