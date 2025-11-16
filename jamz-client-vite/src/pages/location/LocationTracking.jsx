@@ -3618,7 +3618,7 @@ const LocationTracking = () => {
                 
                 if (isPlaying) {
                   console.log('⏸️ Pausing music');
-                  pause();
+                  musicPause();
                 } else {
                   console.log('▶️ Starting music');
                   
@@ -3633,7 +3633,7 @@ const LocationTracking = () => {
                     // Play current track or first in playlist
                     if (currentTrack) {
                       console.log('▶️ Playing current track:', currentTrack.title);
-                      await play();
+                      await musicPlay();
                       console.log('✅ Play completed successfully');
                     } else if (playlist?.length > 0) {
                       console.log('▶️ Loading first track:', playlist[0].title);
