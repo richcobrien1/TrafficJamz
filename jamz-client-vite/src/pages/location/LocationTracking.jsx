@@ -161,7 +161,8 @@ const LocationTracking = () => {
     changeVolume,
     addTrack,
     removeTrack,
-    loadAndPlay
+    loadAndPlay,
+    takeControl
   } = useMusicSession(groupId, audioSessionId || groupId); // Use audio session ID when available
   
   // Music player visibility
@@ -3576,15 +3577,32 @@ const LocationTracking = () => {
                 })
               }}
               onClick={async () => {
-                console.log('🎵 Music icon clicked', { isPlaying, isMusicMuted, currentTrack: currentTrack?.title, playlistLength: playlist?.length });
+                console.log('🎵 Music icon clicked', { 
+                  isPlaying, 
+                  isMusicMuted, 
+                  currentTrack: currentTrack?.title, 
+                  playlistLength: playlist?.length,
+                  isController,
+                  audioSessionId
+                });
                 
                 // If music is NOT playing, start playback (important for iOS users joining)
                 if (!isPlaying) {
                   console.log('▶️ Starting music playback...');
+                  console.log('▶️ isController:', isController);
                   
                   // If there's a current track, play it
                   if (currentTrack) {
                     console.log('▶️ Playing current track:', currentTrack.title);
+                    
+                    // Take control if not already controller
+                    if (!isController) {
+                      console.log('👑 Taking control to play music');
+                      takeControl();
+                      // Wait a moment for control to be established
+                      await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
                     try {
                       await musicPlay();
                       setIsMusicMuted(false);
@@ -3593,12 +3611,21 @@ const LocationTracking = () => {
                       }
                     } catch (error) {
                       console.error('❌ Failed to play:', error);
-                      alert('Could not start playback. On iOS, please make sure you tap the play button.');
+                      showNotification('Could not start playback. On iOS, tap play button.', 'error');
                     }
                   }
                   // If no current track but playlist exists, load and play first track
                   else if (playlist && playlist.length > 0) {
                     console.log('▶️ Loading and playing first track from playlist:', playlist[0].title);
+                    
+                    // Take control if not already controller
+                    if (!isController) {
+                      console.log('👑 Taking control to play music');
+                      takeControl();
+                      // Wait a moment for control to be established
+                      await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
                     try {
                       await loadAndPlay(playlist[0]);
                       setIsMusicMuted(false);
@@ -3607,11 +3634,23 @@ const LocationTracking = () => {
                       }
                     } catch (error) {
                       console.error('❌ Failed to load and play:', error);
-                      alert('Could not start playback. On iOS, please make sure you tap the play button.');
+                      showNotification('Could not start playback. On iOS, tap play button.', 'error');
                     }
                   } else {
-                    console.warn('⚠️ No music to play - no current track or playlist');
-                    alert('No music available. Add tracks to the playlist first.');
+                    // No tracks available - open music player to add tracks
+                    console.warn('⚠️ No music to play - checking session state...');
+                    console.warn('⚠️ currentTrack:', currentTrack);
+                    console.warn('⚠️ playlist:', playlist);
+                    console.warn('⚠️ isController:', isController);
+                    
+                    // Take control and open music player so user can add tracks
+                    if (!isController) {
+                      console.log('👑 Taking control to add music');
+                      takeControl();
+                    }
+                    
+                    setShowMusicPlayer(true);
+                    showNotification('No tracks in playlist. Add some music!', 'info');
                   }
                 }
                 // If music IS playing, toggle mute/unmute
