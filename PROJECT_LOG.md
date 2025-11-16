@@ -4,6 +4,196 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 16, 2025 (Evening) - Music System Critical Fixes 🎵
+
+### Issues Addressed
+**Music Sync & Playback Issues** - Fixed critical music synchronization, session initialization, mute functionality, and track advancement
+
+### Changes Made
+
+#### 1. Music Session Initialization Fix ✅
+**Problem**: Music Icon showed false "No tracks in playlist" message despite tracks existing in database
+- **Root Cause**: LocationTracking used broken `useMusicSession` hook while MusicContext (working) only initialized on Music page
+- **Symptoms**: 
+  - `audioSessionId: null` on member devices
+  - `playlist: []` despite 5 tracks in MongoDB
+  - Music only worked AFTER visiting Music page first
+- **Solution**: 
+  - Replaced `useMusicSession` hook with `useMusic` from MusicContext (commit a0676ef1)
+  - Added auto-initialization of MusicContext when group loads (commit 8135c9d2)
+  - Check for existing audio session before creating new one (commit ccd080da)
+
+**Backend Auto-Create Logic** (commit 915a1647):
+```javascript
+// If session doesn't exist, try to find or create one for this group
+if (!session && groupId) {
+  session = await AudioSession.findActiveByGroupId(groupId);
+  if (!session) {
+    session = new AudioSession({
+      group_id: groupId,
+      creator_id: userId,
+      session_type: 'voice_with_music',
+      music: { playlist: [], controller_id: null }
+    });
+    await session.save();
+  }
+}
+```
+
+**Frontend Session Check** (commit ccd080da):
+```javascript
+// First check if audio session already exists
+let audioSessionId = null;
+try {
+  const existingSessionResponse = await api.get(`/audio/sessions/group/${groupId}`);
+  if (existingSessionResponse.data.session) {
+    audioSessionId = existingSessionResponse.data.session._id;
+    console.log('✅ Audio session already exists:', audioSessionId);
+  }
+} catch (err) {
+  console.log('No existing audio session found, will create new one');
+}
+
+// Create new session if none exists
+if (!audioSessionId) {
+  const sessionResponse = await api.post('/audio/sessions', {
+    group_id: groupId,
+    session_type: 'voice_with_music',
+    recording_enabled: false
+  });
+  audioSessionId = sessionResponse.data.session?._id;
+}
+
+// Initialize MusicContext with the session
+if (audioSessionId) {
+  await initializeSession(audioSessionId, groupId);
+}
+```
+
+#### 2. iOS Mute Functionality Fix ✅
+**Problem**: Mute button worked on desktop but not on iOS devices
+- **Root Cause**: Setting volume to 0 on YouTube player doesn't reliably mute on iOS
+- **Solution**: Use YouTube's native `mute()` and `unMute()` methods (commit c44ea850)
+
+**iOS-Compatible Volume Control**:
+```javascript
+setVolume(volume) {
+  this.volume = Math.max(0, Math.min(1, volume));
+  
+  switch (this.currentPlatform) {
+    case 'youtube':
+      if (this.youtubePlayer) {
+        if (this.volume === 0) {
+          console.log('🔇 Muting YouTube player');
+          this.youtubePlayer.mute();
+        } else {
+          console.log('🔊 Unmuting YouTube player');
+          this.youtubePlayer.unMute();
+          this.youtubePlayer.setVolume(this.volume * 100);
+        }
+      }
+      break;
+  }
+}
+```
+
+#### 3. Track Advancement Fix ✅
+**Problem**: Tracks played on repeat instead of advancing to next track
+- **Root Cause**: Tracks from MongoDB have `_id` field but code expected `id`, so `playNext()` couldn't find current track
+- **Symptoms**: 
+  - `currentTrack.id: undefined`
+  - `findIndex()` returned -1
+  - Always played first track instead of advancing
+- **Solution**: Normalize `_id` to `id` field when loading tracks (commit dfe128bf)
+
+**Track ID Normalization**:
+```javascript
+async loadTrack(track) {
+  // Ensure track has id field (normalize _id to id)
+  if (!track.id && track._id) {
+    track.id = track._id;
+  }
+  
+  this.currentTrack = track;
+  // ... rest of load logic
+}
+```
+
+**Working playNext() Logic**:
+```javascript
+const currentIndex = this.playlist.findIndex(t => t.id === this.currentTrack.id);
+// Now finds track correctly since both use 'id' field
+const nextIndex = (currentIndex + 1) % this.playlist.length;
+const nextTrack = this.playlist[nextIndex];
+```
+
+#### 4. Audio Session Endpoint Fix ✅
+**Problem**: 404 and 400 errors on startup when auto-joining audio session
+- **Root Cause**: Used wrong endpoint - GET `/api/audio/sessions/{groupId}` instead of `/api/audio/sessions/group/{groupId}`
+- **Symptoms**:
+  - GET 404: Not Found
+  - POST 400: Bad Request
+  - "Failed to auto-join audio session" errors
+- **Solution**: Corrected endpoint in useAudioSession hook (commit 99a3e3c1)
+
+**Endpoint Correction**:
+```javascript
+// BEFORE (wrong):
+const response = await fetch(`${API_URL}/api/audio/sessions/${groupId}`, {
+
+// AFTER (correct):
+const response = await fetch(`${API_URL}/api/audio/sessions/group/${groupId}`, {
+```
+
+### Files Changed
+- ✅ `jamz-server/src/index.js`: Added auto-create audio session logic in Socket.IO handler
+- ✅ `jamz-client-vite/src/pages/location/LocationTracking.jsx`: 
+  - Switched from useMusicSession to MusicContext
+  - Added auto-initialization on group load
+  - Added session existence check before creation
+- ✅ `jamz-client-vite/src/contexts/MusicContext.jsx`: Working Socket.IO initialization
+- ✅ `jamz-client-vite/src/services/platform-music.service.js`: Added iOS mute/unmute methods
+- ✅ `jamz-client-vite/src/services/music.service.js`: 
+  - Added track ID normalization
+  - Enhanced YouTube track ended callback with await
+- ✅ `jamz-client-vite/src/hooks/useAudioSession.js`: Fixed audio session endpoint
+
+### Build & Deployment
+- **Backend**: Docker image rebuilt and container restarted (commit 915a1647)
+- **Frontend**: Multiple Vercel deployments (6 commits total)
+- **Final Commits**: 
+  - 915a1647: Backend auto-create logic
+  - a0676ef1: Switch to MusicContext
+  - 8135c9d2: Auto-initialize on group load
+  - ccd080da: Check existing session
+  - c44ea850: iOS mute fix
+  - efa15f75: Debug logging
+  - 99a3e3c1: Endpoint fix
+  - dfe128bf: Track ID normalization
+
+### User Benefits
+1. **Reliable Music Sync**: Members see playlist immediately without visiting Music page
+2. **iOS Mute Works**: iPhone users can mute/unmute music reliably
+3. **Track Advancement**: Playlist plays through all tracks instead of repeating
+4. **Clean Startup**: No more 404/400 errors on page load
+5. **Seamless Experience**: Music initializes automatically when joining group
+
+### Technical Lessons
+- Global contexts better than page-level hooks for shared state
+- Socket.IO connections must initialize before components need them
+- MongoDB `_id` vs `id` field normalization critical for track matching
+- iOS requires native YouTube API methods (mute/unmute) vs volume control
+- Always check for existing resources before creating new ones
+
+### Current Status
+- ✅ Music Icon works on page refresh
+- ✅ Playlist syncs across all devices
+- ✅ Mute button works on iOS
+- ✅ Tracks advance to next track automatically
+- ✅ No startup errors
+
+---
+
 ## Session: November 16, 2025 (Afternoon) - Music Note Icon Smart Functionality
 
 ### Issues Addressed
