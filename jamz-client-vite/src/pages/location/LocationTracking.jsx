@@ -3577,29 +3577,34 @@ const LocationTracking = () => {
                 })
               }}
               onClick={async () => {
-                console.log('🎵 Music icon clicked', { 
-                  isPlaying, 
-                  isMusicMuted, 
-                  currentTrack: currentTrack?.title, 
-                  playlistLength: playlist?.length,
-                  isController,
-                  audioSessionId
-                });
+                console.log('🎵 ========================================');
+                console.log('🎵 MUSIC ICON CLICKED - FULL DIAGNOSTIC');
+                console.log('🎵 ========================================');
+                console.log('🎵 isPlaying:', isPlaying);
+                console.log('🎵 isMusicMuted:', isMusicMuted);
+                console.log('🎵 currentTrack:', currentTrack);
+                console.log('🎵 currentTrack type:', typeof currentTrack);
+                console.log('🎵 playlist:', playlist);
+                console.log('🎵 playlist type:', typeof playlist);
+                console.log('🎵 playlist is array:', Array.isArray(playlist));
+                console.log('🎵 playlist length:', playlist?.length);
+                console.log('🎵 playlist tracks:', playlist?.map(t => t.title));
+                console.log('🎵 isController:', isController);
+                console.log('🎵 audioSessionId:', audioSessionId);
+                console.log('🎵 ========================================');
                 
                 // If music is NOT playing, start playback (important for iOS users joining)
                 if (!isPlaying) {
-                  console.log('▶️ Starting music playback...');
-                  console.log('▶️ isController:', isController);
+                  console.log('▶️ Music NOT playing - attempting to start...');
                   
                   // If there's a current track, play it
                   if (currentTrack) {
-                    console.log('▶️ Playing current track:', currentTrack.title);
+                    console.log('▶️ Found current track:', currentTrack.title);
                     
                     // Take control if not already controller
                     if (!isController) {
                       console.log('👑 Taking control to play music');
                       takeControl();
-                      // Wait a moment for control to be established
                       await new Promise(resolve => setTimeout(resolve, 100));
                     }
                     
@@ -3615,14 +3620,13 @@ const LocationTracking = () => {
                     }
                   }
                   // If no current track but playlist exists, load and play first track
-                  else if (playlist && playlist.length > 0) {
-                    console.log('▶️ Loading and playing first track from playlist:', playlist[0].title);
+                  else if (playlist && Array.isArray(playlist) && playlist.length > 0) {
+                    console.log('▶️ No current track, loading first from playlist:', playlist[0].title);
                     
                     // Take control if not already controller
                     if (!isController) {
                       console.log('👑 Taking control to play music');
                       takeControl();
-                      // Wait a moment for control to be established
                       await new Promise(resolve => setTimeout(resolve, 100));
                     }
                     
@@ -3637,28 +3641,33 @@ const LocationTracking = () => {
                       showNotification('Could not start playback. On iOS, tap play button.', 'error');
                     }
                   } else {
-                    // No tracks available - but might still be loading session state
-                    console.warn('⚠️ No music to play - checking session state...');
+                    // No tracks or playlist not loaded yet
+                    console.warn('⚠️ ========================================');
+                    console.warn('⚠️ NO MUSIC AVAILABLE TO PLAY');
+                    console.warn('⚠️ ========================================');
                     console.warn('⚠️ currentTrack:', currentTrack);
                     console.warn('⚠️ playlist:', playlist);
                     console.warn('⚠️ playlist type:', typeof playlist);
                     console.warn('⚠️ playlist is array:', Array.isArray(playlist));
+                    console.warn('⚠️ playlist length:', playlist?.length);
                     console.warn('⚠️ isController:', isController);
+                    console.warn('⚠️ ========================================');
                     
-                    // Take control and open music player so user can add tracks
+                    // ALWAYS take control and open music player
                     if (!isController) {
-                      console.log('👑 Taking control to add music');
+                      console.log('👑 Taking control to manage music');
                       takeControl();
                     }
                     
-                    // Open music player regardless - user can see tracks or add new ones
+                    // Open music player so user can see what's there or add tracks
                     setShowMusicPlayer(true);
                     
-                    // Only show "no tracks" message if playlist is definitely empty (not undefined/null)
-                    if (Array.isArray(playlist) && playlist.length === 0) {
-                      showNotification('No tracks in playlist. Add some music!', 'info');
+                    // Show appropriate message
+                    if (playlist === undefined || playlist === null) {
+                      showNotification('Loading playlist...', 'info');
+                    } else if (Array.isArray(playlist) && playlist.length === 0) {
+                      showNotification('Playlist is empty. Add tracks from the Music Player!', 'info');
                     } else {
-                      // Playlist might still be loading
                       showNotification('Opening music player...', 'info');
                     }
                   }
