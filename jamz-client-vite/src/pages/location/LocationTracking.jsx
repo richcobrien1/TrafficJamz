@@ -3385,7 +3385,12 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                animation: isPlaying ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                }
               }}
               onClick={() => {
                 if (isPlaying) {
@@ -3403,7 +3408,12 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                bgcolor: isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                animation: isInSession ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                }
               }}
               onClick={isInSession ? leaveSession : joinSession}
             >
@@ -3415,7 +3425,12 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isMuted ? 'error.main' : (isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent')
+                bgcolor: isMuted ? 'error.main' : (isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent'),
+                animation: !isMuted && isInSession ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                }
               }}
               onClick={toggleMute}
             >
