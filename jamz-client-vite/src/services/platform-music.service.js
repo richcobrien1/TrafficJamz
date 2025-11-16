@@ -496,24 +496,42 @@ class PlatformMusicService {
    */
   setVolume(volume) {
     this.volume = Math.max(0, Math.min(1, volume));
-    console.log('🔊 Setting volume:', this.volume);
+    console.log('🔊 Setting volume:', this.volume, 'Platform:', this.currentPlatform);
 
     switch (this.currentPlatform) {
       case 'spotify':
         if (this.spotifyPlayer) {
           this.spotifyPlayer.setVolume(this.volume);
+          console.log('🔊 Spotify volume set to:', this.volume);
+        } else {
+          console.warn('⚠️ Spotify player not available');
         }
         break;
       case 'youtube':
         if (this.youtubePlayer) {
-          this.youtubePlayer.setVolume(this.volume * 100);
+          // Use mute/unmute methods in addition to volume for better iOS support
+          if (this.volume === 0) {
+            console.log('🔇 Muting YouTube player');
+            this.youtubePlayer.mute();
+          } else {
+            console.log('🔊 Unmuting YouTube player and setting volume to:', this.volume * 100);
+            this.youtubePlayer.unMute();
+            this.youtubePlayer.setVolume(this.volume * 100);
+          }
+        } else {
+          console.warn('⚠️ YouTube player not available');
         }
         break;
       case 'appleMusic':
         if (this.appleMusicPlayer) {
           this.appleMusicPlayer.volume = this.volume;
+          console.log('🔊 Apple Music volume set to:', this.volume);
+        } else {
+          console.warn('⚠️ Apple Music player not available');
         }
         break;
+      default:
+        console.warn('⚠️ No platform selected, volume:', this.volume);
     }
   }
 
