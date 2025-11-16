@@ -3637,10 +3637,12 @@ const LocationTracking = () => {
                       showNotification('Could not start playback. On iOS, tap play button.', 'error');
                     }
                   } else {
-                    // No tracks available - open music player to add tracks
+                    // No tracks available - but might still be loading session state
                     console.warn('⚠️ No music to play - checking session state...');
                     console.warn('⚠️ currentTrack:', currentTrack);
                     console.warn('⚠️ playlist:', playlist);
+                    console.warn('⚠️ playlist type:', typeof playlist);
+                    console.warn('⚠️ playlist is array:', Array.isArray(playlist));
                     console.warn('⚠️ isController:', isController);
                     
                     // Take control and open music player so user can add tracks
@@ -3649,8 +3651,16 @@ const LocationTracking = () => {
                       takeControl();
                     }
                     
+                    // Open music player regardless - user can see tracks or add new ones
                     setShowMusicPlayer(true);
-                    showNotification('No tracks in playlist. Add some music!', 'info');
+                    
+                    // Only show "no tracks" message if playlist is definitely empty (not undefined/null)
+                    if (Array.isArray(playlist) && playlist.length === 0) {
+                      showNotification('No tracks in playlist. Add some music!', 'info');
+                    } else {
+                      // Playlist might still be loading
+                      showNotification('Opening music player...', 'info');
+                    }
                   }
                 }
                 // If music IS playing, toggle mute/unmute
