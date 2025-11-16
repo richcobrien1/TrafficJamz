@@ -134,7 +134,7 @@ export const useAudioSession = (groupId) => {
       }
 
       // Get or create audio session from backend
-      const response = await fetch(`${API_URL}/api/audio/sessions/${groupId}`, {
+      const response = await fetch(`${API_URL}/api/audio/sessions/group/${groupId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
