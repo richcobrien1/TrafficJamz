@@ -160,13 +160,13 @@ function App() {
 
   // Preload YouTube API and initialize music service early
   useEffect(() => {
-    const preloadMusic = async () => {
+    const preloadMusic = () => {
       try {
-        console.log('🎵 Preloading YouTube API for instant music playback...');
-        await musicService.initialize();
+        console.log('🎵 Preloading music service for instant playback...');
+        musicService.initialize();
         console.log('✅ Music service preloaded and ready!');
       } catch (error) {
-        console.warn('⚠️ Music service preload failed (will retry on first play):', error.message);
+        console.warn('⚠️ Music service preload failed:', error.message);
       }
     };
 
