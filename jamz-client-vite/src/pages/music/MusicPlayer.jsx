@@ -436,7 +436,7 @@ const MusicPlayerPage = () => {
 
           <Box sx={{ flexGrow: 1 }} />
           
-          <span style={{ fontSize: '24px', marginRight: '8px' }}>🎵</span>
+          <span style={{ fontSize: '24px', marginRight: '8px', filter: 'grayscale(100%) brightness(2)' }}>🎵</span>
           <Typography variant="h6">
             Music
           </Typography>

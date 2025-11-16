@@ -2250,13 +2250,11 @@ const LocationTracking = () => {
 
     if (!mapRef.current) {
       console.error('❌ Map not initialized yet');
-      showNotification('Map not ready', 'error');
       return;
     }
 
     if (!locations || locations.length === 0) {
       console.error('❌ No locations in array');
-      showNotification('No member locations to show', 'info');
       return;
     }
 
@@ -2305,7 +2303,6 @@ const LocationTracking = () => {
 
     if (allLocationsIncludingMe.length === 0) {
       console.error('❌ No member locations to fit - check locations array structure');
-      showNotification('No member locations available', 'info');
       return;
     }
 
@@ -2373,10 +2370,8 @@ const LocationTracking = () => {
       });
 
       console.log('✅ fitBounds called successfully');
-      showNotification(`Showing all ${allLocationsIncludingMe.length} member locations`, 'success');
     } catch (error) {
       console.error('❌ Error fitting bounds:', error);
-      showNotification('Failed to fit all members', 'error');
     }
   };
   
@@ -3630,16 +3625,15 @@ const LocationTracking = () => {
                     } else if (playlist?.length > 0) {
                       await loadAndPlay(playlist[0]);
                     } else {
-                      showNotification('Add music tracks first!', 'info');
                       setShowMusicPlayer(true);
                     }
                   }
                 } catch (error) {
-                  showNotification(`Music error: ${error.message}`, 'error');
+                  console.error('Music error:', error);
                 }
               }}
             >
-              <span style={{ fontSize: '20px', lineHeight: 1 }}>🎵</span>
+              <span style={{ fontSize: '20px', lineHeight: 1, filter: 'grayscale(100%) brightness(2)' }}>🎵</span>
             </IconButton>
           </Tooltip>
           
@@ -4423,8 +4417,6 @@ const LocationTracking = () => {
                   if (m.coordinates) {
                     setSelectedLocation(m);
                     setOpenLocationDialog(true);
-                  } else {
-                    showNotification(`${m.username} has no shared location`, 'info');
                   }
                 }}>
                   <ListItemAvatar>
