@@ -3593,10 +3593,10 @@ const LocationTracking = () => {
           {/* Centered Audio Controls */}
           <Tooltip title={
             isController 
-              ? "Open Music Player"
+              ? (isPlaying ? "Pause Music" : "Play Music")
               : (isBroadcastMuted 
-                  ? "Unmute Music Broadcast - Click to hear group music" 
-                  : "Mute Music Broadcast - Click to stop hearing group music")
+                  ? "Unmute Music Broadcast" 
+                  : "Mute Music Broadcast")
           }>
             <IconButton 
               sx={{
@@ -3619,27 +3619,29 @@ const LocationTracking = () => {
                   }
                 })
               }}
-              onClick={() => {
-                console.log('🎵 ========================================');
-                console.log('🎵 MUSIC NOTE ICON CLICKED');
-                console.log('🎵 isController:', isController);
-                console.log('🎵 isBroadcastMuted:', isBroadcastMuted);
-                console.log('🎵 ========================================');
-                
-                // If DJ (controller): Open music player to control playback
+              onClick={async () => {
+                // If DJ (controller): Play/Pause music
                 if (isController) {
-                  console.log('🎵 DJ clicked - opening music player');
-                  setShowMusicPlayer(true);
+                  if (isPlaying) {
+                    console.log('⏸️ DJ pausing music');
+                    pause();
+                  } else {
+                    console.log('▶️ DJ starting music');
+                    if (currentTrack) {
+                      await play();
+                    } else if (playlist?.length > 0) {
+                      await loadAndPlay(playlist[0]);
+                    } else {
+                      setShowMusicPlayer(true);
+                    }
+                  }
                 }
                 // If listener: Toggle broadcast audio mute
                 else {
-                  console.log('🎵 Listener clicked - toggling broadcast mute');
                   if (isBroadcastMuted) {
-                    console.log('🔊 Unmuting broadcast audio');
                     unmuteBroadcastAudio();
                     setIsBroadcastMuted(false);
                   } else {
-                    console.log('🔇 Muting broadcast audio');
                     muteBroadcastAudio();
                     setIsBroadcastMuted(true);
                   }
