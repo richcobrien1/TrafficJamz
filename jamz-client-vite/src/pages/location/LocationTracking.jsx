@@ -144,7 +144,7 @@ const LocationTracking = () => {
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [lastMusicVolume, setLastMusicVolume] = useState(50);
   
-  // Music session hook
+  // Music session hook - ALWAYS use groupId to let backend auto-create session
   const {
     currentTrack,
     playlist,
@@ -163,7 +163,7 @@ const LocationTracking = () => {
     removeTrack,
     loadAndPlay,
     takeControl
-  } = useMusicSession(groupId, audioSessionId || groupId); // Use audio session ID when available
+  } = useMusicSession(groupId, groupId); // Always use groupId - backend will auto-create audio session
   
   // Music player visibility
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
@@ -850,6 +850,20 @@ const LocationTracking = () => {
       
     setGroup(groupData);
     setMembers(groupData.members);
+    
+    // Create/fetch audio session for this group immediately
+    try {
+      console.log('🎵 Creating/fetching audio session for group:', groupId);
+      const sessionResponse = await api.post('/audio/sessions', {
+        group_id: groupId,
+        session_type: 'voice_with_music',
+        recording_enabled: false
+      });
+      console.log('🎵 Audio session ready:', sessionResponse.data.session?._id || sessionResponse.data.session?.id);
+    } catch (sessionError) {
+      // Session might already exist, that's okay - backend will handle it
+      console.log('🎵 Audio session creation note:', sessionError.response?.data?.message || sessionError.message);
+    }
     
     // Fetch initial member locations with the fresh member data
     fetchMemberLocations(groupData.members);
