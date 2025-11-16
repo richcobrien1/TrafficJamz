@@ -2238,19 +2238,8 @@ const LocationTracking = () => {
       return;
     }
 
-    if (allMemberLocations.length === 1) {
-      // Only one location - just center on it
-      console.log('Only 1 location, centering on it');
-      const loc = allMemberLocations[0];
-      mapRef.current.flyTo({
-        center: [loc.coordinates.longitude, loc.coordinates.latitude],
-        zoom: 14,
-        duration: 1500
-      });
-      showNotification('Centered on member', 'success');
-      return;
-    }
-
+    // Always use bounds fitting to show ALL members, even if just 1
+    // This ensures consistent behavior and proper zoom out
     try {
       // Calculate bounds from all member locations
       const lngs = allMemberLocations.map(loc => loc.coordinates.longitude);
