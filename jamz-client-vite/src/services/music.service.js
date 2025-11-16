@@ -108,6 +108,11 @@ class MusicService {
    * @param {Object} track - Track object with url, title, artist, etc.
    */
   async loadTrack(track) {
+    // Ensure track has id field (normalize _id to id)
+    if (!track.id && track._id) {
+      track.id = track._id;
+    }
+    
     console.log('🎵 [loadTrack] FULL Track object:', track);
     console.log('🎵 [loadTrack] Track ID:', track.id);
     this.currentTrack = track;
