@@ -202,14 +202,13 @@ export const useAudioSession = (groupId) => {
       const token = localStorage.getItem('token');
 
       // Create send transport
-      const sendTransportResponse = await fetch(`${API_URL}/api/audio/transport/create`, {
+      const sendTransportResponse = await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          sessionId: sessionIdRef.current,
           direction: 'send'
         })
       });
@@ -224,30 +223,26 @@ export const useAudioSession = (groupId) => {
         sendTransportData,
         async (transportId, dtlsParameters) => {
           // Connect transport on server
-          await fetch(`${API_URL}/api/audio/transport/connect`, {
+          await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport/${transportId}/connect`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              sessionId: sessionIdRef.current,
-              transportId,
               dtlsParameters
             })
           });
         },
         async (transportId, kind, rtpParameters) => {
           // Create producer on server
-          const response = await fetch(`${API_URL}/api/audio/produce`, {
+          const response = await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport/${transportId}/produce`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              sessionId: sessionIdRef.current,
-              transportId,
               kind,
               rtpParameters
             })
@@ -259,14 +254,13 @@ export const useAudioSession = (groupId) => {
       );
 
       // Create receive transport
-      const recvTransportResponse = await fetch(`${API_URL}/api/audio/transport/create`, {
+      const recvTransportResponse = await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          sessionId: sessionIdRef.current,
           direction: 'receive'
         })
       });
@@ -281,15 +275,13 @@ export const useAudioSession = (groupId) => {
         recvTransportData,
         async (transportId, dtlsParameters) => {
           // Connect transport on server
-          await fetch(`${API_URL}/api/audio/transport/connect`, {
+          await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport/${transportId}/connect`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              sessionId: sessionIdRef.current,
-              transportId,
               dtlsParameters
             })
           });
