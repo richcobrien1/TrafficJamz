@@ -4,6 +4,113 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 16, 2025 - Map Controls & Music Icon Refinements
+
+### Issues Addressed
+1. **GroupsIcon Button Positioning** - Show All Members button not centered between other map controls
+2. **fitAllMembers Not Working** - Button only centering on user location, not showing all members
+3. **Places Icon Toggle** - No visual indicator when places are hidden
+4. **Music Note Icon** - Not showing solid icon when playing, not pulsing correctly in header
+5. **Music Mute Functionality** - Music icon should mute/unmute, not play/pause
+
+### Changes Made
+
+#### 1. Fixed "Show All Members" Map Zoom Feature
+- **Problem**: fitAllMembers was checking for `loc.latitude` but locations have `loc.coordinates.latitude`
+- **Solution**: Changed filter to check `loc.coordinates.latitude && loc.coordinates.longitude`
+- **Result**: Now correctly finds all member locations and zooms map to show everyone
+- **Testing**: Set Breanna's mock location to Rancho Bernardo, CA (817 miles from Centennial, CO)
+- **Files**: `jamz-client-vite/src/pages/location/LocationTracking.jsx` (lines 2180-2270)
+- **Commits**: `30d13007`, `634782d9`
+
+#### 2. Fixed Button Positioning on Map
+- **Problem**: GroupsIcon (Show All Members) not evenly spaced between controls toggle and MyLocationIcon
+- **Initial spacing**: right: 16 (controls), 56 (groups), 76 (my location) - uneven
+- **Final spacing**: right: 16 (controls), 76 (my location), 136 (groups) - consistent 60px gaps
+- **Files**: `jamz-client-vite/src/pages/location/LocationTracking.jsx`
+- **Commits**: `4b12736d`, `d95733d8`, `ed39c7f4`
+
+#### 3. Places Toggle Icon Improvement
+- **Problem**: Places icon (PlaceIcon) shown both when on and off - no visual feedback
+- **Solution**: Show `ExploreOffIcon` when places are hidden, `PlaceIcon` when visible
+- **Files**: `jamz-client-vite/src/pages/location/LocationTracking.jsx` (line 3579)
+- **Commit**: `1e1ebcae`
+
+#### 4. Music Icon Header Improvements
+- **Change 1**: Use solid `MusicNoteIcon` when playing (not outlined)
+  - When playing & not muted → `MusicNoteIcon` (solid, pulsing)
+  - When playing & muted → `MusicOffIcon` (crossed out)
+  - When paused → `MusicNoteOutlinedIcon` (outlined)
+- **Change 2**: Changed functionality from play/pause to mute/unmute
+  - Added `isMusicMuted` state and `lastMusicVolume` state
+  - Click toggles between volume 0 (muted) and previous volume (unmuted)
+  - Tooltip shows "Mute Music" / "Unmute Music" when playing
+- **Change 3**: Fixed pulse animation
+  - Used spread operator for conditional animation styles
+  - Pulses entire button including background circle
+- **Change 4**: Removed `disabled={!isPlaying}` - button now always clickable
+- **Change 5**: Removed `if (isPlaying)` check from onClick - always allows mute/unmute
+- **Files**: `jamz-client-vite/src/pages/location/LocationTracking.jsx` (lines 3483-3520)
+- **Commits**: `0faa717a`, `6f675476`, `9cd86a94`, `960d5d0a`
+
+### Testing Results
+- ✅ Show All Members button correctly zooms to show all member locations
+- ✅ Button spacing consistent at 60px intervals
+- ✅ Places toggle shows correct icon (PlaceIcon vs ExploreOffIcon)
+- ✅ Music icon shows solid note when playing
+- ✅ Music icon mutes/unmutes volume when clicked
+- ✅ Music icon pulse animation working
+
+### Commits (in chronological order)
+- `4b12736d` - Center GroupsIcon button positioning
+- `d95733d8` - Fix button spacing to 60px and move Breanna 50mi south for fitAllMembers testing
+- `ed39c7f4` - Set Breanna location to Rancho Bernardo CA (817mi) and fix button spacing
+- `30d13007` - Fix fitAllMembers to use coordinates.latitude/longitude structure
+- `634782d9` - Remove mock user logic from fitAllMembers - use actual Snow Warriors locations
+- `1e1ebcae` - Show ExploreOffIcon when places toggle is off
+- `0faa717a` - Change music icon to mute/unmute with MusicOffIcon when muted
+- `6f675476` - Remove disabled state from music icon button
+- `9cd86a94` - Use solid MusicNoteIcon when playing, outlined when paused
+- `37bcfd70` - Force redeploy: Use solid MusicNoteIcon when playing
+- `960d5d0a` - Remove isPlaying check from music mute onClick - always allow mute/unmute
+
+### Icon Behavior Summary
+**Music Note Icon (Header)**:
+- Playing + Not Muted: Solid `MusicNoteIcon`, background visible, pulsing, tooltip "Mute Music"
+- Playing + Muted: `MusicOffIcon` (crossed), no background, no pulse, tooltip "Unmute Music"
+- Paused: Outlined `MusicNoteOutlinedIcon`, no background, no pulse, tooltip "Music Paused"
+- Click action: Toggle mute (set volume to 0 or restore previous volume)
+
+**Headset Icon (Header)**:
+- Active: `HeadsetIcon`, background visible, pulsing when in session
+- Muted: `HeadsetOffIcon` (crossed)
+- Click action: Toggle voice output mute
+
+**Mic Icon (Header)**:
+- Active: `MicIcon`, background visible, pulsing when in session
+- Muted: `MicOffIcon` (crossed)
+- Not in session: `MicNoneIcon`
+- Click action: Join session if not in, toggle mute if in session
+
+**Places Icon (Header)**:
+- Visible: `PlaceIcon`
+- Hidden: `ExploreOffIcon`
+- Click action: Toggle places visibility on map
+
+### Next Steps
+1. Test music mute/unmute functionality with actual music playing
+2. Verify Show All Members zoom works with real dispersed member locations
+3. Test all icon states and tooltips for consistency
+
+### Lessons Learned
+- **Data structure matters**: Always verify nested object structure (loc.coordinates.latitude vs loc.latitude)
+- **Visual feedback essential**: Icons need clear on/off states (PlaceIcon vs ExploreOffIcon)
+- **Consistency in patterns**: Mute/unmute pattern should be consistent across all audio controls
+- **Button spacing**: Use consistent pixel gaps for visual alignment (60px intervals)
+- **Always test edge cases**: Test with distant locations (817 miles) to verify zoom functionality
+
+---
+
 ## Session: November 15, 2025 (Evening) - Voice Icon Redesign & Music Auto-Advance Debug
 
 ### Issues Addressed
