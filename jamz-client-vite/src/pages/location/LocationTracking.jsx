@@ -90,7 +90,8 @@ import {
   ShareLocation as ShareLocationIcon,
   LocationDisabled as LocationDisabledIcon,
   GpsNotFixed as GpsNotFixedIcon,
-  GpsOff as GpsOffIcon
+  GpsOff as GpsOffIcon,
+  Groups as GroupsIcon
 } from '@mui/icons-material';
 
 const LocationTracking = () => {
@@ -2177,6 +2178,70 @@ const LocationTracking = () => {
     }
   };
   
+  // Fit map bounds to show all members
+  const fitAllMembers = () => {
+    console.log('Fitting all members on map');
+    console.log('Map ref exists:', !!mapRef.current);
+
+    if (!mapRef.current) {
+      console.error('Map not initialized yet');
+      return;
+    }
+
+    // Get all member locations (including current user)
+    const allMemberLocations = locations.filter(loc => 
+      loc && loc.latitude && loc.longitude && !loc.isPlace
+    );
+
+    // Add current user location if available
+    if (userLocation && userLocation.latitude && userLocation.longitude) {
+      const currentUserExists = allMemberLocations.some(loc => loc.user_id === user?.id);
+      if (!currentUserExists) {
+        allMemberLocations.push(userLocation);
+      }
+    }
+
+    console.log('All member locations count:', allMemberLocations.length);
+
+    if (allMemberLocations.length === 0) {
+      console.warn('No member locations to fit');
+      showNotification('No member locations available', 'info');
+      return;
+    }
+
+    if (allMemberLocations.length === 1) {
+      // Only one location - just center on it
+      centerMapOnLocation(allMemberLocations[0]);
+      return;
+    }
+
+    try {
+      // Calculate bounds
+      const lngs = allMemberLocations.map(loc => loc.longitude);
+      const lats = allMemberLocations.map(loc => loc.latitude);
+      
+      const bounds = [
+        [Math.min(...lngs), Math.min(...lats)], // Southwest
+        [Math.max(...lngs), Math.max(...lats)]  // Northeast
+      ];
+
+      console.log('Fitting to bounds:', bounds);
+
+      // Fit map to bounds with padding
+      mapRef.current.fitBounds(bounds, {
+        padding: { top: 100, bottom: 100, left: 100, right: 100 },
+        maxZoom: 16,
+        essential: true,
+        duration: 1000
+      });
+
+      showNotification(`Showing ${allMemberLocations.length} member${allMemberLocations.length > 1 ? 's' : ''}`, 'success');
+    } catch (error) {
+      console.error('Error fitting bounds:', error);
+      showNotification('Failed to fit all members', 'error');
+    }
+  };
+  
   // Toggle satellite mode
   const toggleSatelliteMode = (enabled) => {
     if (mapRef.current) {
@@ -3548,7 +3613,7 @@ const LocationTracking = () => {
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 76, // Moved from right: 136
+            right: 116, // Moved left to make room for fit all button
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
@@ -3584,6 +3649,29 @@ const LocationTracking = () => {
           }}
         >
           <MyLocationIcon />
+        </IconButton>
+      </Tooltip>
+
+      {/* Fit All Members Button */}
+      <Tooltip title="Show All Members">
+        <IconButton
+          sx={{
+            position: 'absolute',
+            top: showControls ? 72 : 16,
+            right: 76,
+            zIndex: 10,
+            display: showMembersList ? 'none' : undefined,
+            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
+            color: 'purple',
+            boxShadow: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
+            }
+          }}
+          onClick={fitAllMembers}
+        >
+          <GroupsIcon />
         </IconButton>
       </Tooltip>
 
