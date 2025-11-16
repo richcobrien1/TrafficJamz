@@ -2203,11 +2203,18 @@ const LocationTracking = () => {
     console.log('FIT ALL MEMBERS CLICKED');
     console.log('========================================');
     console.log('Map ref exists:', !!mapRef.current);
-    console.log('locations array:', locations);
+    console.log('locations array:', JSON.stringify(locations, null, 2));
     console.log('locations.length:', locations.length);
 
     if (!mapRef.current) {
-      console.error('Map not initialized yet');
+      console.error('❌ Map not initialized yet');
+      showNotification('Map not ready', 'error');
+      return;
+    }
+
+    if (!locations || locations.length === 0) {
+      console.error('❌ No locations in array');
+      showNotification('No member locations to show', 'info');
       return;
     }
 
@@ -2218,21 +2225,43 @@ const LocationTracking = () => {
                        loc.coordinates.latitude && 
                        loc.coordinates.longitude && 
                        !loc.isPlace;
-      console.log('Checking location:', {
+      console.log('📍 Checking location:', {
         user_id: loc?.user_id,
         username: loc?.username,
         lat: loc?.coordinates?.latitude,
         lng: loc?.coordinates?.longitude,
         isPlace: loc?.isPlace,
-        hasCoords
+        hasCoords,
+        fullLocation: loc
       });
       return hasCoords;
     });
 
-    console.log('Filtered member locations:', allMemberLocations);
-    console.log('Total member locations count:', allMemberLocations.length);
+    console.log('📍 Filtered member locations:', allMemberLocations);
+    console.log('📍 Total member locations count:', allMemberLocations.length);
 
-    if (allMemberLocations.length === 0) {
+    // IMPORTANT: Include current user's location in the bounds calculation
+    // This ensures "Show All Members" includes YOU as well
+    const allLocationsIncludingMe = [...allMemberLocations];
+    
+    // Add current user location if available
+    if (userLocation && userLocation.latitude && userLocation.longitude) {
+      console.log('📍 Adding current user location to bounds:', userLocation);
+      allLocationsIncludingMe.push({
+        user_id: currentUser?.id,
+        username: currentUser?.username || 'Me',
+        coordinates: {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude
+        }
+      });
+    } else {
+      console.warn('⚠️ Current user location not available:', userLocation);
+    }
+
+    console.log('📍 Total locations including current user:', allLocationsIncludingMe.length);
+
+    if (allLocationsIncludingMe.length === 0) {
       console.error('❌ No member locations to fit - check locations array structure');
       showNotification('No member locations available', 'info');
       return;
@@ -2241,9 +2270,9 @@ const LocationTracking = () => {
     // Always use bounds fitting to show ALL members, even if just 1
     // This ensures consistent behavior and proper zoom out
     try {
-      // Calculate bounds from all member locations
-      const lngs = allMemberLocations.map(loc => loc.coordinates.longitude);
-      const lats = allMemberLocations.map(loc => loc.coordinates.latitude);
+      // Calculate bounds from all member locations (including current user)
+      const lngs = allLocationsIncludingMe.map(loc => loc.coordinates.longitude);
+      const lats = allLocationsIncludingMe.map(loc => loc.coordinates.latitude);
       
       const minLng = Math.min(...lngs);
       const maxLng = Math.max(...lngs);
@@ -2302,7 +2331,7 @@ const LocationTracking = () => {
       });
 
       console.log('✅ fitBounds called successfully');
-      showNotification(`Showing ${allMemberLocations.length} members`, 'success');
+      showNotification(`Showing all ${allLocationsIncludingMe.length} member locations`, 'success');
     } catch (error) {
       console.error('❌ Error fitting bounds:', error);
       showNotification('Failed to fit all members', 'error');
