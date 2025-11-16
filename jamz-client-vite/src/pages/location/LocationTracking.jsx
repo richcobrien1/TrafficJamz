@@ -2253,7 +2253,6 @@ const LocationTracking = () => {
       console.log('Calling fitBounds on map...');
       mapRef.current.fitBounds(bounds, {
         padding: { top: 100, bottom: 100, left: 100, right: 100 },
-        maxZoom: 16,
         essential: true,
         duration: 1000
       });
@@ -3712,7 +3711,7 @@ const LocationTracking = () => {
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 76,
+            right: 56,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
