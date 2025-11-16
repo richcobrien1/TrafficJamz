@@ -2007,7 +2007,12 @@ const AudioSession = () => {
               onClick={toggleVoiceMute}
               sx={{ 
                 color: '#000',
-                bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)'
+                bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
+                animation: !isVoiceMuted ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                }
               }}
             >
               {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
@@ -2020,7 +2025,12 @@ const AudioSession = () => {
               disabled={!micInitialized}
               sx={{ 
                 color: '#000',
-                bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)'
+                bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
+                animation: !isMuted ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                }
               }}
             >
               {isMuted ? <MicOffIcon /> : <MicIcon />}
