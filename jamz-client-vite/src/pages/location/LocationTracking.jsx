@@ -153,6 +153,7 @@ const LocationTracking = () => {
     duration,
     volume,
     isController,
+    initializeSession,
     play: musicPlay,
     pause: musicPause,
     seekTo: musicSeek,
@@ -851,18 +852,24 @@ const LocationTracking = () => {
     setGroup(groupData);
     setMembers(groupData.members);
     
-    // Create/fetch audio session for this group immediately
+    // Initialize music session for this group immediately
     try {
-      console.log('🎵 Creating/fetching audio session for group:', groupId);
+      console.log('🎵 Initializing music session for group:', groupId);
+      // First try to get or create audio session
       const sessionResponse = await api.post('/audio/sessions', {
         group_id: groupId,
         session_type: 'voice_with_music',
         recording_enabled: false
       });
-      console.log('🎵 Audio session ready:', sessionResponse.data.session?._id || sessionResponse.data.session?.id);
+      const audioSessionId = sessionResponse.data.session?._id || sessionResponse.data.session?.id;
+      console.log('🎵 Audio session ready:', audioSessionId);
+      
+      // Initialize MusicContext with the session
+      await initializeSession(audioSessionId, groupId);
+      console.log('🎵 Music session initialized successfully');
     } catch (sessionError) {
-      // Session might already exist, that's okay - backend will handle it
-      console.log('🎵 Audio session creation note:', sessionError.response?.data?.message || sessionError.message);
+      console.error('🎵 Music session initialization error:', sessionError);
+      // Continue loading even if music session fails
     }
     
     // Fetch initial member locations with the fresh member data
