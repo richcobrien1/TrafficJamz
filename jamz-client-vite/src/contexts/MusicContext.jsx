@@ -74,8 +74,10 @@ export const MusicProvider = ({ children }) => {
     setActiveSessionId(sessionId);
     setActiveGroupId(groupId);
     
-    // Initialize music service
-    musicService.initialize();
+    // Initialize music service (idempotent - safe to call multiple times)
+    musicService.initialize().catch(err => {
+      console.warn('⚠️ Music service initialization warning:', err.message);
+    });
     
     // Set up callbacks
     musicService.onTrackChange = (track) => {
