@@ -218,7 +218,20 @@ export const useMusicSession = (groupId, audioSessionId) => {
 
     // Set up callbacks
     musicService.onTrackChange = (track) => {
+      console.log('🎵 [Hook] onTrackChange callback:', track?.title);
       setCurrentTrack(track);
+      
+      // If we're the controller and track changed, broadcast to group
+      // This handles auto-advance when track ends
+      if (isControllerRef.current && track) {
+        console.log('🎵 [Hook] Broadcasting track change as controller');
+        socketRef.current?.emit('music-change-track', {
+          sessionId: audioSessionId,
+          track,
+          autoPlay: true,
+          position: 0
+        });
+      }
     };
 
     musicService.onPlayStateChange = (playing) => {
@@ -431,14 +444,19 @@ export const useMusicSession = (groupId, audioSessionId) => {
    * Play next track
    */
   const playNext = useCallback(async () => {
+    console.log('⏭️ playNext called, isController:', isController);
     await musicService.playNext();
     
+    // Controller broadcasts to group
     if (isController) {
+      console.log('⏭️ Broadcasting next track to group');
       socketRef.current?.emit('music-control', {
         sessionId: audioSessionId,
         action: 'next',
         trackId: musicService.currentTrack?.id
       });
+    } else {
+      console.log('⏭️ Not controller - local playback only (no broadcast)');
     }
   }, [audioSessionId, isController]);
 

@@ -57,7 +57,7 @@ class MusicService {
       }
     });
 
-    this.audioElement.addEventListener('ended', () => {
+    this.audioElement.addEventListener('ended', async () => {
       console.log('🎵 ========================================');
       console.log('🎵 TRACK ENDED EVENT FIRED');
       console.log('🎵 ========================================');
@@ -65,7 +65,18 @@ class MusicService {
       console.log('🎵 Playlist length:', this.playlist.length);
       console.log('🎵 Playlist tracks:', this.playlist.map(t => `${t.title} (${t.id})`));
       console.log('🎵 Calling playNext()...');
-      this.playNext();
+      
+      try {
+        await this.playNext();
+        console.log('🎵 ✅ Auto-advanced to next track successfully');
+        
+        // Trigger callback so hook can broadcast if controller
+        if (this.onTrackChange) {
+          this.onTrackChange(this.currentTrack);
+        }
+      } catch (error) {
+        console.error('🎵 ❌ Failed to auto-advance to next track:', error);
+      }
     });
 
     this.audioElement.addEventListener('timeupdate', () => {
