@@ -525,12 +525,19 @@ const AudioSession = () => {
         });
       };
 
-      console.log('🎤 Starting getUserMedia call...');
+      console.log('🎤 Starting getUserMedia call with echo cancellation and noise suppression...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 1
+        },
         video: false
       });
-      console.log('🎤 getUserMediaPromise resolved successfully');
+      console.log('🎤 getUserMedia resolved with audio processing enabled');
+      console.log('🎤 Audio constraints applied: echoCancellation=true, noiseSuppression=true, autoGainControl=true');
 
       console.log('✅ Microphone access granted!');
       console.log('✅ Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
@@ -1436,7 +1443,7 @@ const AudioSession = () => {
       }
     };
 
-    // Handle connection state changes
+    // Handle connection state changes with automatic reconnection
     peerConnection.onconnectionstatechange = () => {
       console.log('🔗 Connection state changed:', peerConnection.connectionState);
       console.log('🔗 Full connection state details:', {
@@ -1445,8 +1452,36 @@ const AudioSession = () => {
         iceGatheringState: peerConnection.iceGatheringState,
         signalingState: peerConnection.signalingState
       });
-      setConnected(peerConnection.connectionState === 'connected');
-      setConnecting(peerConnection.connectionState === 'connecting');
+      
+      const state = peerConnection.connectionState;
+      setConnected(state === 'connected');
+      setConnecting(state === 'connecting');
+      
+      // Automatic reconnection on connection failure
+      if (state === 'disconnected' || state === 'failed') {
+        console.warn('🔗 ⚠️ Connection lost, attempting reconnection in 2 seconds...');
+        setAudioError('Voice connection lost. Reconnecting...');
+        
+        setTimeout(async () => {
+          try {
+            console.log('🔗 🔄 Attempting to reconnect...');
+            if (signalingRef.current && rtcConnectionRef.current) {
+              // ICE restart
+              const offer = await rtcConnectionRef.current.createOffer({ iceRestart: true });
+              await rtcConnectionRef.current.setLocalDescription(offer);
+              signalingRef.current.emit('webrtc-offer', {
+                offer: rtcConnectionRef.current.localDescription,
+                sessionId: sessionIdRef.current
+              });
+              console.log('🔗 ✅ Reconnection offer sent');
+              setAudioError(null);
+            }
+          } catch (err) {
+            console.error('🔗 ❌ Reconnection failed:', err.message);
+            setAudioError('Failed to reconnect. Please refresh the page.');
+          }
+        }, 2000);
+      }
     };
 
     // Handle ICE connection state changes
@@ -1495,6 +1530,19 @@ const AudioSession = () => {
 
     // IMPORTANT: Extract stream ID to identify which participant this belongs to
     const streamId = stream.id;
+    
+    // Check for duplicate streams to prevent feedback loops
+    const remoteAudios = document.getElementById('remote-audios');
+    if (remoteAudios) {
+      const existingAudio = Array.from(remoteAudios.querySelectorAll('audio')).find(
+        audio => audio.dataset.streamId === streamId
+      );
+      if (existingAudio) {
+        console.log('🎵 ⚠️ Stream already exists, updating existing audio element instead');
+        existingAudio.srcObject = stream;
+        return;
+      }
+    }
 
     // Create audio element for remote stream
     const audioElement = new Audio();
@@ -1507,6 +1555,22 @@ const AudioSession = () => {
     NativeAudio.configureAudioElement(audioElement, outputVolume, false);
     audioElement.muted = false; // Explicitly ensure not muted
     console.log('🎵 Remote audio element created - volume:', outputVolume, 'muted:', false);
+    
+    // Monitor track health
+    stream.getTracks().forEach(track => {
+      track.onended = () => {
+        console.warn('🎵 ⚠️ Remote audio track ended:', track.id);
+        audioElement.remove();
+        setAudioError('Participant audio disconnected');
+        setTimeout(() => setAudioError(null), 3000);
+      };
+      track.onmute = () => {
+        console.warn('🎵 ⚠️ Remote audio track muted:', track.id);
+      };
+      track.onunmute = () => {
+        console.log('🎵 ✅ Remote audio track unmuted:', track.id);
+      };
+    });
 
     // Add event listeners to debug audio playback
     audioElement.onloadedmetadata = () => console.log('🎵 Audio element loaded metadata');
@@ -1583,22 +1647,12 @@ const AudioSession = () => {
     setTimeout(attemptPlay, 100);
 
     // Store the audio element
-    const remoteAudios = document.getElementById('remote-audios');
     if (remoteAudios) {
-      // Remove any existing audio elements for this stream
-      const existingAudios = remoteAudios.querySelectorAll('audio');
-      existingAudios.forEach(audio => {
-        if (audio.srcObject === stream) {
-          console.log('🎵 Removing existing audio element');
-          audio.remove();
-        }
-      });
-
       console.log('🎵 Appending new audio element to DOM');
       remoteAudios.appendChild(audioElement);
       console.log('🎵 Total audio elements in container:', remoteAudios.children.length);
     } else {
-      console.warn('🎵 Remote audios container not found');
+      console.warn('🎵 ⚠️ Remote audios container not found - audio will not play');
     }
   };
   
