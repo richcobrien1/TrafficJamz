@@ -3480,15 +3480,15 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={isPlaying ? (isMusicMuted ? "Unmute Music" : "Mute Music") : "Music Paused"}>
+          <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying && !isMusicMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
-                ...(isPlaying && !isMusicMuted && {
+                ...(isPlaying && {
                   animation: 'musicPulse 1.5s ease-in-out infinite',
                   '@keyframes musicPulse': {
                     '0%, 100%': { 
@@ -3501,19 +3501,14 @@ const LocationTracking = () => {
                 })
               }}
               onClick={() => {
-                if (isMusicMuted) {
-                  // Unmute
-                  setVolume(lastMusicVolume);
-                  setIsMusicMuted(false);
+                if (isPlaying) {
+                  musicPause();
                 } else {
-                  // Mute
-                  setLastMusicVolume(volume);
-                  setVolume(0);
-                  setIsMusicMuted(true);
+                  musicPlay();
                 }
               }}
             >
-              {isPlaying && isMusicMuted ? <MusicOffIcon /> : (isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />)}
+              {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
             </IconButton>
           </Tooltip>
           
