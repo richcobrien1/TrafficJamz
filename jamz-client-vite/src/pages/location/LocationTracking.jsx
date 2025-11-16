@@ -15,6 +15,7 @@ import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { useAudioSession } from '../../hooks/useAudioSession';
 import { useMusicSession } from '../../hooks/useMusicSession';
+import musicService from '../../services/music.service';
 import MusicPlayer from '../../components/music/MusicPlayer';
 import MusicUpload from '../../components/music/MusicUpload';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
@@ -3480,7 +3481,17 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
+          <Tooltip 
+            title={
+              !playlist || playlist.length === 0 
+                ? "No Music - Click to Add Tracks" 
+                : isPlaying 
+                  ? "Music Playing - Click to Pause" 
+                  : currentTrack 
+                    ? "Music Paused - Click to Resume"
+                    : "Click to Play Music"
+            }
+          >
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
@@ -3492,13 +3503,17 @@ const LocationTracking = () => {
                   animation: 'musicPulse 1.5s ease-in-out infinite',
                   '@keyframes musicPulse': {
                     '0%, 100%': { 
-                      transform: 'scale(1)'
+                      transform: 'scale(1)',
+                      opacity: 1
                     },
                     '50%': { 
-                      transform: 'scale(1.15)'
+                      transform: 'scale(1.15)',
+                      opacity: 0.5
                     }
                   }
-                })
+                }),
+                // Dim the icon when no music available
+                opacity: (!playlist || playlist.length === 0) ? 0.5 : 1
               }}
               onClick={() => {
                 console.log('🎵 Music icon clicked');
@@ -3514,12 +3529,21 @@ const LocationTracking = () => {
                   return;
                 }
                 
+                // Toggle play/pause
                 if (isPlaying) {
                   console.log('⏸️ Pausing music');
                   musicPause();
                 } else {
                   console.log('▶️ Playing music');
-                  musicPlay();
+                  // If no current track but we have a playlist, load the first track
+                  if (!currentTrack && playlist.length > 0) {
+                    console.log('🎵 No current track, loading first track from playlist');
+                    musicService.loadTrack(playlist[0]).then(() => {
+                      musicPlay();
+                    });
+                  } else {
+                    musicPlay();
+                  }
                 }
               }}
             >
