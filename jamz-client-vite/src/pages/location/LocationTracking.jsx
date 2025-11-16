@@ -3483,17 +3483,15 @@ const LocationTracking = () => {
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
-                  bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
                 animation: isPlaying ? 'musicPulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes musicPulse': {
                   '0%, 100%': { 
-                    transform: 'scale(1)',
-                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.4)'
+                    transform: 'scale(1)'
                   },
                   '50%': { 
-                    transform: 'scale(1.15)',
-                    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.1)'
+                    transform: 'scale(1.15)'
                   }
                 }
               }}
@@ -3515,17 +3513,15 @@ const LocationTracking = () => {
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isInSession && !isVoiceMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
-                  bgcolor: isInSession ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
                 animation: !isVoiceMuted && isInSession ? 'headsetPulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes headsetPulse': {
                   '0%, 100%': { 
-                    transform: 'scale(1)',
-                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.4)'
+                    transform: 'scale(1)'
                   },
                   '50%': { 
-                    transform: 'scale(1.15)',
-                    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.1)'
+                    transform: 'scale(1.15)'
                   }
                 }
               }}
@@ -3541,17 +3537,15 @@ const LocationTracking = () => {
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isInSession && !isMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
-                  bgcolor: isInSession ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
                 animation: !isMuted && isInSession ? 'micPulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes micPulse': {
                   '0%, 100%': { 
-                    transform: 'scale(1)',
-                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.4)'
+                    transform: 'scale(1)'
                   },
                   '50%': { 
-                    transform: 'scale(1.15)',
-                    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.1)'
+                    transform: 'scale(1.15)'
                   }
                 }
               }}
@@ -3577,7 +3571,10 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: showPlaces ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                bgcolor: showPlaces ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                }
               }}
               onClick={() => setShowPlaces(!showPlaces)}
             >
@@ -3590,7 +3587,10 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                bgcolor: sharingLocation ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                }
               }}
               onClick={toggleLocationSharing}
             >
