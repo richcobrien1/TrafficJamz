@@ -230,9 +230,18 @@ class MusicService {
         }
       };
       
-      platformMusicService.onTrackChange = (direction) => {
+      platformMusicService.onTrackChange = async (direction) => {
+        console.log('🔄 [YouTube] onTrackChange callback fired, direction:', direction);
         if (direction === 'next') {
-          this.playNext();
+          console.log('⏭️ [YouTube] Track ended, calling playNext()...');
+          await this.playNext();
+          console.log('✅ [YouTube] playNext() completed');
+          
+          // Notify context that track changed
+          if (this.onTrackChange) {
+            console.log('📢 [YouTube] Notifying context of track change');
+            this.onTrackChange(this.currentTrack);
+          }
         }
       };
       
