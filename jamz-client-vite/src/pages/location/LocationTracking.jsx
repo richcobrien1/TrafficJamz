@@ -126,6 +126,7 @@ const LocationTracking = () => {
     participants: audioParticipants,
     error: audioError,
     audioLevel,
+    sessionId: audioSessionId,
     joinSession, 
     leaveSession, 
     toggleMute,
@@ -158,12 +159,10 @@ const LocationTracking = () => {
     playNext,
     playPrevious,
     setVolume,
-    takeControl,
-    releaseControl,
     addTrack,
     removeTrack,
     loadAndPlay
-  } = useMusicSession(groupId, groupId); // Use groupId as sessionId for location tracking
+  } = useMusicSession(groupId, audioSessionId || groupId); // Use audio session ID when available
   
   // Music player visibility
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
@@ -1314,6 +1313,20 @@ const LocationTracking = () => {
   useEffect(() => {
     fetchGroupDetails();
   }, []);
+
+  // Auto-join audio session for music functionality
+  useEffect(() => {
+    if (groupId && !isInSession) {
+      console.log('🎵 Auto-joining audio session for music functionality...');
+      const timer = setTimeout(() => {
+        joinSession().catch(err => {
+          console.error('Failed to auto-join audio session:', err);
+        });
+      }, 1000); // 1 second delay to ensure everything is initialized
+      
+      return () => clearTimeout(timer);
+    }
+  }, [groupId, isInSession, joinSession]);
 
   // Initialize rename input when dialog opens for a place
   useEffect(() => {
@@ -4674,8 +4687,6 @@ const LocationTracking = () => {
           onSeek={(position) => musicSeek(position)}
           onVolumeChange={(vol) => setVolume(vol)}
           onClose={() => setShowMusicPlayer(false)}
-          onTakeControl={takeControl}
-          onReleaseControl={releaseControl}
           onSelectTrack={(track) => loadAndPlay(track)}
         />
       )}
