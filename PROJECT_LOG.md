@@ -4,6 +4,83 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 15, 2025 (Evening) - Voice Icon Redesign & Music Auto-Advance Debug
+
+### Issues Addressed
+1. **Music Playlist Not Auto-Advancing** - Songs don't automatically play next track when current track ends
+2. **Headset Icon Misunderstood** - Icon was trying to join/leave session (wrong behavior)
+3. **Deployment Confusion** - Changes weren't appearing on production (jamz.v2u.us)
+
+### Changes Made
+
+#### 1. Voice Control Icon Redesign (CRITICAL FIX)
+- **Problem**: Headset icon was calling `joinSession()`/`leaveSession()` causing "Failed to create audio session" errors
+- **Clarification**: Headset = voice OUTPUT mute toggle (NOT session join/leave)
+- **Pattern**: Made Headset behave exactly like Music Note icon (simple on/off toggle)
+- **Implementation**:
+  - Added `const [isVoiceMuted, setIsVoiceMuted] = useState(false);` to LocationTracking and AudioSession
+  - Headset onClick: `() => setIsVoiceMuted(!isVoiceMuted)` (simple toggle)
+  - Shows HeadsetIcon when active, HeadsetOffIcon when muted (crossthrough)
+  - Pulses when `!isVoiceMuted && isInSession` (same pattern as Music/Mic icons)
+- **Voice Session Auto-Join**: Re-enabled with 1-second delay on LocationTracking page load
+- **Files**: 
+  - `jamz-client-vite/src/pages/location/LocationTracking.jsx`
+  - `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+
+#### 2. Deployment Investigation & Resolution
+- **Discovery**: Two Vercel projects existed causing confusion
+  - `jamz-client-vite` → https://jamz-client-vite.vercel.app (WRONG)
+  - `traffic-jamz-jamz-client-vite` → https://jamz.v2u.us (CORRECT)
+- **Solution**: Used `vercel projects ls` to identify correct project
+- **Verification**: Checked Vercel dashboard - commit 37d6e781 deployed successfully
+- **Result**: Confirmed GitHub auto-deploy IS working to correct project
+- **Lesson**: Always verify which Vercel project serves production domain before debugging deployments
+- **Files**: `.vercel/project.json` correctly linked to `prj_XKugz1Ro6WxgsbovQfSV7LbBHtiF`
+
+#### 3. Music Auto-Advance Debug Logging
+- **Problem**: Music doesn't continue to next track when current track ends
+- **Investigation**: Added extensive debug logging to track ended event and playNext() behavior
+- **Changes**:
+  - Enhanced `ended` event listener logging: Shows current track, playlist length, track IDs
+  - Enhanced `playNext()` logging: Shows current index, playlist contents, track changes
+  - Added fallback: If current track not found in playlist, plays first track
+  - Added detection: Warns if only 1 track in playlist (would loop)
+- **Purpose**: Will help identify if issue is:
+  - `ended` event not firing
+  - `playNext()` not being called
+  - Current track not in `musicService.playlist` array
+  - Playlist empty or has only 1 track
+- **Files**: `jamz-client-vite/src/services/music.service.js`
+
+#### 4. Enhanced Pulse Animations (from earlier)
+- **Made more prominent**: 1.5s cycle (was 2s), scale 1.15 (was 1.1), opacity 0.5 (was 0.7)
+- **Applied to**: Music Note, Headset, Mic icons on LocationTracking and AudioSession pages
+
+### Testing Results
+- ✅ Headset icon correctly toggles voice output mute (not session join/leave)
+- ✅ Deployment to jamz.v2u.us confirmed working via Vercel dashboard
+- ✅ Pulse animations more noticeable
+- ✅ Auto-join voice session on LocationTracking page load
+- ⏳ Music auto-advance: Debug logging deployed, awaiting test results
+
+### Commits
+- `59b0525d` - Add enhanced debug logging for music auto-advance troubleshooting
+- `37d6e781` - Fix Headset icon: make it voice output mute toggle (not join/leave session), re-enable auto-join
+- `0f85a7bc` - Fix babel version conflict in package.json
+
+### Next Steps
+1. **Test music auto-advance**: Play 2+ tracks, watch console for debug logs when track ends
+2. **Test voice communication**: Verify Headset mutes voice output, Mic mutes input
+3. **Cross-device voice test**: iPhone Edge ↔ PC browser
+
+### Lessons Learned
+- **Verify Vercel projects**: Multiple projects can cause deployment confusion - use `vercel projects ls` to identify which serves production
+- **Confirm user intent before implementing**: Major time lost due to Headset icon misunderstanding
+- **Pattern consistency matters**: Voice controls should follow same toggle pattern as Music Note
+- **Debug logging essential**: Can't fix what you can't see - comprehensive logs help identify root cause
+
+---
+
 ## Session: November 15, 2025 - Voice Controls & Icon Improvements
 
 ### Issues Addressed
