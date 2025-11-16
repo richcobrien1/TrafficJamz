@@ -2044,11 +2044,16 @@ const AudioSession = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title={isMusicEnabled ? "Music On" : "Music Off"}>
+          <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
             <IconButton 
               sx={{ 
                 color: '#000',
-                bgcolor: isMusicEnabled ? 'rgba(0,0,0,0.1)' : 'transparent'
+                bgcolor: musicIsPlaying ? 'rgba(0,0,0,0.1)' : 'transparent',
+                animation: musicIsPlaying ? 'pulse 2s ease-in-out infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                }
               }}
               onClick={() => setOpenMusicDialog(true)}
             >
