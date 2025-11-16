@@ -29,6 +29,7 @@ import AppLoader from './components/AppLoader';
 import api from './services/api';
 
 import MapboxMap from './components/MapboxMap';
+import musicService from './services/music.service';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -156,6 +157,21 @@ function App() {
       wakeUpBackend();
     }
   }, []); // Run only once on mount
+
+  // Preload YouTube API and initialize music service early
+  useEffect(() => {
+    const preloadMusic = async () => {
+      try {
+        console.log('🎵 Preloading YouTube API for instant music playback...');
+        await musicService.initialize();
+        console.log('✅ Music service preloaded and ready!');
+      } catch (error) {
+        console.warn('⚠️ Music service preload failed (will retry on first play):', error.message);
+      }
+    };
+
+    preloadMusic();
+  }, []); // Run once on mount
 
   // iOS-specific: Detect when app returns from background and refresh if needed
   useEffect(() => {
