@@ -3458,10 +3458,19 @@ const LocationTracking = () => {
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                '&:hover': {
+                  bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                },
+                animation: isPlaying ? 'musicPulse 1.5s ease-in-out infinite' : 'none',
+                '@keyframes musicPulse': {
+                  '0%, 100%': { 
+                    transform: 'scale(1)',
+                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.4)'
+                  },
+                  '50%': { 
+                    transform: 'scale(1.15)',
+                    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.1)'
+                  }
                 }
               }}
               onClick={() => {
