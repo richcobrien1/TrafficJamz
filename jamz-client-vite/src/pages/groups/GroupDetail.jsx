@@ -869,7 +869,7 @@ const GroupDetail = () => {
                     }}
                     onClick={() => navigate(`/music/${groupId}`)}
                   >
-                    <MusicNoteIcon />
+                    <span style={{ fontSize: '28px', marginRight: '8px' }}>🎵</span>
                     <Typography variant="h6">Music</Typography>
                     {musicIsPlaying && (
                       <>
