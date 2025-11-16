@@ -196,7 +196,7 @@ class PlatformMusicService {
       // Set up callback for when SDK loads
       const originalCallback = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
-        console.log('✅ YouTube SDK loaded');
+        console.log('✅ YouTube SDK loaded via callback');
         if (originalCallback) originalCallback();
         resolve();
       };
@@ -204,19 +204,17 @@ class PlatformMusicService {
       // Check if script already exists (from index.html)
       const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
       if (existingScript) {
-        console.log('✅ YouTube SDK script already in DOM, waiting for it to load...');
-        // Script exists, just wait for it to load
-        // If it's already loaded, the check above would have caught it
-        // If it's loading, our callback will fire
-        return;
+        console.log('✅ YouTube SDK script already in DOM, waiting for onYouTubeIframeAPIReady callback...');
+        // Script exists, callback is set up above - now wait for it to fire
+        // Don't return here - let the promise wait for the callback!
+      } else {
+        // If no script exists, create one (fallback)
+        console.log('⚠️ YouTube SDK not found, loading it now...');
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.async = true;
+        document.body.appendChild(script);
       }
-
-      // If no script exists, create one (fallback)
-      console.log('⚠️ YouTube SDK not found, loading it now...');
-      const script = document.createElement('script');
-      script.src = 'https://www.youtube.com/iframe_api';
-      script.async = true;
-      document.body.appendChild(script);
     });
   }
 
