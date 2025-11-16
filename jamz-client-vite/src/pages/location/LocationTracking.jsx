@@ -855,18 +855,35 @@ const LocationTracking = () => {
     // Initialize music session for this group immediately
     try {
       console.log('🎵 Initializing music session for group:', groupId);
-      // First try to get or create audio session
-      const sessionResponse = await api.post('/audio/sessions', {
-        group_id: groupId,
-        session_type: 'voice_with_music',
-        recording_enabled: false
-      });
-      const audioSessionId = sessionResponse.data.session?._id || sessionResponse.data.session?.id;
-      console.log('🎵 Audio session ready:', audioSessionId);
+      
+      // First check if audio session already exists
+      let audioSessionId = null;
+      try {
+        const existingSessionResponse = await api.get(`/audio/sessions/group/${groupId}`);
+        if (existingSessionResponse.data.session) {
+          audioSessionId = existingSessionResponse.data.session._id || existingSessionResponse.data.session.id;
+          console.log('✅ Audio session already exists:', audioSessionId);
+        }
+      } catch (err) {
+        console.log('No existing audio session found, will create new one');
+      }
+      
+      // Create new session if none exists
+      if (!audioSessionId) {
+        const sessionResponse = await api.post('/audio/sessions', {
+          group_id: groupId,
+          session_type: 'voice_with_music',
+          recording_enabled: false
+        });
+        audioSessionId = sessionResponse.data.session?._id || sessionResponse.data.session?.id;
+        console.log('🎵 Audio session created:', audioSessionId);
+      }
       
       // Initialize MusicContext with the session
-      await initializeSession(audioSessionId, groupId);
-      console.log('🎵 Music session initialized successfully');
+      if (audioSessionId) {
+        await initializeSession(audioSessionId, groupId);
+        console.log('🎵 Music session initialized successfully');
+      }
     } catch (sessionError) {
       console.error('🎵 Music session initialization error:', sessionError);
       // Continue loading even if music session fails
