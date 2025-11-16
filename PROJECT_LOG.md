@@ -4,6 +4,90 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 16, 2025 (Late Evening) - WebRTC Voice Transport Endpoint Regression Fix 🔧
+
+### Issue Addressed
+**WebRTC Voice Communication 404 Error** - Fixed production regression where voice chat endpoints returned 404
+
+### Root Cause Analysis
+- **Error**: POST `/api/audio/transport/create` returning 404
+- **Historical Context**: WebRTC voice chat worked perfectly on Nov 14, 2025 (2 days ago)
+- **Root Cause**: Frontend endpoint paths didn't match backend route structure
+  - Frontend called: `/api/audio/transport/create`
+  - Backend expected: `/api/audio/sessions/:sessionId/transport`
+- **Impact**: Complete voice chat feature failure in production
+
+### Technical Details
+
+**Backend Routes** (from `audio.routes.js`):
+```javascript
+router.post('/sessions/:sessionId/transport', ...)           // Create transport
+router.post('/sessions/:sessionId/transport/:transportId/connect', ...) // Connect
+router.post('/sessions/:sessionId/transport/:transportId/produce', ...) // Produce
+router.post('/sessions/:sessionId/transport/:transportId/consume', ...) // Consume
+```
+
+**Frontend Fix** (commit e9101538):
+Fixed `useAudioSession.js` to use correct endpoint paths:
+
+Before:
+```javascript
+await fetch(`${API_URL}/api/audio/transport/create`, {
+  body: JSON.stringify({ sessionId, direction: 'send' })
+})
+```
+
+After:
+```javascript
+await fetch(`${API_URL}/api/audio/sessions/${sessionIdRef.current}/transport`, {
+  body: JSON.stringify({ direction: 'send' })
+})
+```
+
+### Changes Made
+
+**File Modified**: `jamz-client-vite/src/hooks/useAudioSession.js`
+
+1. **Transport Creation Endpoints**:
+   - ❌ `/api/audio/transport/create`
+   - ✅ `/api/audio/sessions/${sessionId}/transport`
+
+2. **Transport Connection Endpoints**:
+   - ❌ `/api/audio/transport/connect` with `{ sessionId, transportId, dtlsParameters }`
+   - ✅ `/api/audio/sessions/${sessionId}/transport/${transportId}/connect` with `{ dtlsParameters }`
+
+3. **Producer Creation Endpoints**:
+   - ❌ `/api/audio/produce` with `{ sessionId, transportId, kind, rtpParameters }`
+   - ✅ `/api/audio/sessions/${sessionId}/transport/${transportId}/produce` with `{ kind, rtpParameters }`
+
+### Commits
+- **e9101538**: Fix WebRTC transport endpoint paths to match backend routes
+
+### Testing Verification
+- ✅ Endpoint paths now match backend route structure
+- ✅ SessionId moved from request body to URL path parameter
+- ✅ TransportId moved from request body to URL path parameter
+- ✅ Frontend build successful (35.51s)
+- ✅ Code deployed to Vercel (auto-deploy on push)
+
+### Lessons Learned
+**CRITICAL**: Endpoint path mismatches cause silent production failures
+- Backend routes MUST be documented when WebRTC features are implemented
+- Frontend endpoint calls MUST be verified against actual backend routes
+- 404 errors on working features = endpoint path mismatch, not missing functionality
+- User was correct: "THEY ARE THERE! THEY WORKED 2 DAYS AGO"
+
+### Next Steps
+1. Monitor Vercel deployment for successful frontend update
+2. Test voice chat functionality in production after deployment
+3. Verify all WebRTC transport operations (create, connect, produce, consume)
+4. Consider creating endpoint documentation to prevent future regressions
+
+### Status
+🚀 **DEPLOYED** - Awaiting Vercel auto-deployment completion
+
+---
+
 ## Session: November 16, 2025 (Evening) - Music System Critical Fixes 🎵
 
 ### Issues Addressed

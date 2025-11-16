@@ -238,6 +238,15 @@ class PlatformMusicService {
           },
           onStateChange: (event) => {
             // YouTube states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+            console.log('🎵 YouTube onStateChange:', event.data, {
+              '-1': 'unstarted',
+              0: 'ended',
+              1: 'playing',
+              2: 'paused',
+              3: 'buffering',
+              5: 'cued'
+            }[event.data] || 'unknown');
+            
             if (event.data === 1) {
               this.isPlaying = true;
               if (this.onPlayStateChange) this.onPlayStateChange(true);
@@ -245,8 +254,17 @@ class PlatformMusicService {
               this.isPlaying = false;
               if (this.onPlayStateChange) this.onPlayStateChange(false);
             } else if (event.data === 0) {
-              console.log('🎵 YouTube track ended');
-              if (this.onTrackChange) this.onTrackChange('next');
+              console.log('🎵 ========================================');
+              console.log('🎵 YOUTUBE TRACK ENDED (state = 0)');
+              console.log('🎵 Has onTrackChange callback:', !!this.onTrackChange);
+              console.log('🎵 Current track:', this.currentTrack?.title);
+              console.log('🎵 ========================================');
+              if (this.onTrackChange) {
+                console.log('🎵 Calling onTrackChange("next")...');
+                this.onTrackChange('next');
+              } else {
+                console.error('🎵 ❌ onTrackChange callback is NULL - cannot auto-advance!');
+              }
             }
           },
           onError: (event) => {
