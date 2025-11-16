@@ -2049,10 +2049,10 @@ const AudioSession = () => {
               sx={{ 
                 color: '#000',
                 bgcolor: musicIsPlaying ? 'rgba(0,0,0,0.1)' : 'transparent',
-                animation: musicIsPlaying ? 'pulse 2s ease-in-out infinite' : 'none',
+                animation: musicIsPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
               onClick={() => setOpenMusicDialog(true)}
@@ -2067,10 +2067,10 @@ const AudioSession = () => {
               sx={{ 
                 color: '#000',
                 bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
-                animation: !isVoiceMuted ? 'pulse 2s ease-in-out infinite' : 'none',
+                animation: !isVoiceMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
             >
@@ -2085,10 +2085,10 @@ const AudioSession = () => {
               sx={{ 
                 color: '#000',
                 bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
-                animation: !isMuted ? 'pulse 2s ease-in-out infinite' : 'none',
+                animation: !isMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
             >
