@@ -77,6 +77,7 @@ import {
   MicNone as MicNoneIcon,
   MusicNote as MusicNoteIcon,
   MusicNoteOutlined as MusicNoteOutlinedIcon,
+  MusicOff as MusicOffIcon,
   ScreenShare as ScreenShareIcon,
   StopScreenShare as StopScreenShareIcon,
   Headset as HeadsetIcon,
@@ -136,6 +137,10 @@ const LocationTracking = () => {
   
   // Voice output mute state (for headset/speaker icon)
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
+  
+  // Music mute state
+  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [lastMusicVolume, setLastMusicVolume] = useState(50);
   
   // Music session hook
   const {
@@ -3475,33 +3480,43 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
+          <Tooltip title={isPlaying ? (isMusicMuted ? "Unmute Music" : "Mute Music") : "Music Paused"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: isPlaying && !isMusicMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
-                animation: isPlaying ? 'musicPulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes musicPulse': {
-                  '0%, 100%': { 
-                    transform: 'scale(1)'
-                  },
-                  '50%': { 
-                    transform: 'scale(1.15)'
+                ...(isPlaying && !isMusicMuted && {
+                  animation: 'musicPulse 1.5s ease-in-out infinite',
+                  '@keyframes musicPulse': {
+                    '0%, 100%': { 
+                      transform: 'scale(1)'
+                    },
+                    '50%': { 
+                      transform: 'scale(1.15)'
+                    }
                   }
-                }
+                })
               }}
               onClick={() => {
                 if (isPlaying) {
-                  musicPause();
-                } else {
-                  musicPlay();
+                  if (isMusicMuted) {
+                    // Unmute
+                    setVolume(lastMusicVolume);
+                    setIsMusicMuted(false);
+                  } else {
+                    // Mute
+                    setLastMusicVolume(volume);
+                    setVolume(0);
+                    setIsMusicMuted(true);
+                  }
                 }
               }}
+              disabled={!isPlaying}
             >
-              <MusicNoteOutlinedIcon />
+              {isPlaying && isMusicMuted ? <MusicOffIcon /> : <MusicNoteOutlinedIcon />}
             </IconButton>
           </Tooltip>
           
