@@ -214,10 +214,23 @@ export const useAudioSession = (groupId) => {
       });
 
       if (!sendTransportResponse.ok) {
-        throw new Error('Failed to create send transport');
+        const errorText = await sendTransportResponse.text();
+        console.error('❌ Send transport response not OK:', {
+          status: sendTransportResponse.status,
+          statusText: sendTransportResponse.statusText,
+          errorBody: errorText
+        });
+        throw new Error(`Failed to create send transport: ${sendTransportResponse.status} ${errorText}`);
       }
 
       const sendTransportData = await sendTransportResponse.json();
+      console.log('✅ Send transport response:', sendTransportData);
+      console.log('🔍 Transport object:', sendTransportData.transport);
+
+      if (!sendTransportData.transport) {
+        console.error('❌ No transport in response! Full response:', sendTransportData);
+        throw new Error('Backend did not return transport object');
+      }
 
       await audioService.createSendTransport(
         sendTransportData.transport,
