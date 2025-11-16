@@ -588,6 +588,7 @@ export const useAudioSession = (groupId) => {
     participants,
     error,
     audioLevel,
+    sessionId: sessionIdRef.current,
     
     // Actions
     joinSession,
