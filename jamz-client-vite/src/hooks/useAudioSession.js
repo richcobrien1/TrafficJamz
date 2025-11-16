@@ -571,6 +571,38 @@ export const useAudioSession = (groupId) => {
     }
   }, [isInSession, isMuted]);
 
+  /**
+   * Mute all remote broadcast audio (music from other participants)
+   */
+  const muteBroadcastAudio = useCallback(() => {
+    console.log('🔇 Muting all broadcast audio...');
+    audioElementsRef.current.forEach((audioElement, userId) => {
+      audioElement.volume = 0;
+      console.log(`🔇 Muted broadcast from user: ${userId}`);
+    });
+  }, []);
+
+  /**
+   * Unmute all remote broadcast audio (music from other participants)
+   */
+  const unmuteBroadcastAudio = useCallback(() => {
+    console.log('🔊 Unmuting all broadcast audio...');
+    audioElementsRef.current.forEach((audioElement, userId) => {
+      audioElement.volume = 1;
+      console.log('🔊 Unmuted broadcast from user:', userId);
+    });
+  }, []);
+
+  /**
+   * Set volume for all remote broadcast audio
+   */
+  const setBroadcastVolume = useCallback((volume) => {
+    console.log(`🔊 Setting broadcast volume to: ${volume}`);
+    audioElementsRef.current.forEach((audioElement, userId) => {
+      audioElement.volume = Math.max(0, Math.min(1, volume));
+    });
+  }, []);
+
   return {
     // State
     isConnected,
@@ -587,6 +619,9 @@ export const useAudioSession = (groupId) => {
     leaveSession,
     toggleMute,
     shareDesktopAudio,
-    stopDesktopAudio
+    stopDesktopAudio,
+    muteBroadcastAudio,
+    unmuteBroadcastAudio,
+    setBroadcastVolume
   };
 };
