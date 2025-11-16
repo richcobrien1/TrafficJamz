@@ -131,7 +131,10 @@ const LocationTracking = () => {
     leaveSession, 
     toggleMute,
     shareDesktopAudio,
-    stopDesktopAudio
+    stopDesktopAudio,
+    muteBroadcastAudio,
+    unmuteBroadcastAudio,
+    setBroadcastVolume
   } = useAudioSession(groupId);
   
   // Desktop audio sharing state
@@ -140,8 +143,8 @@ const LocationTracking = () => {
   // Voice output mute state (for headset/speaker icon)
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   
-  // Music mute state
-  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  // Broadcast music mute state (for music note icon - controls receiving broadcast audio)
+  const [isBroadcastMuted, setIsBroadcastMuted] = useState(false);
   const [lastMusicVolume, setLastMusicVolume] = useState(50);
   
   // Music session from context
@@ -3589,18 +3592,18 @@ const LocationTracking = () => {
           
           {/* Centered Audio Controls */}
           <Tooltip title={
-            !isPlaying && currentTrack ? "Play Music" :
-            !isPlaying && playlist?.length > 0 ? "Play Music" :
-            isMusicMuted ? "Unmute Music" : "Mute Music"
+            isBroadcastMuted 
+              ? "Unmute Music Broadcast - Click to hear group music" 
+              : "Mute Music Broadcast - Click to stop hearing group music"
           }>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying && !isMusicMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: isPlaying && !isBroadcastMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
-                ...(isPlaying && !isMusicMuted && {
+                ...(isPlaying && !isBroadcastMuted && {
                   animation: 'musicPulse 1.5s ease-in-out infinite',
                   '@keyframes musicPulse': {
                     '0%, 100%': { 
@@ -3614,120 +3617,26 @@ const LocationTracking = () => {
                   }
                 })
               }}
-              onClick={async () => {
+              onClick={() => {
                 console.log('🎵 ========================================');
-                console.log('🎵 MUSIC ICON CLICKED - FULL DIAGNOSTIC');
-                console.log('🎵 ========================================');
-                console.log('🎵 isPlaying:', isPlaying);
-                console.log('🎵 isMusicMuted:', isMusicMuted);
-                console.log('🎵 currentTrack:', currentTrack);
-                console.log('🎵 currentTrack type:', typeof currentTrack);
-                console.log('🎵 playlist:', playlist);
-                console.log('🎵 playlist type:', typeof playlist);
-                console.log('🎵 playlist is array:', Array.isArray(playlist));
-                console.log('🎵 playlist length:', playlist?.length);
-                console.log('🎵 playlist tracks:', playlist?.map(t => t.title));
+                console.log('🎵 MUSIC NOTE ICON CLICKED - TOGGLE BROADCAST');
+                console.log('🎵 Current isBroadcastMuted:', isBroadcastMuted);
                 console.log('🎵 isController:', isController);
-                console.log('🎵 audioSessionId:', audioSessionId);
                 console.log('🎵 ========================================');
                 
-                // If music is NOT playing, start playback (important for iOS users joining)
-                if (!isPlaying) {
-                  console.log('▶️ Music NOT playing - attempting to start...');
-                  
-                  // If there's a current track, play it
-                  if (currentTrack) {
-                    console.log('▶️ Found current track:', currentTrack.title);
-                    
-                    // Take control if not already controller
-                    if (!isController) {
-                      console.log('👑 Taking control to play music');
-                      takeControl();
-                      await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    
-                    try {
-                      await musicPlay();
-                      setIsMusicMuted(false);
-                      if (volume === 0 || isMusicMuted) {
-                        changeVolume(lastMusicVolume > 0 ? lastMusicVolume / 100 : 0.5);
-                      }
-                    } catch (error) {
-                      console.error('❌ Failed to play:', error);
-                      showNotification('Could not start playback. On iOS, tap play button.', 'error');
-                    }
-                  }
-                  // If no current track but playlist exists, load and play first track
-                  else if (playlist && Array.isArray(playlist) && playlist.length > 0) {
-                    console.log('▶️ No current track, loading first from playlist:', playlist[0].title);
-                    
-                    // Take control if not already controller
-                    if (!isController) {
-                      console.log('👑 Taking control to play music');
-                      takeControl();
-                      await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    
-                    try {
-                      await loadAndPlay(playlist[0]);
-                      setIsMusicMuted(false);
-                      if (volume === 0 || isMusicMuted) {
-                        changeVolume(lastMusicVolume > 0 ? lastMusicVolume / 100 : 0.5);
-                      }
-                    } catch (error) {
-                      console.error('❌ Failed to load and play:', error);
-                      showNotification('Could not start playback. On iOS, tap play button.', 'error');
-                    }
-                  } else {
-                    // No tracks or playlist not loaded yet
-                    console.warn('⚠️ ========================================');
-                    console.warn('⚠️ NO MUSIC AVAILABLE TO PLAY');
-                    console.warn('⚠️ ========================================');
-                    console.warn('⚠️ currentTrack:', currentTrack);
-                    console.warn('⚠️ playlist:', playlist);
-                    console.warn('⚠️ playlist type:', typeof playlist);
-                    console.warn('⚠️ playlist is array:', Array.isArray(playlist));
-                    console.warn('⚠️ playlist length:', playlist?.length);
-                    console.warn('⚠️ isController:', isController);
-                    console.warn('⚠️ ========================================');
-                    
-                    // ALWAYS take control and open music player
-                    if (!isController) {
-                      console.log('👑 Taking control to manage music');
-                      takeControl();
-                    }
-                    
-                    // Open music player so user can see what's there or add tracks
-                    setShowMusicPlayer(true);
-                    
-                    // Show appropriate message
-                    if (playlist === undefined || playlist === null) {
-                      showNotification('Loading playlist...', 'info');
-                    } else if (Array.isArray(playlist) && playlist.length === 0) {
-                      showNotification('Playlist is empty. Add tracks from the Music Player!', 'info');
-                    } else {
-                      showNotification('Opening music player...', 'info');
-                    }
-                  }
-                }
-                // If music IS playing, toggle mute/unmute
-                else {
-                  if (isMusicMuted) {
-                    // Unmute: restore previous volume
-                    console.log('🔊 Unmuting music, restoring volume to:', lastMusicVolume);
-                    changeVolume(lastMusicVolume / 100);
-                    setIsMusicMuted(false);
-                  } else {
-                    // Mute: save current volume and set to 0
-                    console.log('🔇 Muting music, saving volume:', volume);
-                    setLastMusicVolume(volume * 100);
-                    changeVolume(0);
-                    setIsMusicMuted(true);
-                  }
+                // Toggle broadcast audio mute (for receiving music from DJ)
+                if (isBroadcastMuted) {
+                  console.log('🔊 Unmuting broadcast audio');
+                  unmuteBroadcastAudio();
+                  setIsBroadcastMuted(false);
+                } else {
+                  console.log('🔇 Muting broadcast audio');
+                  muteBroadcastAudio();
+                  setIsBroadcastMuted(true);
                 }
               }}
             >
-              {isMusicMuted ? <MusicOffIcon /> : (isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />)}
+              {isBroadcastMuted ? <MusicOffIcon /> : (isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />)}
             </IconButton>
           </Tooltip>
           
