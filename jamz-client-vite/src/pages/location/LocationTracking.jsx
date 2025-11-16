@@ -3591,21 +3591,15 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={
-            isController 
-              ? (isPlaying ? "Pause Music" : "Play Music")
-              : (isBroadcastMuted 
-                  ? "Unmute Music Broadcast" 
-                  : "Mute Music Broadcast")
-          }>
+          <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying && !isBroadcastMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
-                ...(isPlaying && !isBroadcastMuted && {
+                ...(isPlaying && {
                   animation: 'musicPulse 1.5s ease-in-out infinite',
                   '@keyframes musicPulse': {
                     '0%, 100%': { 
@@ -3620,35 +3614,37 @@ const LocationTracking = () => {
                 })
               }}
               onClick={async () => {
-                // If DJ (controller): Play/Pause music
-                if (isController) {
-                  if (isPlaying) {
-                    console.log('⏸️ DJ pausing music');
-                    pause();
-                  } else {
-                    console.log('▶️ DJ starting music');
-                    if (currentTrack) {
-                      await play();
-                    } else if (playlist?.length > 0) {
-                      await loadAndPlay(playlist[0]);
-                    } else {
-                      setShowMusicPlayer(true);
-                    }
+                console.log('🎵 Music Note clicked - isPlaying:', isPlaying);
+                
+                if (isPlaying) {
+                  console.log('⏸️ Pausing music');
+                  pause();
+                } else {
+                  console.log('▶️ Starting music');
+                  
+                  // Take control if not already
+                  if (!isController) {
+                    console.log('👑 Taking control');
+                    takeControl();
+                    await new Promise(resolve => setTimeout(resolve, 100));
                   }
-                }
-                // If listener: Toggle broadcast audio mute
-                else {
-                  if (isBroadcastMuted) {
-                    unmuteBroadcastAudio();
-                    setIsBroadcastMuted(false);
+                  
+                  // Play current track or first in playlist
+                  if (currentTrack) {
+                    console.log('▶️ Playing current track:', currentTrack.title);
+                    await play();
+                  } else if (playlist?.length > 0) {
+                    console.log('▶️ Loading first track:', playlist[0].title);
+                    await loadAndPlay(playlist[0]);
                   } else {
-                    muteBroadcastAudio();
-                    setIsBroadcastMuted(true);
+                    console.log('❌ No tracks available');
+                    showNotification('Add music tracks first!', 'info');
+                    setShowMusicPlayer(true);
                   }
                 }
               }}
             >
-              {isBroadcastMuted ? <MusicOffIcon /> : (isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />)}
+              {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
             </IconButton>
           </Tooltip>
           
