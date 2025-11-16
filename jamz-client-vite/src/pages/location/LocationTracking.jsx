@@ -3515,7 +3515,7 @@ const LocationTracking = () => {
                 }
               }}
             >
-              {isPlaying && isMusicMuted ? <MusicOffIcon /> : <MusicNoteOutlinedIcon />}
+              {isPlaying && isMusicMuted ? <MusicOffIcon /> : (isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />)}
             </IconButton>
           </Tooltip>
           
