@@ -3513,11 +3513,20 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isVoiceMuted ? 'error.main' : (isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent'),
-                animation: !isVoiceMuted && isInSession ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                bgcolor: isInSession && !isVoiceMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                '&:hover': {
+                  bgcolor: isInSession ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                },
+                animation: !isVoiceMuted && isInSession ? 'headsetPulse 1.5s ease-in-out infinite' : 'none',
+                '@keyframes headsetPulse': {
+                  '0%, 100%': { 
+                    transform: 'scale(1)',
+                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.4)'
+                  },
+                  '50%': { 
+                    transform: 'scale(1.15)',
+                    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.1)'
+                  }
                 }
               }}
               onClick={() => setIsVoiceMuted(!isVoiceMuted)}
@@ -3530,16 +3539,28 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isMuted ? 'error.main' : (isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent'),
-                animation: !isMuted && isInSession ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                bgcolor: isInSession && !isMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                '&:hover': {
+                  bgcolor: isInSession ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                },
+                animation: !isMuted && isInSession ? 'micPulse 1.5s ease-in-out infinite' : 'none',
+                '@keyframes micPulse': {
+                  '0%, 100%': { 
+                    transform: 'scale(1)',
+                    boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.4)'
+                  },
+                  '50%': { 
+                    transform: 'scale(1.15)',
+                    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.1)'
+                  }
                 }
               }}
               onClick={() => {
                 if (!isInSession) {
-                  joinSession().catch(err => console.error('Failed to join:', err));
+                  joinSession().catch(err => {
+                    console.error('Failed to join:', err);
+                    // Suppress error popup - just log to console
+                  });
                 } else {
                   toggleMute();
                 }
@@ -3858,8 +3879,8 @@ const LocationTracking = () => {
         </Box>
       )}
 
-      {/* Audio Error Alert */}
-      {audioError && (
+      {/* Audio Error Alert - Disabled to prevent annoying popups */}
+      {false && audioError && (
         <Alert
           severity="error"
           onClose={() => {
