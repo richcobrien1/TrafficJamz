@@ -636,17 +636,17 @@ const LocationTracking = () => {
     try { localStorage.setItem('screenThreshold', String(screenThreshold)); } catch (e) {}
   }, [screenThreshold]);
   
-  // Auto-join voice session when component mounts
-  useEffect(() => {
-    if (groupId && !isInSession) {
-      console.log('🎙️ Auto-joining voice session for group:', groupId);
-      // Small delay to ensure page is fully loaded
-      const timer = setTimeout(() => {
-        joinSession();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [groupId, joinSession]);
+  // Auto-join voice session when component mounts (DISABLED - manual join for debugging)
+  // useEffect(() => {
+  //   if (groupId && !isInSession) {
+  //     console.log('🎙️ Auto-joining voice session for group:', groupId);
+  //     // Small delay to ensure page is fully loaded
+  //     const timer = setTimeout(() => {
+  //       joinSession();
+  //     }, 1000);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [groupId, joinSession]);
   
   // Show drop notification
   const showNotification = (message, severity = 'info') => {
@@ -3398,10 +3398,10 @@ const LocationTracking = () => {
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                animation: isPlaying ? 'pulse 2s ease-in-out infinite' : 'none',
+                animation: isPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
               onClick={() => {
@@ -3421,10 +3421,10 @@ const LocationTracking = () => {
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                animation: isInSession ? 'pulse 2s ease-in-out infinite' : 'none',
+                animation: isInSession ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
               onClick={isInSession ? leaveSession : joinSession}
@@ -3438,10 +3438,10 @@ const LocationTracking = () => {
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
                 bgcolor: isMuted ? 'error.main' : (isInSession ? 'rgba(255, 255, 255, 0.2)' : 'transparent'),
-                animation: !isMuted && isInSession ? 'pulse 2s ease-in-out infinite' : 'none',
+                animation: !isMuted && isInSession ? 'pulse 1.5s ease-in-out infinite' : 'none',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
               onClick={toggleMute}
