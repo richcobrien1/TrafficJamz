@@ -74,6 +74,7 @@ import {
   PhoneDisabled as PhoneDisabledIcon,
   Mic as MicIcon,
   MicOff as MicOffIcon,
+  MicNone as MicNoneIcon,
   MusicNote as MusicNoteIcon,
   MusicNoteOutlined as MusicNoteOutlinedIcon,
   ScreenShare as ScreenShareIcon,
@@ -639,17 +640,8 @@ const LocationTracking = () => {
     try { localStorage.setItem('screenThreshold', String(screenThreshold)); } catch (e) {}
   }, [screenThreshold]);
   
-  // Auto-join voice session when component mounts
-  useEffect(() => {
-    if (groupId && !isInSession) {
-      console.log('🎙️ Auto-joining voice session for group:', groupId);
-      // Small delay to ensure page is fully loaded
-      const timer = setTimeout(() => {
-        joinSession();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [groupId, joinSession]);
+  // NOTE: Auto-join removed - was causing "Failed to join audio session" popups
+  // Users can manually join by clicking the Mic icon if they want voice chat
   
   // Show drop notification
   const showNotification = (message, severity = 'info') => {
@@ -3436,7 +3428,7 @@ const LocationTracking = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title={isMuted ? "Unmute Microphone" : "Mute Microphone"}>
+          <Tooltip title={!isInSession ? "Join Voice Chat" : (isMuted ? "Unmute Microphone" : "Mute Microphone")}>
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
@@ -3447,9 +3439,15 @@ const LocationTracking = () => {
                   '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                 }
               }}
-              onClick={toggleMute}
+              onClick={() => {
+                if (!isInSession) {
+                  joinSession().catch(err => console.error('Failed to join:', err));
+                } else {
+                  toggleMute();
+                }
+              }}
             >
-              {isMuted ? <MicOffIcon /> : <MicIcon />}
+              {!isInSession ? <MicNoneIcon /> : (isMuted ? <MicOffIcon /> : <MicIcon />)}
             </IconButton>
           </Tooltip>
 
