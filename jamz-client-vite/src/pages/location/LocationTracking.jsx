@@ -2256,21 +2256,58 @@ const LocationTracking = () => {
       const lngs = allMemberLocations.map(loc => loc.coordinates.longitude);
       const lats = allMemberLocations.map(loc => loc.coordinates.latitude);
       
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      
+      // Calculate distances
+      const lngDistance = maxLng - minLng;
+      const latDistance = maxLat - minLat;
+      
+      console.log('Calculated bounds:', { minLng, maxLng, minLat, maxLat });
+      console.log('Distance (lng):', lngDistance);
+      console.log('Distance (lat):', latDistance);
+      
+      // If members are very close together, add minimum padding to ensure zoom out
+      const minDistance = 0.005; // ~500 meters minimum separation
+      let adjustedMinLng = minLng;
+      let adjustedMaxLng = maxLng;
+      let adjustedMinLat = minLat;
+      let adjustedMaxLat = maxLat;
+      
+      if (lngDistance < minDistance) {
+        const center = (minLng + maxLng) / 2;
+        adjustedMinLng = center - minDistance / 2;
+        adjustedMaxLng = center + minDistance / 2;
+        console.log('📏 Adjusted longitude bounds for minimum separation');
+      }
+      
+      if (latDistance < minDistance) {
+        const center = (minLat + maxLat) / 2;
+        adjustedMinLat = center - minDistance / 2;
+        adjustedMaxLat = center + minDistance / 2;
+        console.log('📏 Adjusted latitude bounds for minimum separation');
+      }
+      
       const bounds = [
-        [Math.min(...lngs), Math.min(...lats)], // Southwest
-        [Math.max(...lngs), Math.max(...lats)]  // Northeast
+        [adjustedMinLng, adjustedMinLat], // Southwest
+        [adjustedMaxLng, adjustedMaxLat]  // Northeast
       ];
 
-      console.log('Calculated bounds:', bounds);
-      console.log('Min lng:', Math.min(...lngs), 'Max lng:', Math.max(...lngs));
-      console.log('Min lat:', Math.min(...lats), 'Max lat:', Math.max(...lats));
-      console.log('Distance (lng):', Math.max(...lngs) - Math.min(...lngs));
-      console.log('Distance (lat):', Math.max(...lats) - Math.min(...lats));
+      console.log('Final bounds with adjustments:', bounds);
+      
+      // Detect mobile device for responsive padding
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const padding = isMobile ? 50 : 100; // Smaller padding on mobile
+      
+      console.log('Device type:', isMobile ? 'Mobile' : 'Desktop', 'Padding:', padding);
 
-      // Fit map to bounds with padding
+      // Fit map to bounds with padding and max zoom constraint
       console.log('Calling fitBounds on map...');
       mapRef.current.fitBounds(bounds, {
-        padding: 100,
+        padding: padding,
+        maxZoom: 15, // Prevent over-zooming when members are close
         essential: true,
         duration: 1500
       });
