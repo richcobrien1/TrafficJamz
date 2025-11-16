@@ -1014,8 +1014,8 @@ const LocationTracking = () => {
           first_name: 'Breanna',
           last_name: 'O\'Brien',
           coordinates: {
-            latitude: 39.7392 + 0.001, // Fixed offset for Denver area
-            longitude: -104.9903 + 0.001,
+            latitude: 39.0392, // ~50 miles south to test zoom out
+            longitude: -104.9903,
             accuracy: 15,
             altitude: 1609,
             heading: 0,
@@ -3666,7 +3666,7 @@ const LocationTracking = () => {
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 116, // Moved left to make room for fit all button
+            right: 76, // Consistent 60px spacing
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
