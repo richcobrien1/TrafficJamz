@@ -1014,8 +1014,8 @@ const LocationTracking = () => {
           first_name: 'Breanna',
           last_name: 'O\'Brien',
           coordinates: {
-            latitude: 39.0392, // ~50 miles south to test zoom out
-            longitude: -104.9903,
+            latitude: 33.0231, // Rancho Bernardo, CA (~817 miles from Centennial, CO)
+            longitude: -117.0844,
             accuracy: 15,
             altitude: 1609,
             heading: 0,
@@ -3711,7 +3711,7 @@ const LocationTracking = () => {
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 56,
+            right: 136, // Consistent 60px spacing from right: 76
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
