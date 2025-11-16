@@ -4,6 +4,81 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 15, 2025 - Voice Controls & Icon Improvements
+
+### Issues Addressed
+1. **Vercel Auto-Deploy Not Working** - GitHub pushes weren't triggering auto-deploys to jamz.v2u.us
+2. **Voice Control Icons Confusing** - Headset icon was trying to join/leave session instead of muting voice output
+3. **Pulsing Animations Not Noticeable** - Icons needed more prominent visual feedback
+4. **Mic Icon Behavior** - Needed clear crossthrough icon when muted
+
+### Changes Made
+
+#### 1. Fixed Vercel Deployment Issues
+- **Problem**: Two Vercel projects existed - `jamz-client-vite` (wrong) and `traffic-jamz-jamz-client-vite` (correct)
+- **Solution**: Identified that `traffic-jamz-jamz-client-vite` serves jamz.v2u.us and has GitHub auto-deploy enabled
+- **Result**: Confirmed GitHub auto-deploy IS working - just needed to identify the correct project
+- **Files**: `.vercel/project.json` updated to link to correct project
+
+#### 2. Voice Control Icon Redesign
+- **Headset Icon** - Changed from "join/leave session" to "mute/unmute voice OUTPUT"
+  - `isVoiceMuted` state added to LocationTracking
+  - Default: HeadsetIcon (voice ON), pulses when session active
+  - Muted: HeadsetOffIcon (crossed through), no pulse
+  - Works like Music Note but for voice audio
+- **Mic Icon** - Remains "mute/unmute microphone INPUT"
+  - Default: MicIcon (mic ON), pulses when session active
+  - Muted: MicOffIcon (crossed through), no pulse
+- **Auto-Join Voice Session** - Re-enabled 1-second delay on LocationTracking page load
+- **Files**: `jamz-client-vite/src/pages/location/LocationTracking.jsx`
+
+#### 3. Enhanced Pulse Animations
+- **Made more noticeable**: Changed from 2s to 1.5s cycle
+- **Bigger scale**: Changed from `scale(1.1)` to `scale(1.15)` 
+- **More opacity change**: Changed from `opacity: 0.7` to `opacity: 0.5`
+- **Applied to**: Music Note, Headset, Mic icons on both LocationTracking and AudioSession pages
+- **Files**: 
+  - `jamz-client-vite/src/pages/location/LocationTracking.jsx`
+  - `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+
+#### 4. Voice Communication Improvements (earlier in session)
+- **Echo Cancellation**: Added `echoCancellation: true` to getUserMedia constraints
+- **Noise Suppression**: Added `noiseSuppression: true`
+- **Auto Gain Control**: Added `autoGainControl: true`
+- **Sample Rate**: Set to 48000 Hz, mono channel
+- **Auto-Reconnection**: WebRTC connection auto-recovers on disconnect/failure with ICE restart
+- **Duplicate Stream Prevention**: Checks for existing streams before creating new audio elements
+- **Track Health Monitoring**: Monitors remote audio tracks for ended/muted events
+- **Files**: `jamz-client-vite/src/pages/sessions/AudioSession.jsx`
+
+#### 5. Bug Fixes
+- **package.json**: Fixed Babel version conflict (`@babel/core` and `@babel/parser` updated to 7.25.0 to match overrides)
+
+### Testing Results
+- ✅ Headset icon displays correctly (normal icon, not crossed through by default)
+- ✅ Headset toggles voice output muting
+- ✅ Mic icon shows crossthrough when muted
+- ✅ Pulsing animations more visible
+- ✅ Auto-join voice session on page load
+- ✅ Deployment to jamz.v2u.us working via GitHub auto-deploy
+
+### Commits
+- `1627484f` - Make pulse animations more noticeable (faster, bigger scale)
+- `37d6e781` - Fix Headset icon: make it voice output mute toggle (not join/leave session), re-enable auto-join
+- `0f85a7bc` - Fix babel version conflict in package.json
+- `9c9e1bc7` - Auto-join voice session when LocationTracking page loads
+- `f8f237d2` - Add pulsing animations to Music Note, Headset, and Mic icons on LocationTracking map page
+- `e6efa247` - Add pulsing animation to Music Note icon when music is playing
+- `d9385f14` - Improve voice comm consistency: add echo cancellation, noise suppression, auto-reconnection
+
+### Next Steps
+1. Test voice communication between multiple devices
+2. Implement YouTube track selection UI to avoid movie dialog clips
+3. Verify connection quality monitoring
+4. Test Music Note icon pulsing during playback
+
+---
+
 ## 🚨 CRITICAL TROUBLESHOOTING - CHECK THESE FIRST
 
 ### Backend Server Won't Start / 502 Bad Gateway / "Server listening" but no response
