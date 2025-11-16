@@ -461,7 +461,12 @@ class PlatformMusicService {
    * Resume playback
    */
   async play() {
-    console.log('▶️ Resuming playback');
+    console.log('▶️ Resuming playback', {
+      platform: this.currentPlatform,
+      hasPlayer: !!this.youtubePlayer,
+      playerState: this.youtubePlayer?.getPlayerState?.(),
+      currentTrack: this.currentTrack?.title
+    });
 
     switch (this.currentPlatform) {
       case 'spotify':
@@ -471,7 +476,17 @@ class PlatformMusicService {
         break;
       case 'youtube':
         if (this.youtubePlayer) {
-          this.youtubePlayer.playVideo();
+          console.log('🎵 Calling YouTube playVideo()...');
+          try {
+            this.youtubePlayer.playVideo();
+            console.log('✅ YouTube playVideo() called successfully');
+          } catch (error) {
+            console.error('❌ YouTube playVideo() failed:', error);
+            throw error;
+          }
+        } else {
+          console.error('❌ YouTube player not initialized!');
+          throw new Error('YouTube player not available');
         }
         break;
       case 'appleMusic':
@@ -482,6 +497,7 @@ class PlatformMusicService {
     }
 
     this.isPlaying = true;
+    console.log('✅ play() completed, isPlaying set to true');
   }
 
   /**
