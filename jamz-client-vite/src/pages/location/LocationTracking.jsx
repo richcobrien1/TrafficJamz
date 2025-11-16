@@ -14,7 +14,7 @@ import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { useAudioSession } from '../../hooks/useAudioSession';
-import { useMusicSession } from '../../hooks/useMusicSession';
+import { useMusic } from '../../contexts/MusicContext';
 import musicService from '../../services/music.service';
 import MusicPlayer from '../../components/music/MusicPlayer';
 import MusicUpload from '../../components/music/MusicUpload';
@@ -144,7 +144,7 @@ const LocationTracking = () => {
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [lastMusicVolume, setLastMusicVolume] = useState(50);
   
-  // Music session hook - ALWAYS use groupId to let backend auto-create session
+  // Music session from context
   const {
     currentTrack,
     playlist,
@@ -163,7 +163,7 @@ const LocationTracking = () => {
     removeTrack,
     loadAndPlay,
     takeControl
-  } = useMusicSession(groupId, groupId); // Always use groupId - backend will auto-create audio session
+  } = useMusic();
   
   // Music player visibility
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
