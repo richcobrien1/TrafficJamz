@@ -2193,7 +2193,7 @@ const LocationTracking = () => {
       return;
     }
 
-    // Get all member locations (including current user)
+    // Get all member locations (excluding places)
     const allMemberLocations = locations.filter(loc => {
       const isValid = loc && loc.latitude && loc.longitude && !loc.isPlace;
       console.log('Checking location:', {
@@ -2208,19 +2208,7 @@ const LocationTracking = () => {
     });
 
     console.log('Filtered member locations:', allMemberLocations);
-
-    // Add current user location if available
-    if (userLocation && userLocation.latitude && userLocation.longitude) {
-      const currentUserExists = allMemberLocations.some(loc => loc.user_id === user?.id);
-      console.log('Current user exists in locations?', currentUserExists);
-      if (!currentUserExists) {
-        console.log('Adding current user to allMemberLocations');
-        allMemberLocations.push(userLocation);
-      }
-    }
-
     console.log('Total member locations count:', allMemberLocations.length);
-    console.log('All member locations:', allMemberLocations);
 
     if (allMemberLocations.length === 0) {
       console.warn('No member locations to fit');
@@ -2236,7 +2224,7 @@ const LocationTracking = () => {
     }
 
     try {
-      // Calculate bounds
+      // Calculate bounds from all member locations
       const lngs = allMemberLocations.map(loc => loc.longitude);
       const lats = allMemberLocations.map(loc => loc.latitude);
       
@@ -2248,17 +2236,19 @@ const LocationTracking = () => {
       console.log('Calculated bounds:', bounds);
       console.log('Min lng:', Math.min(...lngs), 'Max lng:', Math.max(...lngs));
       console.log('Min lat:', Math.min(...lats), 'Max lat:', Math.max(...lats));
+      console.log('Distance (lng):', Math.max(...lngs) - Math.min(...lngs));
+      console.log('Distance (lat):', Math.max(...lats) - Math.min(...lats));
 
       // Fit map to bounds with padding
       console.log('Calling fitBounds on map...');
       mapRef.current.fitBounds(bounds, {
-        padding: { top: 100, bottom: 100, left: 100, right: 100 },
+        padding: 100,
         essential: true,
-        duration: 1000
+        duration: 1500
       });
 
       console.log('✅ fitBounds called successfully');
-      showNotification(`Showing ${allMemberLocations.length} member${allMemberLocations.length > 1 ? 's' : ''}`, 'success');
+      showNotification(`Showing ${allMemberLocations.length} members`, 'success');
     } catch (error) {
       console.error('❌ Error fitting bounds:', error);
       showNotification('Failed to fit all members', 'error');
