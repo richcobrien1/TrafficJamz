@@ -298,24 +298,6 @@ const MusicPlayer = ({
               />
             </Tooltip>
           )}
-          
-          {/* DEBUG: Test Next Track */}
-          {isController && (
-            <Tooltip title="DEBUG: Force next track (simulates track end)">
-              <Button
-                size="small"
-                variant="outlined"
-                color="warning"
-                onClick={() => {
-                  console.log('🔧 DEBUG: Forcing next track...');
-                  if (onNext) onNext();
-                }}
-                sx={{ ml: 1 }}
-              >
-                Test Next
-              </Button>
-            </Tooltip>
-          )}
         </Box>
 
         {/* Progress Bar */}
