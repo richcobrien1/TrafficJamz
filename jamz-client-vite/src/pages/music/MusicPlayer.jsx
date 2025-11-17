@@ -395,7 +395,14 @@ const MusicPlayerPage = () => {
             <Tooltip title="Music Player (Active)">
               <IconButton 
                 color="inherit"
-                sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}
+                sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  }
+                }}
               >
                 <MusicNoteOutlinedIcon />
               </IconButton>
@@ -405,6 +412,13 @@ const MusicPlayerPage = () => {
               <IconButton 
                 color="inherit"
                 onClick={() => {/* TODO: Toggle voice */}}
+                sx={{
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  }
+                }}
               >
                 <HeadsetOffIcon />
               </IconButton>
@@ -414,6 +428,13 @@ const MusicPlayerPage = () => {
               <IconButton 
                 color="inherit"
                 onClick={() => {/* TODO: Toggle mic */}}
+                sx={{
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                  }
+                }}
               >
                 <MicOffIcon />
               </IconButton>

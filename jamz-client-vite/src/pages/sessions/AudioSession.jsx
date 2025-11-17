@@ -2026,7 +2026,6 @@ const AudioSession = () => {
           <IconButton 
             edge="start" 
             sx={{ 
-              mr: 2,
               color: '#000'
             }}
             onClick={handleLeaveAudio}
