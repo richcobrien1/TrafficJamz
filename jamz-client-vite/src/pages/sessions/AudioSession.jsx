@@ -2041,14 +2041,17 @@ const AudioSession = () => {
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex', 
-            gap: 2, 
+            gap: 3, 
             alignItems: 'center' 
           }}>
             <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
               <IconButton 
                 sx={{ 
                   color: '#000',
-                  bgcolor: musicIsPlaying ? 'rgba(0,0,0,0.1)' : 'transparent',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
+                  },
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
@@ -2066,7 +2069,10 @@ const AudioSession = () => {
                 onClick={toggleVoiceMute}
                 sx={{ 
                   color: '#000',
-                  bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
+                  },
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
@@ -2084,7 +2090,10 @@ const AudioSession = () => {
                 disabled={!micInitialized}
                 sx={{ 
                   color: '#000',
-                  bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
+                  },
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
