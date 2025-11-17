@@ -391,7 +391,14 @@ const MusicPlayerPage = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Sound Icons */}
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ 
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex', 
+            gap: 2, 
+            alignItems: 'center' 
+          }}>
             <Tooltip title="Music Player (Active)">
               <IconButton 
                 color="inherit"
