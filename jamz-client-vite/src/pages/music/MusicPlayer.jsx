@@ -391,32 +391,34 @@ const MusicPlayerPage = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Sound Icons */}
-          <Tooltip title="Music Player (Active)">
-            <IconButton 
-              color="inherit"
-              sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}
-            >
-              <MusicNoteOutlinedIcon />
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title="Voice Audio Off">
-            <IconButton 
-              color="inherit"
-              onClick={() => {/* TODO: Toggle voice */}}
-            >
-              <HeadsetOffIcon />
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title="Microphone Off">
-            <IconButton 
-              color="inherit"
-              onClick={() => {/* TODO: Toggle mic */}}
-            >
-              <MicOffIcon />
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Tooltip title="Music Player (Active)">
+              <IconButton 
+                color="inherit"
+                sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}
+              >
+                <MusicNoteOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title="Voice Audio Off">
+              <IconButton 
+                color="inherit"
+                onClick={() => {/* TODO: Toggle voice */}}
+              >
+                <HeadsetOffIcon />
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title="Microphone Off">
+              <IconButton 
+                color="inherit"
+                onClick={() => {/* TODO: Toggle mic */}}
+              >
+                <MicOffIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
           
           <Box sx={{ flexGrow: 1 }} />
           

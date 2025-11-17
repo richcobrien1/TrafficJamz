@@ -2037,57 +2037,59 @@ const AudioSession = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Sound Control Icons */}
-          <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
-            <IconButton 
-              sx={{ 
-                color: '#000',
-                bgcolor: musicIsPlaying ? 'rgba(0,0,0,0.1)' : 'transparent',
-                animation: musicIsPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
-                }
-              }}
-              onClick={() => setOpenMusicDialog(true)}
-            >
-              <MusicNoteOutlinedIcon />
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title={isVoiceMuted ? "Voice Muted - Click to Unmute" : "Voice Active - Click to Mute"}>
-            <IconButton 
-              onClick={toggleVoiceMute}
-              sx={{ 
-                color: '#000',
-                bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
-                animation: !isVoiceMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
-                }
-              }}
-            >
-              {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title={isMuted ? "Microphone Muted - Click to Unmute" : "Microphone Active - Click to Mute"}>
-            <IconButton 
-              onClick={toggleMute}
-              disabled={!micInitialized}
-              sx={{ 
-                color: '#000',
-                bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
-                animation: !isMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                  '50%': { opacity: 0.5, transform: 'scale(1.15)' }
-                }
-              }}
-            >
-              {isMuted ? <MicOffIcon /> : <MicIcon />}
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
+              <IconButton 
+                sx={{ 
+                  color: '#000',
+                  bgcolor: musicIsPlaying ? 'rgba(0,0,0,0.1)' : 'transparent',
+                  animation: musicIsPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                  }
+                }}
+                onClick={() => setOpenMusicDialog(true)}
+              >
+                <MusicNoteOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title={isVoiceMuted ? "Voice Muted - Click to Unmute" : "Voice Active - Click to Mute"}>
+              <IconButton 
+                onClick={toggleVoiceMute}
+                sx={{ 
+                  color: '#000',
+                  bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
+                  animation: !isVoiceMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                  }
+                }}
+              >
+                {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title={isMuted ? "Microphone Muted - Click to Unmute" : "Microphone Active - Click to Mute"}>
+              <IconButton 
+                onClick={toggleMute}
+                disabled={!micInitialized}
+                sx={{ 
+                  color: '#000',
+                  bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
+                  animation: !isMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                  }
+                }}
+              >
+                {isMuted ? <MicOffIcon /> : <MicIcon />}
+              </IconButton>
+            </Tooltip>
+          </Box>
           
           <Box sx={{ flexGrow: 1 }} />
         </Toolbar>
