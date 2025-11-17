@@ -70,9 +70,27 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:latest
             ghcr.io/${{ github.repository_owner }}/trafficjamz-jamz-server:${{ github.sha }}
 
+  deploy-to-digitalocean:
+    # Deploy to DigitalOcean droplet via SSH after successful build
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /root/TrafficJamz
+            git pull origin main
+            docker restart trafficjamz
+            echo "✅ Backend deployed successfully!"
+  
   deploy-to-k8s:
     # deploy the image pushed by the build-and-push job to a target cluster
-    # DISABLED - Not currently using Kubernetes
+    # DISABLED - Not currently using Kubernetes (needs Redis adapter for Socket.IO clustering)
     if: false
     needs: build-and-push
     runs-on: ubuntu-latest

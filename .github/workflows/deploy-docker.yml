@@ -1,0 +1,75 @@
+name: Deploy to DigitalOcean Docker
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy Backend to DigitalOcean
+    runs-on: ubuntu-latest
+    # Only deploy after successful build (if build-and-push workflow ran)
+    steps:
+      - name: Deploy to DigitalOcean via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Deploying TrafficJamz backend..."
+            
+            # Navigate to project directory
+            cd /root/TrafficJamz || { echo "❌ Project directory not found"; exit 1; }
+            
+            # Pull latest code
+            echo "📥 Pulling latest code from GitHub..."
+            git pull origin main
+            
+            # Restart backend container
+            echo "🔄 Restarting backend container..."
+            docker restart trafficjamz
+            
+            # Wait for container to stabilize
+            echo "⏳ Waiting for container to stabilize..."
+            sleep 5
+            
+            # Check container status
+            echo "✅ Checking container status..."
+            docker ps | grep trafficjamz
+            
+            # Show recent logs
+            echo "📋 Recent logs:"
+            docker logs --tail=30 trafficjamz
+            
+            echo "✅ Deployment complete!"
+      
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🔍 Verifying backend health..."
+            
+            # Check if container is running
+            if docker ps | grep -q trafficjamz; then
+              echo "✅ Container is running"
+            else
+              echo "❌ Container is not running!"
+              exit 1
+            fi
+            
+            # Wait for health check
+            sleep 3
+            
+            # Test backend endpoint
+            if curl -sSf http://localhost:5050/api/status > /dev/null 2>&1; then
+              echo "✅ Backend health check passed"
+            else
+              echo "⚠️ Backend health check failed (might still be starting)"
+            fi
