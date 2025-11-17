@@ -2033,17 +2033,10 @@ const AudioSession = () => {
           >
             <ArrowBackIcon />
           </IconButton>
+
+          <Box sx={{ flexGrow: 1 }} />
           
-          {/* Standard Icon Set - Left Justified */}
-          <Tooltip title="Group Members">
-            <IconButton 
-              sx={{ color: '#000' }}
-              onClick={() => {/* TODO: Navigate to members list */}}
-            >
-              <PeopleIcon />
-            </IconButton>
-          </Tooltip>
-          
+          {/* Centered Sound Control Icons */}
           <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
             <IconButton 
               sx={{ 
@@ -2096,21 +2089,7 @@ const AudioSession = () => {
             </IconButton>
           </Tooltip>
           
-          <Tooltip title="Location Tracking">
-            <IconButton 
-              sx={{ color: '#000' }}
-              onClick={() => navigate(`/groups/${groupId}/location`)}
-            >
-              <MapIcon />
-            </IconButton>
-          </Tooltip>
-
           <Box sx={{ flexGrow: 1 }} />
-          
-          <VolumeUpIcon sx={{ mr: 1, color: '#000' }} />
-          <Typography variant="h6" sx={{ color: '#000' }}>
-            Voice
-          </Typography>
         </Toolbar>
       </AppBar>
 
