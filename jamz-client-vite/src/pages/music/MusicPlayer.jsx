@@ -387,15 +387,6 @@ const MusicPlayerPage = () => {
           <IconButton edge="start" color="inherit" onClick={() => navigate(`/groups/${groupId}`)}>
             <ArrowBackIcon />
           </IconButton>
-          
-          <Tooltip title="Group Members">
-            <IconButton 
-              color="inherit"
-              onClick={() => {/* TODO: Navigate to members list */}}
-            >
-              <PeopleIcon />
-            </IconButton>
-          </Tooltip>
 
           <Box sx={{ flexGrow: 1 }} />
           
