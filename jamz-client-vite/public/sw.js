@@ -1,23 +1,37 @@
-// TrafficJamz Service Worker - Audio Caching for Offline Playback
-// Version: 1.0.0
+// TrafficJamz Service Worker - Full Offline Support
+// Version: 2.0.0
 
-const CACHE_VERSION = 'trafficjamz-v1';
-const AUDIO_CACHE = 'trafficjamz-audio-v1';
-const STATIC_CACHE = 'trafficjamz-static-v1';
+const CACHE_VERSION = 'trafficjamz-v2';
+const AUDIO_CACHE = 'trafficjamz-audio-v2';
+const STATIC_CACHE = 'trafficjamz-static-v2';
+const APP_CACHE = 'trafficjamz-app-v2';
 
 // R2 domain for audio files
 const R2_DOMAIN = 'pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev';
 
-// Install event - prepare caches
+// Critical app assets to cache for offline use
+const APP_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/vite.svg'
+  // JS and CSS will be cached on first load
+];
+
+// Install event - cache critical app assets
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker version:', CACHE_VERSION);
   
   event.waitUntil(
     Promise.all([
       caches.open(STATIC_CACHE),
-      caches.open(AUDIO_CACHE)
+      caches.open(AUDIO_CACHE),
+      caches.open(APP_CACHE).then((cache) => {
+        console.log('[SW] Caching app shell assets');
+        return cache.addAll(APP_ASSETS);
+      })
     ]).then(() => {
-      console.log('[SW] Caches created successfully');
+      console.log('[SW] All caches created successfully');
       // Skip waiting to activate immediately
       return self.skipWaiting();
     })
@@ -33,7 +47,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           // Delete old cache versions
-          if (cacheName !== STATIC_CACHE && cacheName !== AUDIO_CACHE) {
+          if (cacheName !== STATIC_CACHE && cacheName !== AUDIO_CACHE && cacheName !== APP_CACHE) {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -46,18 +60,125 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - intercept audio requests
+// Fetch event - smart caching strategy
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // Only intercept audio file requests from R2
+  // Audio files: cache-first strategy
   if (url.hostname === R2_DOMAIN && isAudioFile(url.pathname)) {
     event.respondWith(handleAudioRequest(event.request));
-  } else {
-    // Let all other requests pass through
+  }
+  // App assets (JS, CSS, HTML): network-first with cache fallback
+  else if (event.request.destination === 'document' || 
+           event.request.destination === 'script' || 
+           event.request.destination === 'style' ||
+           event.request.destination === 'manifest') {
+    event.respondWith(handleAppRequest(event.request));
+  }
+  // Images and fonts: cache-first
+  else if (event.request.destination === 'image' || 
+           event.request.destination === 'font') {
+    event.respondWith(handleStaticRequest(event.request));
+  }
+  // Everything else: network only
+  else {
     event.respondWith(fetch(event.request));
   }
 });
+
+// Handle app assets (HTML, JS, CSS) - network first, cache fallback for offline
+async function handleAppRequest(request) {
+  const cache = await caches.open(APP_CACHE);
+  
+  try {
+    // Try network first
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      // Cache the fresh response
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    // Network failed - try cache
+    console.log('[SW] Network failed for app asset, trying cache:', request.url);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      console.log('[SW] Serving app asset from cache:', request.url);
+      return cachedResponse;
+    }
+    
+    // If requesting HTML and nothing in cache, return offline page
+    if (request.destination === 'document') {
+      return new Response(
+        `<!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>TrafficJamz - Offline</title>
+          <style>
+            body { 
+              font-family: system-ui, -apple-system, sans-serif; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              min-height: 100vh; 
+              margin: 0;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+            }
+            .container {
+              text-align: center;
+              padding: 2rem;
+            }
+            h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+            p { font-size: 1.2rem; opacity: 0.9; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🎵 TrafficJamz</h1>
+            <p>You're offline!</p>
+            <p>Connect to the internet to start jamming.</p>
+          </div>
+        </body>
+        </html>`,
+        {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' }
+        }
+      );
+    }
+    
+    throw error;
+  }
+}
+
+// Handle static assets (images, fonts) - cache first
+async function handleStaticRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.error('[SW] Failed to fetch static asset:', request.url);
+    throw error;
+  }
+}
 
 // Handle audio file requests with cache-first strategy
 async function handleAudioRequest(request) {
