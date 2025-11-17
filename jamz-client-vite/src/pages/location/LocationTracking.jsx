@@ -3586,115 +3586,124 @@ const LocationTracking = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Audio Controls */}
-          <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.3)',
-                },
-                animation: 'musicPulse 1.5s ease-in-out infinite',
-                '@keyframes musicPulse': {
-                  '0%, 100%': { 
-                    transform: 'scale(1)',
-                    opacity: 1
+          <Box sx={{ 
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex', 
+            gap: 3, 
+            alignItems: 'center' 
+          }}>
+            <Tooltip title={isPlaying ? "Pause Music" : "Play Music"}>
+              <IconButton 
+                sx={{
+                  color: sharingLocation ? '#fff' : 'inherit',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
                   },
-                  '50%': { 
-                    transform: 'scale(1.15)',
-                    opacity: 0.5
-                  }
-                }
-              }}
-              onClick={async () => {
-                try {
-                  if (isPlaying) {
-                    await musicPause();
-                  } else {
-                    // Take control if not already
-                    if (!isController) {
-                      await takeControl();
-                      await new Promise(resolve => setTimeout(resolve, 100));
+                  animation: 'musicPulse 1.5s ease-in-out infinite',
+                  '@keyframes musicPulse': {
+                    '0%, 100%': { 
+                      transform: 'scale(1)',
+                      opacity: 1
+                    },
+                    '50%': { 
+                      transform: 'scale(1.15)',
+                      opacity: 0.5
                     }
-                    
-                    // Play current track or first in playlist
-                    if (currentTrack) {
-                      await musicPlay();
-                    } else if (playlist?.length > 0) {
-                      await loadAndPlay(playlist[0]);
+                  }
+                }}
+                onClick={async () => {
+                  try {
+                    if (isPlaying) {
+                      await musicPause();
                     } else {
-                      setShowMusicPlayer(true);
+                      // Take control if not already
+                      if (!isController) {
+                        await takeControl();
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                      }
+                      
+                      // Play current track or first in playlist
+                      if (currentTrack) {
+                        await musicPlay();
+                      } else if (playlist?.length > 0) {
+                        await loadAndPlay(playlist[0]);
+                      } else {
+                        setShowMusicPlayer(true);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Music error:', error);
+                  }
+                }}
+              >
+                {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title={isVoiceMuted ? "Voice Muted - Click to Unmute" : "Voice Active - Click to Mute"}>
+              <IconButton 
+                sx={{
+                  color: sharingLocation ? '#fff' : 'inherit',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
+                  },
+                  animation: 'headsetPulse 1.5s ease-in-out infinite',
+                  '@keyframes headsetPulse': {
+                    '0%, 100%': { 
+                      transform: 'scale(1)',
+                      opacity: 1
+                    },
+                    '50%': { 
+                      transform: 'scale(1.15)',
+                      opacity: 0.5
                     }
                   }
-                } catch (error) {
-                  console.error('Music error:', error);
-                }
-              }}
-            >
-              {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title={isVoiceMuted ? "Voice Muted - Click to Unmute" : "Voice Active - Click to Mute"}>
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.3)',
-                },
-                animation: 'headsetPulse 1.5s ease-in-out infinite',
-                '@keyframes headsetPulse': {
-                  '0%, 100%': { 
-                    transform: 'scale(1)',
-                    opacity: 1
+                }}
+                onClick={() => setIsVoiceMuted(!isVoiceMuted)}
+              >
+                {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title={!isInSession ? "Join Voice Chat" : (isMuted ? "Unmute Microphone" : "Mute Microphone")}>
+              <IconButton 
+                sx={{
+                  color: sharingLocation ? '#fff' : 'inherit',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.3)',
                   },
-                  '50%': { 
-                    transform: 'scale(1.15)',
-                    opacity: 0.5
+                  animation: 'micPulse 1.5s ease-in-out infinite',
+                  '@keyframes micPulse': {
+                    '0%, 100%': { 
+                      transform: 'scale(1)',
+                      opacity: 1
+                    },
+                    '50%': { 
+                      transform: 'scale(1.15)',
+                      opacity: 0.5
+                    }
                   }
-                }
-              }}
-              onClick={() => setIsVoiceMuted(!isVoiceMuted)}
-            >
-              {isVoiceMuted ? <HeadsetOffIcon /> : <HeadsetIcon />}
-            </IconButton>
-          </Tooltip>
-          
-          <Tooltip title={!isInSession ? "Join Voice Chat" : (isMuted ? "Unmute Microphone" : "Mute Microphone")}>
-            <IconButton 
-              sx={{
-                color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.3)',
-                },
-                animation: 'micPulse 1.5s ease-in-out infinite',
-                '@keyframes micPulse': {
-                  '0%, 100%': { 
-                    transform: 'scale(1)',
-                    opacity: 1
-                  },
-                  '50%': { 
-                    transform: 'scale(1.15)',
-                    opacity: 0.5
+                }}
+                onClick={() => {
+                  if (!isInSession) {
+                    joinSession().catch(err => {
+                      console.error('Failed to join:', err);
+                      // Suppress error popup - just log to console
+                    });
+                  } else {
+                    toggleMute();
                   }
-                }
-              }}
-              onClick={() => {
-                if (!isInSession) {
-                  joinSession().catch(err => {
-                    console.error('Failed to join:', err);
-                    // Suppress error popup - just log to console
-                  });
-                } else {
-                  toggleMute();
-                }
-              }}
-            >
-              {!isInSession ? <MicNoneIcon /> : (isMuted ? <MicOffIcon /> : <MicIcon />)}
-            </IconButton>
-          </Tooltip>
+                }}
+              >
+                {!isInSession ? <MicNoneIcon /> : (isMuted ? <MicOffIcon /> : <MicIcon />)}
+              </IconButton>
+            </Tooltip>
+          </Box>
 
           <Box sx={{ flexGrow: 1 }} />
           
