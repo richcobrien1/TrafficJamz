@@ -886,8 +886,9 @@ export const MusicProvider = ({ children }) => {
       socketConnected: socketRef.current.connected
     });
     
-    setIsController(true);
-    musicService.isController = true;
+    // Don't set isController optimistically - wait for server confirmation
+    // via 'music-controller-changed' event to ensure atomic handoff
+    console.log('🎵 [MusicContext] Waiting for server confirmation...');
     
     socketRef.current.emit('music-take-control', {
       sessionId: activeSessionId,
@@ -918,8 +919,9 @@ export const MusicProvider = ({ children }) => {
       userId
     });
     
-    setIsController(false);
-    musicService.isController = false;
+    // Don't set isController optimistically - wait for server confirmation
+    // via 'music-controller-changed' event to ensure atomic handoff
+    console.log('🎵 [MusicContext] Waiting for server confirmation...');
     
     socketRef.current.emit('music-release-control', {
       sessionId: activeSessionId,

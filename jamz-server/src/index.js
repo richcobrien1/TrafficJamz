@@ -1136,7 +1136,8 @@ io.on("connection", (socket) => {
       }
       
       const room = `audio-${sessionId}`;
-      socket.to(room).emit('music-controller-changed', {
+      // Broadcast to ALL clients (including requester) for atomic controller handoff
+      io.to(room).emit('music-controller-changed', {
         controllerId: socket.id,
         userId: userId,
         timestamp: Date.now()
@@ -1163,7 +1164,8 @@ io.on("connection", (socket) => {
       }
       
       const room = `audio-${sessionId}`;
-      socket.to(room).emit('music-controller-changed', {
+      // Broadcast to ALL clients (including requester) for atomic controller handoff
+      io.to(room).emit('music-controller-changed', {
         controllerId: null,
         userId: null,
         timestamp: Date.now()
