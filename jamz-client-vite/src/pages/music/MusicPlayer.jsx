@@ -407,7 +407,7 @@ const MusicPlayerPage = () => {
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                   }
                 }}
               >
@@ -423,7 +423,7 @@ const MusicPlayerPage = () => {
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                   }
                 }}
               >
@@ -439,7 +439,7 @@ const MusicPlayerPage = () => {
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
+                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                   }
                 }}
               >
