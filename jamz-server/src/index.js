@@ -1120,10 +1120,25 @@ io.on("connection", (socket) => {
   
   // Controller (DJ) mode events
   socket.on('music-take-control', async (data) => {
+    console.log('🎵 ========================================');
+    console.log('🎵 MUSIC-TAKE-CONTROL EVENT RECEIVED');
+    console.log('🎵 ========================================');
+    console.log('🎵 Socket ID:', socket.id);
+    console.log('🎵 Data:', JSON.stringify(data, null, 2));
+    console.log('🎵 Audio signaling enabled?', audioSignalingEnabled);
+    console.log('🎵 ========================================');
+    
     try {
-      if (!audioSignalingEnabled) return;
+      if (!audioSignalingEnabled) {
+        console.log('🎵 ❌ Audio signaling disabled, ignoring');
+        return;
+      }
       const sessionId = requireSessionId(data, { socketId: socket.id, logger: console });
-      if (!sessionId) return;
+      console.log('🎵 Session ID from requireSessionId:', sessionId);
+      if (!sessionId) {
+        console.log('🎵 ❌ No session ID, aborting');
+        return;
+      }
       
       const userId = data.userId;
       
