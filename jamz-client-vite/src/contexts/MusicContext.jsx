@@ -8,6 +8,9 @@ import {
   clearPlaylistCache,
   addTrackToCache 
 } from '../utils/playlistCache';
+import { downloadManager } from '../services/audioDownloadManager';
+import { dbManager } from '../services/indexedDBManager';
+import { swManager } from '../services/serviceWorkerManager';
 
 const MusicContext = createContext();
 
@@ -30,6 +33,12 @@ export const MusicProvider = ({ children }) => {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [activeGroupId, setActiveGroupId] = useState(null);
   
+  // Offline/caching state
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [cachedTracks, setCachedTracks] = useState(new Set());
+  const [downloadProgress, setDownloadProgress] = useState(new Map());
+  const [storageStats, setStorageStats] = useState(null);
+  
   // Refs
   const socketRef = useRef(null);
   const isControllerRef = useRef(isController);
@@ -43,6 +52,112 @@ export const MusicProvider = ({ children }) => {
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+  
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🌐 Network: Online');
+      setIsOnline(true);
+    };
+    
+    const handleOffline = () => {
+      console.log('📴 Network: Offline');
+      setIsOnline(false);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  
+  // Monitor download progress
+  useEffect(() => {
+    const handleProgress = ({ trackId, status, progress }) => {
+      setDownloadProgress(prev => {
+        const updated = new Map(prev);
+        updated.set(trackId, { status, progress });
+        return updated;
+      });
+      
+      if (status === 'cached') {
+        setCachedTracks(prev => new Set([...prev, trackId]));
+        updateStorageStats();
+      }
+    };
+    
+    downloadManager.onProgress(handleProgress);
+  }, []);
+  
+  // Load cached track list on mount
+  useEffect(() => {
+    loadCachedTrackList();
+    updateStorageStats();
+  }, []);
+  
+  // Auto-prefetch next tracks when playing (smart caching)
+  useEffect(() => {
+    if (!currentTrack || !isPlaying || !isOnline) return;
+    
+    const prefetchNextTracks = async () => {
+      const currentIndex = playlist.findIndex(t => 
+        (t.id || t._id || t.trackId) === (currentTrack.id || currentTrack._id || currentTrack.trackId)
+      );
+      
+      if (currentIndex === -1) return;
+      
+      // Prefetch next 3 tracks
+      const tracksToCache = playlist.slice(currentIndex + 1, currentIndex + 4);
+      
+      for (const track of tracksToCache) {
+        const trackId = track.id || track._id || track.trackId;
+        
+        // Skip if already cached or downloading
+        if (cachedTracks.has(trackId)) continue;
+        const progress = downloadProgress.get(trackId);
+        if (progress?.status === 'downloading' || progress?.status === 'cached') continue;
+        
+        // Queue for background download
+        console.log('📥 Auto-prefetching:', track.title);
+        downloadManager.queueDownload(track).catch(err => {
+          console.warn('Failed to prefetch track:', track.title, err);
+        });
+      }
+    };
+    
+    // Prefetch after 2 seconds of playback (avoid immediate network spam)
+    const timer = setTimeout(prefetchNextTracks, 2000);
+    return () => clearTimeout(timer);
+  }, [currentTrack, isPlaying, playlist, isOnline, cachedTracks, downloadProgress]);
+  
+  /**
+   * Load list of cached tracks from IndexedDB
+   */
+  const loadCachedTrackList = async () => {
+    try {
+      const cached = await downloadManager.getCachedTracks();
+      const trackIds = cached.map(t => t.trackId);
+      setCachedTracks(new Set(trackIds));
+      console.log(`📦 Loaded ${trackIds.length} cached tracks`);
+    } catch (error) {
+      console.error('Failed to load cached track list:', error);
+    }
+  };
+  
+  /**
+   * Update storage statistics
+   */
+  const updateStorageStats = async () => {
+    try {
+      const stats = await downloadManager.getStorageStats();
+      setStorageStats(stats);
+    } catch (error) {
+      console.error('Failed to update storage stats:', error);
+    }
+  };
   
   /**
    * Initialize music session
@@ -1129,6 +1244,11 @@ export const MusicProvider = ({ children }) => {
     activeSessionId,
     activeGroupId,
     
+    // Offline state (read-only for components)
+    isOnline,
+    cachedTracks,
+    storageStats,
+    
     // Actions
     initializeSession,
     addTrack,
@@ -1145,6 +1265,7 @@ export const MusicProvider = ({ children }) => {
     releaseControl,
     changeVolume,
     toggleMusic,
+    
     testSocketConnection  // TEST - Remove after debugging
   };
   
