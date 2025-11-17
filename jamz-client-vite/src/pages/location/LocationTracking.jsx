@@ -3590,23 +3590,21 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isPlaying ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
                 '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.3)',
                 },
-                ...(isPlaying && {
-                  animation: 'musicPulse 1.5s ease-in-out infinite',
-                  '@keyframes musicPulse': {
-                    '0%, 100%': { 
-                      transform: 'scale(1)',
-                      opacity: 1
-                    },
-                    '50%': { 
-                      transform: 'scale(1.15)',
-                      opacity: 0.5
-                    }
+                animation: 'musicPulse 1.5s ease-in-out infinite',
+                '@keyframes musicPulse': {
+                  '0%, 100%': { 
+                    transform: 'scale(1)',
+                    opacity: 1
+                  },
+                  '50%': { 
+                    transform: 'scale(1.15)',
+                    opacity: 0.5
                   }
-                })
+                }
               }}
               onClick={async () => {
                 try {
@@ -3641,17 +3639,19 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isInSession && !isVoiceMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
                 '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.3)',
                 },
-                animation: !isVoiceMuted && isInSession ? 'headsetPulse 1.5s ease-in-out infinite' : 'none',
+                animation: 'headsetPulse 1.5s ease-in-out infinite',
                 '@keyframes headsetPulse': {
                   '0%, 100%': { 
-                    transform: 'scale(1)'
+                    transform: 'scale(1)',
+                    opacity: 1
                   },
                   '50%': { 
-                    transform: 'scale(1.15)'
+                    transform: 'scale(1.15)',
+                    opacity: 0.5
                   }
                 }
               }}
@@ -3665,17 +3665,19 @@ const LocationTracking = () => {
             <IconButton 
               sx={{
                 color: sharingLocation ? '#fff' : 'inherit',
-                bgcolor: isInSession && !isMuted ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
                 '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  bgcolor: 'rgba(255, 255, 255, 0.3)',
                 },
-                animation: !isMuted && isInSession ? 'micPulse 1.5s ease-in-out infinite' : 'none',
+                animation: 'micPulse 1.5s ease-in-out infinite',
                 '@keyframes micPulse': {
                   '0%, 100%': { 
-                    transform: 'scale(1)'
+                    transform: 'scale(1)',
+                    opacity: 1
                   },
                   '50%': { 
-                    transform: 'scale(1.15)'
+                    transform: 'scale(1.15)',
+                    opacity: 0.5
                   }
                 }
               }}
