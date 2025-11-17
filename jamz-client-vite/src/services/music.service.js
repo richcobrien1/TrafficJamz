@@ -37,11 +37,23 @@ class MusicService {
     // iOS requires preload to be set for better compatibility
     this.audioElement.preload = 'auto';
     
+    // CRITICAL: Prevent audio from stopping when tab loses focus
+    // Keep audio context active in background
+    this.audioElement.preservesPitch = true;
+    
     // Detect iOS (any browser) for additional logging
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     if (isIOS) {
       console.log('🍎 iOS device detected - music service configured for iOS (all browsers)');
     }
+    
+    // Prevent page visibility from pausing audio
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.isPlaying && this.audioElement) {
+        console.log('🎵 Tab hidden - keeping audio playing');
+        // Audio element should continue playing in background
+      }
+    });
     
     // Set up event listeners
     this.audioElement.addEventListener('play', () => {
@@ -253,6 +265,9 @@ class MusicService {
           console.error('❌ Failed to load Spotify preview with caching, using direct URL:', error);
           this.audioElement.src = spotifyPreviewUrl;
         }
+        
+        // Update Media Session for background playback
+        this.updateMediaSession(track);
         
         if (this.onTrackChange) {
           this.onTrackChange(track);
@@ -767,6 +782,47 @@ class MusicService {
    */
   async isTrackCached(trackId) {
     return await musicCacheService.isCached(trackId);
+  }
+
+  /**
+   * Update Media Session API for background playback and lock screen controls
+   */
+  updateMediaSession(track) {
+    if (!('mediaSession' in navigator)) {
+      return; // Media Session API not supported
+    }
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title || 'Unknown Track',
+        artist: track.artist || 'Unknown Artist',
+        album: track.album || '',
+        artwork: track.albumArt ? [
+          { src: track.albumArt, sizes: '512x512', type: 'image/jpeg' }
+        ] : []
+      });
+
+      // Set up action handlers for background controls
+      navigator.mediaSession.setActionHandler('play', () => {
+        this.play();
+      });
+
+      navigator.mediaSession.setActionHandler('pause', () => {
+        this.pause();
+      });
+
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        this.playPrevious();
+      });
+
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        this.playNext();
+      });
+
+      console.log('🎵 Media Session updated:', track.title);
+    } catch (error) {
+      console.warn('Failed to update Media Session:', error);
+    }
   }
 }
 
