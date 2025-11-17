@@ -388,7 +388,6 @@ const MusicPlayerPage = () => {
             <ArrowBackIcon />
           </IconButton>
           
-          {/* Standard Icon Set - Left Justified */}
           <Tooltip title="Group Members">
             <IconButton 
               color="inherit"
@@ -397,7 +396,10 @@ const MusicPlayerPage = () => {
               <PeopleIcon />
             </IconButton>
           </Tooltip>
+
+          <Box sx={{ flexGrow: 1 }} />
           
+          {/* Centered Sound Icons */}
           <Tooltip title="Music Player (Active)">
             <IconButton 
               color="inherit"
@@ -424,22 +426,6 @@ const MusicPlayerPage = () => {
               <MicOffIcon />
             </IconButton>
           </Tooltip>
-          
-          <Tooltip title="Location Tracking">
-            <IconButton 
-              color="inherit"
-              onClick={() => navigate(`/groups/${groupId}/location`)}
-            >
-              <MapIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Box sx={{ flexGrow: 1 }} />
-          
-          <span style={{ fontSize: '28px', marginRight: '8px', filter: 'grayscale(100%) brightness(2)' }}>♪</span>
-          <Typography variant="h6">
-            Music
-          </Typography>
           
           <Box sx={{ flexGrow: 1 }} />
           
