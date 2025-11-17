@@ -2036,16 +2036,23 @@ const AudioSession = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Sound Control Icons */}
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ 
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex', 
+            gap: 2, 
+            alignItems: 'center' 
+          }}>
             <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
               <IconButton 
                 sx={{ 
                   color: '#000',
                   bgcolor: musicIsPlaying ? 'rgba(0,0,0,0.1)' : 'transparent',
-                  animation: musicIsPlaying ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
                   }
                 }}
                 onClick={() => setOpenMusicDialog(true)}
@@ -2060,10 +2067,10 @@ const AudioSession = () => {
                 sx={{ 
                   color: '#000',
                   bgcolor: isVoiceMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
-                  animation: !isVoiceMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
                   }
                 }}
               >
@@ -2078,10 +2085,10 @@ const AudioSession = () => {
                 sx={{ 
                   color: '#000',
                   bgcolor: isMuted ? 'error.main' : 'rgba(0,0,0,0.1)',
-                  animation: !isMuted ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                  animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                    '50%': { opacity: 0.7, transform: 'scale(1.1)' }
                   }
                 }}
               >
