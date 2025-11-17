@@ -28,16 +28,16 @@ ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no $USER@$SERVER << 'ENDSSH'
     git pull origin main
     
     echo "🐳 Restarting backend container..."
-    docker-compose restart backend
+    docker restart trafficjamz
     
     echo "⏳ Waiting for container to stabilize..."
     sleep 5
     
     echo "✅ Checking container status..."
-    docker-compose ps backend
+    docker ps | grep trafficjamz
     
     echo "📋 Recent logs:"
-    docker-compose logs --tail=20 backend
+    docker logs --tail=20 trafficjamz
     
     echo "✅ Deployment complete!"
 ENDSSH
