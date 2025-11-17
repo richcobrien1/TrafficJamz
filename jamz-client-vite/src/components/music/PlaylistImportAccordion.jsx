@@ -255,37 +255,66 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
   };
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)} sx={{ mb: 2 }}>
-        <Tab icon={<SpotifyIcon />} label="Spotify" />
-        <Tab icon={<YouTubeIcon />} label="YouTube" />
-        <Tab icon={<AppleMusicIcon />} label="Apple Music" />
+    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Mobile-optimized tabs - icons only on mobile, text on desktop */}
+      <Tabs 
+        value={activeTab} 
+        onChange={(e, val) => setActiveTab(val)} 
+        sx={{ 
+          mb: 2,
+          minHeight: { xs: 48, sm: 64 },
+          borderBottom: 1,
+          borderColor: 'divider'
+        }}
+        variant="fullWidth"
+      >
+        <Tab 
+          icon={<SpotifyIcon />} 
+          label={<Box sx={{ display: { xs: 'none', sm: 'block' } }}>Spotify</Box>}
+          iconPosition="start"
+          sx={{ minHeight: { xs: 48, sm: 64 }, px: { xs: 1, sm: 2 } }}
+        />
+        <Tab 
+          icon={<YouTubeIcon />} 
+          label={<Box sx={{ display: { xs: 'none', sm: 'block' } }}>YouTube</Box>}
+          iconPosition="start"
+          sx={{ minHeight: { xs: 48, sm: 64 }, px: { xs: 1, sm: 2 } }}
+        />
+        <Tab 
+          icon={<AppleMusicIcon />} 
+          label={<Box sx={{ display: { xs: 'none', sm: 'block' } }}>Apple Music</Box>}
+          iconPosition="start"
+          sx={{ minHeight: { xs: 48, sm: 64 }, px: { xs: 1, sm: 2 } }}
+        />
       </Tabs>
 
-      {/* Connection Status Chips */}
-      <Box sx={{ mb: 2 }}>
+      {/* Connection Status - Compact on mobile */}
+      <Box sx={{ mb: 2, px: { xs: 0, sm: 1 } }}>
         {activeTab === 0 && (
           <Chip
             icon={platformStatuses.spotify.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
-            label={platformStatuses.spotify.connected ? 'Spotify Connected' : 'Spotify Not Connected'}
+            label={platformStatuses.spotify.connected ? 'Connected' : 'Not Connected'}
             size="small"
             color={platformStatuses.spotify.connected ? 'success' : 'default'}
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           />
         )}
         {activeTab === 1 && (
           <Chip
             icon={platformStatuses.youtube.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
-            label={platformStatuses.youtube.connected ? 'YouTube Connected' : 'YouTube Not Connected'}
+            label={platformStatuses.youtube.connected ? 'Connected' : 'Not Connected'}
             size="small"
             color={platformStatuses.youtube.connected ? 'success' : 'default'}
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           />
         )}
         {activeTab === 2 && (
           <Chip
             icon={platformStatuses.appleMusic.connected ? <ConnectedIcon /> : <DisconnectedIcon />}
-            label={platformStatuses.appleMusic.connected ? 'Apple Music Connected' : 'Not Connected'}
+            label={platformStatuses.appleMusic.connected ? 'Connected' : 'Not Connected'}
             size="small"
             color={platformStatuses.appleMusic.connected ? 'success' : 'default'}
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           />
         )}
       </Box>
@@ -297,23 +326,24 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
       )}
 
       {!selectedPlaylist ? (
-        // Playlist selection view
-        <Box>
+        // Playlist selection view - Mobile optimized
+        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {/* Show connect button if not connected */}
           {((activeTab === 0 && !platformStatuses.spotify.connected) || 
             (activeTab === 1 && !platformStatuses.youtube.connected) ||
             (activeTab === 2 && !platformStatuses.appleMusic.connected)) && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="body2">
-                  Connect your {activeTab === 0 ? 'Spotify' : activeTab === 1 ? 'YouTube' : 'Apple Music'} account
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, alignItems: { xs: 'stretch', sm: 'center' } }}>
+                <Typography variant="body2" sx={{ flex: 1 }}>
+                  Connect {activeTab === 0 ? 'Spotify' : activeTab === 1 ? 'YouTube' : 'Apple Music'}
                 </Typography>
                 <Button
                   variant="contained"
                   size="small"
                   startIcon={<LinkIcon />}
                   onClick={() => handleConnectPlatform(activeTab === 0 ? 'spotify' : activeTab === 1 ? 'youtube' : 'appleMusic')}
-                  sx={{ ml: 2 }}
+                  fullWidth={{ xs: true, sm: false }}
+                  sx={{ minHeight: 44 }}
                 >
                   Connect
                 </Button>
@@ -326,7 +356,7 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
               <CircularProgress />
             </Box>
           ) : playlists.length === 0 ? (
-            <Typography color="textSecondary" align="center" sx={{ p: 2 }}>
+            <Typography color="textSecondary" align="center" sx={{ p: 3 }}>
               {activeTab === 0 && !platformStatuses.spotify.connected && 'Connect Spotify to view playlists'}
               {activeTab === 0 && platformStatuses.spotify.connected && 'No playlists found'}
               {activeTab === 1 && !platformStatuses.youtube.connected && 'Connect YouTube to view playlists'}
@@ -335,18 +365,34 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
               {activeTab === 2 && platformStatuses.appleMusic.connected && 'No playlists found'}
             </Typography>
           ) : (
-            <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+            <List sx={{ 
+              flex: 1,
+              overflow: 'auto', 
+              WebkitOverflowScrolling: 'touch',
+              px: { xs: 0, sm: 1 }
+            }}>
               {playlists.map((playlist) => (
                 <ListItem
                   key={playlist.id}
                   button
                   onClick={() => handlePlaylistClick(playlist)}
-                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 1 }}
+                  sx={{ 
+                    border: '1px solid', 
+                    borderColor: 'divider', 
+                    borderRadius: 1, 
+                    mb: 1,
+                    minHeight: { xs: 72, sm: 80 },
+                    px: { xs: 2, sm: 3 },
+                    '&:active': {
+                      backgroundColor: 'action.selected'
+                    }
+                  }}
                 >
                   <ListItemAvatar>
                     <Avatar
                       src={playlist.images?.[0]?.url || playlist.artwork || playlist.thumbnail}
                       variant="rounded"
+                      sx={{ width: { xs: 48, sm: 56 }, height: { xs: 48, sm: 56 } }}
                     >
                       {getPlatformIcon()}
                     </Avatar>
@@ -354,6 +400,14 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
                   <ListItemText
                     primary={playlist.name}
                     secondary={`${playlist.tracksCount || playlist.itemCount || 0} tracks`}
+                    primaryTypographyProps={{
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                      noWrap: true
+                    }}
+                    secondaryTypographyProps={{
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }}
+                    sx={{ pr: 1 }}
                   />
                 </ListItem>
               ))}
@@ -361,78 +415,161 @@ const PlaylistImportAccordion = ({ onImport, sessionId }) => {
           )}
         </Box>
       ) : (
-        // Track selection view
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Button variant="outlined" size="small" onClick={() => setSelectedPlaylist(null)}>
+        // Track selection view - Mobile optimized with card layout
+        <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {/* Mobile header with back button and selection count */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2,
+            mb: 2,
+            pb: 2,
+            borderBottom: 1,
+            borderColor: 'divider'
+          }}>
+            <Button 
+              variant="text" 
+              onClick={() => {
+                setSelectedPlaylist(null);
+                setTracks([]);
+                setSelectedTracks([]);
+                setPlayingTrackIndex(null);
+              }}
+              sx={{ 
+                minWidth: 'auto',
+                minHeight: 44,
+                px: 2
+              }}
+            >
               ← Back
             </Button>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" noWrap sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                {selectedPlaylist.name}
+              </Typography>
+            </Box>
             <Chip
-              label={`${selectedTracks.length} / ${tracks.length} selected`}
+              label={`${selectedTracks.length}/${tracks.length}`}
               color="primary"
               size="small"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             />
           </Box>
-
-          <Typography variant="subtitle2" gutterBottom>
-            {selectedPlaylist.name}
-          </Typography>
 
           {loadingTracks ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
               <CircularProgress />
             </Box>
           ) : (
-            <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+            <List sx={{ 
+              flex: 1,
+              overflow: 'auto', 
+              WebkitOverflowScrolling: 'touch',
+              px: { xs: 0, sm: 1 }
+            }}>
               {tracks.map((track, index) => (
                 <ListItem
                   key={index}
-                  button
-                  onClick={() => toggleTrackSelection(index)}
                   sx={{
                     border: '1px solid',
                     borderColor: selectedTracks.includes(index) ? 'primary.main' : 'divider',
                     borderRadius: 1,
                     mb: 1,
-                    backgroundColor: selectedTracks.includes(index) ? 'action.selected' : 'transparent'
+                    backgroundColor: selectedTracks.includes(index) ? 'action.selected' : 'transparent',
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                    p: { xs: 1.5, sm: 2 },
+                    gap: 1,
+                    minHeight: 'auto'
                   }}
                 >
-                  <Checkbox
-                    checked={selectedTracks.includes(index)}
-                    onChange={() => toggleTrackSelection(index)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <ListItemAvatar>
-                    <Avatar src={track.albumArt} variant="rounded">
+                  {/* Top row: checkbox + track info */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                    <Checkbox
+                      checked={selectedTracks.includes(index)}
+                      onChange={() => toggleTrackSelection(index)}
+                      sx={{ 
+                        p: 0,
+                        '& .MuiSvgIcon-root': { fontSize: { xs: 24, sm: 28 } }
+                      }}
+                    />
+                    <Avatar 
+                      src={track.albumArt} 
+                      variant="rounded"
+                      sx={{ width: { xs: 40, sm: 48 }, height: { xs: 40, sm: 48 } }}
+                    >
                       {getPlatformIcon()}
                     </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={track.title}
-                    secondary={`${track.artist} • ${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`}
-                  />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography 
+                        variant="body2" 
+                        noWrap
+                        sx={{ 
+                          fontSize: { xs: '0.875rem', sm: '1rem' },
+                          fontWeight: 500
+                        }}
+                      >
+                        {track.title}
+                      </Typography>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        noWrap
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
+                        {track.artist}
+                      </Typography>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                      >
+                        {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  {/* Bottom row: Play button (full width on mobile) */}
                   <Button
                     size="small"
+                    variant="outlined"
                     onClick={(e) => {
                       e.stopPropagation();
                       handlePlayTrack(track, index);
                     }}
                     startIcon={playingTrackIndex === index ? <PauseIcon /> : <PlayIcon />}
+                    fullWidth
+                    sx={{ 
+                      minHeight: 40,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                    }}
                   >
-                    {playingTrackIndex === index ? 'Pause' : 'Play'}
+                    {playingTrackIndex === index ? 'Pause' : 'Preview'}
                   </Button>
                 </ListItem>
               ))}
             </List>
           )}
 
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          {/* Sticky import button at bottom */}
+          <Box sx={{ 
+            mt: 2,
+            pt: 2,
+            borderTop: 1,
+            borderColor: 'divider',
+            position: 'sticky',
+            bottom: 0,
+            backgroundColor: 'background.paper'
+          }}>
             <Button
               onClick={handleImport}
               variant="contained"
               disabled={selectedTracks.length === 0}
+              fullWidth
+              size="large"
+              sx={{ minHeight: 48 }}
             >
-              Import {selectedTracks.length > 0 && `(${selectedTracks.length})`}
+              Import {selectedTracks.length > 0 && `${selectedTracks.length} Track${selectedTracks.length > 1 ? 's' : ''}`}
             </Button>
           </Box>
         </Box>
