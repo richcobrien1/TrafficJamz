@@ -74,8 +74,7 @@ const MusicPlayerPage = () => {
     takeControl: takeMusicControl,
     releaseControl: releaseMusicControl,
     changeVolume: changeMusicVolume,
-    initializeSession,
-    testSocketConnection  // TEST - Remove after debugging
+    initializeSession
   } = useMusic();
 
   // Debug: Log the functions to verify they exist
@@ -592,18 +591,6 @@ const MusicPlayerPage = () => {
           onReleaseControl={releaseMusicControl}
           disabled={!sessionId}
         />
-        
-        {/* TEST BUTTON - Remove after debugging */}
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Button 
-            variant="outlined" 
-            color="warning"
-            onClick={testSocketConnection}
-            disabled={!sessionId}
-          >
-            🔔 Test Socket.IO Connection
-          </Button>
-        </Box>
       </Paper>
 
       {/* Playlist Import Dialog */}

@@ -1,14 +1,16 @@
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
 const dotenv = require('dotenv');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables (removed - already loaded in index.js)
+// dotenv.config();
 
 // InfluxDB connection configuration
-const url = process.env.INFLUXDB_URL || 'https://us-east-1-1.aws.cloud2.influxdata.com';
-const token = process.env.INFLUXDB_TOKEN || 'Vy57uArV5tf17mCqoqPCbzL4xXnMM0uQIcqglnA4d8vWEJSoc66WJJu37ntxTK8PF4XA9SYQ9u1nhIaBkZMKug==';
-const org = process.env.INFLUXDB_ORG || 'a48c228a5a10b4c7';
-const bucket = process.env.INFLUXDB_BUCKET || 'trafficjam';
+// Strip surrounding quotes if present (can happen with some .env parsers)
+const stripQuotes = (str) => str && str.replace(/^["']|["']$/g, '');
+const url = stripQuotes(process.env.INFLUXDB_URL) || 'https://us-east-1-1.aws.cloud2.influxdata.com';
+const token = stripQuotes(process.env.INFLUXDB_TOKEN) || 'Vy57uArV5tf17mCqoqPCbzL4xXnMM0uQIcqglnA4d8vWEJSoc66WJJu37ntxTK8PF4XA9SYQ9u1nhIaBkZMKug==';
+const org = stripQuotes(process.env.INFLUXDB_ORG) || 'a48c228a5a10b4c7';
+const bucket = stripQuotes(process.env.INFLUXDB_BUCKET) || 'trafficjam';
 
 // Create InfluxDB client
 const influxClient = new InfluxDB({ url, token });
