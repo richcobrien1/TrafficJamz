@@ -849,6 +849,25 @@ export const MusicProvider = ({ children }) => {
   };
   
   /**
+   * TEST FUNCTION - Remove after debugging
+   */
+  const testSocketConnection = () => {
+    console.log('🔔 TEST: Sending test-ping event');
+    if (!socketRef.current?.connected) {
+      console.error('🔔 TEST: Socket not connected!');
+      return;
+    }
+    socketRef.current.emit('test-ping', { timestamp: Date.now(), message: 'Hello from frontend' });
+    socketRef.current.once('test-pong', (data) => {
+      console.log('🔔 TEST: Received test-pong response:', data);
+      alert('✅ Socket.IO test successful! Backend received and responded.');
+    });
+    setTimeout(() => {
+      console.log('🔔 TEST: Timeout waiting for test-pong');
+    }, 3000);
+  };
+  
+  /**
    * Take control (become DJ)
    */
   const takeControl = () => {
@@ -1125,7 +1144,8 @@ export const MusicProvider = ({ children }) => {
     takeControl,
     releaseControl,
     changeVolume,
-    toggleMusic
+    toggleMusic,
+    testSocketConnection  // TEST - Remove after debugging
   };
   
   return (

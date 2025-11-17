@@ -355,6 +355,12 @@ io.on("connection", (socket) => {
     musicSyncCountWindow: 0,
   };
 
+  // TEST EVENT HANDLER - Remove after debugging
+  socket.on('test-ping', (data) => {
+    console.log('🔔 TEST-PING EVENT RECEIVED from', socket.id, 'data:', data);
+    socket.emit('test-pong', { received: true, yourData: data });
+  });
+
   // Join a group room
   socket.on('join-group', (groupId) => {
     socket.join(`group-${groupId}`);
