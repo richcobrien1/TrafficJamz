@@ -396,7 +396,7 @@ const MusicPlayerPage = () => {
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex', 
-            gap: 2, 
+            gap: 3, 
             alignItems: 'center' 
           }}>
             <Tooltip title="Music Player (Active)">
@@ -420,6 +420,7 @@ const MusicPlayerPage = () => {
                 color="inherit"
                 onClick={() => {/* TODO: Toggle voice */}}
                 sx={{
+                  bgcolor: 'rgba(255,255,255,0.2)',
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
@@ -436,6 +437,7 @@ const MusicPlayerPage = () => {
                 color="inherit"
                 onClick={() => {/* TODO: Toggle mic */}}
                 sx={{
+                  bgcolor: 'rgba(255,255,255,0.2)',
                   animation: 'pulse 1.5s ease-in-out infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
