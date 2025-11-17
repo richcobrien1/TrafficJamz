@@ -4,6 +4,113 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 17, 2025 (Night) - Docker Auto-Deploy & Production Stabilization 🚀🐳
+
+### Work Completed
+
+#### DigitalOcean Auto-Deploy Workflow
+Configured automated deployment pipeline for stable, predictable production releases.
+
+**Problem**: Manual deployments required SSH, running scripts, and remembering Docker commands.
+
+**Solution**: GitHub Actions workflow that automatically deploys backend on every push to `main`.
+
+**Implementation**:
+1. **Created `.github/workflows/deploy-docker.yml`**:
+   - Triggers on push to `main` branch
+   - Uses `appleboy/ssh-action` to connect to DigitalOcean
+   - Pulls latest code from GitHub
+   - Restarts Docker container (`docker restart trafficjamz`)
+   - Verifies deployment with health checks
+   - Shows recent logs for debugging
+
+2. **Fixed `remote-deploy.sh`**:
+   - Updated from Docker Compose v1 (`docker-compose`) to v2 (`docker restart trafficjamz`)
+   - Script now matches actual production container setup
+   - Can still be run manually for ad-hoc deploys
+
+3. **Created `docs/DIGITALOCEAN_AUTO_DEPLOY.md`**:
+   - Complete setup guide for GitHub secrets
+   - Troubleshooting common deployment issues
+   - Manual trigger instructions
+   - Health check verification steps
+
+**GitHub Secrets Required** (now configured):
+- `DO_HOST`: DigitalOcean droplet IP (157.230.165.156)
+- `DO_USER`: SSH username (root)
+- `DO_SSH_KEY`: RSA private key for authentication
+
+**Deployment Flow**:
+```
+Developer pushes to main
+  ↓
+GitHub Actions triggers deploy-docker.yml
+  ↓
+SSH into DigitalOcean (157.230.165.156)
+  ↓
+Pull latest code (git pull origin main)
+  ↓
+Restart container (docker restart trafficjamz)
+  ↓
+Verify health & show logs
+  ↓
+✅ Deployment complete!
+```
+
+**Benefits**:
+- ✅ Automated deployment on every push (no manual intervention)
+- ✅ Consistent deployment process (eliminates human error)
+- ✅ Health check verification (catches failed deployments)
+- ✅ Deployment logs visible in GitHub Actions UI
+- ✅ Manual trigger available for ad-hoc deploys
+
+**Production Environment Status**:
+- **Frontend**: Vercel auto-deploys on push ✅
+- **Backend**: DigitalOcean auto-deploys on push ✅ (NEW)
+- **Deployment Time**: ~30 seconds from push to live
+- **Current Setup**: Single Docker container (stable, predictable)
+
+**Files Modified**:
+- `.github/workflows/deploy-docker.yml`: Created auto-deploy workflow
+- `remote-deploy.sh`: Updated for Docker v2 commands
+- `docs/DIGITALOCEAN_AUTO_DEPLOY.md`: Created deployment guide
+
+---
+
+#### Kubernetes Deployment Planning
+Reviewed Kubernetes architecture for future multi-node deployment and P2P testing.
+
+**Current K8s Assets**:
+- ✅ `kubernetes/kubernetes-cluster-ubuntu-calico.sh`: Full cluster setup script (Ubuntu + Calico)
+- ✅ K8s manifests: backend-deployment.yaml, backend-service.yaml, frontend manifests
+- ✅ Docker images building to GHCR: `ghcr.io/richcobrien1/trafficjamz-jamz-server:latest`
+
+**Requirements for K8s Activation**:
+1. **Redis Deployment**: Required for Socket.IO clustering across multiple pods
+2. **Socket.IO Redis Adapter**: Install `@socket.io/redis-adapter` in jamz-server
+3. **Sticky Sessions**: Configure Nginx Ingress or Redis adapter for WebSocket persistence
+4. **Secrets ConfigMap**: Create `jamz-secrets` with DB credentials, JWT, API keys
+5. **KUBE_CONFIG_DATA**: Add kubeconfig to GitHub secrets for CI/CD
+
+**Critical Issue for Multi-Pod Socket.IO**:
+- Current deployment: `replicas: 3` without sticky sessions
+- WebSocket connections require sticky sessions OR Redis adapter
+- Without either: Client connects to Pod 1 → Message routes to Pod 2 → Fails (no connection)
+
+**Decision**: Postpone K8s deployment until Docker environment stable (later this week).
+- Docker provides stable single-instance deployment
+- K8s will be needed for P2P WebRTC testing (multiple instances)
+- Allows time to test controller sync fix in production
+
+**Next Steps for K8s** (Later This Week):
+- [ ] Deploy Redis to K8s cluster
+- [ ] Install Socket.IO Redis adapter
+- [ ] Run `kubernetes/kubernetes-cluster-ubuntu-calico.sh` on nodes
+- [ ] Create secrets ConfigMap
+- [ ] Test multi-pod Socket.IO sync
+
+---
+
 ## Session: November 17, 2025 (Late Evening) - Music Sync Architecture & P2P Planning 🔄🌐
 
 ### Work Completed
