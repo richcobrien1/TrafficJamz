@@ -2037,7 +2037,7 @@ const AudioSession = () => {
           <Box sx={{ flexGrow: 1 }} />
           
           {/* Centered Sound Control Icons */}
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
               <IconButton 
                 sx={{ 
