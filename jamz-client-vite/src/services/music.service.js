@@ -1,5 +1,6 @@
 // Music service for synchronized playback across group members
 import platformMusicService from './platform-music.service';
+import musicCacheService from './music-cache.service';
 
 class MusicService {
   constructor() {
@@ -171,14 +172,35 @@ class MusicService {
         
         platformMusicService.onError = (platform, error) => {
           console.error(`❌ ${platform} error:`, error);
-          // If Premium fails, fall back to preview URL
+          // If Premium fails, fall back to preview URL with caching
           if (track.spotifyPreviewUrl) {
             console.log('⚠️ Falling back to Spotify preview URL');
             this.platformMode = false;
             if (!this.audioElement) {
               this.initialize();
             }
-            this.audioElement.src = track.spotifyPreviewUrl;
+            
+            // Try to use cache for fallback preview
+            musicCacheService.getTrack(
+              track.id || track._id,
+              track.spotifyPreviewUrl,
+              {
+                title: track.title,
+                artist: track.artist,
+                album: track.album,
+                source: 'spotify-preview-fallback'
+              }
+            ).then(blob => {
+              const blobUrl = URL.createObjectURL(blob);
+              if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
+                URL.revokeObjectURL(this.audioElement.src);
+              }
+              this.audioElement.src = blobUrl;
+            }).catch(() => {
+              // Final fallback: direct URL
+              this.audioElement.src = track.spotifyPreviewUrl;
+            });
+            
             if (this.onTrackChange) {
               this.onTrackChange(track);
             }
@@ -193,7 +215,7 @@ class MusicService {
         return;
       }
       
-      // No Premium or no token - use preview URL
+      // No Premium or no token - use preview URL with caching
       const spotifyPreviewUrl = track.spotifyPreviewUrl || track.previewUrl || track.fileUrl || track.url;
       if (spotifyPreviewUrl) {
         console.log('🎵 Loading Spotify preview (no Premium):', track.title);
@@ -203,13 +225,39 @@ class MusicService {
           this.initialize();
         }
         
-        this.audioElement.src = spotifyPreviewUrl;
+        try {
+          // Get track from cache or fetch and cache it
+          const blob = await musicCacheService.getTrack(
+            track.id || track._id, 
+            spotifyPreviewUrl,
+            {
+              title: track.title,
+              artist: track.artist,
+              album: track.album,
+              duration: track.duration,
+              source: 'spotify-preview'
+            }
+          );
+          
+          // Create object URL from blob
+          const blobUrl = URL.createObjectURL(blob);
+          
+          // Revoke previous blob URL
+          if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
+            URL.revokeObjectURL(this.audioElement.src);
+          }
+          
+          this.audioElement.src = blobUrl;
+          console.log('✅ Spotify preview loaded from cache/network:', track.title);
+        } catch (error) {
+          console.error('❌ Failed to load Spotify preview with caching, using direct URL:', error);
+          this.audioElement.src = spotifyPreviewUrl;
+        }
         
         if (this.onTrackChange) {
           this.onTrackChange(track);
         }
         
-        console.log('✅ Spotify preview loaded:', track.title);
         return;
       }
     }
@@ -258,7 +306,7 @@ class MusicService {
       };
       
     } else {
-      // File-based track - use HTML5 Audio
+      // File-based track - use HTML5 Audio with caching
       console.log('🎵 Loading file track:', track.title);
       this.platformMode = false;
       
@@ -273,8 +321,35 @@ class MusicService {
         console.error('❌ Track has no URL:', track);
         throw new Error('Track has no valid URL');
       }
-      
-      this.audioElement.src = trackUrl;
+
+      try {
+        // Get track from cache or fetch and cache it
+        const blob = await musicCacheService.getTrack(
+          track.id || track._id, 
+          trackUrl,
+          {
+            title: track.title,
+            artist: track.artist,
+            album: track.album,
+            duration: track.duration
+          }
+        );
+        
+        // Create object URL from blob for audio element
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Revoke previous blob URL to prevent memory leaks
+        if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
+          URL.revokeObjectURL(this.audioElement.src);
+        }
+        
+        this.audioElement.src = blobUrl;
+        console.log('✅ Track loaded from cache/network:', track.title);
+      } catch (error) {
+        console.error('❌ Failed to load track with caching, using direct URL:', error);
+        // Fallback to direct URL if caching fails
+        this.audioElement.src = trackUrl;
+      }
     }
     
     if (this.onTrackChange) {
@@ -620,6 +695,10 @@ class MusicService {
   cleanup() {
     if (this.audioElement) {
       this.audioElement.pause();
+      // Revoke blob URLs to prevent memory leaks
+      if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
+        URL.revokeObjectURL(this.audioElement.src);
+      }
       this.audioElement.src = '';
       this.audioElement = null;
     }
@@ -630,6 +709,64 @@ class MusicService {
     this.isController = false;
     
     console.log('🧹 Music service cleaned up');
+  }
+
+  /**
+   * Get cache statistics
+   * @returns {Promise<object>}
+   */
+  async getCacheStats() {
+    return await musicCacheService.getCacheStats();
+  }
+
+  /**
+   * Clear music cache
+   */
+  async clearCache() {
+    await musicCacheService.clearCache();
+  }
+
+  /**
+   * Preload playlist tracks for offline use
+   * @param {Function} progressCallback - Optional callback(current, total)
+   */
+  async preloadPlaylist(progressCallback = null) {
+    if (this.playlist.length === 0) {
+      console.warn('⚠️ No tracks in playlist to preload');
+      return;
+    }
+
+    console.log(`📥 Preloading ${this.playlist.length} tracks for offline playback...`);
+
+    const tracksToPreload = this.playlist
+      .filter(track => track.source === 'local' || track.source === 'spotify-preview')
+      .map(track => ({
+        id: track.id || track._id,
+        url: track.url || track.fileUrl || track.spotifyPreviewUrl,
+        metadata: {
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration
+        }
+      }));
+
+    if (tracksToPreload.length === 0) {
+      console.warn('⚠️ No cacheable tracks in playlist (only streaming tracks)');
+      return;
+    }
+
+    await musicCacheService.preloadTracks(tracksToPreload, progressCallback);
+    console.log('✅ Playlist preload complete');
+  }
+
+  /**
+   * Check if a track is cached
+   * @param {string} trackId
+   * @returns {Promise<boolean>}
+   */
+  async isTrackCached(trackId) {
+    return await musicCacheService.isCached(trackId);
   }
 }
 
