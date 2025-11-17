@@ -852,7 +852,14 @@ export const MusicProvider = ({ children }) => {
    * Take control (become DJ)
    */
   const takeControl = () => {
-    console.log('🎵 [MusicContext] Taking control');
+    console.log('🎵 [MusicContext] ========================================');
+    console.log('🎵 [MusicContext] TAKE CONTROL BUTTON CLICKED');
+    console.log('🎵 [MusicContext] ========================================');
+    console.log('🎵 [MusicContext] Socket exists?', !!socketRef.current);
+    console.log('🎵 [MusicContext] Socket connected?', socketRef.current?.connected);
+    console.log('🎵 [MusicContext] Active session?', activeSessionId);
+    console.log('🎵 [MusicContext] User ID?', userRef.current?.id || userRef.current?.user_id);
+    console.log('🎵 [MusicContext] ========================================');
     
     // Validation checks
     if (!socketRef.current) {
