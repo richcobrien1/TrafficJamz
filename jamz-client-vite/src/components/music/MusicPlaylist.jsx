@@ -171,18 +171,41 @@ const MusicPlaylist = ({
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1 }}>
-            {/* Selection Mode Toggle - Shows trash icon */}
-            {isController && !selectionMode && (
-              <Tooltip title="Select tracks to delete">
+            {/* Trash icon - shows badge when tracks selected */}
+            {isController && (
+              <Tooltip title={selectionMode ? (selectedTracks.size > 0 ? `Delete ${selectedTracks.size} track${selectedTracks.size !== 1 ? 's' : ''}` : "Select tracks to delete") : "Select tracks to delete"}>
                 <IconButton
                   size="small"
-                  onClick={toggleSelectionMode}
+                  onClick={selectedTracks.size > 0 ? deleteSelectedTracks : toggleSelectionMode}
+                  disabled={selectionMode && selectedTracks.size === 0}
                   sx={{ 
                     color: 'text.secondary',
+                    position: 'relative',
                     '&:hover': { color: 'error.main' }
                   }}
                 >
                   <DeleteIcon />
+                  {selectedTracks.size > 0 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -4,
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {selectedTracks.size}
+                    </Box>
+                  )}
                 </IconButton>
               </Tooltip>
             )}
@@ -195,32 +218,6 @@ const MusicPlaylist = ({
                 onClick={toggleSelectionMode}
               >
                 Cancel
-              </Button>
-            )}
-            
-            {/* Delete Selected Button - Only shown when tracks are selected */}
-            {isController && selectionMode && selectedTracks.size > 0 && (
-              <Button
-                variant="contained"
-                color="error"
-                size="small"
-                onClick={deleteSelectedTracks}
-                startIcon={<DeleteIcon />}
-              >
-                Delete ({selectedTracks.size})
-              </Button>
-            )}
-            
-            {/* Clear All Button - Only shown when NOT in selection mode */}
-            {onClearPlaylist && !selectionMode && (
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={onClearPlaylist}
-                disabled={!isController}
-              >
-                CLEAR ALL
               </Button>
             )}
           </Box>
@@ -247,21 +244,26 @@ const MusicPlaylist = ({
                   position: 'relative'
                 }}
               >
-                {/* Checkbox for selection mode */}
+                {/* Checkbox for selection mode - small and right-aligned */}
                 {selectionMode && isController && (
                   <Checkbox
                     checked={selectedTracks.has(track.id || track._id)}
                     onChange={() => toggleTrackSelection(track.id || track._id)}
                     onClick={(e) => e.stopPropagation()}
+                    size="small"
                     sx={{ 
                       position: 'absolute',
                       top: 8,
-                      left: 8,
+                      right: 8,
                       zIndex: 3,
                       bgcolor: 'rgba(255,255,255,0.9)',
                       borderRadius: 1,
+                      padding: '4px',
                       '&:hover': {
                         bgcolor: 'rgba(255,255,255,1)'
+                      },
+                      '& .MuiSvgIcon-root': {
+                        fontSize: '1.2rem'
                       }
                     }}
                   />
@@ -280,7 +282,7 @@ const MusicPlaylist = ({
                     display: 'flex',
                     alignItems: 'center',
                     p: 2,
-                    pl: selectionMode && isController ? 7 : 2,
+                    pr: selectionMode && isController ? 6 : 2,
                     bgcolor: 'background.paper',
                     borderRadius: 2,
                     border: '2px solid',
