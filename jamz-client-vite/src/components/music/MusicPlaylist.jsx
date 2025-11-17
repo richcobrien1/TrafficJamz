@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -13,7 +13,8 @@ import {
   Avatar,
   Chip,
   Divider,
-  Tooltip
+  Tooltip,
+  Checkbox
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -32,6 +33,8 @@ const MusicPlaylist = ({
   onClearPlaylist,
   disabled = false
 }) => {
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTracks, setSelectedTracks] = useState(new Set());
   /**
    * Format duration for display
    */
@@ -72,6 +75,51 @@ const MusicPlaylist = ({
     }
   };
 
+  /**
+   * Toggle selection mode
+   */
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedTracks(new Set());
+  };
+
+  /**
+   * Toggle track selection
+   */
+  const toggleTrackSelection = (trackId) => {
+    const newSelected = new Set(selectedTracks);
+    if (newSelected.has(trackId)) {
+      newSelected.delete(trackId);
+    } else {
+      newSelected.add(trackId);
+    }
+    setSelectedTracks(newSelected);
+  };
+
+  /**
+   * Toggle select all
+   */
+  const toggleSelectAll = () => {
+    if (selectedTracks.size === playlist.length) {
+      setSelectedTracks(new Set());
+    } else {
+      setSelectedTracks(new Set(playlist.map(track => track.id || track._id)));
+    }
+  };
+
+  /**
+   * Delete selected tracks
+   */
+  const deleteSelectedTracks = () => {
+    if (isController && onRemoveTrack) {
+      selectedTracks.forEach(trackId => {
+        onRemoveTrack(trackId);
+      });
+      setSelectedTracks(new Set());
+      setSelectionMode(false);
+    }
+  };
+
   if (playlist.length === 0) {
     return (
       <Card variant="outlined">
@@ -93,29 +141,89 @@ const MusicPlaylist = ({
       <CardContent>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <PlaylistIcon sx={{ mr: 1, color: 'primary.main' }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {!selectionMode && <PlaylistIcon sx={{ mr: 1, color: 'primary.main' }} />}
+            
+            {/* Select All Checkbox - Only shown in selection mode */}
+            {selectionMode && isController && (
+              <Tooltip title="Select All">
+                <Checkbox
+                  checked={selectedTracks.size === playlist.length}
+                  indeterminate={selectedTracks.size > 0 && selectedTracks.size < playlist.length}
+                  onChange={toggleSelectAll}
+                  sx={{ p: 0.5 }}
+                />
+              </Tooltip>
+            )}
+            
             <Chip 
-              label={`${playlist.length} track${playlist.length !== 1 ? 's' : ''}`}
+              label={selectionMode && selectedTracks.size > 0 
+                ? `${selectedTracks.size} selected`
+                : `${playlist.length} track${playlist.length !== 1 ? 's' : ''}`
+              }
               size="small"
               sx={{ 
-                bgcolor: 'primary.main',
+                bgcolor: selectionMode && selectedTracks.size > 0 ? 'warning.main' : 'primary.main',
                 color: 'white',
                 fontWeight: 'bold'
               }}
             />
           </Box>
-          {onClearPlaylist && (
-            <Button
-              variant="contained"
-              color="error"
-              size="small"
-              onClick={onClearPlaylist}
-              disabled={!isController}
-            >
-              CLEAR ALL
-            </Button>
-          )}
+          
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Selection Mode Toggle - Shows trash icon */}
+            {isController && !selectionMode && (
+              <Tooltip title="Select tracks to delete">
+                <IconButton
+                  size="small"
+                  onClick={toggleSelectionMode}
+                  sx={{ 
+                    color: 'text.secondary',
+                    '&:hover': { color: 'error.main' }
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            
+            {/* Cancel Selection Button */}
+            {isController && selectionMode && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={toggleSelectionMode}
+              >
+                Cancel
+              </Button>
+            )}
+            
+            {/* Delete Selected Button - Only shown when tracks are selected */}
+            {isController && selectionMode && selectedTracks.size > 0 && (
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                onClick={deleteSelectedTracks}
+                startIcon={<DeleteIcon />}
+              >
+                Delete ({selectedTracks.size})
+              </Button>
+            )}
+            
+            {/* Clear All Button - Only shown when NOT in selection mode */}
+            {onClearPlaylist && !selectionMode && (
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={onClearPlaylist}
+                disabled={!isController}
+              >
+                CLEAR ALL
+              </Button>
+            )}
+          </Box>
         </Box>
 
         <Divider sx={{ mb: 2 }} />
@@ -139,18 +247,46 @@ const MusicPlaylist = ({
                   position: 'relative'
                 }}
               >
+                {/* Checkbox for selection mode */}
+                {selectionMode && isController && (
+                  <Checkbox
+                    checked={selectedTracks.has(track.id || track._id)}
+                    onChange={() => toggleTrackSelection(track.id || track._id)}
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{ 
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      zIndex: 3,
+                      bgcolor: 'rgba(255,255,255,0.9)',
+                      borderRadius: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,1)'
+                      }
+                    }}
+                  />
+                )}
+
                 {/* Main clickable area - full panel for mobile touch */}
                 <Box
-                  onClick={() => isController && !isCurrentTrack && !disabled && handlePlayTrack(track)}
+                  onClick={() => {
+                    if (selectionMode && isController) {
+                      toggleTrackSelection(track.id || track._id);
+                    } else if (isController && !isCurrentTrack && !disabled) {
+                      handlePlayTrack(track);
+                    }
+                  }}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     p: 2,
+                    pl: selectionMode && isController ? 7 : 2,
                     bgcolor: 'background.paper',
                     borderRadius: 2,
                     border: '2px solid',
-                    borderColor: isCurrentTrack ? 'primary.main' : 'divider',
-                    cursor: isController && !isCurrentTrack && !disabled ? 'pointer' : 'default',
+                    borderColor: isCurrentTrack ? 'primary.main' : 
+                               (selectionMode && selectedTracks.has(track.id || track._id)) ? 'warning.main' : 'divider',
+                    cursor: (isController && !disabled) ? 'pointer' : 'default',
                     transition: 'all 0.2s ease',
                     minHeight: { xs: 80, sm: 72 },
                     position: 'relative',
@@ -238,7 +374,7 @@ const MusicPlaylist = ({
                   )}
 
                   {/* Track Info - Takes remaining space */}
-                  <Box sx={{ flex: 1, minWidth: 0, pr: isController ? 6 : 0, position: 'relative', zIndex: 1 }}>
+                  <Box sx={{ flex: 1, minWidth: 0, pr: 0, position: 'relative', zIndex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Typography 
                         variant="body1" 
@@ -287,38 +423,6 @@ const MusicPlaylist = ({
                     </Box>
                   </Box>
                 </Box>
-
-                {/* Delete button - Separate for controller, large touch target, centered vertically */}
-                {isController && (
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveTrack(track.id);
-                    }}
-                    disabled={disabled}
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      right: 8,
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'error.main',
-                      color: 'white',
-                      width: { xs: 40, sm: 36 },
-                      height: { xs: 40, sm: 36 },
-                      zIndex: 2,
-                      '&:hover': {
-                        bgcolor: 'error.dark'
-                      },
-                      '&:disabled': {
-                        bgcolor: 'action.disabledBackground',
-                        color: 'action.disabled'
-                      }
-                    }}
-                    aria-label="Remove track"
-                  >
-                    <DeleteIcon sx={{ fontSize: { xs: 20, sm: 18 } }} />
-                  </IconButton>
-                )}
               </Box>
             );
           })}
