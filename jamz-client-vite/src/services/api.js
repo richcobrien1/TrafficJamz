@@ -46,14 +46,15 @@ const getBaseURL = () => {
                      window.location?.hostname === '127.0.0.1') && !isCapacitor;
   
   // Priority: 
-  // 1. If Capacitor mobile app, ALWAYS use full backend URL
+  // 1. If Capacitor mobile app, ALWAYS use full backend URL + /api
   // 2. If VITE_API_BASE is explicitly set, use it (production web)
   // 3. If localhost (non-Capacitor), use '/api' for Vite proxy (local dev)
   // 4. Fallback to '/api'
   let apiBase;
   if (isCapacitor) {
     // Mobile app - ALWAYS use full backend URL from environment variable
-    apiBase = import.meta.env.VITE_API_BASE || 'https://trafficjamz.v2u.us/api';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
+    apiBase = `${backendUrl}/api`;
     console.warn('📱 CAPACITOR DETECTED - Using production backend:', apiBase);
   } else if (import.meta.env.VITE_API_BASE && !isLocalDev) {
     apiBase = import.meta.env.VITE_API_BASE;
