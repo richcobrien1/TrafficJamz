@@ -146,13 +146,6 @@ const AudioSession = () => {
   const [originalMusicVolume, setOriginalMusicVolume] = useState(null);
   const voiceActivityTimeoutRef = useRef(null);
   
-  // Voice validation indicators
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speakingParticipants, setSpeakingParticipants] = useState(new Set());
-  const [audioQuality, setAudioQuality] = useState({ latency: 0, packetLoss: 0 });
-  const [lastAudioReceived, setLastAudioReceived] = useState(null);
-  const audioQualityIntervalRef = useRef(null);
-  
   // Simplified Push-to-talk state
   const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
   const [micButtonPressStartTime, setMicButtonPressStartTime] = useState(null);
@@ -793,7 +786,6 @@ const AudioSession = () => {
     let lastUpdateTime = 0;
     const updateInterval = 100; // Update every 100ms instead of every frame
     const voiceActivityThreshold = 0.15; // 15% threshold for voice activity
-    const speakingThreshold = 0.10; // 10% threshold for "speaking" indicator (lower for better detection)
     
     const updateMeter = (timestamp) => {
       if (timestamp - lastUpdateTime >= updateInterval) {
@@ -807,14 +799,6 @@ const AudioSession = () => {
         const average = sum / bufferLength;
         const normalizedLevel = (average / 255) * micSensitivity; // Apply sensitivity multiplier
         setInputLevel(Math.min(normalizedLevel, 1.0)); // Clamp to max 1.0
-        
-        // Speaking indicator (more sensitive than voice activity for UI feedback)
-        if (!isMuted && normalizedLevel > speakingThreshold) {
-          setIsSpeaking(true);
-          console.log(`🎤 Speaking detected: ${(normalizedLevel * 100).toFixed(1)}%`);
-        } else {
-          setIsSpeaking(false);
-        }
         
         // Voice activity detection for music ducking
         // Only trigger if mic is not muted and audio level exceeds threshold
@@ -1527,8 +1511,6 @@ const AudioSession = () => {
       
       if (event.track.kind === 'audio') {
         console.log('🎵 Setting up remote audio stream');
-        setLastAudioReceived(Date.now());
-        console.log('✅ VALIDATION: Remote audio received at', new Date().toLocaleTimeString());
         handleRemoteAudioStream(event.streams[0]);
       }
     };
@@ -2031,89 +2013,7 @@ const AudioSession = () => {
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
-      {/* Voice Validation Banner - Testing Indicators */}
-      <Paper 
-        elevation={3}
-        sx={{ 
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1300,
-          bgcolor: connected ? '#1b5e20' : '#b71c1c',
-          color: 'white',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          flexWrap: 'wrap'
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          {/* Connection Status */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%', 
-              bgcolor: connected ? '#4caf50' : '#f44336',
-              animation: connected ? 'pulse 2s ease-in-out infinite' : 'none',
-              '@keyframes pulse': {
-                '0%, 100%': { opacity: 1 },
-                '50%': { opacity: 0.5 }
-              }
-            }} />
-            <Typography variant="caption" fontWeight="bold">
-              {connected ? 'CONNECTED' : 'DISCONNECTED'}
-            </Typography>
-          </Box>
-          
-          {/* Speaking Indicator */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MicIcon sx={{ 
-              fontSize: 16,
-              color: isSpeaking && !isMuted ? '#ffeb3b' : 'rgba(255,255,255,0.5)',
-              animation: isSpeaking && !isMuted ? 'speaking 0.5s ease-in-out infinite' : 'none',
-              '@keyframes speaking': {
-                '0%, 100%': { transform: 'scale(1)' },
-                '50%': { transform: 'scale(1.3)' }
-              }
-            }} />
-            <Typography variant="caption">
-              {isSpeaking && !isMuted ? 'SPEAKING' : 'Silent'}
-            </Typography>
-          </Box>
-          
-          {/* Audio Received Indicator */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <HeadsetIcon sx={{ 
-              fontSize: 16,
-              color: lastAudioReceived && (Date.now() - lastAudioReceived < 5000) ? '#4caf50' : 'rgba(255,255,255,0.5)'
-            }} />
-            <Typography variant="caption">
-              {lastAudioReceived 
-                ? `Audio RX: ${Math.round((Date.now() - lastAudioReceived) / 1000)}s ago`
-                : 'No audio received'}
-            </Typography>
-          </Box>
-          
-          {/* Participant Count */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <GroupIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">
-              {safeParticipants.length} participant{safeParticipants.length !== 1 ? 's' : ''}
-            </Typography>
-          </Box>
-        </Box>
-        
-        {/* Quick Test Info */}
-        <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.9 }}>
-          Voice Testing Mode - Speak to see indicators
-        </Typography>
-      </Paper>
-      
-      {/* App Bar - Lime Green for Voice (moved down to accommodate validation banner) */}
+      {/* App Bar - Lime Green for Voice */}
       <AppBar 
         position="absolute"
         sx={{ 
@@ -2247,7 +2147,7 @@ const AudioSession = () => {
         </Typography>
       </Box>
 
-      <Container maxWidth="md" sx={{ position: 'relative', pt: 14, pb: 3 }}> {/* Extra padding for validation banner */}
+      <Container maxWidth="md" sx={{ position: 'relative', pt: 10, pb: 3 }}>
 
         {/* iOS Audio Prompt for Listeners */}
         {showIOSAudioPrompt && (
@@ -2355,40 +2255,10 @@ const AudioSession = () => {
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="body2">{p.display_name || 'Unknown'}</Typography>
                                 {p.isMe && <Chip label="You" size="small" color="primary" />}
-                                {p.isMe && isSpeaking && !isMuted && (
-                                  <Chip 
-                                    label="SPEAKING" 
-                                    size="small" 
-                                    sx={{ 
-                                      bgcolor: '#ffeb3b',
-                                      color: '#000',
-                                      fontWeight: 'bold',
-                                      animation: 'flash 1s ease-in-out infinite',
-                                      '@keyframes flash': {
-                                        '0%, 100%': { opacity: 1 },
-                                        '50%': { opacity: 0.7 }
-                                      }
-                                    }} 
-                                  />
-                                )}
                               </Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  {p.isMuted ? '🔇 Muted' : '🎤 Active'}
-                                </Typography>
-                                {p.isMe && connected && (
-                                  <Chip 
-                                    label="TX OK" 
-                                    size="small" 
-                                    sx={{ 
-                                      height: 16,
-                                      fontSize: '0.65rem',
-                                      bgcolor: '#4caf50',
-                                      color: 'white'
-                                    }} 
-                                  />
-                                )}
-                              </Box>
+                              <Typography variant="caption" color="text.secondary">
+                                {p.isMuted ? '🔇 Muted' : '🎤 Active'}
+                              </Typography>
                             </Box>
                             
                             {/* Per-Member Controls */}
