@@ -99,18 +99,19 @@ const api = axios.create({
 // Simplified request interceptor - remove complex URL normalization
 api.interceptors.request.use((config) => {
   try {
-    // Log the request for debugging
-    if (import.meta.env.MODE === 'development') {
-      console.log('📤 API Request:', {
-        method: config.method,
-        baseURL: config.baseURL,
-        url: config.url,
-        fullURL: config.baseURL + config.url
-      });
-    }
+    // Always log the request for debugging (especially important for mobile)
+    console.log('📤 API Request:', {
+      method: config.method?.toUpperCase(),
+      baseURL: config.baseURL,
+      url: config.url,
+      fullURL: `${config.baseURL}${config.url}`,
+      hasAuth: !!config.headers.Authorization,
+      mode: import.meta.env.MODE,
+      platform: window.Capacitor ? 'MOBILE' : 'WEB'
+    });
     return config;
   } catch (err) {
-    console.error('Request interceptor error:', err);
+    console.error('❌ Request interceptor error:', err);
     return config;
   }
 });
@@ -150,8 +151,28 @@ const processQueue = (error, token = null) => {
 
 // 🧠 Response interceptor with refresh logic
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses for debugging
+    console.log('✅ API Response:', {
+      status: response.status,
+      url: response.config.url,
+      hasData: !!response.data
+    });
+    return response;
+  },
   async (error) => {
+    // Enhanced error logging for mobile debugging
+    console.error('❌ API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      fullURL: error.config?.baseURL + error.config?.url,
+      code: error.code,
+      isNetworkError: !error.response,
+      platform: window.Capacitor ? 'MOBILE' : 'WEB'
+    });
+    
     const originalRequest = error.config;
 
     if (
