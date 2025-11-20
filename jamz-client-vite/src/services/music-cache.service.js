@@ -19,17 +19,39 @@ class MusicCacheService {
   async init() {
     if (this.db) return this.db;
 
+    // Mobile detection
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isMobile = isAndroid || isIOS;
+    
+    if (isMobile) {
+      console.log(`📱 Mobile device detected (${isAndroid ? 'Android' : 'iOS'}) - initializing music cache`);
+    }
+
     return new Promise((resolve, reject) => {
+      // Mobile: Check if IndexedDB is available
+      if (!window.indexedDB) {
+        console.error('❌ IndexedDB not supported on this device');
+        reject(new Error('IndexedDB not supported'));
+        return;
+      }
+
       const request = indexedDB.open(this.dbName, this.dbVersion);
 
       request.onerror = () => {
         console.error('❌ Failed to open music cache database:', request.error);
+        if (isMobile) {
+          console.error('❌ Mobile IndexedDB error - this may affect music caching');
+        }
         reject(request.error);
       };
 
       request.onsuccess = () => {
         this.db = request.result;
         console.log('✅ Music cache database opened successfully');
+        if (isMobile) {
+          console.log(`✅ Mobile music cache ready (${isAndroid ? 'Android' : 'iOS'})`);
+        }
         resolve(this.db);
       };
 
@@ -43,6 +65,9 @@ class MusicCacheService {
           objectStore.createIndex('lastPlayed', 'lastPlayed', { unique: false });
           objectStore.createIndex('playCount', 'playCount', { unique: false });
           console.log('✅ Music cache object store created');
+          if (isMobile) {
+            console.log('✅ Mobile music cache schema initialized');
+          }
         }
       };
     });
