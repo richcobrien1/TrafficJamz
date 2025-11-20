@@ -2,8 +2,9 @@
 // Stores track metadata, download status, and cache info
 
 const DB_NAME = 'TrafficJamzDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for new playlist store
 const STORE_TRACKS = 'cachedTracks';
+const STORE_PLAYLISTS = 'playlists';
 
 class IndexedDBManager {
   constructor() {
@@ -43,6 +44,16 @@ class IndexedDBManager {
           trackStore.createIndex('cachedAt', 'cachedAt', { unique: false });
           
           console.log('Created cachedTracks object store');
+        }
+
+        // Create playlists store if it doesn't exist
+        if (!db.objectStoreNames.contains(STORE_PLAYLISTS)) {
+          const playlistStore = db.createObjectStore(STORE_PLAYLISTS, { keyPath: 'sessionId' });
+          
+          // Indexes for querying
+          playlistStore.createIndex('timestamp', 'timestamp', { unique: false });
+          
+          console.log('Created playlists object store');
         }
       };
     });
@@ -274,6 +285,113 @@ class IndexedDBManager {
       this.db = null;
       console.log('IndexedDB connection closed');
     }
+  }
+
+  // ============================================
+  // PLAYLIST METHODS
+  // ============================================
+
+  /**
+   * Save playlist for a session
+   */
+  async savePlaylist(sessionId, playlist) {
+    await this.ensureDB();
+
+    const playlistData = {
+      sessionId,
+      playlist,
+      timestamp: Date.now()
+    };
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_PLAYLISTS], 'readwrite');
+      const store = transaction.objectStore(STORE_PLAYLISTS);
+      const request = store.put(playlistData);
+
+      request.onsuccess = () => {
+        console.log('💾 [IndexedDB] Saved playlist to IndexedDB:', playlist.length, 'tracks');
+        resolve(playlistData);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get playlist for a session
+   */
+  async getPlaylist(sessionId) {
+    await this.ensureDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_PLAYLISTS], 'readonly');
+      const store = transaction.objectStore(STORE_PLAYLISTS);
+      const request = store.get(sessionId);
+
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          console.log('✅ [IndexedDB] Loaded playlist from IndexedDB:', result.playlist.length, 'tracks');
+        } else {
+          console.log('📭 [IndexedDB] No cached playlist found');
+        }
+        resolve(result ? result.playlist : null);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Delete playlist for a session
+   */
+  async deletePlaylist(sessionId) {
+    await this.ensureDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_PLAYLISTS], 'readwrite');
+      const store = transaction.objectStore(STORE_PLAYLISTS);
+      const request = store.delete(sessionId);
+
+      request.onsuccess = () => {
+        console.log('🗑️ [IndexedDB] Deleted playlist for session:', sessionId);
+        resolve(true);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get all playlists
+   */
+  async getAllPlaylists() {
+    await this.ensureDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_PLAYLISTS], 'readonly');
+      const store = transaction.objectStore(STORE_PLAYLISTS);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Clear all playlists
+   */
+  async clearAllPlaylists() {
+    await this.ensureDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_PLAYLISTS], 'readwrite');
+      const store = transaction.objectStore(STORE_PLAYLISTS);
+      const request = store.clear();
+
+      request.onsuccess = () => {
+        console.log('🗑️ [IndexedDB] All playlists cleared');
+        resolve(true);
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 }
 
