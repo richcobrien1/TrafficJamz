@@ -141,9 +141,10 @@ const AudioSession = () => {
   const [memberVolumes, setMemberVolumes] = useState({}); // { socketId: volumeLevel }
   const [memberMuted, setMemberMuted] = useState({}); // { socketId: boolean }
   
-  // Voice activity detection for music ducking
+  // Voice activity detection for music and speaker volume ducking
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [originalMusicVolume, setOriginalMusicVolume] = useState(null);
+  const [originalSpeakerVolume, setOriginalSpeakerVolume] = useState(null);
   const voiceActivityTimeoutRef = useRef(null);
   
   // Simplified Push-to-talk state
@@ -804,27 +805,38 @@ const AudioSession = () => {
         // Only trigger if mic is not muted and audio level exceeds threshold
         if (!isMuted && normalizedLevel > voiceActivityThreshold) {
           if (!isVoiceActive) {
-            console.log('🎤 Voice activity detected - ducking music');
+            console.log('🎤 Voice activity detected - ducking music and speaker volume to 25%');
             setIsVoiceActive(true);
             
-            // Store original volume if not already stored
+            // Store original volumes if not already stored
             if (originalMusicVolume === null && musicVolume > 0) {
               setOriginalMusicVolume(musicVolume);
-              // Reduce music to 50%
-              changeMusicVolume(musicVolume * 0.5);
+              // Reduce music to 25%
+              changeMusicVolume(musicVolume * 0.25);
+            }
+            
+            if (originalSpeakerVolume === null && outputVolume > 0) {
+              setOriginalSpeakerVolume(outputVolume);
+              // Reduce speaker volume to 25%
+              setOutputVolume(outputVolume * 0.25);
             }
           }
           
-          // Reset timeout - keep music ducked while speaking
+          // Reset timeout - keep volumes ducked while speaking
           clearTimeout(voiceActivityTimeoutRef.current);
           voiceActivityTimeoutRef.current = setTimeout(() => {
-            console.log('🎤 Voice activity stopped - restoring music volume');
+            console.log('🎤 Voice activity stopped - restoring music and speaker volumes');
             setIsVoiceActive(false);
             
-            // Restore original music volume
+            // Restore original volumes
             if (originalMusicVolume !== null) {
               changeMusicVolume(originalMusicVolume);
               setOriginalMusicVolume(null);
+            }
+            
+            if (originalSpeakerVolume !== null) {
+              setOutputVolume(originalSpeakerVolume);
+              setOriginalSpeakerVolume(null);
             }
           }, 1500); // 1.5 second delay after voice stops
         }
@@ -1056,10 +1068,19 @@ const AudioSession = () => {
         const s = setupSignaling(audioSessionId);
         console.log('📡 AUTO-CONNECT: Signaling setup initiated for session:', audioSessionId, 'groupId:', groupId);
         
-        // When socket connects, initialize WebRTC automatically
+        // When socket connects, initialize WebRTC and microphone automatically
         s.on('connect', () => {
-          console.log('🎯 AUTO-CONNECT: Socket connected, initializing WebRTC...');
+          console.log('🎯 AUTO-CONNECT: Socket connected, initializing WebRTC and microphone...');
           initializeWebRTC(audioSessionId);
+          
+          // AUTO-ENABLE MICROPHONE: Initialize mic automatically after socket connects
+          setTimeout(() => {
+            console.log('🎤 AUTO-ENABLE: Initializing microphone automatically...');
+            initializeMicrophone().catch(err => {
+              console.warn('🎤 AUTO-ENABLE: Failed to auto-initialize microphone:', err.message);
+              // Don't show error - user can manually enable later
+            });
+          }, 500); // Small delay to ensure WebRTC is ready
         });
       } catch (err) {
         console.error('❌ AUTO-CONNECT: Error setting up signaling:', err);
