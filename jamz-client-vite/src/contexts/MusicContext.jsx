@@ -911,6 +911,9 @@ export const MusicProvider = ({ children }) => {
    */
   const loadAndPlay = async (track) => {
     try {
+      console.log('🎵 [MusicContext] ========================================');
+      console.log('🎵 [MusicContext] LOAD AND PLAY TRACK');
+      console.log('🎵 [MusicContext] ========================================');
       console.log('🎵 [MusicContext] Load and play:', {
         title: track.title,
         source: track.source,
@@ -919,7 +922,8 @@ export const MusicProvider = ({ children }) => {
         spotifyPreviewUrl: track.spotifyPreviewUrl,
         hasUrl: !!(track.url || track.fileUrl || track.youtubeId || track.spotifyPreviewUrl),
         isController,
-        socketConnected: socketRef.current?.connected
+        socketConnected: socketRef.current?.connected,
+        sessionId: activeSessionId
       });
       
       // Check if track has any playable source
@@ -938,16 +942,11 @@ export const MusicProvider = ({ children }) => {
         return;
       }
       
-      await musicService.loadTrack(track);
-      console.log('🎵 [MusicContext] ✅ Track loaded, now playing...');
-      
-      await musicService.play();
-      console.log('🎵 [MusicContext] ✅ Playback started');
-      
-      if (isController) {
-        console.log('🎵 [MusicContext] Broadcasting track change to listeners...');
+      // CRITICAL: Broadcast BEFORE loading to ensure sync happens immediately
+      if (isController && socketRef.current?.connected) {
+        console.log('🎵 [MusicContext] 📡 Broadcasting track change BEFORE loading...');
         
-        socketRef.current?.emit('music-control', {
+        socketRef.current.emit('music-control', {
           sessionId: activeSessionId,
           action: 'change-track',
           track,
@@ -955,12 +954,23 @@ export const MusicProvider = ({ children }) => {
           position: 0
         });
         
-        socketRef.current?.emit('music-track-change', {
+        socketRef.current.emit('music-track-change', {
           sessionId: activeSessionId,
           track,
           autoPlay: true
         });
+        
+        console.log('🎵 [MusicContext] ✅ Track change broadcast sent');
       }
+      
+      // Now load and play locally
+      console.log('🎵 [MusicContext] Loading track locally...');
+      await musicService.loadTrack(track);
+      console.log('🎵 [MusicContext] ✅ Track loaded, now playing...');
+      
+      await musicService.play();
+      console.log('🎵 [MusicContext] ✅ Playback started locally');
+      console.log('🎵 [MusicContext] ========================================');
     } catch (error) {
       console.error('🎵 [MusicContext] ❌ Error in loadAndPlay:', error);
       alert(`Failed to play "${track.title}": ${error.message}`);
