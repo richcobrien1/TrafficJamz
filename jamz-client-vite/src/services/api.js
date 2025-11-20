@@ -22,12 +22,15 @@ import axios from 'axios';
 // In Capacitor: VITE_API_BASE should be set to full backend URL in native builds
 
 const getBaseURL = () => {
+  // Check if running in Electron desktop app
+  const isElectron = typeof window !== 'undefined' && 
+                     (window.electron !== undefined || window.electronAPI !== undefined);
+  
   // Check if running in Capacitor native app - multiple detection methods
   const isCapacitorProtocol = window.location && (
     window.location.protocol === 'capacitor:' || 
     window.location.protocol === 'ionic:' ||
-    window.location.protocol === 'file:' ||
-    window.location.protocol === 'http:'  // Android emulator uses http://localhost
+    window.location.protocol === 'file:'
   );
   
   // Check for Capacitor global object (more reliable)
@@ -36,26 +39,30 @@ const getBaseURL = () => {
   
   // Android emulator detection
   const isAndroidEmulator = window.location?.hostname === '10.0.2.2' || 
-                           window.location?.hostname === 'localhost' && hasCapacitorGlobal;
+                           (window.location?.hostname === 'localhost' && hasCapacitorGlobal && !isElectron);
   
-  const isCapacitor = hasCapacitorGlobal || isCapacitorProtocol || isAndroidEmulator;
+  const isCapacitor = (hasCapacitorGlobal || isCapacitorProtocol || isAndroidEmulator) && !isElectron;
+  
+  // Electron also needs production backend (treat like Capacitor for API purposes)
+  const needsProductionBackend = isCapacitor || isElectron;
   
   // For local development (localhost:5173, localhost:5174, etc), use '/api' for Vite proxy
-  // But NOT if it's Capacitor running on localhost (Android emulator)
+  // But NOT if it's Capacitor or Electron (they need production backend)
   const isLocalDev = (window.location?.hostname === 'localhost' || 
-                     window.location?.hostname === '127.0.0.1') && !isCapacitor;
+                     window.location?.hostname === '127.0.0.1') && !needsProductionBackend;
   
   // Priority: 
-  // 1. If Capacitor mobile app, ALWAYS use full backend URL + /api
+  // 1. If Capacitor mobile app OR Electron desktop app, ALWAYS use full backend URL + /api
   // 2. If VITE_API_BASE is explicitly set, use it (production web)
-  // 3. If localhost (non-Capacitor), use '/api' for Vite proxy (local dev)
+  // 3. If localhost (non-Capacitor/non-Electron), use '/api' for Vite proxy (local dev)
   // 4. Fallback to '/api'
   let apiBase;
-  if (isCapacitor) {
-    // Mobile app - ALWAYS use full backend URL from environment variable
+  if (needsProductionBackend) {
+    // Mobile app OR Desktop app - ALWAYS use full backend URL from environment variable
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
     apiBase = `${backendUrl}/api`;
-    console.warn('📱 CAPACITOR DETECTED - Using production backend:', apiBase);
+    const appType = isElectron ? 'ELECTRON DESKTOP' : 'CAPACITOR MOBILE';
+    console.warn(`📱 ${appType} DETECTED - Using production backend:`, apiBase);
   } else if (import.meta.env.VITE_API_BASE && !isLocalDev) {
     apiBase = import.meta.env.VITE_API_BASE;
   } else if (isLocalDev) {
@@ -68,10 +75,12 @@ const getBaseURL = () => {
   console.log('🔗 API Configuration:', {
     protocol: window.location?.protocol,
     hostname: window.location?.hostname,
+    isElectron,
     hasCapacitorGlobal,
     isCapacitorProtocol,
     isAndroidEmulator,
     isCapacitor,
+    needsProductionBackend,
     isLocalDev,
     VITE_API_BASE: import.meta.env.VITE_API_BASE,
     computed_baseURL: apiBase,
