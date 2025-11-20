@@ -292,6 +292,7 @@ const LocationTracking = () => {
   const [showMembersList, setShowMembersList] = useState(false);
   const [showLocationInfo, setShowLocationInfo] = useState(false);
   const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
+  const [viewMode, setViewMode] = useState('my-location'); // 'my-location' or 'all-members'
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
   const [satelliteMode, setSatelliteMode] = useState(false);
@@ -1916,10 +1917,10 @@ const LocationTracking = () => {
     
     setIsGettingLocation(true);
     
-    // Safety timeout: use last known location after 5 seconds if GPS doesn't respond
+    // Safety timeout: use last known location after 20 seconds if GPS doesn't respond
     const safetyTimeout = setTimeout(() => {
       if (isGettingLocation) {
-        console.warn('Geolocation request timed out after 5 seconds - using last known location');
+        console.warn('Geolocation request timed out after 20 seconds - using fallback location');
         setIsGettingLocation(false);
         
         // Try to use last known location from localStorage
@@ -1931,6 +1932,7 @@ const LocationTracking = () => {
             
             // Set the last known location as current location
             setUserLocation(parsedLocation);
+            userLocationRef.current = parsedLocation;
             setLocationError(null);
             setGeolocationRetries(0);
             
@@ -1947,22 +1949,37 @@ const LocationTracking = () => {
             startWatchingPosition();
             
             // Show a subtle notification that we're using cached location
-            setLocationInfo('Using last known location. GPS may be slow to respond.');
-            setTimeout(() => setLocationInfo(null), 3000); // Clear after 3 seconds
+            setLocationInfo('Using last known location. Waiting for GPS...');
+            setTimeout(() => setLocationInfo(null), 5000);
           } else {
-            // No cached location available
-            setLocationError('Location request timed out and no cached location available. Please try again.');
+            // No cached location - use map center
+            const fallbackLoc = {
+              latitude: defaultCenter[1],
+              longitude: defaultCenter[0],
+              accuracy: 5000,
+              altitude: 0,
+              heading: 0,
+              speed: 0,
+              timestamp: Date.now()
+            };
+            setUserLocation(fallbackLoc);
+            userLocationRef.current = fallbackLoc;
+            setLocationInfo('GPS timeout. Tap the map to set your location manually.');
+            setLocationError(null);
+            // Try watching in background
+            startWatchingPosition();
           }
         } catch (e) {
           console.error('Error using cached location:', e);
-          setLocationError('Location request timed out. Please try again.');
+          setLocationInfo('GPS unavailable. Tap the map to set your location.');
         }
       }
-    }, 5000); // 5 seconds
+    }, 20000); // 20 seconds
     
     const options = {
       enableHighAccuracy: highAccuracyMode,
-      timeout: 30000 // Increased to 30 seconds for better GPS acquisition
+      timeout: 60000, // 60 seconds for Windows/Desktop GPS
+      maximumAge: 30000 // Accept cached positions up to 30 seconds old
     };
     
     try {
@@ -1978,9 +1995,25 @@ const LocationTracking = () => {
         (error) => {
           clearTimeout(safetyTimeout); // Clear safety timeout on error
           console.log('Error getting initial position:', error);
-          setLocationError('Failed to get initial location. ' + getGeolocationErrorMessage(error));
+          
+          // Try to use last known location even on error
+          try {
+            const lastLocation = localStorage.getItem('lastUserLocation');
+            if (lastLocation) {
+              const parsedLocation = JSON.parse(lastLocation);
+              setUserLocation(parsedLocation);
+              userLocationRef.current = parsedLocation;
+              centerMapOnLocation(parsedLocation);
+              updateMapMarkersWithUserLocation(parsedLocation);
+              setLocationInfo('Using last known location. ' + getGeolocationErrorMessage(error));
+              startWatchingPosition(); // Keep trying in background
+            } else {
+              setLocationError(getGeolocationErrorMessage(error) + ' Tap the map to set your location.');
+            }
+          } catch (e) {
+            setLocationError('Failed to get location. ' + getGeolocationErrorMessage(error));
+          }
           setIsGettingLocation(false);
-          // Don't start watching if initial position failed - user can try again
         },
         options
       );
@@ -1996,8 +2029,8 @@ const LocationTracking = () => {
   const startWatchingPosition = () => {
     const options = {
       enableHighAccuracy: highAccuracyMode,
-      timeout: 25000, // Increased to 25 seconds for better GPS acquisition
-      maximumAge: 15000 // Allow cached positions up to 15 seconds old
+      timeout: 60000, // 60 seconds timeout for desktop/Windows
+      maximumAge: 30000 // Allow cached positions up to 30 seconds old
     };
     
     try {
@@ -3802,17 +3835,17 @@ const LocationTracking = () => {
         </IconButton>
       </Tooltip>
       
-      {/* Center on My Location Button */}
-      <Tooltip title="Center on My Location">
+      {/* Toggle View: My Location / All Members Button */}
+      <Tooltip title={viewMode === 'my-location' ? "Show All Members" : "Center on My Location"}>
         <IconButton
           sx={{
             position: 'absolute',
             top: showControls ? 72 : 16,
-            right: 76, // Consistent 60px spacing
+            right: 76,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
             bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: !userLocation ? 'rgba(128, 128, 128, 0.5)' : 
+            color: !userLocation && viewMode === 'my-location' ? 'rgba(128, 128, 128, 0.5)' : 
                    isCentering ? 'success.main' : 
                    isGettingLocation ? 'secondary.main' : 'purple',
             boxShadow: 2,
@@ -3828,45 +3861,27 @@ const LocationTracking = () => {
             }
           }}
           onClick={() => {
-            // Always try to center on user's location
-            if (userLocation) {
-              // If we already have location, center immediately
-              centerMapOnLocation(userLocation);
+            if (viewMode === 'my-location') {
+              // Switch to show all members
+              setViewMode('all-members');
+              fitAllMembers();
             } else {
-              // No location available - start location tracking to get it
-              if (!sharingLocation) {
-                toggleLocationSharing();
+              // Switch to my location
+              setViewMode('my-location');
+              if (userLocation) {
+                centerMapOnLocation(userLocation);
               } else {
-                // Already sharing but no location yet - force acquisition
-                startLocationTracking();
+                // No location available - start location tracking to get it
+                if (!sharingLocation) {
+                  toggleLocationSharing();
+                } else {
+                  startLocationTracking();
+                }
               }
             }
           }}
         >
-          <MyLocationIcon />
-        </IconButton>
-      </Tooltip>
-
-      {/* Fit All Members Button */}
-      <Tooltip title="Show All Members">
-        <IconButton
-          sx={{
-            position: 'absolute',
-            top: showControls ? 72 : 16,
-            right: 136, // Consistent 60px spacing from right: 76
-            zIndex: 10,
-            display: showMembersList ? 'none' : undefined,
-            bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.2)',
-            color: 'purple',
-            boxShadow: 2,
-            cursor: 'pointer',
-            '&:hover': {
-              bgcolor: satelliteMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)',
-            }
-          }}
-          onClick={fitAllMembers}
-        >
-          <GroupsIcon />
+          {viewMode === 'my-location' ? <GroupsIcon /> : <MyLocationIcon />}
         </IconButton>
       </Tooltip>
 
