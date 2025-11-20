@@ -33,6 +33,26 @@ class MusicService {
     const isAndroid = /Android/.test(navigator.userAgent);
     const isMobile = isIOS || isAndroid;
     
+    // Detect Android emulator
+    const isEmulator = isAndroid && (
+      navigator.userAgent.includes('Emulator') ||
+      navigator.userAgent.includes('Android SDK') ||
+      navigator.userAgent.includes('Build/SDK') ||
+      navigator.userAgent.includes('google_sdk')
+    );
+    
+    if (isEmulator) {
+      console.warn('⚠️ ========================================');
+      console.warn('⚠️ ANDROID EMULATOR DETECTED');
+      console.warn('⚠️ ========================================');
+      console.warn('⚠️ Audio quality will be POOR on emulator!');
+      console.warn('⚠️ This is a known emulator limitation.');
+      console.warn('⚠️ For proper audio testing:');
+      console.warn('⚠️ 1. Use a REAL Android device');
+      console.warn('⚠️ 2. OR test on web (npm run dev)');
+      console.warn('⚠️ ========================================');
+    }
+    
     // CRITICAL MOBILE FIX: Set attributes for iOS and Android
     // iOS browsers use WebKit, Android uses Chrome/WebView
     this.audioElement.setAttribute('playsinline', 'true');
@@ -42,16 +62,25 @@ class MusicService {
     // Mobile requires preload to be set for better compatibility
     this.audioElement.preload = 'auto';
     
-    // CRITICAL: Prevent audio from stopping when tab loses focus or app backgrounds
-    this.audioElement.preservesPitch = true;
+    // CRITICAL: Set playback rate to normal (Android can have issues)
+    this.audioElement.playbackRate = 1.0;
+    this.audioElement.defaultPlaybackRate = 1.0;
+    
+    // CRITICAL: preservesPitch can cause speed issues on Android
+    // Only set for iOS where it's needed for background audio
+    if (isIOS) {
+      this.audioElement.preservesPitch = true;
+    } else if (isAndroid) {
+      // Android: Explicitly disable preservesPitch to prevent speed issues
+      this.audioElement.preservesPitch = false;
+      console.log('🤖 Android: preservesPitch disabled to prevent fast playback');
+    }
     
     // Android-specific: Ensure audio continues in background
     if (isAndroid) {
       console.log('🤖 Android device detected - music service configured for Android');
       // Android Chrome requires explicit wake lock for background audio
       this.audioElement.setAttribute('controls', 'false');
-      // Keep audio context alive on Android
-      this.audioElement.load();
     }
     
     if (isIOS) {
@@ -116,6 +145,18 @@ class MusicService {
     this.audioElement.addEventListener('timeupdate', () => {
       if (this.onTimeUpdate) {
         this.onTimeUpdate(this.audioElement.currentTime);
+      }
+    });
+
+    // CRITICAL: Monitor playback rate changes (Android fast playback debug)
+    this.audioElement.addEventListener('ratechange', () => {
+      console.log('🎵 Playback rate changed:', this.audioElement.playbackRate);
+      if (this.audioElement.playbackRate !== 1.0) {
+        console.warn('⚠️ Unexpected playback rate detected:', this.audioElement.playbackRate);
+        if (isAndroid) {
+          console.warn('⚠️ Android: Forcing playback rate back to 1.0');
+          this.audioElement.playbackRate = 1.0;
+        }
       }
     });
 
@@ -531,6 +572,8 @@ class MusicService {
           networkState: this.audioElement.networkState,
           paused: this.audioElement.paused,
           duration: this.audioElement.duration,
+          playbackRate: this.audioElement.playbackRate,
+          preservesPitch: this.audioElement.preservesPitch,
           platform: isMobile ? (isAndroid ? 'Android' : 'iOS') : 'Desktop'
         });
 
@@ -544,6 +587,18 @@ class MusicService {
         if (this.audioElement.volume === 0) {
           console.warn('⚠️ Audio volume was 0 - setting to current volume:', this.volume);
           this.audioElement.volume = this.volume;
+        }
+
+        // CRITICAL: Ensure playback rate is normal (Android fast playback fix)
+        if (this.audioElement.playbackRate !== 1.0) {
+          console.warn('⚠️ Playback rate was', this.audioElement.playbackRate, '- resetting to 1.0');
+          this.audioElement.playbackRate = 1.0;
+        }
+        
+        // Android: Verify preservesPitch is false
+        if (isAndroid && this.audioElement.preservesPitch !== false) {
+          console.warn('⚠️ Android: preservesPitch was true - setting to false to prevent fast playback');
+          this.audioElement.preservesPitch = false;
         }
 
         // Mobile: Resume AudioContext before playing (both iOS and Android)
