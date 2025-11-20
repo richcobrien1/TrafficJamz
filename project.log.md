@@ -4,6 +4,85 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 19, 2025 (Evening) - Music Playback Fix & IndexedDB Migration 🎵💾
+
+### Issues Resolved
+
+#### 1. Music Playback Toggle Bug ✅
+**Problem**: Play button clicked → music state toggles true → immediately toggles false → button shows "play" instead of "pause". Music service logs show "Playing: [track]" but audio doesn't sustain playback.
+
+**Root Cause**: Audio element `play()` was being called before element had sufficient data buffered (readyState < 2). Browser fires `play` event → immediately fires `pause` event due to insufficient buffer.
+
+**Solution**: Added readyState check with promise-based loading.
+
+**Changes** (`jamz-client-vite/src/services/music.service.js`):
+- Check `audioElement.readyState` before calling play()
+- If readyState < 2, wait for `loadeddata` or `canplay` event
+- 5-second timeout fallback to attempt play anyway
+- Added readyState logging to debug output
+
+**Result**: Music now plays continuously without immediate pause toggle.
+
+#### 2. Playlist Cache Migration to IndexedDB ✅
+**Problem**: Playlist cache used localStorage (5MB limit). User reported playlists "unavailable" - likely hitting storage quota with large playlists.
+
+**Previous Implementation**: 
+- `playlistCache.js` used localStorage with `trafficjamz_playlist_` prefix
+- Synchronous operations
+- Size-limited (~5MB across entire domain)
+
+**New Implementation**:
+- Migrated to IndexedDB via `indexedDBManager.js`
+- Added `playlists` object store (keyed by sessionId)
+- Async operations (non-blocking UI)
+- No practical size limits
+
+**Changes**:
+- `jamz-client-vite/src/services/indexedDBManager.js`:
+  - Bumped DB_VERSION 1 → 2
+  - Added `STORE_PLAYLISTS` object store with timestamp index
+  - Added playlist CRUD methods: `savePlaylist()`, `getPlaylist()`, `deletePlaylist()`, `getAllPlaylists()`, `clearAllPlaylists()`
+  
+- `jamz-client-vite/src/utils/playlistCache.js`:
+  - Replaced localStorage with IndexedDB calls
+  - All functions now async (return Promises)
+  - Import `dbManager` instead of localStorage API
+  
+- `jamz-client-vite/src/contexts/MusicContext.jsx`:
+  - Made `initializeSession()` async
+  - Await `loadPlaylistFromCache()` on session init
+  - Wrapped in try/catch for graceful fallback
+
+**Result**: Playlists now cached in IndexedDB with unlimited storage.
+
+#### 3. Playlist Visibility Fix ✅
+**Problem**: Playlist section hidden when `playlist.length === 0`. User sees empty screen, doesn't know where to add tracks.
+
+**Solution**: Always render `MusicPlaylist` component (it has its own empty state UI).
+
+**Changes** (`jamz-client-vite/src/pages/music/MusicPlayer.jsx`):
+- Removed conditional `{playlist.length > 0 && ...}` wrapper
+- Playlist now always visible with "No tracks in playlist" message when empty
+
+### Files Modified
+- `jamz-client-vite/src/services/music.service.js` - Audio loading fix
+- `jamz-client-vite/src/services/indexedDBManager.js` - Added playlist store
+- `jamz-client-vite/src/utils/playlistCache.js` - Migrated to IndexedDB
+- `jamz-client-vite/src/contexts/MusicContext.jsx` - Async cache loading
+- `jamz-client-vite/src/pages/music/MusicPlayer.jsx` - Always show playlist
+
+### Commit
+```
+46cb7cd5 - Fix music playback and migrate playlist cache to IndexedDB
+```
+
+### Next Steps
+- Monitor IndexedDB playlist loading in production
+- Test music playback with various audio formats/sources
+- Consider implementing voice validation (simple approach: mic on by default, 25% speaker volume when mic active)
+
+---
+
 ## Session: November 17, 2025 (Evening) - Full Offline Support & Mobile Optimization 📱🔌
 
 ### Major Features Implemented
