@@ -28,30 +28,51 @@ class MusicService {
     this.audioElement = new Audio();
     this.audioElement.volume = this.volume;
     
-    // CRITICAL iOS FIX: Set attributes for ALL iOS browsers (Safari, Chrome, Firefox, etc.)
-    // All iOS browsers use WebKit under the hood and have the same restrictions
+    // Detect mobile platforms
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+    
+    // CRITICAL MOBILE FIX: Set attributes for iOS and Android
+    // iOS browsers use WebKit, Android uses Chrome/WebView
     this.audioElement.setAttribute('playsinline', 'true');
     this.audioElement.setAttribute('webkit-playsinline', 'true');
     this.audioElement.playsInline = true;
     
-    // iOS requires preload to be set for better compatibility
+    // Mobile requires preload to be set for better compatibility
     this.audioElement.preload = 'auto';
     
-    // CRITICAL: Prevent audio from stopping when tab loses focus
-    // Keep audio context active in background
+    // CRITICAL: Prevent audio from stopping when tab loses focus or app backgrounds
     this.audioElement.preservesPitch = true;
     
-    // Detect iOS (any browser) for additional logging
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    // Android-specific: Ensure audio continues in background
+    if (isAndroid) {
+      console.log('🤖 Android device detected - music service configured for Android');
+      // Android Chrome requires explicit wake lock for background audio
+      this.audioElement.setAttribute('controls', 'false');
+      // Keep audio context alive on Android
+      this.audioElement.load();
+    }
+    
     if (isIOS) {
-      console.log('🍎 iOS device detected - music service configured for iOS (all browsers)');
+      console.log('🍎 iOS device detected - music service configured for iOS');
+    }
+    
+    if (isMobile) {
+      console.log('📱 Mobile audio optimizations enabled');
     }
     
     // Prevent page visibility from pausing audio
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.isPlaying && this.audioElement) {
-        console.log('🎵 Tab hidden - keeping audio playing');
-        // Audio element should continue playing in background
+        console.log('🎵 Tab/App backgrounded - keeping audio playing');
+        // Force audio to continue on mobile
+        if (isMobile && this.audioElement.paused && this.isPlaying) {
+          console.log('🎵 Mobile: Re-activating paused audio');
+          this.audioElement.play().catch(err => {
+            console.warn('🎵 Failed to resume audio in background:', err);
+          });
+        }
       }
     });
     
@@ -99,9 +120,31 @@ class MusicService {
     });
 
     this.audioElement.addEventListener('error', (e) => {
+      const errorCode = this.audioElement.error?.code;
+      const errorMessage = this.audioElement.error?.message;
+      
       console.error('❌ Audio playback error:', e);
-      console.error('❌ Error code:', this.audioElement.error?.code);
-      console.error('❌ Error message:', this.audioElement.error?.message);
+      console.error('❌ Error code:', errorCode);
+      console.error('❌ Error message:', errorMessage);
+      console.error('❌ Platform:', isMobile ? (isAndroid ? 'Android' : 'iOS') : 'Desktop');
+      console.error('❌ Network state:', this.audioElement.networkState);
+      console.error('❌ Ready state:', this.audioElement.readyState);
+      console.error('❌ Source:', this.audioElement.src);
+      
+      // Mobile-specific error recovery
+      if (isMobile && this.currentTrack) {
+        console.log('📱 Mobile error detected - attempting recovery...');
+        
+        // Error codes: 1=ABORTED, 2=NETWORK, 3=DECODE, 4=SRC_NOT_SUPPORTED
+        if (errorCode === 2) {
+          console.warn('⚠️ Network error on mobile - will retry on next play attempt');
+          // Don't auto-retry here to avoid loops, let user retry manually
+        } else if (errorCode === 3) {
+          console.error('❌ Audio decode error - file may be corrupted');
+        } else if (errorCode === 4) {
+          console.error('❌ Audio source not supported on this device');
+        }
+      }
     });
     
     // Additional event for debugging iOS issues
@@ -445,6 +488,10 @@ class MusicService {
 
         // Wait for audio to be ready before playing
         // readyState: 0=nothing, 1=metadata, 2=current data, 3=future data, 4=enough data
+        const isAndroid = /Android/.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const isMobile = isAndroid || isIOS;
+        
         if (this.audioElement.readyState < 2) {
           console.log('🎵 [music.service] Audio not ready (readyState:', this.audioElement.readyState, '), waiting for loadeddata...');
           await new Promise((resolve) => {
@@ -457,13 +504,17 @@ class MusicService {
             this.audioElement.addEventListener('loadeddata', onReady, { once: true });
             this.audioElement.addEventListener('canplay', onReady, { once: true });
             
-            // Timeout after 5 seconds
+            // Mobile: Longer timeout for slower networks (10s vs 5s)
+            const timeout = isMobile ? 10000 : 5000;
             setTimeout(() => {
               this.audioElement.removeEventListener('loadeddata', onReady);
               this.audioElement.removeEventListener('canplay', onReady);
-              console.warn('⚠️ [music.service] Audio ready timeout, attempting play anyway');
+              console.warn(`⚠️ [music.service] Audio ready timeout (${timeout}ms), attempting play anyway`);
+              if (isMobile) {
+                console.warn('⚠️ Platform:', isAndroid ? 'Android' : 'iOS');
+              }
               resolve();
-            }, 5000);
+            }, timeout);
           });
         }
 
@@ -471,25 +522,23 @@ class MusicService {
           this.audioElement.currentTime = position;
         }
 
-        // iOS (ALL browsers) requires resuming AudioContext before playing
-        // This applies to Safari, Chrome, Firefox, etc. on iOS
-        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        if (isIOS && typeof window.AudioContext !== 'undefined') {
+        // Mobile: Resume AudioContext before playing (both iOS and Android)
+        if (isMobile && typeof window.AudioContext !== 'undefined') {
           try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') {
-              console.log('🍎 iOS AudioContext suspended, resuming...');
+              console.log(`📱 ${isAndroid ? 'Android' : 'iOS'} AudioContext suspended, resuming...`);
               await audioCtx.resume();
-              console.log('🍎 iOS AudioContext resumed:', audioCtx.state);
+              console.log(`📱 ${isAndroid ? 'Android' : 'iOS'} AudioContext resumed:`, audioCtx.state);
             }
             audioCtx.close(); // Clean up
           } catch (err) {
-            console.warn('⚠️ Failed to resume AudioContext:', err);
+            console.warn(`⚠️ ${isAndroid ? 'Android' : 'iOS'} AudioContext resume failed:`, err);
           }
         }
         
         await this.audioElement.play();
-        console.log('✅ [music.service] Playing:', this.currentTrack.title, isIOS ? '(iOS)' : '');
+        console.log('✅ [music.service] Playing:', this.currentTrack.title, isMobile ? `(${isAndroid ? 'Android' : 'iOS'})` : '');
       }
     } catch (error) {
       console.error('❌ [music.service] Playback failed:', error.name, error.message);
