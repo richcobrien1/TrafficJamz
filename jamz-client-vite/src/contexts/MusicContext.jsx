@@ -162,7 +162,7 @@ export const MusicProvider = ({ children }) => {
   /**
    * Initialize music session
    */
-  const initializeSession = (sessionId, groupId) => {
+  const initializeSession = async (sessionId, groupId) => {
     console.log('🎵 [MusicContext] Initializing music session:', { sessionId, groupId });
     
     // If already connected to this session, don't reconnect
@@ -172,11 +172,15 @@ export const MusicProvider = ({ children }) => {
     }
     
     // Load playlist from cache immediately for instant display
-    const cachedPlaylist = loadPlaylistFromCache(sessionId);
-    if (cachedPlaylist && cachedPlaylist.length > 0) {
-      console.log('⚡ [MusicContext] Loaded playlist from cache immediately:', cachedPlaylist.length, 'tracks');
-      setPlaylist(cachedPlaylist);
-      musicService.playlist = cachedPlaylist;
+    try {
+      const cachedPlaylist = await loadPlaylistFromCache(sessionId);
+      if (cachedPlaylist && cachedPlaylist.length > 0) {
+        console.log('⚡ [MusicContext] Loaded playlist from IndexedDB cache immediately:', cachedPlaylist.length, 'tracks');
+        setPlaylist(cachedPlaylist);
+        musicService.playlist = cachedPlaylist;
+      }
+    } catch (error) {
+      console.warn('⚠️ [MusicContext] Failed to load cached playlist:', error);
     }
     
     // Clean up previous session if different
