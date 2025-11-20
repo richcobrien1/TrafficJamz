@@ -2087,7 +2087,11 @@ const AudioSession = () => {
             
             <Tooltip title={isVoiceMuted ? "Voice Muted - Click to Unmute" : "Voice Active - Click to Mute"}>
               <IconButton 
-                onClick={toggleVoiceMute}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('🎧 Headset button clicked, current state:', isVoiceMuted);
+                  toggleVoiceMute();
+                }}
                 sx={{ 
                   color: '#000',
                   bgcolor: 'rgba(255, 255, 255, 0.2)',
@@ -2107,8 +2111,19 @@ const AudioSession = () => {
             
             <Tooltip title={isMuted ? "Microphone Muted - Click to Unmute" : "Microphone Active - Click to Mute"}>
               <IconButton 
-                onClick={toggleMute}
-                disabled={!micInitialized}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('🎤 Mic button clicked, current state:', isMuted, 'micInitialized:', micInitialized);
+                  if (!micInitialized) {
+                    console.log('🎤 Mic not initialized yet, initializing now...');
+                    initializeMicrophone().catch(err => {
+                      console.error('🎤 Failed to initialize mic:', err);
+                    });
+                  } else {
+                    toggleMute();
+                  }
+                }}
+                disabled={false}
                 sx={{ 
                   color: '#000',
                   bgcolor: 'rgba(255, 255, 255, 0.2)',
@@ -2119,6 +2134,10 @@ const AudioSession = () => {
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
                     '50%': { opacity: 0.5, transform: 'scale(1.15)' }
+                  },
+                  '&.Mui-disabled': {
+                    color: '#666',
+                    bgcolor: 'rgba(0, 0, 0, 0.1)'
                   }
                 }}
               >
