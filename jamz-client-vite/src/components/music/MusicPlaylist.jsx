@@ -61,8 +61,20 @@ const MusicPlaylist = ({
    * Handle track play
    */
   const handlePlayTrack = (track) => {
+    console.log('🎵 [MusicPlaylist] Track clicked:', {
+      title: track.title,
+      id: track.id || track._id,
+      isController,
+      hasOnPlayTrack: !!onPlayTrack
+    });
+    
     if (isController && onPlayTrack) {
+      console.log('🎵 [MusicPlaylist] Calling onPlayTrack...');
       onPlayTrack(track);
+    } else if (!isController) {
+      console.warn('⚠️ [MusicPlaylist] Not controller - cannot play track');
+    } else if (!onPlayTrack) {
+      console.error('❌ [MusicPlaylist] onPlayTrack callback not provided!');
     }
   };
 
@@ -272,10 +284,24 @@ const MusicPlaylist = ({
                 {/* Main clickable area - full panel for mobile touch */}
                 <Box
                   onClick={() => {
+                    console.log('🎵 [MusicPlaylist] Track clicked:', {
+                      title: track.title,
+                      selectionMode,
+                      isController,
+                      isCurrentTrack,
+                      disabled
+                    });
+                    
                     if (selectionMode && isController) {
                       toggleTrackSelection(track.id || track._id);
-                    } else if (isController && !isCurrentTrack && !disabled) {
+                    } else if (isController && !disabled) {
+                      // Allow playing any track, including current track (restart)
+                      console.log('🎵 [MusicPlaylist] Initiating playback...');
                       handlePlayTrack(track);
+                    } else if (disabled) {
+                      console.warn('⚠️ [MusicPlaylist] Playback disabled');
+                    } else if (!isController) {
+                      console.warn('⚠️ [MusicPlaylist] Not controller - take control to play tracks');
                     }
                   }}
                   sx={{
