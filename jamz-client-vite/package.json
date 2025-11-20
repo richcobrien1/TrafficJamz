@@ -1,14 +1,22 @@
 {
   "name": "jamz-client-vite",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
+  "author": "TrafficJamz",
+  "description": "Real-time group communication with GPS, music sync, and voice chat",
   "scripts": {
     "dev": "vite --port 5174",
     "dev:host": "vite --host --port 5175",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "electron:dev": "concurrently \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:5174 && cross-env ELECTRON_START_URL=http://localhost:5174 electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac",
+    "electron:build:linux": "npm run build && electron-builder --linux",
     "cap:sync": "npm run build && npx cap sync",
     "cap:sync:android": "npm run build && npx cap sync android",
     "cap:sync:ios": "npm run build && npx cap sync ios",
@@ -17,7 +25,11 @@
     "cap:run:android": "npm run build && npx cap sync android && npx cap run android",
     "cap:run:ios": "npm run build && npx cap sync ios && npx cap run ios",
     "mobile:android": "npm run build && npx cap sync android && npx cap open android",
-    "mobile:ios": "npm run build && npx cap sync ios && npx cap open ios"
+    "mobile:ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "build:all": "bash build-all.sh --all",
+    "build:web": "bash build-all.sh --web",
+    "build:mobile": "bash build-all.sh --mobile",
+    "build:desktop": "bash build-all.sh --electron"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
@@ -46,14 +58,64 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
+    "electron": "39.2.3",
+    "electron-builder": "^26.0.12",
     "eslint": "^9.30.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
-    "vite": "^5.4.20"
+    "vite": "^5.4.20",
+    "wait-on": "^9.0.3"
   },
   "overrides": {
     "@babel/parser": "^7.25.0",
     "@babel/core": "^7.25.0"
+  },
+  "build": {
+    "appId": "com.trafficjamz.app",
+    "productName": "TrafficJamz",
+    "copyright": "Copyright © 2025 TrafficJamz",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.social-networking"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Network"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "forceCodeSigning": false
   }
 }
