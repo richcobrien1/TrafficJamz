@@ -28,7 +28,7 @@ function createWindow() {
 
   // Load the app
   const startUrl = process.env.ELECTRON_START_URL || 
-    `file://${path.join(app.getAppPath(), '..', 'dist', 'index.html')}`;
+    `file://${path.join(__dirname, '..', 'dist', 'index.html')}`;
   
   mainWindow.loadURL(startUrl);
 
