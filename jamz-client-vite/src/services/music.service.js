@@ -522,10 +522,35 @@ class MusicService {
           this.audioElement.currentTime = position;
         }
 
+        // CRITICAL: Check audio element state before playing
+        console.log('🎵 [music.service] Pre-play audio state:', {
+          src: this.audioElement.src,
+          volume: this.audioElement.volume,
+          muted: this.audioElement.muted,
+          readyState: this.audioElement.readyState,
+          networkState: this.audioElement.networkState,
+          paused: this.audioElement.paused,
+          duration: this.audioElement.duration,
+          platform: isMobile ? (isAndroid ? 'Android' : 'iOS') : 'Desktop'
+        });
+
+        // CRITICAL: Ensure audio is not muted (Android emulator issue)
+        if (this.audioElement.muted) {
+          console.warn('⚠️ Audio element was muted - unmuting now');
+          this.audioElement.muted = false;
+        }
+
+        // CRITICAL: Ensure volume is set
+        if (this.audioElement.volume === 0) {
+          console.warn('⚠️ Audio volume was 0 - setting to current volume:', this.volume);
+          this.audioElement.volume = this.volume;
+        }
+
         // Mobile: Resume AudioContext before playing (both iOS and Android)
         if (isMobile && typeof window.AudioContext !== 'undefined') {
           try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            console.log(`📱 ${isAndroid ? 'Android' : 'iOS'} AudioContext state:`, audioCtx.state);
             if (audioCtx.state === 'suspended') {
               console.log(`📱 ${isAndroid ? 'Android' : 'iOS'} AudioContext suspended, resuming...`);
               await audioCtx.resume();
@@ -537,8 +562,21 @@ class MusicService {
           }
         }
         
-        await this.audioElement.play();
-        console.log('✅ [music.service] Playing:', this.currentTrack.title, isMobile ? `(${isAndroid ? 'Android' : 'iOS'})` : '');
+        try {
+          await this.audioElement.play();
+          console.log('✅ [music.service] Playing:', this.currentTrack.title, isMobile ? `(${isAndroid ? 'Android' : 'iOS'})` : '');
+          console.log('✅ [music.service] Post-play state:', {
+            paused: this.audioElement.paused,
+            currentTime: this.audioElement.currentTime,
+            volume: this.audioElement.volume,
+            muted: this.audioElement.muted
+          });
+        } catch (playError) {
+          console.error('❌ [music.service] Play() failed:', playError);
+          console.error('❌ Error name:', playError.name);
+          console.error('❌ Error message:', playError.message);
+          throw playError;
+        }
       }
     } catch (error) {
       console.error('❌ [music.service] Playback failed:', error.name, error.message);
