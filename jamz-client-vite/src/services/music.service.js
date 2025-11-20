@@ -389,7 +389,8 @@ class MusicService {
       position,
       platformMode: this.platformMode,
       hasAudioElement: !!this.audioElement,
-      audioSrc: this.audioElement?.src
+      audioSrc: this.audioElement?.src,
+      readyState: this.audioElement?.readyState
     });
 
     try {
@@ -441,6 +442,30 @@ class MusicService {
         }
         
         console.log('🎵 [music.service] Playing audio file:', this.audioElement.src);
+
+        // Wait for audio to be ready before playing
+        // readyState: 0=nothing, 1=metadata, 2=current data, 3=future data, 4=enough data
+        if (this.audioElement.readyState < 2) {
+          console.log('🎵 [music.service] Audio not ready (readyState:', this.audioElement.readyState, '), waiting for loadeddata...');
+          await new Promise((resolve) => {
+            const onReady = () => {
+              this.audioElement.removeEventListener('loadeddata', onReady);
+              this.audioElement.removeEventListener('canplay', onReady);
+              console.log('🎵 [music.service] Audio ready, readyState:', this.audioElement.readyState);
+              resolve();
+            };
+            this.audioElement.addEventListener('loadeddata', onReady, { once: true });
+            this.audioElement.addEventListener('canplay', onReady, { once: true });
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              this.audioElement.removeEventListener('loadeddata', onReady);
+              this.audioElement.removeEventListener('canplay', onReady);
+              console.warn('⚠️ [music.service] Audio ready timeout, attempting play anyway');
+              resolve();
+            }, 5000);
+          });
+        }
 
         if (position !== null) {
           this.audioElement.currentTime = position;
