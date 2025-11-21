@@ -41,9 +41,9 @@ export const AuthProvider = ({ children }) => {
         
         if (import.meta.env.MODE === 'development') console.log('Found existing token in localStorage');
         
-        // Set a timeout for the API call
+        // Set a timeout for the API call (30s to handle Render cold starts in desktop app)
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Auth check timeout')), 5000);
+          setTimeout(() => reject(new Error('Auth check timeout')), 30000);
         });
         
         // Fetch user profile with the token
@@ -75,7 +75,14 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (error) {
-        if (import.meta.env.MODE === 'development') console.warn('Could not fetch user profile:', error);
+        console.error('❌ Could not fetch user profile:', {
+          message: error.message,
+          status: error.response?.status,
+          url: error.config?.url,
+          isTimeout: error.message.includes('timeout'),
+          isNetworkError: !error.response,
+          platform: window.electron ? 'DESKTOP' : 'WEB'
+        });
         // Token might be invalid, remove it
         localStorage.removeItem('token');
         setUser(null);
