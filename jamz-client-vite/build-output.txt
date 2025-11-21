@@ -1,0 +1,7 @@
+
+> jamz-client-vite@1.0.0 build
+> vite build
+
+Vite dev proxy target set to: http://localhost:5000
+[36mvite v5.4.20 [32mbuilding for production...[36m[39m
+transforming...
