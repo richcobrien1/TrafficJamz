@@ -12,6 +12,7 @@
     "smoke:routes": "node scripts/smoke_routes.js"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.4",
     "nodemon": "^3.1.10"
   },
   "dependencies": {

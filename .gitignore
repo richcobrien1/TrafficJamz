@@ -33,6 +33,7 @@ vendor/            # Composer dependencies
 # --- Build Outputs ---
 /public            # Static site generators (Hugo, Jekyll)
 /dist              # Build output directories
+/dist-electron     # Electron build outputs
 *.log             # Build process logs
 
 # --- Collaboration Tools ---
