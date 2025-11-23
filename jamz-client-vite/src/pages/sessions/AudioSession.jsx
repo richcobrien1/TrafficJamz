@@ -2040,7 +2040,10 @@ const AudioSession = () => {
         sx={{ 
           bgcolor: '#76ff03',
           color: '#000',
-          zIndex: 10
+          zIndex: 10,
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
         }}
       >
         <Toolbar>
