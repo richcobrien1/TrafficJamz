@@ -14,7 +14,7 @@ function createWindow() {
     height: 900,
     minWidth: 800,
     minHeight: 600,
-    // icon: path.join(__dirname, '../public/vite.svg'), // Commented - SVG not supported, use PNG/ICO later
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
