@@ -89,13 +89,14 @@
     "win": {
       "target": [
         {
-          "target": "portable",
+          "target": "dir",
           "arch": [
             "x64"
           ]
         }
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false
     },
     "mac": {
       "target": [
