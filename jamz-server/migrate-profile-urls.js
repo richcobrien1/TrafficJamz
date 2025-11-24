@@ -14,35 +14,37 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function fixUrls() {
   try {
-    // Get all users with R2 signed URLs
+    // Get all users with public.v2u.us URLs (broken R2 domain)
     const { data: users, error: fetchError } = await supabase
       .from('users')
       .select('user_id, email, profile_image_url')
-      .like('profile_image_url', '%r2.cloudflarestorage.com%');
+      .like('profile_image_url', '%public.v2u.us%');
     
     if (fetchError) throw fetchError;
     
-    console.log(`📊 Found ${users?.length || 0} users with old R2 URLs`);
+    console.log(`📊 Found ${users?.length || 0} users with broken public.v2u.us URLs`);
     
     if (!users || users.length === 0) {
       console.log('✅ No URLs to fix');
       return;
     }
     
-    // Update each URL
+    // Convert public.v2u.us back to Supabase Storage
     let successCount = 0;
     let failCount = 0;
     
     for (const user of users) {
       const oldUrl = user.profile_image_url;
-      // Extract just the path after /music/
-      const match = oldUrl.match(/\/music\/(profiles\/[^?]+)/);
+      // Extract filename from URL: https://public.v2u.us/profiles/profile-xxx.jpg
+      const match = oldUrl.match(/\/profiles\/(profile-[^?]+)/);
       if (!match) {
         console.log(`⚠️ Skipping ${user.email}: couldn't parse URL`);
         continue;
       }
       
-      const newUrl = `https://public.v2u.us/${match[1]}`;
+      // Convert to Supabase Storage URL
+      const filename = match[1];
+      const newUrl = `https://nrlaqkpojtvvheosnpaz.supabase.co/storage/v1/object/public/profile-images/profiles/${filename}`;
       
       const { error: updateError } = await supabase
         .from('users')
@@ -53,7 +55,7 @@ async function fixUrls() {
         console.error(`❌ Failed to update ${user.email}: ${updateError.message}`);
         failCount++;
       } else {
-        console.log(`✅ Updated ${user.email}: ${newUrl}`);
+        console.log(`✅ Updated ${user.email}\n   Old: ${oldUrl}\n   New: ${newUrl}`);
         successCount++;
       }
     }
