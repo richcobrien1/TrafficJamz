@@ -125,15 +125,14 @@ const uploadProfileToR2 = async (file, userId) => {
     const uploadResult = await s3.upload(params).promise();
     console.log('R2 upload result:', uploadResult);
 
-    // Generate signed URL (valid for 7 days - max allowed with SigV4)
-    const signedUrl = s3.getSignedUrl('getObject', {
-      Bucket: params.Bucket,
-      Key: filePath,
-      Expires: 604800 // 7 days in seconds (max for SigV4)
-    });
+    // Use public R2 URL instead of signed URL (no expiration)
+    // R2_PUBLIC_URL should be configured as https://public.v2u.us
+    const publicUrl = process.env.R2_PUBLIC_URL 
+      ? `${process.env.R2_PUBLIC_URL}/${filePath}`
+      : uploadResult.Location; // Fallback to direct R2 URL if no public URL configured
     
-    console.log('Profile upload successful:', { filePath, signedUrl });
-    return signedUrl;
+    console.log('Profile upload successful:', { filePath, publicUrl });
+    return publicUrl;
   } catch (error) {
     console.error('R2 upload exception:', error);
     throw error;
