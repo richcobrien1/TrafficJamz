@@ -150,6 +150,12 @@ const MusicPlayerPage = () => {
     };
 
     initMusic();
+    
+    // Cleanup function
+    return () => {
+      console.log('🎵 MusicPlayer component unmounting');
+      initializationRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]); // Only run when groupId changes, not when initializeSession reference changes
 

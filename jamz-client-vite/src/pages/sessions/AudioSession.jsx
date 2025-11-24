@@ -290,13 +290,7 @@ const AudioSession = () => {
     };
   }, []);
   
-  // Auto-initialize microphone on mount
-  useEffect(() => {
-    console.log('🎤 Auto-initializing microphone on component mount');
-    initializeMicrophone();
-  }, []);
-  
-  // Audio level monitoring
+  // Audio level monitoring with cleanup
   useEffect(() => {
     if (localStream) {
       setupAudioLevelMonitoring(localStream);
@@ -321,6 +315,11 @@ const AudioSession = () => {
         }
       }
     }
+    
+    // Cleanup: No explicit cleanup needed here as setupAudioLevelMonitoring manages its own interval
+    return () => {
+      // Audio monitoring cleanup is handled within setupAudioLevelMonitoring function
+    };
   }, [localStream, peerReady, micSensitivity]);
 
   // Update gain node when inputVolume changes to control outbound volume
@@ -774,6 +773,12 @@ const AudioSession = () => {
   
   // Audio level monitoring
   const setupAudioLevelMonitoring = (stream) => {
+    // Clean up existing monitoring first
+    if (monitoringIntervalRef.current) {
+      clearInterval(monitoringIntervalRef.current);
+      monitoringIntervalRef.current = null;
+    }
+    
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioContext.createAnalyser();
     const source = audioContext.createMediaStreamSource(stream);
@@ -1385,8 +1390,40 @@ const AudioSession = () => {
     socket.connect();
     console.log('👥 [Participants] Socket connection initiated');
 
-    return socket;
+    // Return cleanup function
+    return () => {
+      console.log('🧹 Cleaning up socket listeners and disconnecting');
+      socket.off('connect');
+      socket.off('connect_error');
+      socket.off('connect_timeout');
+      socket.off('disconnect');
+      socket.off('webrtc-offer');
+      socket.off('webrtc-answer');
+      socket.off('webrtc-candidate');
+      socket.off('webrtc-ready');
+      socket.off('participant-joined');
+      socket.off('participant-left');
+      socket.off('current-participants');
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    };
   };
+  
+  // Setup signaling when sessionId is available and cleanup on unmount
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    console.log('🔌 Setting up signaling for session:', sessionId);
+    const cleanup = setupSignaling();
+    
+    return () => {
+      console.log('🔌 Cleaning up signaling on unmount');
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup();
+      }
+    };
+  }, [sessionId]);
   
   // Handle signaling messages
   const handleSignalingMessage = async (message, signaling) => {
