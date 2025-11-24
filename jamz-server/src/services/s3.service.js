@@ -16,18 +16,26 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Clean environment variables (remove inline comments and quotes)
+const cleanEnv = (str) => {
+  if (!str) return '';
+  return str.split('#')[0].trim().replace(/^["']|["']$/g, '');
+};
+
 // Check if Supabase Storage is configured
 const isSupabaseConfigured = () => {
-  const hasUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http');
-  const hasKey = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY.length > 20;
+  const url = cleanEnv(process.env.SUPABASE_URL);
+  const key = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasUrl = url && url.startsWith('http');
+  const hasKey = key && key.length > 20;
   return !!(hasUrl && hasKey);
 };
 
 // Initialize Supabase client for storage (only if properly configured)
 const supabase = isSupabaseConfigured()
   ? createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      cleanEnv(process.env.SUPABASE_URL),
+      cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
     )
   : null;
 
