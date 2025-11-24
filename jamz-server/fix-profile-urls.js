@@ -11,14 +11,20 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'aws-0-us-east-1.pooler.supabase.com',
-  port: process.env.POSTGRES_PORT || 6543,
-  database: process.env.POSTGRES_DB || 'postgres',
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  ssl: { rejectUnauthorized: false }
-});
+// Use DATABASE_URL if available, otherwise construct from individual env vars
+const pool = process.env.DATABASE_URL 
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    })
+  : new Pool({
+      host: process.env.POSTGRES_HOST || 'aws-0-us-east-1.pooler.supabase.com',
+      port: parseInt(process.env.POSTGRES_PORT) || 6543,
+      database: process.env.POSTGRES_DB || 'postgres',
+      user: process.env.POSTGRES_USER,
+      password: process.env.POSTGRES_PASSWORD,
+      ssl: { rejectUnauthorized: false }
+    });
 
 async function fixProfileUrls() {
   console.log('🔧 Fixing profile image URLs...\n');
