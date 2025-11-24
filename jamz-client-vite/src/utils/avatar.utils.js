@@ -12,10 +12,18 @@ export const getAvatarContent = (user) => {
   if (user?.profile_image_url && 
       !user.profile_image_url.includes('ui-avatars.com')) {
     // Check if it's a real storage URL (Supabase or R2)
+    // R2 patterns: public.v2u.us, .r2.cloudflarestorage.com, pub-*.r2.dev
+    // Supabase pattern: supabase.co/storage
     if (user.profile_image_url.includes('supabase.co/storage') ||
         user.profile_image_url.includes('public.v2u.us') ||
-        user.profile_image_url.includes('.r2.cloudflarestorage.com')) {
+        user.profile_image_url.includes('.r2.cloudflarestorage.com') ||
+        user.profile_image_url.includes('.r2.dev') ||
+        user.profile_image_url.includes('https://') && 
+        (user.profile_image_url.includes('/profiles/') || user.profile_image_url.includes('/profile-'))) {
+      console.log('✅ Using profile image URL:', user.profile_image_url.substring(0, 80) + '...');
       return user.profile_image_url;
+    } else {
+      console.warn('⚠️ Profile image URL exists but doesn\'t match known storage patterns:', user.profile_image_url.substring(0, 80));
     }
   }
 

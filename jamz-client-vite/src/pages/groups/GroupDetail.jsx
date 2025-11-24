@@ -989,12 +989,32 @@ const GroupDetail = () => {
                                     color="primary"
                                     overlap="circular"
                                   >
-                                    <Avatar 
-                                      src={getAvatarContent(member)}
-                                      alt={`${member.first_name} ${member.last_name}`}
-                                    >
-                                      {getAvatarFallback(member)}
-                                    </Avatar>
+                                    {(() => {
+                                      const avatarSrc = getAvatarContent(member);
+                                      console.log('🖼️ Member avatar:', {
+                                        name: `${member.first_name} ${member.last_name}`,
+                                        email: member.email,
+                                        profile_image_url: member.profile_image_url,
+                                        avatarSrc,
+                                        gender: member.gender
+                                      });
+                                      return (
+                                        <Avatar 
+                                          src={avatarSrc}
+                                          alt={`${member.first_name} ${member.last_name}`}
+                                          imgProps={{
+                                            onError: (e) => {
+                                              console.error('❌ Avatar image failed to load:', {
+                                                src: avatarSrc,
+                                                member: member.email
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          {getAvatarFallback(member)}
+                                        </Avatar>
+                                      );
+                                    })()}
                                   </Badge>
                                 </ListItemAvatar>
                               <ListItemText 
