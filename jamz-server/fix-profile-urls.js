@@ -11,20 +11,30 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-// Use DATABASE_URL if available, otherwise construct from individual env vars
-const pool = process.env.DATABASE_URL 
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
-    })
-  : new Pool({
-      host: process.env.POSTGRES_HOST || 'aws-0-us-east-1.pooler.supabase.com',
-      port: parseInt(process.env.POSTGRES_PORT) || 6543,
-      database: process.env.POSTGRES_DB || 'postgres',
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      ssl: { rejectUnauthorized: false }
-    });
+// Clean environment variables (remove comments and quotes)
+const cleanEnv = (value) => {
+  if (!value) return value;
+  // Remove everything after # (comments)
+  const withoutComments = value.split('#')[0].trim();
+  // Remove surrounding quotes
+  return withoutComments.replace(/^["']|["']$/g, '');
+};
+
+const pool = new Pool({
+  host: cleanEnv(process.env.POSTGRES_HOST) || 'aws-0-us-east-1.pooler.supabase.com',
+  port: parseInt(cleanEnv(process.env.POSTGRES_PORT)) || 6543,
+  database: cleanEnv(process.env.POSTGRES_DB) || 'postgres',
+  user: cleanEnv(process.env.POSTGRES_USER),
+  password: cleanEnv(process.env.POSTGRES_PASSWORD),
+  ssl: { rejectUnauthorized: false }
+});
+
+console.log('📊 Database config:', {
+  host: cleanEnv(process.env.POSTGRES_HOST),
+  port: cleanEnv(process.env.POSTGRES_PORT),
+  database: cleanEnv(process.env.POSTGRES_DB),
+  user: cleanEnv(process.env.POSTGRES_USER)
+});
 
 async function fixProfileUrls() {
   console.log('🔧 Fixing profile image URLs...\n');
