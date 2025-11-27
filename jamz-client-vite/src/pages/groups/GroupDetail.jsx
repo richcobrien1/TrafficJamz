@@ -444,8 +444,9 @@ const GroupDetail = () => {
       // Only fetch if online
       if (!navigator.onLine) {
         console.log('📴 Offline - using cached group data only');
-        if (!cachedGroups || cachedGroups.length === 0) {
-          setError('No internet connection and no cached data available.');
+        if (!group) {
+          // No cached data loaded, but don't show error - show helpful message
+          setError('📴 Offline mode - Connect to internet to load group details.');
         }
         return;
       }
@@ -480,8 +481,12 @@ const GroupDetail = () => {
         }
       }
       
-      // No cache - show full error
-      setError('Failed to load group details. Please check your connection.');
+      // No cache - show full error only if online (network issue), otherwise offline message
+      if (navigator.onLine) {
+        setError('Failed to load group details. Please check your connection.');
+      } else {
+        setError('📴 Offline mode - Connect to internet to load group details.');
+      }
       setLoading(false); // CRITICAL: Always turn off loading even on error
     } finally {
       setLoading(false); // CRITICAL: Ensure loading is always turned off

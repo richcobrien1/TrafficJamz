@@ -74,7 +74,7 @@ const Dashboard = () => {
       if (!navigator.onLine) {
         console.log('📴 Offline - using cached data only');
         if (!cachedGroups || cachedGroups.length === 0) {
-          setError('No internet connection and no cached data available.');
+          setError('📴 Offline mode - Connect to internet to load groups.');
         }
         return;
       }
@@ -97,8 +97,12 @@ const Dashboard = () => {
         setGroups(cachedGroups);
         setError(''); // Don't show error if we have cached data
       } else {
-        // No cache - show error
-        setError('Failed to load groups. Please check your connection.');
+        // No cache - show error based on connection state
+        if (navigator.onLine) {
+          setError('Failed to load groups. Please check your connection.');
+        } else {
+          setError('📴 Offline mode - Connect to internet to load groups.');
+        }
       }
     } finally {
       setLoading(false); // CRITICAL: Always turn off loading

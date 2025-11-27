@@ -870,8 +870,8 @@ const LocationTracking = () => {
       // Only fetch if online
       if (!navigator.onLine) {
         console.log('📴 Offline - using cached data only');
-        if (!cachedGroups || cachedGroups.length === 0) {
-          setError('No internet connection and no cached data available.');
+        if (!group) {
+          setError('📴 Offline mode - Connect to internet to load location tracking.');
         }
         return;
       }
@@ -979,8 +979,12 @@ const LocationTracking = () => {
         }
       }
       
-      // No cache - show error
-      setError('Failed to load group details. Please check your connection.');
+      // No cache - show error based on connection state
+      if (navigator.onLine) {
+        setError('Failed to load group details. Please check your connection.');
+      } else {
+        setError('📴 Offline mode - Connect to internet to load location tracking.');
+      }
     } finally {
       setLoading(false);
     }

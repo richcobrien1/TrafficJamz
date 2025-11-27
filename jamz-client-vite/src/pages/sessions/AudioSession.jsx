@@ -891,7 +891,7 @@ const AudioSession = () => {
     // Only attempt network calls if online
     if (!navigator.onLine) {
       console.log('📴 Offline - audio session requires connection');
-      setError('No internet connection. Audio sessions require an active connection.');
+      setError('📴 Offline mode - Audio sessions require an internet connection.');
       setLoading(false);
       return;
     }
