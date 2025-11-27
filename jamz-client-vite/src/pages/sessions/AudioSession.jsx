@@ -1418,20 +1418,9 @@ const AudioSession = () => {
     };
   };
   
-  // Setup signaling when sessionId is available and cleanup on unmount
-  useEffect(() => {
-    if (!sessionId) return;
-    
-    console.log('🔌 Setting up signaling for session:', sessionId);
-    const cleanup = setupSignaling();
-    
-    return () => {
-      console.log('🔌 Cleaning up signaling on unmount');
-      if (cleanup && typeof cleanup === 'function') {
-        cleanup();
-      }
-    };
-  }, [sessionId]);
+  // Note: Signaling setup is now handled in applySessionState's AUTO-CONNECT section
+  // No separate useEffect needed since setupSignaling is called with the session ID
+  // when the session data is loaded
   
   // Handle signaling messages
   const handleSignalingMessage = async (message, signaling) => {
