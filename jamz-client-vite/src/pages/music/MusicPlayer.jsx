@@ -113,7 +113,7 @@ const MusicPlayerPage = () => {
         // Only fetch if online
         if (!navigator.onLine) {
           console.log('📴 Offline - music player requires connection');
-          setUploadError('No internet connection. Music player requires an active connection.');
+          setUploadError('📴 Offline mode - Music player requires an internet connection.');
           setIsInitializing(false);
           return;
         }
@@ -152,7 +152,11 @@ const MusicPlayerPage = () => {
         }
       } catch (error) {
         console.error('Error initializing music session:', error);
-        setUploadError('Failed to load music player. Please check your connection.');
+        if (navigator.onLine) {
+          setUploadError('Failed to load music player. Please check your connection.');
+        } else {
+          setUploadError('📴 Offline mode - Music player requires an internet connection.');
+        }
       } finally {
         setIsInitializing(false);
       }
