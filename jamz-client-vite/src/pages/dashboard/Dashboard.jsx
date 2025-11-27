@@ -67,9 +67,10 @@ const Dashboard = () => {
       if (cachedGroups) {
         console.log('📦 Using cached groups data');
         setGroups(cachedGroups);
+        setLoading(false); // Turn off loading immediately when we have cache
       }
       
-      // Fetch fresh data
+      // Fetch fresh data in background
       const response = await api.get('/groups');
       setGroups(response.data.groups);
       
@@ -91,7 +92,7 @@ const Dashboard = () => {
         setError('Failed to load groups. Please refresh the page.');
       }
     } finally {
-      setLoading(false);
+      setLoading(false); // CRITICAL: Always turn off loading
     }
   }, []);
 
