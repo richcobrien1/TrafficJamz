@@ -1761,7 +1761,7 @@ const AudioSession = () => {
     if (!localStream) throw new Error('No local stream');
 
     // Request RTP capabilities from server
-    const rtpCapsResp = await new Promise((res) => signaling.emit('mediasoup-get-rtpCapabilities', { sessionId }, (r) => res(r)));
+    const rtpCapsResp = await new Promise((res) => signaling.emit('mediasoup-get-rtpCapabilities', { sessionId: sessionIdRef.current }, (r) => res(r)));
     if (!rtpCapsResp || !rtpCapsResp.success) throw new Error('mediasoup unavailable or disabled');
 
     // Create a mediasoup Device
@@ -1776,7 +1776,7 @@ const AudioSession = () => {
     }
 
     // Create send transport for producing
-    const sendTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
+    const sendTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId: sessionIdRef.current }, (r) => res(r)));
     if (!sendTransportResp || !sendTransportResp.success) {
       console.warn('mediasoup create send transport failed, fallback to native');
       return nativePublishFallback(signaling);
@@ -1790,13 +1790,13 @@ const AudioSession = () => {
     });
 
     sendTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
-      signaling.emit('mediasoup-connect-transport', { sessionId, transportId: sendTransportResp.transport.id, dtlsParameters }, (resp) => {
+      signaling.emit('mediasoup-connect-transport', { sessionId: sessionIdRef.current, transportId: sendTransportResp.transport.id, dtlsParameters }, (resp) => {
         if (resp && resp.success) callback(); else errback(resp && resp.error ? new Error(resp.error) : new Error('connect failed'));
       });
     });
 
     sendTransport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
-      signaling.emit('mediasoup-produce', { sessionId, transportId: sendTransportResp.transport.id, kind, rtpParameters }, (resp) => {
+      signaling.emit('mediasoup-produce', { sessionId: sessionIdRef.current, transportId: sendTransportResp.transport.id, kind, rtpParameters }, (resp) => {
         if (resp && resp.success) callback({ id: resp.id }); else errback(new Error(resp && resp.error ? resp.error : 'produce failed'));
       });
     });
@@ -1827,7 +1827,7 @@ const AudioSession = () => {
     console.log('🎤 Mediasoup producer created with gain control:', producer.id);
 
     // Create receive transport for consuming
-    const recvTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId }, (r) => res(r)));
+    const recvTransportResp = await new Promise((res) => signaling.emit('mediasoup-create-transport', { sessionId: sessionIdRef.current }, (r) => res(r)));
     if (recvTransportResp && recvTransportResp.success) {
       const recvTransport = device.createRecvTransport({
         id: recvTransportResp.transport.id,
@@ -1837,7 +1837,7 @@ const AudioSession = () => {
       });
 
       recvTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
-        signaling.emit('mediasoup-connect-transport', { sessionId, transportId: recvTransportResp.transport.id, dtlsParameters }, (resp) => {
+        signaling.emit('mediasoup-connect-transport', { sessionId: sessionIdRef.current, transportId: recvTransportResp.transport.id, dtlsParameters }, (resp) => {
           if (resp && resp.success) callback(); else errback(resp && resp.error ? new Error(resp.error) : new Error('connect failed'));
         });
       });
@@ -1849,7 +1849,7 @@ const AudioSession = () => {
       const myProducerId = producer.id;
 
       // Get existing producers and consume them (skip our own)
-      const existingProducersResp = await new Promise((res) => signaling.emit('mediasoup-get-producers', { sessionId }, (r) => res(r)));
+      const existingProducersResp = await new Promise((res) => signaling.emit('mediasoup-get-producers', { sessionId: sessionIdRef.current }, (r) => res(r)));
       if (existingProducersResp && existingProducersResp.success && existingProducersResp.producerIds) {
         for (const producerId of existingProducersResp.producerIds) {
           if (producerId !== myProducerId) {
@@ -1879,7 +1879,7 @@ const AudioSession = () => {
     try {
       const consumeResp = await new Promise((res) => 
         signaling.emit('mediasoup-consume', { 
-          sessionId, 
+          sessionId: sessionIdRef.current, 
           transportId: recvTransport.id, 
           producerId,
           rtpCapabilities 
@@ -1929,7 +1929,7 @@ const AudioSession = () => {
     await pc.setLocalDescription(offer);
 
     return new Promise((resolve, reject) => {
-      signaling.emit('webrtc-offer', { offer: pc.localDescription, sessionId }, (ack) => {
+      signaling.emit('webrtc-offer', { offer: pc.localDescription, sessionId: sessionIdRef.current }, (ack) => {
         // ack might be undefined depending on server handlers; resolve anyway
         resolve(ack || { success: true });
       });
@@ -2004,7 +2004,7 @@ const AudioSession = () => {
     if (rtcConnectionRef.current && signalingRef.current && participant.id !== user?.id) {
       console.log('Initiating WebRTC connection with new participant');
       // Send ready signal to trigger connection establishment
-      signalingRef.current.emit('webrtc-ready', { sessionId });
+      signalingRef.current.emit('webrtc-ready', { sessionId: sessionIdRef.current });
     }
   };
   
