@@ -110,6 +110,14 @@ const MusicPlayerPage = () => {
       try {
         const token = localStorage.getItem('token');
         
+        // Only fetch if online
+        if (!navigator.onLine) {
+          console.log('📴 Offline - music player requires connection');
+          setUploadError('No internet connection. Music player requires an active connection.');
+          setIsInitializing(false);
+          return;
+        }
+        
         // Fetch group details
         const groupResponse = await fetch(`${API_URL}/api/groups/${groupId}`, {
           headers: {
@@ -144,6 +152,7 @@ const MusicPlayerPage = () => {
         }
       } catch (error) {
         console.error('Error initializing music session:', error);
+        setUploadError('Failed to load music player. Please check your connection.');
       } finally {
         setIsInitializing(false);
       }
