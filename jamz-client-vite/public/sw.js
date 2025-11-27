@@ -105,15 +105,18 @@ async function handleAppRequest(request) {
   } catch (error) {
     // Network failed - try cache as fallback
     console.log('[SW] Network failed for app asset, trying cache:', request.url);
-    const cachedResponse = await cache.match(request);
     
-    if (cachedResponse) {
-      console.log('[SW] ⚠️ OFFLINE MODE - Serving stale app asset from cache:', request.url);
-      return cachedResponse;
-    }
-    
-    // If requesting HTML and nothing in cache, return offline page
+    // For document requests (navigation), ALWAYS return index.html for SPA routing
     if (request.destination === 'document') {
+      const indexResponse = await cache.match('/index.html') || await cache.match('/');
+      
+      if (indexResponse) {
+        console.log('[SW] 📴 OFFLINE - Serving cached index.html for SPA route:', request.url);
+        return indexResponse;
+      }
+      
+      // No cached index.html - this shouldn't happen but show offline page as fallback
+      console.error('[SW] ❌ CRITICAL: No cached index.html found!');
       return new Response(
         `<!DOCTYPE html>
         <html>
@@ -138,13 +141,25 @@ async function handleAppRequest(request) {
             }
             h1 { font-size: 2.5rem; margin-bottom: 1rem; }
             p { font-size: 1.2rem; opacity: 0.9; }
+            button {
+              margin-top: 1.5rem;
+              padding: 0.75rem 2rem;
+              font-size: 1rem;
+              background: white;
+              color: #667eea;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 600;
+            }
           </style>
         </head>
         <body>
           <div class="container">
             <h1>🎵 TrafficJamz</h1>
-            <p>You're offline!</p>
-            <p>Connect to the internet to start jamming.</p>
+            <p>App not cached yet!</p>
+            <p>Connect to the internet and reload to cache the app for offline use.</p>
+            <button onclick="location.reload()">Retry</button>
           </div>
         </body>
         </html>`,
@@ -153,6 +168,14 @@ async function handleAppRequest(request) {
           headers: { 'Content-Type': 'text/html' }
         }
       );
+    }
+    
+    // For JS/CSS assets, try exact cache match
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      console.log('[SW] ⚠️ OFFLINE MODE - Serving stale app asset from cache:', request.url);
+      return cachedResponse;
     }
     
     throw error;
