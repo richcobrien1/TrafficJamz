@@ -12,39 +12,35 @@ class ServiceWorkerManager {
    * Register the service worker
    */
   async register() {
+    // TEMPORARILY DISABLED - Service Worker causing cache issues
+    console.warn('⚠️ Service Worker DISABLED - unregistering any existing workers');
+    
     if (!this.isSupported) {
       console.warn('Service Workers not supported in this browser');
       return false;
     }
 
     try {
-      this.registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
-      });
-
-      console.log('✅ Service Worker registered:', this.registration.scope);
-
-      // Listen for updates
-      this.registration.addEventListener('updatefound', () => {
-        console.log('🔄 Service Worker update found');
-        const newWorker = this.registration.installing;
-
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('✨ New Service Worker available - page reload recommended');
-            this.notifyStatusChange('update-available');
-          }
-        });
-      });
-
-      // Check for updates periodically
-      setInterval(() => {
-        this.registration.update();
-      }, 60000); // Check every minute
-
-      return true;
+      // Unregister ALL existing service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (let registration of registrations) {
+        const result = await registration.unregister();
+        console.log('🗑️ Unregistered Service Worker:', result);
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (let cacheName of cacheNames) {
+          await caches.delete(cacheName);
+          console.log('🗑️ Deleted cache:', cacheName);
+        }
+      }
+      
+      console.log('✅ All Service Workers unregistered and caches cleared');
+      return false; // Return false to indicate SW is not active
     } catch (error) {
-      console.error('❌ Service Worker registration failed:', error);
+      console.error('❌ Service Worker unregistration failed:', error);
       return false;
     }
   }
