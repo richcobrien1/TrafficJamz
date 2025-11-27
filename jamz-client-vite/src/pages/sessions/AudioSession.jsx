@@ -888,6 +888,14 @@ const AudioSession = () => {
       }
     };
 
+    // Only attempt network calls if online
+    if (!navigator.onLine) {
+      console.log('📴 Offline - audio session requires connection');
+      setError('No internet connection. Audio sessions require an active connection.');
+      setLoading(false);
+      return;
+    }
+
     // Try to GET existing session
     try {
       console.log('Checking for existing audio session for group:', groupId);
