@@ -50,6 +50,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../../contexts/AuthContext';
 import { useMusic } from '../../contexts/MusicContext';
+import sessionService from '../../services/session.service';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const GroupDetail = () => {
@@ -417,14 +418,50 @@ const GroupDetail = () => {
   const fetchGroupDetails = async () => {
     try {
       setLoading(true);
-  const response = await api.get(`/groups/${groupId}`);
+      
+      // Try cached groups data first
+      const cachedGroups = sessionService.getCachedGroupsData();
+      if (cachedGroups && Array.isArray(cachedGroups)) {
+        const cachedGroup = cachedGroups.find(g => g.group_id === parseInt(groupId));
+        if (cachedGroup) {
+          console.log('📦 Using cached group data for instant display');
+          setGroup(cachedGroup);
+          setEditName(cachedGroup.name);
+          setCreatedAt(cachedGroup.createdAt);
+          setEditDescription(cachedGroup.description || '');
+        }
+      }
+      
+      // Fetch fresh data
+      const response = await api.get(`/groups/${groupId}`);
       setGroup(response.data.group);
       setEditName(response.data.group.name);
       setCreatedAt(response.data.group.createdAt);
       setEditDescription(response.data.group.description || '');
       setError('');
+      
+      // Update cache with fresh group data
+      if (cachedGroups && Array.isArray(cachedGroups)) {
+        const updatedGroups = cachedGroups.map(g => 
+          g.group_id === parseInt(groupId) ? response.data.group : g
+        );
+        sessionService.cacheGroupsData(updatedGroups);
+      }
     } catch (error) {
       console.error('Error fetching group details:', error);
+      
+      // If we have cached data, keep using it
+      const cachedGroups = sessionService.getCachedGroupsData();
+      if (cachedGroups && Array.isArray(cachedGroups)) {
+        const cachedGroup = cachedGroups.find(g => g.group_id === parseInt(groupId));
+        if (cachedGroup) {
+          console.log('⚠️ Using cached group data due to fetch error');
+          setError('Unable to refresh group details. Showing cached data.');
+          return; // Don't show full error if we have cache
+        }
+      }
+      
+      // No cache - show full error
       setError('Failed to load group details. Please try again later.');
     } finally {
       setLoading(false);
@@ -775,22 +812,22 @@ const GroupDetail = () => {
                 <Paper sx={{ p: 3, mb: 3 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Avatar 
-                      src={group.avatar_url}
+                      src={group?.avatar_url}
                       sx={{ width: 80, height: 80, mr: 3 }}
                     >
-                      {group.name[0]}
+                      {group?.name?.[0] || 'G'}
                     </Avatar>
                     <Box>
                       <Typography variant="h5" component="h1">
-                        {group.name}
+                        {group?.name || 'Group'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {group.members?.length || 0} members • Created {new Date(group.createdAt).toLocaleDateString()}
+                        {group?.members?.length || 0} members • Created {group?.createdAt ? new Date(group.createdAt).toLocaleDateString() : 'Unknown'}
                       </Typography>
                       <Chip 
-                        label={group.privacy_level} 
+                        label={group?.privacy_level || 'private'} 
                         size="small" 
-                        color={group.privacy_level === 'public' ? 'success' : 'primary'}
+                        color={group?.privacy_level === 'public' ? 'success' : 'primary'}
                         sx={{ mt: 1 }}
                       />
                     </Box>

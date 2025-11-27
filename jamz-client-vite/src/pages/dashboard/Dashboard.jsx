@@ -39,6 +39,7 @@ import {
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import AIChatAssistant from '../../components/AIChatAssistant';
+import sessionService from '../../services/session.service';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Dashboard = () => {
@@ -60,11 +61,35 @@ const Dashboard = () => {
   const fetchGroups = React.useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Try cached data first for instant display
+      const cachedGroups = sessionService.getCachedGroupsData();
+      if (cachedGroups) {
+        console.log('📦 Using cached groups data');
+        setGroups(cachedGroups);
+      }
+      
+      // Fetch fresh data
       const response = await api.get('/groups');
       setGroups(response.data.groups);
+      
+      // Cache fresh data
+      sessionService.cacheGroupsData(response.data.groups);
+      
       setError('');
     } catch (error) {
       console.error('Error fetching groups:', error);
+      
+      // If we have cached data, use it and show a warning
+      const cachedGroups = sessionService.getCachedGroupsData();
+      if (cachedGroups && cachedGroups.length > 0) {
+        console.log('⚠️ Using cached groups due to fetch error');
+        setGroups(cachedGroups);
+        setError('Unable to refresh groups. Showing cached data.');
+      } else {
+        // No cache - show error
+        setError('Failed to load groups. Please refresh the page.');
+      }
     } finally {
       setLoading(false);
     }
@@ -210,7 +235,7 @@ const Dashboard = () => {
               Create Group
             </Button>
           </Paper>
-        ) : (
+        ) : (groups && groups.length > 0) ? (
           <Grid container spacing={3}>
             {groups.map((group) => (
               <Grid item size={{ xs: 12, sm: 6, md: 4 }} key={group.id}>
@@ -227,10 +252,10 @@ const Dashboard = () => {
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Avatar src={group.avatar_url} sx={{ width: 56, height: 56, mr: 2 }}>
-                      {group.name[0]}
+                      {group?.name?.[0] || 'G'}
                     </Avatar>
                     <Box>
-                      <Typography variant="h6">{group.name}</Typography>
+                      <Typography variant="h6">{group?.name || 'Unnamed Group'}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         {group.members?.length || 0} members
                       </Typography>
@@ -246,7 +271,7 @@ const Dashboard = () => {
               </Grid>
             ))}
           </Grid>
-        )}
+        ) : null}
       </Container>
 
       {/* AI Chat Assistant Button */}
