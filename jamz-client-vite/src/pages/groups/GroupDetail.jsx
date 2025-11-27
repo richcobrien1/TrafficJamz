@@ -49,8 +49,10 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
 import { useAuth } from '../../contexts/AuthContext';
-import { useMusic } from '../../contexts/MusicContext';
 import sessionService from '../../services/session.service';
+import { dbManager } from '../../services/indexedDBManager';
+import offlineQueue from '../../services/offline-queue.service';
+import { useMusic } from '../../contexts/MusicContext';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const GroupDetail = () => {
@@ -481,16 +483,42 @@ const GroupDetail = () => {
     try {
       setInvitationsLoading(true);
       console.log('Fetching invitations for group:', groupId);
-      const response = await api.get(`/groups/${groupId}/invitations`);
-      console.log('Invitations response:', response.data);
-      const invitationsList = response.data.invitations || [];
-      console.log('Setting invitations:', invitationsList.length, 'items');
-      setInvitations(invitationsList);
+      
+      // Try cache first for instant display
+      const cachedInvitations = await dbManager.getInvitations(parseInt(groupId));
+      if (cachedInvitations && cachedInvitations.length > 0) {
+        console.log('📦 Using cached invitations');
+        setInvitations(cachedInvitations);
+        setInvitationsLoading(false);
+      }
+      
+      // Fetch fresh data if online
+      if (navigator.onLine) {
+        const response = await api.get(`/groups/${groupId}/invitations`);
+        console.log('Invitations response:', response.data);
+        const invitationsList = response.data.invitations || [];
+        console.log('Setting invitations:', invitationsList.length, 'items');
+        setInvitations(invitationsList);
+        
+        // Cache for offline use
+        await dbManager.saveInvitations(parseInt(groupId), invitationsList);
+      } else if (!cachedInvitations || cachedInvitations.length === 0) {
+        // Offline and no cache
+        console.log('📴 Offline - no cached invitations');
+        setInvitations([]);
+      }
     } catch (error) {
       console.error('Error fetching invitations:', error);
       console.error('Error details:', error.response?.data || error.message);
-      // Set empty array on error so UI shows "No pending invitations"
-      setInvitations([]);
+      
+      // Try to use cached data on error
+      const cachedInvitations = await dbManager.getInvitations(parseInt(groupId));
+      if (cachedInvitations && cachedInvitations.length > 0) {
+        console.log('⚠️ Using cached invitations due to error');
+        setInvitations(cachedInvitations);
+      } else {
+        setInvitations([]);
+      }
     } finally {
       setInvitationsLoading(false);
     }
@@ -528,6 +556,36 @@ const GroupDetail = () => {
     
     try {
       setInviteLoading(true);
+      
+      if (navigator.onLine) {
+        const response = await api.post(`/groups/${groupId}/invitations`, {
+          email: inviteEmail.trim(),
+          message: inviteMessage.trim() || undefined
+        });
+        
+        setInviteSuccess(true);
+        setInviteEmail('');
+        setInviteMessage('');
+        setInviteError('');
+        
+        // Refresh invitations
+        await fetchInvitations();
+      } else {
+        // Queue for when online
+        await offlineQueue.queueInvitation(groupId, inviteEmail.trim());
+        
+        setInviteSuccess(true);
+        setInviteError('');
+        setInviteEmail('');
+        setInviteMessage('');
+        
+        // Show offline notice
+        setSnackbar({
+          open: true,
+          message: '📴 Offline - Invitation will be sent when connection is restored',
+          severity: 'info'
+        });
+      }
       setInviteError('');
       
       console.log('Sending invitation to:', inviteEmail);
