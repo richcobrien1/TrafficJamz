@@ -852,6 +852,30 @@ const LocationTracking = () => {
     try {
       setLoading(true);
       
+      // Try cached groups data first
+      const cachedGroups = sessionService.getCachedGroupsData();
+      if (cachedGroups && Array.isArray(cachedGroups)) {
+        const cachedGroup = cachedGroups.find(g => g.group_id === parseInt(groupId));
+        if (cachedGroup) {
+          console.log('📦 Using cached group data for instant display');
+          setGroup(cachedGroup);
+          setMembers(cachedGroup.members);
+          setLoading(false);
+          
+          // Fetch cached member locations
+          fetchMemberLocations(cachedGroup.members);
+        }
+      }
+      
+      // Only fetch if online
+      if (!navigator.onLine) {
+        console.log('📴 Offline - using cached data only');
+        if (!cachedGroups || cachedGroups.length === 0) {
+          setError('No internet connection and no cached data available.');
+        }
+        return;
+      }
+      
       const response = await api.get(`/groups/${groupId}`);
       const groupData = response.data.group;
       
@@ -860,6 +884,14 @@ const LocationTracking = () => {
       
     setGroup(groupData);
     setMembers(groupData.members);
+    
+    // Update cache with fresh group data
+    if (cachedGroups && Array.isArray(cachedGroups)) {
+      const updatedGroups = cachedGroups.map(g => 
+        g.group_id === parseInt(groupId) ? groupData : g
+      );
+      sessionService.cacheGroupsData(updatedGroups);
+    }
     
     // Initialize music session for this group immediately
     try {
@@ -935,7 +967,20 @@ const LocationTracking = () => {
     setError('');
     } catch (error) {
       console.error('Error fetching group details:', error);
-      setError('Failed to load group details. Please try again later.');
+      
+      // If we have cached data, keep using it
+      const cachedGroups = sessionService.getCachedGroupsData();
+      if (cachedGroups && Array.isArray(cachedGroups)) {
+        const cachedGroup = cachedGroups.find(g => g.group_id === parseInt(groupId));
+        if (cachedGroup) {
+          console.log('⚠️ Using cached group data due to fetch error');
+          setError(''); // Don't show error if we have cache
+          return;
+        }
+      }
+      
+      // No cache - show error
+      setError('Failed to load group details. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -944,6 +989,42 @@ const LocationTracking = () => {
   // Fetch locations of all group members
   const fetchMemberLocations = async (membersData = null) => {
     try {
+      // Try cached locations first
+      const cachedLocations = await dbManager.getLocations(parseInt(groupId));
+      if (cachedLocations && cachedLocations.length > 0) {
+        console.log('📦 Using cached member locations');
+        // Enrich cached data with member info and apply same filtering
+        let enrichedCached = cachedLocations
+          .filter(location => {
+            if (currentUser?.id && location.user_id === currentUser.id) return false;
+            const member = (membersData || members).find(m => m.user_id === location.user_id);
+            if (member?.username === 'richcobrien') return false;
+            return true;
+          })
+          .map(location => {
+            const member = (membersData || members).find(m => m.user_id === location.user_id);
+            if (member) {
+              return {
+                ...location,
+                username: member.username,
+                first_name: member.first_name,
+                last_name: member.last_name,
+                profile_image_url: member.profile_image_url,
+                social_accounts: member.social_accounts
+              };
+            }
+            return null;
+          }).filter(location => location !== null);
+        
+        setLocations(enrichedCached);
+      }
+      
+      // Only fetch if online
+      if (!navigator.onLine) {
+        console.log('📴 Offline - using cached locations only');
+        return;
+      }
+      
       const response = await api.get(`/location/group/${groupId}`);
       const locationData = response.data.locations;
       
@@ -997,6 +1078,9 @@ const LocationTracking = () => {
         }).filter(location => location !== null); // Remove null entries
 
       setLocations(enrichedLocations);
+      
+      // Save fresh locations to cache
+      await dbManager.saveLocations(parseInt(groupId), enrichedLocations);
 
       // Update last-known locations cache
       try {
