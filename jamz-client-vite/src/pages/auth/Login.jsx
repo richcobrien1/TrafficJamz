@@ -104,8 +104,8 @@ const Login = () => {
   return (
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 56, height: 56 }}>
-          <img src="/icon-512.png" alt="TrafficJamz" style={{ width: 48, height: 48 }} />
+        <Avatar sx={{ m: 1, bgcolor: 'transparent', width: 56, height: 56 }}>
+          <img src="/icon-512.png" alt="TrafficJamz" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </Avatar>
         <Typography component="h1" variant="h5">
           Sign in
