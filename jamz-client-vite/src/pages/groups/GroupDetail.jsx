@@ -441,6 +441,15 @@ const GroupDetail = () => {
         }
       }
       
+      // Only fetch if online
+      if (!navigator.onLine) {
+        console.log('📴 Offline - using cached group data only');
+        if (!cachedGroups || cachedGroups.length === 0) {
+          setError('No internet connection and no cached data available.');
+        }
+        return;
+      }
+      
       // Fetch fresh data in background
       const response = await api.get(`/groups/${groupId}`);
       setGroup(response.data.group);
@@ -465,14 +474,14 @@ const GroupDetail = () => {
         const cachedGroup = cachedGroups.find(g => g.group_id === parseInt(groupId));
         if (cachedGroup) {
           console.log('⚠️ Using cached group data due to fetch error');
-          setError('Unable to refresh group details. Showing cached data.');
+          setError(''); // Don't show error if we have cache
           setLoading(false); // CRITICAL: Always turn off loading
           return; // Don't show full error if we have cache
         }
       }
       
       // No cache - show full error
-      setError('Failed to load group details. Please try again later.');
+      setError('Failed to load group details. Please check your connection.');
       setLoading(false); // CRITICAL: Always turn off loading even on error
     } finally {
       setLoading(false); // CRITICAL: Ensure loading is always turned off
