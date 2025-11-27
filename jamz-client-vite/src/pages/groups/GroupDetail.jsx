@@ -572,7 +572,6 @@ const GroupDetail = () => {
           message: inviteTextMsg.trim() || undefined
         });
         
-        setInviteSuccess(true);
         setInviteEmail('');
         setInviteTextMsg('');
         setInviteError('');
@@ -583,7 +582,6 @@ const GroupDetail = () => {
         // Queue for when online
         await offlineQueue.queueInvitation(groupId, inviteEmail.trim());
         
-        setInviteSuccess(true);
         setInviteError('');
         setInviteEmail('');
         setInviteTextMsg('');
