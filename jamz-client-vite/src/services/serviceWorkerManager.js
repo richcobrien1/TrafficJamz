@@ -12,35 +12,40 @@ class ServiceWorkerManager {
    * Register the service worker
    */
   async register() {
-    // TEMPORARILY DISABLED - Service Worker causing cache issues
-    console.warn('⚠️ Service Worker DISABLED - unregistering any existing workers');
-    
     if (!this.isSupported) {
       console.warn('Service Workers not supported in this browser');
       return false;
     }
 
     try {
-      // Unregister ALL existing service workers
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (let registration of registrations) {
-        const result = await registration.unregister();
-        console.log('🗑️ Unregistered Service Worker:', result);
-      }
+      console.log('🔄 Registering Service Worker...');
       
-      // Clear all caches
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        for (let cacheName of cacheNames) {
-          await caches.delete(cacheName);
-          console.log('🗑️ Deleted cache:', cacheName);
-        }
-      }
+      // Register the service worker
+      this.registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      });
+
+      // Handle updates
+      this.registration.addEventListener('updatefound', () => {
+        const newWorker = this.registration.installing;
+        console.log('🔄 New Service Worker version found, installing...');
+
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('✅ New Service Worker installed. Refresh to activate.');
+            this.notifyStatusChange('update-available');
+          }
+        });
+      });
+
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+      console.log('✅ Service Worker registered and ready');
       
-      console.log('✅ All Service Workers unregistered and caches cleared');
-      return false; // Return false to indicate SW is not active
+      this.notifyStatusChange('ready');
+      return true;
     } catch (error) {
-      console.error('❌ Service Worker unregistration failed:', error);
+      console.error('❌ Service Worker registration failed:', error);
       return false;
     }
   }

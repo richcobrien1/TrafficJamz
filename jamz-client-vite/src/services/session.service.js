@@ -14,8 +14,8 @@ const CACHE_KEYS = {
 
 // Cache TTL in milliseconds
 const CACHE_TTL = {
-  USER: 5 * 60 * 1000,      // 5 minutes - frequently updated
-  GROUPS: 10 * 60 * 1000,   // 10 minutes - less frequently updated
+  USER: 30 * 60 * 1000,     // 30 minutes - user data changes infrequently
+  GROUPS: 2 * 60 * 60 * 1000,   // 2 hours - more stable data
   CONFIG: 30 * 60 * 1000    // 30 minutes - rarely changes
 };
 
