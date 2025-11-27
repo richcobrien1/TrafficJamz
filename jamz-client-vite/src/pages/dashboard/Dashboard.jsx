@@ -62,18 +62,32 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      // Try cached data first for instant display
+      // Try cached data first for instant display (localStorage - fast)
       const cachedGroups = sessionService.getCachedGroupsData();
       if (cachedGroups) {
-        console.log('📦 Using cached groups data');
+        console.log('📦 Using cached groups data from localStorage');
         setGroups(cachedGroups);
         setLoading(false); // Turn off loading immediately when we have cache
+      } else {
+        // Fallback to IndexedDB if localStorage is empty/expired
+        try {
+          const idbGroups = await dbManager.getGroups();
+          if (idbGroups && idbGroups.length > 0) {
+            console.log('📦 Using cached groups data from IndexedDB (localStorage was empty)');
+            setGroups(idbGroups);
+            // Restore to localStorage for faster access next time
+            sessionService.cacheGroupsData(idbGroups);
+            setLoading(false);
+          }
+        } catch (idbError) {
+          console.warn('Failed to load from IndexedDB:', idbError);
+        }
       }
       
       // Only fetch if online
       if (!navigator.onLine) {
         console.log('📴 Offline - using cached data only');
-        if (!cachedGroups || cachedGroups.length === 0) {
+        if (!group) {
           setError('📴 Offline mode - Connect to internet to load groups.');
         }
         return;
@@ -83,8 +97,9 @@ const Dashboard = () => {
       const response = await api.get('/groups');
       setGroups(response.data.groups);
       
-      // Cache fresh data
+      // Cache fresh data in BOTH locations
       sessionService.cacheGroupsData(response.data.groups);
+      await dbManager.saveGroups(response.data.groups);
       
       setError('');
     } catch (error) {
@@ -97,6 +112,19 @@ const Dashboard = () => {
         setGroups(cachedGroups);
         setError(''); // Don't show error if we have cached data
       } else {
+        // Try IndexedDB fallback
+        try {
+          const idbGroups = await dbManager.getGroups();
+          if (idbGroups && idbGroups.length > 0) {
+            console.log('⚠️ Using IndexedDB groups due to fetch error');
+            setGroups(idbGroups);
+            setError(''); // Don't show error if we have cached data
+            return;
+          }
+        } catch (idbError) {
+          console.warn('Failed to load from IndexedDB fallback:', idbError);
+        }
+        
         // No cache - show error based on connection state
         if (navigator.onLine) {
           setError('Failed to load groups. Please check your connection.');
