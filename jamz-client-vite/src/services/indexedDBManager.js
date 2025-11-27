@@ -2,9 +2,14 @@
 // Stores track metadata, download status, and cache info
 
 const DB_NAME = 'TrafficJamzDB';
-const DB_VERSION = 2; // Incremented for new playlist store
+const DB_VERSION = 5; // Incremented for offline support stores
 const STORE_TRACKS = 'cachedTracks';
 const STORE_PLAYLISTS = 'playlists';
+const STORE_INVITATIONS = 'group_invitations';
+const STORE_LOCATIONS = 'member_locations';
+const STORE_PLACES = 'saved_places';
+const STORE_AVATARS = 'avatar_cache';
+const STORE_OFFLINE_QUEUE = 'offline_queue';
 
 class IndexedDBManager {
   constructor() {
@@ -54,6 +59,48 @@ class IndexedDBManager {
           playlistStore.createIndex('timestamp', 'timestamp', { unique: false });
           
           console.log('Created playlists object store');
+        }
+
+        // Create group invitations store
+        if (!db.objectStoreNames.contains(STORE_INVITATIONS)) {
+          const invitationsStore = db.createObjectStore(STORE_INVITATIONS, { keyPath: 'id' });
+          invitationsStore.createIndex('groupId', 'groupId', { unique: false });
+          invitationsStore.createIndex('email', 'email', { unique: false });
+          invitationsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+          console.log('Created group_invitations object store');
+        }
+
+        // Create member locations store
+        if (!db.objectStoreNames.contains(STORE_LOCATIONS)) {
+          const locationsStore = db.createObjectStore(STORE_LOCATIONS, { keyPath: 'id', autoIncrement: true });
+          locationsStore.createIndex('groupId', 'groupId', { unique: false });
+          locationsStore.createIndex('userId', 'userId', { unique: false });
+          locationsStore.createIndex('timestamp', 'timestamp', { unique: false });
+          console.log('Created member_locations object store');
+        }
+
+        // Create saved places store
+        if (!db.objectStoreNames.contains(STORE_PLACES)) {
+          const placesStore = db.createObjectStore(STORE_PLACES, { keyPath: '_id' });
+          placesStore.createIndex('groupId', 'groupId', { unique: false });
+          placesStore.createIndex('name', 'name', { unique: false });
+          console.log('Created saved_places object store');
+        }
+
+        // Create avatar cache store
+        if (!db.objectStoreNames.contains(STORE_AVATARS)) {
+          const avatarsStore = db.createObjectStore(STORE_AVATARS, { keyPath: 'url' });
+          avatarsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+          console.log('Created avatar_cache object store');
+        }
+
+        // Create offline queue store
+        if (!db.objectStoreNames.contains(STORE_OFFLINE_QUEUE)) {
+          const queueStore = db.createObjectStore(STORE_OFFLINE_QUEUE, { keyPath: 'id', autoIncrement: true });
+          queueStore.createIndex('timestamp', 'timestamp', { unique: false });
+          queueStore.createIndex('type', 'type', { unique: false });
+          queueStore.createIndex('status', 'status', { unique: false });
+          console.log('Created offline_queue object store');
         }
       };
     });
@@ -392,6 +439,234 @@ class IndexedDBManager {
       };
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // ============================================
+  // GROUP INVITATIONS METHODS
+  // ============================================
+
+  async saveInvitations(groupId, invitations) {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_INVITATIONS], 'readwrite');
+    const store = transaction.objectStore(STORE_INVITATIONS);
+
+    // Clear existing invitations for this group
+    const index = store.index('groupId');
+    const range = IDBKeyRange.only(groupId);
+    const deleteRequest = index.openCursor(range);
+
+    deleteRequest.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      }
+    };
+
+    // Add new invitations
+    for (const inv of invitations) {
+      store.put({ ...inv, groupId, cachedAt: Date.now() });
+    }
+
+    return new Promise((resolve) => {
+      transaction.oncomplete = () => {
+        console.log('💾 Cached invitations for group:', groupId);
+        resolve(true);
+      };
+    });
+  }
+
+  async getInvitations(groupId) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_INVITATIONS], 'readonly');
+      const store = transaction.objectStore(STORE_INVITATIONS);
+      const index = store.index('groupId');
+      const request = index.getAll(groupId);
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============================================
+  // MEMBER LOCATIONS METHODS
+  // ============================================
+
+  async saveLocations(groupId, locations) {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_LOCATIONS], 'readwrite');
+    const store = transaction.objectStore(STORE_LOCATIONS);
+
+    // Clear old locations for this group
+    const index = store.index('groupId');
+    const range = IDBKeyRange.only(groupId);
+    const deleteRequest = index.openCursor(range);
+
+    deleteRequest.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      }
+    };
+
+    // Add new locations
+    for (const loc of locations) {
+      store.put({ ...loc, groupId, timestamp: loc.timestamp || Date.now() });
+    }
+
+    return new Promise((resolve) => {
+      transaction.oncomplete = () => {
+        console.log('💾 Cached locations for group:', groupId);
+        resolve(true);
+      };
+    });
+  }
+
+  async getLocations(groupId) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_LOCATIONS], 'readonly');
+      const store = transaction.objectStore(STORE_LOCATIONS);
+      const index = store.index('groupId');
+      const request = index.getAll(groupId);
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============================================
+  // SAVED PLACES METHODS
+  // ============================================
+
+  async savePlaces(groupId, places) {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_PLACES], 'readwrite');
+    const store = transaction.objectStore(STORE_PLACES);
+
+    for (const place of places) {
+      store.put({ ...place, groupId });
+    }
+
+    return new Promise((resolve) => {
+      transaction.oncomplete = () => {
+        console.log('💾 Cached places for group:', groupId);
+        resolve(true);
+      };
+    });
+  }
+
+  async getPlaces(groupId) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_PLACES], 'readonly');
+      const store = transaction.objectStore(STORE_PLACES);
+      const index = store.index('groupId');
+      const request = index.getAll(groupId);
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============================================
+  // AVATAR CACHE METHODS
+  // ============================================
+
+  async saveAvatar(url, blob) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_AVATARS], 'readwrite');
+      const store = transaction.objectStore(STORE_AVATARS);
+      const request = store.put({ url, blob, cachedAt: Date.now() });
+
+      request.onsuccess = () => resolve(true);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAvatar(url) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_AVATARS], 'readonly');
+      const store = transaction.objectStore(STORE_AVATARS);
+      const request = store.get(url);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============================================
+  // OFFLINE QUEUE METHODS
+  // ============================================
+
+  async queueRequest(type, url, data, method = 'POST') {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_OFFLINE_QUEUE], 'readwrite');
+      const store = transaction.objectStore(STORE_OFFLINE_QUEUE);
+      const request = store.add({
+        type,
+        url,
+        data,
+        method,
+        timestamp: Date.now(),
+        status: 'pending'
+      });
+
+      request.onsuccess = () => {
+        console.log('📤 Queued offline request:', type);
+        resolve(request.result);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getPendingRequests() {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_OFFLINE_QUEUE], 'readonly');
+      const store = transaction.objectStore(STORE_OFFLINE_QUEUE);
+      const index = store.index('status');
+      const request = index.getAll('pending');
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateRequestStatus(id, status) {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_OFFLINE_QUEUE], 'readwrite');
+    const store = transaction.objectStore(STORE_OFFLINE_QUEUE);
+    const getRequest = store.get(id);
+
+    getRequest.onsuccess = () => {
+      const record = getRequest.result;
+      if (record) {
+        record.status = status;
+        store.put(record);
+      }
+    };
+  }
+
+  async clearProcessedRequests() {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_OFFLINE_QUEUE], 'readwrite');
+    const store = transaction.objectStore(STORE_OFFLINE_QUEUE);
+    const index = store.index('status');
+    const request = index.openCursor(IDBKeyRange.only('completed'));
+
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      }
+    };
   }
 }
 

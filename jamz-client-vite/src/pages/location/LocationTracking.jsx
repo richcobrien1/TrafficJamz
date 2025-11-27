@@ -10,6 +10,8 @@ import React, { useState, useEffect, useRef, useContext, useCallback, useMemo } 
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api, { MAPBOX_TOKEN } from '../../services/api';
+import { dbManager } from '../../services/indexedDBManager';
+import offlineQueue from '../../services/offline-queue.service';
 import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
@@ -692,6 +694,9 @@ const LocationTracking = () => {
       const response = await api.get(`/location/group/${groupId}`);
       const locationData = response.data.locations;
       
+      // Cache locations for offline use
+      await dbManager.saveLocations(parseInt(groupId), locationData);
+      
       // Reset consecutive errors and retry delay on success
       if (consecutiveErrors > 0) {
         setConsecutiveErrors(0);
@@ -906,10 +911,21 @@ const LocationTracking = () => {
     
     // Check if group has places by fetching them
     try {
-      const placesResponse = await api.get(`/groups/${groupId}/places`);
-      const places = placesResponse.data.places || [];
-      if (places.length > 0) {
+      // Try cache first
+      const cachedPlaces = await dbManager.getPlaces(parseInt(groupId));
+      if (cachedPlaces && cachedPlaces.length > 0) {
         setShowPlaces(true);
+      }
+      
+      // Fetch fresh if online
+      if (navigator.onLine) {
+        const placesResponse = await api.get(`/groups/${groupId}/places`);
+        const places = placesResponse.data.places || [];
+        if (places.length > 0) {
+          setShowPlaces(true);
+        }
+        // Cache for offline
+        await dbManager.savePlaces(parseInt(groupId), places);
       }
     } catch (placesError) {
       console.warn('Could not fetch places for group:', placesError);
@@ -1306,13 +1322,24 @@ const LocationTracking = () => {
         }
 
         // Also save to backend via API
-        api.post('/location/update', {
-          coordinates: locationData,
-          device_id: navigator.userAgent,
-          battery_level: 85 // TODO: Get actual battery level if available
-        }).catch(err => {
-          console.warn('Failed to save location to API:', err);
-        });
+        if (navigator.onLine) {
+          api.post('/location/update', {
+            coordinates: locationData,
+            device_id: navigator.userAgent,
+            battery_level: 85 // TODO: Get actual battery level if available
+          }).catch(err => {
+            console.warn('Failed to save location to API:', err);
+          });
+        } else {
+          // Queue for offline sync
+          offlineQueue.queueLocationUpdate({
+            coordinates: locationData,
+            device_id: navigator.userAgent,
+            battery_level: 85
+          }).catch(err => {
+            console.warn('Failed to queue location update:', err);
+          });
+        }
       },
       (error) => {
         console.error('❌ Geolocation error:', error);
@@ -1517,20 +1544,59 @@ const LocationTracking = () => {
   const fetchPlacesForGroup = async () => {
     if (!groupId) return [];
     try {
-      const resp = await api.get(`/groups/${groupId}/places`);
-      const places = resp.data.places || [];
-      // Normalize places into a 'location-like' shape so updateMapMarkers can render them
-      return places.map(p => ({
-        user_id: `place_${p._id}`,
-        username: p.name,
-        coordinates: { latitude: p.coordinates.latitude, longitude: p.coordinates.longitude },
-        timestamp: p.createdAt,
-        battery_level: null,
-        place: true,
-        raw: p
-      }));
+      // Try cache first
+      const cachedPlaces = await dbManager.getPlaces(parseInt(groupId));
+      
+      // If online, fetch fresh data
+      if (navigator.onLine) {
+        const resp = await api.get(`/groups/${groupId}/places`);
+        const places = resp.data.places || [];
+        
+        // Cache for offline
+        await dbManager.savePlaces(parseInt(groupId), places);
+        
+        // Normalize places into a 'location-like' shape so updateMapMarkers can render them
+        return places.map(p => ({
+          user_id: `place_${p._id}`,
+          username: p.name,
+          coordinates: { latitude: p.coordinates.latitude, longitude: p.coordinates.longitude },
+          timestamp: p.createdAt,
+          battery_level: null,
+          place: true,
+          raw: p
+        }));
+      } else if (cachedPlaces && cachedPlaces.length > 0) {
+        // Offline - use cached data
+        console.log('📦 Using cached places (offline mode)');
+        return cachedPlaces.map(p => ({
+          user_id: `place_${p._id}`,
+          username: p.name,
+          coordinates: { latitude: p.coordinates.latitude, longitude: p.coordinates.longitude },
+          timestamp: p.createdAt,
+          battery_level: null,
+          place: true,
+          raw: p
+        }));
+      }
+      
+      return [];
     } catch (e) {
       console.warn('Failed to fetch places for group', e);
+      
+      // Fallback to cache on error
+      const cachedPlaces = await dbManager.getPlaces(parseInt(groupId));
+      if (cachedPlaces && cachedPlaces.length > 0) {
+        return cachedPlaces.map(p => ({
+          user_id: `place_${p._id}`,
+          username: p.name,
+          coordinates: { latitude: p.coordinates.latitude, longitude: p.coordinates.longitude },
+          timestamp: p.createdAt,
+          battery_level: null,
+          place: true,
+          raw: p
+        }));
+      }
+      
       return [];
     }
   };
@@ -2232,8 +2298,13 @@ const LocationTracking = () => {
         connection_type: navigator.connection ? navigator.connection.type : 'unknown'
       };
       
-      await api.post('/location/update', locationData);
-      // console.log('Location updated successfully on server');
+      if (navigator.onLine) {
+        await api.post('/location/update', locationData);
+        // console.log('Location updated successfully on server');
+      } else {
+        await offlineQueue.queueLocationUpdate(locationData);
+        console.log('📴 Location update queued for offline sync');
+      }
     } catch (error) {
       console.error('Error updating location on server:', error);
     }
