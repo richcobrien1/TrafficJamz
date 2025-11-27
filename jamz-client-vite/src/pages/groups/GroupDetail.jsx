@@ -439,6 +439,21 @@ const GroupDetail = () => {
           setEditDescription(cachedGroup.description || '');
           setLoading(false); // Turn off loading immediately when we have cache
         }
+      } else {
+        // Fallback to IndexedDB if localStorage is empty
+        try {
+          const idbGroup = await dbManager.getGroup(groupId);
+          if (idbGroup) {
+            console.log('📦 Using cached group data from IndexedDB');
+            setGroup(idbGroup);
+            setEditName(idbGroup.name);
+            setCreatedAt(idbGroup.createdAt);
+            setEditDescription(idbGroup.description || '');
+            setLoading(false);
+          }
+        } catch (idbError) {
+          console.warn('Failed to load group from IndexedDB:', idbError);
+        }
       }
       
       // Only fetch if online
@@ -465,6 +480,7 @@ const GroupDetail = () => {
           g.group_id === parseInt(groupId) ? response.data.group : g
         );
         sessionService.cacheGroupsData(updatedGroups);
+        await dbManager.saveGroups(updatedGroups);
       }
     } catch (error) {
       console.error('Error fetching group details:', error);
@@ -479,6 +495,19 @@ const GroupDetail = () => {
           setLoading(false); // CRITICAL: Always turn off loading
           return; // Don't show full error if we have cache
         }
+      }
+      
+      // Try IndexedDB fallback
+      try {
+        const idbGroup = await dbManager.getGroup(groupId);
+        if (idbGroup) {
+          console.log('⚠️ Using IndexedDB group due to fetch error');
+          setError('');
+          setLoading(false);
+          return;
+        }
+      } catch (idbError) {
+        console.warn('Failed to load from IndexedDB fallback:', idbError);
       }
       
       // No cache - show full error only if online (network issue), otherwise offline message
