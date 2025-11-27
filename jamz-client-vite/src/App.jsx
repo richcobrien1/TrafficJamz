@@ -26,6 +26,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MusicProvider } from './contexts/MusicContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AppLoader from './components/AppLoader';
+import ErrorBoundary from './components/ErrorBoundary';
 import api from './services/api';
 
 import MapboxMap from './components/MapboxMap';
@@ -276,93 +277,91 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
-        <MusicProvider>
-          <Suspense fallback={<AppLoader message="Loading page..." />}>
-          {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
-          {/*<AnimatePresence mode="wait">*/}
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 1, y: 0 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ minHeight: '100vh' }}
-              onAnimationComplete={() => console.log('✅ Page animation completed')}
-            >
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/auth/login" element={<Login />} />
-                <Route path="/auth/register" element={<Register />} />
-                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
-                <Route path="/auth/youtube/callback" element={<YouTubeCallback />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/invitations/:groupId/:invitationIndex" element={<InvitationAccept />} />
+      <ErrorBoundary>
+        <AuthProvider>
+          <MusicProvider>
+            <Suspense fallback={<AppLoader message="Loading page..." />}>
+            {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
+            {/*<AnimatePresence mode="wait">*/}
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                style={{ minHeight: '100vh' }}
+                onAnimationComplete={() => console.log('✅ Page animation completed')}
+              >
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/auth/login" element={<Login />} />
+                  <Route path="/auth/register" element={<Register />} />
+                  <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
+                  <Route path="/auth/youtube/callback" element={<YouTubeCallback />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/invitations/:groupId/:invitationIndex" element={<InvitationAccept />} />
 
-                {/* Protected routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/groups/:groupId" element={
-                  <ProtectedRoute>
-                    <GroupDetail />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dev/map" element={
-                  <ProtectedRoute>
-                    <MapboxMap />
-                  </ProtectedRoute>
-                } />
-                {/* Dev-only debug console (no auth required) */}
-                {import.meta.env.DEV && (
-                  <Route path="/dev/debug" element={<DevDebug />} />
-                )}
-                <Route path="/location-tracking/:groupId" element={
-                  <ProtectedRoute>
-                    <LocationTracking />
-                  </ProtectedRoute>
-                } />
-                <Route path="/audio-settings/:groupId" element={
-                  <ProtectedRoute>
-                    <AudioSession />
-                  </ProtectedRoute>
-                } />
-                <Route path="/music/:groupId" element={
-                  <ProtectedRoute>
-                    <MusicPlayer />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/subscription-plans" element={
-                  <ProtectedRoute>
-                    <SubscriptionPlans />
-                  </ProtectedRoute>
-                } />
+                  {/* Protected routes */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/groups/:groupId" element={
+                    <ProtectedRoute>
+                      <GroupDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/dev/map" element={
+                    <ProtectedRoute>
+                      <MapboxMap />
+                    </ProtectedRoute>
+                  } />
+                  {/* Dev-only debug console (no auth required) */}
+                  {import.meta.env.DEV && (
+                    <Route path="/dev/debug" element={<DevDebug />} />
+                  )}
+                  <Route path="/location-tracking/:groupId" element={
+                    <ProtectedRoute>
+                      <LocationTracking />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/audio-settings/:groupId" element={
+                    <ProtectedRoute>
+                      <AudioSession />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/music/:groupId" element={
+                    <ProtectedRoute>
+                      <MusicPlayer />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/subscription-plans" element={
+                    <ProtectedRoute>
+                      <SubscriptionPlans />
+                    </ProtectedRoute>
+                  } />
 
-                {/* Redirect root based on auth status */}
-                <Route path="/" element={<RootRedirect />} />
+                  {/* Redirect root based on auth status */}
+                  <Route path="/" element={<RootRedirect />} />
 
-                {/* Catch-all - redirect to login if not authenticated */}
-                <Route path="*" element={
-                  <ProtectedRoute>
-                    <NotFound />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </motion.div>
-          {/*</AnimatePresence>*/}
-        </Suspense>
-        </MusicProvider>
-      </AuthProvider>
+                  {/* Catch-all - redirect to root instead of showing 404 */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </motion.div>
+            {/*</AnimatePresence>*/}
+          </Suspense>
+          </MusicProvider>
+        </AuthProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

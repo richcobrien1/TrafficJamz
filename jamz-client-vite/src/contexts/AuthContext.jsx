@@ -4,6 +4,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { configService } from '../services/api.service';
+import sessionService from '../services/session.service';
 
 // Create the auth context
 const AuthContext = createContext();
@@ -41,37 +42,66 @@ export const AuthProvider = ({ children }) => {
         
         if (import.meta.env.MODE === 'development') console.log('Found existing token in localStorage');
         
+        // Try to load cached user data first for instant display
+        const cachedUser = sessionService.getCachedUserData();
+        const cachedConfig = sessionService.getCachedConfigData();
+        
+        if (cachedUser) {
+          console.log('📦 Using cached user data for instant display');
+          setUser(cachedUser);
+          if (cachedConfig) {
+            setConfig(cachedConfig);
+          }
+        }
+        
         // Set a timeout for the API call (30s to handle Render cold starts in desktop app)
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Auth check timeout')), 30000);
         });
         
-        // Fetch user profile with the token
+        // Fetch fresh user profile in background
         const profilePromise = api.get('/users/profile');
         
-        const response = await Promise.race([profilePromise, timeoutPromise]);
-        
-        if (response.data) {
-          // Normalize user data - handle both response.data.user and response.data formats
-          const userData = response.data.user || response.data;
-          setUser(userData);
-          if (import.meta.env.MODE === 'development') {
-            console.log('User profile fetched successfully:', userData);
-            console.log('Notification settings:', {
-              email_notifications: userData.email_notifications,
-              push_notifications: userData.push_notifications,
-              proximity_alerts: userData.proximity_alerts,
-              group_invitations: userData.group_invitations
-            });
-          }
+        try {
+          const response = await Promise.race([profilePromise, timeoutPromise]);
           
-          // Load client config
-          try {
-            const configResponse = await configService.getClientConfig();
-            setConfig(configResponse.config);
-            if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
-          } catch (configError) {
-            console.warn('Could not fetch client config:', configError);
+          if (response.data) {
+            // Normalize user data - handle both response.data.user and response.data formats
+            const userData = response.data.user || response.data;
+            setUser(userData);
+            
+            // Cache fresh user data
+            sessionService.cacheUserData(userData);
+            
+            if (import.meta.env.MODE === 'development') {
+              console.log('User profile fetched successfully:', userData);
+              console.log('Notification settings:', {
+                email_notifications: userData.email_notifications,
+                push_notifications: userData.push_notifications,
+                proximity_alerts: userData.proximity_alerts,
+                group_invitations: userData.group_invitations
+              });
+            }
+            
+            // Load client config
+            try {
+              const configResponse = await configService.getClientConfig();
+              setConfig(configResponse.config);
+              // Cache config data
+              sessionService.cacheConfigData(configResponse.config);
+              if (import.meta.env.MODE === 'development') console.log('Client config loaded successfully');
+            } catch (configError) {
+              console.warn('Could not fetch client config:', configError);
+            }
+          }
+        } catch (fetchError) {
+          // If we have cached data and just failed to refresh, keep using cached data
+          if (cachedUser) {
+            console.log('⚠️ Failed to refresh user data, using cached version');
+            // Don't throw error if we have cached data
+          } else {
+            // No cached data and fetch failed - this is a real error
+            throw fetchError;
           }
         }
       } catch (error) {
@@ -83,9 +113,16 @@ export const AuthProvider = ({ children }) => {
           isNetworkError: !error.response,
           platform: window.electron ? 'DESKTOP' : 'WEB'
         });
-        // Token might be invalid, remove it
-        localStorage.removeItem('token');
-        setUser(null);
+        
+        // Only clear token if it's a 401 (unauthorized) - keep token for network errors
+        if (error.response?.status === 401) {
+          console.log('🔐 Token invalid (401) - clearing auth data');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
+          sessionService.clearAll();
+          setUser(null);
+        }
+        // For other errors (network, timeout), keep token and user state
       } finally {
         setLoading(false);
       }
@@ -107,9 +144,15 @@ export const AuthProvider = ({ children }) => {
         // Normalize user data - handle both response.data.user and response.data formats
         const userData = response.data.user || response.data;
         setUser(userData);
+        
+        // Cache user data for session persistence
+        sessionService.cacheUserData(userData);
 
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
+        if (response.data.refresh_token) {
+          localStorage.setItem('refresh_token', response.data.refresh_token);
+        }
         if (import.meta.env.MODE === 'development') {
           console.log('Token stored in localStorage after login');
           console.log('User data after login:', userData);
@@ -154,8 +197,14 @@ export const AuthProvider = ({ children }) => {
         const userData = response.data.user || response.data;
         setUser(userData);
         
+        // Cache user data for session persistence
+        sessionService.cacheUserData(userData);
+        
         // Store token for API calls - CRITICAL
         localStorage.setItem('token', response.data.access_token);
+        if (response.data.refresh_token) {
+          localStorage.setItem('refresh_token', response.data.refresh_token);
+        }
         console.log('Token stored in localStorage after registration');
         
         // Load client config
@@ -195,7 +244,12 @@ export const AuthProvider = ({ children }) => {
       
       // Remove token from localStorage - CRITICAL
       localStorage.removeItem('token');
-      console.log('Token removed from localStorage after logout');
+      localStorage.removeItem('refresh_token');
+      
+      // Clear all cached session data
+      sessionService.clearAll();
+      
+      console.log('Token and cached data removed after logout');
     } catch (error) {
       console.error('Logout error:', error);
       setError(error.message);
@@ -406,6 +460,8 @@ export const AuthProvider = ({ children }) => {
       if (response.data) {
         const userData = response.data.user || response.data;
         setUser(userData);
+        // Update cache with fresh data
+        sessionService.cacheUserData(userData);
         console.log('[AuthContext] User profile refreshed successfully');
         return userData;
       }
