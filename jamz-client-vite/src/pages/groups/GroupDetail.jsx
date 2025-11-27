@@ -204,6 +204,12 @@ const GroupDetail = () => {
   };
   
   useEffect(() => {
+    // Don't fetch until auth is ready
+    if (userLoading) {
+      console.log('⏸️ Waiting for auth to load before fetching group...');
+      return;
+    }
+    
     fetchGroupDetails();
     fetchInvitations();
     checkServiceStatus();
@@ -222,7 +228,7 @@ const GroupDetail = () => {
       clearInterval(statusPoll);
       clearInterval(invitePoll);
     };
-  }, [groupId, pollInterval]);
+  }, [groupId, pollInterval, userLoading]);
 
   // Auto-start audio session when viewing group
   useEffect(() => {
@@ -419,7 +425,7 @@ const GroupDetail = () => {
     try {
       setLoading(true);
       
-      // Try cached groups data first
+      // Try cached groups data first for instant display
       const cachedGroups = sessionService.getCachedGroupsData();
       if (cachedGroups && Array.isArray(cachedGroups)) {
         const cachedGroup = cachedGroups.find(g => g.group_id === parseInt(groupId));
@@ -429,10 +435,11 @@ const GroupDetail = () => {
           setEditName(cachedGroup.name);
           setCreatedAt(cachedGroup.createdAt);
           setEditDescription(cachedGroup.description || '');
+          setLoading(false); // Turn off loading immediately when we have cache
         }
       }
       
-      // Fetch fresh data
+      // Fetch fresh data in background
       const response = await api.get(`/groups/${groupId}`);
       setGroup(response.data.group);
       setEditName(response.data.group.name);
@@ -457,14 +464,16 @@ const GroupDetail = () => {
         if (cachedGroup) {
           console.log('⚠️ Using cached group data due to fetch error');
           setError('Unable to refresh group details. Showing cached data.');
+          setLoading(false); // CRITICAL: Always turn off loading
           return; // Don't show full error if we have cache
         }
       }
       
       // No cache - show full error
       setError('Failed to load group details. Please try again later.');
+      setLoading(false); // CRITICAL: Always turn off loading even on error
     } finally {
-      setLoading(false);
+      setLoading(false); // CRITICAL: Ensure loading is always turned off
     }
   };
   
