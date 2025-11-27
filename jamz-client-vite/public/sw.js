@@ -1,10 +1,11 @@
 // TrafficJamz Service Worker - Full Offline Support
-// Version: 2.0.0
+// Version: 3.0.0 - FIXED: Proper cache versioning to prevent stale code
 
-const CACHE_VERSION = 'trafficjamz-v2';
-const AUDIO_CACHE = 'trafficjamz-audio-v2';
-const STATIC_CACHE = 'trafficjamz-static-v2';
-const APP_CACHE = 'trafficjamz-app-v2';
+const BUILD_VERSION = '3.0.0-' + Date.now(); // Unique version per build
+const CACHE_VERSION = 'trafficjamz-v3';
+const AUDIO_CACHE = 'trafficjamz-audio-v3';
+const STATIC_CACHE = 'trafficjamz-static-v3';
+const APP_CACHE = 'trafficjamz-app-v3';
 
 // R2 domain for audio files
 const R2_DOMAIN = 'pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev';
@@ -86,27 +87,28 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Handle app assets (HTML, JS, CSS) - network first, cache fallback for offline
+// Handle app assets (HTML, JS, CSS) - NETWORK FIRST with cache fallback
 async function handleAppRequest(request) {
   const cache = await caches.open(APP_CACHE);
   
   try {
-    // Try network first
-    const networkResponse = await fetch(request);
+    // ALWAYS try network first for app assets to prevent stale code
+    const networkResponse = await fetch(request, { cache: 'no-cache' });
     
     if (networkResponse.ok) {
-      // Cache the fresh response
+      // Only cache successful responses
       cache.put(request, networkResponse.clone());
+      console.log('[SW] Cached fresh app asset:', request.url);
     }
     
     return networkResponse;
   } catch (error) {
-    // Network failed - try cache
+    // Network failed - try cache as fallback
     console.log('[SW] Network failed for app asset, trying cache:', request.url);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('[SW] Serving app asset from cache:', request.url);
+      console.log('[SW] ⚠️ OFFLINE MODE - Serving stale app asset from cache:', request.url);
       return cachedResponse;
     }
     
