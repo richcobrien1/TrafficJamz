@@ -2,7 +2,7 @@
 // Stores track metadata, download status, and cache info
 
 const DB_NAME = 'TrafficJamzDB';
-const DB_VERSION = 5; // Incremented for offline support stores
+const DB_VERSION = 6; // Incremented for groups store
 const STORE_TRACKS = 'cachedTracks';
 const STORE_PLAYLISTS = 'playlists';
 const STORE_INVITATIONS = 'group_invitations';
@@ -10,6 +10,7 @@ const STORE_LOCATIONS = 'member_locations';
 const STORE_PLACES = 'saved_places';
 const STORE_AVATARS = 'avatar_cache';
 const STORE_OFFLINE_QUEUE = 'offline_queue';
+const STORE_GROUPS = 'groups_cache';
 
 class IndexedDBManager {
   constructor() {
@@ -101,6 +102,14 @@ class IndexedDBManager {
           queueStore.createIndex('type', 'type', { unique: false });
           queueStore.createIndex('status', 'status', { unique: false });
           console.log('Created offline_queue object store');
+        }
+
+        // Create groups cache store
+        if (!db.objectStoreNames.contains(STORE_GROUPS)) {
+          const groupsStore = db.createObjectStore(STORE_GROUPS, { keyPath: 'group_id' });
+          groupsStore.createIndex('name', 'name', { unique: false });
+          groupsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+          console.log('Created groups_cache object store');
         }
       };
     });
@@ -667,6 +676,85 @@ class IndexedDBManager {
         cursor.continue();
       }
     };
+  }
+
+  // ============================================
+  // GROUPS CACHE METHODS
+  // ============================================
+
+  /**
+   * Save groups to IndexedDB (permanent cache fallback)
+   */
+  async saveGroups(groupsArray) {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_GROUPS], 'readwrite');
+    const store = transaction.objectStore(STORE_GROUPS);
+    
+    // Clear existing groups first
+    await store.clear();
+    
+    // Add each group with timestamp
+    const promises = groupsArray.map(group => {
+      return new Promise((resolve, reject) => {
+        const request = store.add({
+          ...group,
+          cachedAt: Date.now()
+        });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    });
+
+    await Promise.all(promises);
+    console.log('💾 Saved', groupsArray.length, 'groups to IndexedDB');
+  }
+
+  /**
+   * Get all cached groups from IndexedDB
+   */
+  async getGroups() {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_GROUPS], 'readonly');
+      const store = transaction.objectStore(STORE_GROUPS);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const groups = request.result || [];
+        console.log('📦 Retrieved', groups.length, 'groups from IndexedDB');
+        resolve(groups);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get single group by ID from IndexedDB
+   */
+  async getGroup(groupId) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_GROUPS], 'readonly');
+      const store = transaction.objectStore(STORE_GROUPS);
+      const request = store.get(parseInt(groupId));
+
+      request.onsuccess = () => {
+        console.log('📦 Retrieved group', groupId, 'from IndexedDB');
+        resolve(request.result);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Clear all cached groups
+   */
+  async clearGroups() {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_GROUPS], 'readwrite');
+    const store = transaction.objectStore(STORE_GROUPS);
+    await store.clear();
+    console.log('🗑️ Cleared groups cache from IndexedDB');
   }
 }
 
