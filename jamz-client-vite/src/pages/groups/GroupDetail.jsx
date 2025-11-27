@@ -569,12 +569,12 @@ const GroupDetail = () => {
       if (navigator.onLine) {
         const response = await api.post(`/groups/${groupId}/invitations`, {
           email: inviteEmail.trim(),
-          message: inviteMessage.trim() || undefined
+          message: inviteTextMsg.trim() || undefined
         });
         
         setInviteSuccess(true);
         setInviteEmail('');
-        setInviteMessage('');
+        setInviteTextMsg('');
         setInviteError('');
         
         // Refresh invitations
@@ -586,7 +586,7 @@ const GroupDetail = () => {
         setInviteSuccess(true);
         setInviteError('');
         setInviteEmail('');
-        setInviteMessage('');
+        setInviteTextMsg('');
         
         // Show offline notice
         setSnackbar({
@@ -595,23 +595,7 @@ const GroupDetail = () => {
           severity: 'info'
         });
       }
-      setInviteError('');
       
-      console.log('Sending invitation to:', inviteEmail);
-      const response = await api.post(`/groups/${groupId}/invitations`, {
-        email: inviteEmail,
-        phoneNumber: invitePhone || undefined,
-        text: inviteTextMsg || undefined
-      }, {
-        timeout: 60000 // 60 second timeout for email sending
-      });
-      
-      console.log('Invitation response:', response.data);
-      
-      // Reset form fields after successful invitation
-      setInviteEmail('');
-      setInvitePhone('');
-      setInviteTextMsg('');
       setOpenInviteDialog(false);
       
       // Refresh the invitations list
