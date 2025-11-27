@@ -299,9 +299,11 @@ const MusicPlaylist = ({
                       console.log('🎵 [MusicPlaylist] Initiating playback...');
                       handlePlayTrack(track);
                     } else if (disabled) {
-                      console.warn('⚠️ [MusicPlaylist] Playback disabled');
+                      console.warn('⚠️ [MusicPlaylist] Playback disabled - no session');
+                      alert('Music session not initialized. Please reload the page.');
                     } else if (!isController) {
                       console.warn('⚠️ [MusicPlaylist] Not controller - take control to play tracks');
+                      alert('You need to take control of the music player first. Click the "Take Control" button.');
                     }
                   }}
                   sx={{
