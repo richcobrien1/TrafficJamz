@@ -70,6 +70,15 @@ const Dashboard = () => {
         setLoading(false); // Turn off loading immediately when we have cache
       }
       
+      // Only fetch if online
+      if (!navigator.onLine) {
+        console.log('📴 Offline - using cached data only');
+        if (!cachedGroups || cachedGroups.length === 0) {
+          setError('No internet connection and no cached data available.');
+        }
+        return;
+      }
+      
       // Fetch fresh data in background
       const response = await api.get('/groups');
       setGroups(response.data.groups);
@@ -86,10 +95,10 @@ const Dashboard = () => {
       if (cachedGroups && cachedGroups.length > 0) {
         console.log('⚠️ Using cached groups due to fetch error');
         setGroups(cachedGroups);
-        setError('Unable to refresh groups. Showing cached data.');
+        setError(''); // Don't show error if we have cached data
       } else {
         // No cache - show error
-        setError('Failed to load groups. Please refresh the page.');
+        setError('Failed to load groups. Please check your connection.');
       }
     } finally {
       setLoading(false); // CRITICAL: Always turn off loading
