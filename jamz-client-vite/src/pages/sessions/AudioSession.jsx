@@ -1204,7 +1204,7 @@ const AudioSession = () => {
       const userId = user?.id || user?.user_id;
       
       socket.emit('join-audio-session', { 
-        sessionId,
+        sessionId: sessionIdRef.current,
         userId: userId,
         display_name: displayName
       });
@@ -1239,7 +1239,7 @@ const AudioSession = () => {
       });
 
       // Send ready signal to let others know we're here
-      socket.emit('webrtc-ready', { sessionId });
+      socket.emit('webrtc-ready', { sessionId: sessionIdRef.current });
       console.log('🚀 Sent webrtc-ready signal');
     });
 
