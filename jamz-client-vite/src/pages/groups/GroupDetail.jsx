@@ -589,11 +589,9 @@ const GroupDetail = () => {
         setInviteTextMsg('');
         
         // Show offline notice
-        setSnackbar({
-          open: true,
-          message: '📴 Offline - Invitation will be sent when connection is restored',
-          severity: 'info'
-        });
+        setSnackbarMsg('📴 Offline - Invitation will be sent when connection is restored');
+        setSnackbarLink(null);
+        setSnackbarOpen(true);
       }
       
       setOpenInviteDialog(false);
