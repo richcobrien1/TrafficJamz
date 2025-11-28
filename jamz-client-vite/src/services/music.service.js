@@ -484,20 +484,12 @@ class MusicService {
             if (this.onNotification) {
               this.onNotification({
                 type: 'error',
-                message: `Cannot play "${track.title}". YouTube video is restricted and no Spotify preview available. Skipping...`
+                message: `YouTube video is restricted. Please select an alternative video.`
               });
             }
             
-            // Auto-skip to next track immediately
-            console.log('⏭️ Auto-skipping to next track...');
-            const wasPlaying = this.isPlaying;
-            await this.playNext();
-            
-            // Resume playback if we were playing before
-            if (wasPlaying && !this.isPlaying) {
-              console.log('▶️ Resuming playback after auto-skip');
-              await this.play();
-            }
+            // Note: Dialog will be shown by onError callback in MusicContext
+            // Auto-skip disabled to allow user to choose alternative
           }
         }
       };
