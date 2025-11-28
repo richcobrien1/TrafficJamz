@@ -1426,6 +1426,7 @@ function setupServer() {
   app.use('/api/groups', groupRoutes);
   app.use('/api', placesRoutes);
   app.use('/api/audio', audioRoutes);
+  app.use('/api/music', audioRoutes); // Alias for music-related endpoints
   app.use('/api/location', locationRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/notifications', notificationRoutes);
