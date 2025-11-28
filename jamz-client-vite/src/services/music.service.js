@@ -422,6 +422,11 @@ class MusicService {
       platformMusicService.onError = async (platform, error) => {
         console.error(`❌ ${platform} error:`, error);
         
+        // Forward error to MusicContext if callback exists
+        if (this.onError) {
+          this.onError(platform, error);
+        }
+        
         // Parse error code from string or object
         const errorCode = typeof error === 'string' ? 
           parseInt(error.replace(/[^0-9]/g, '')) : 
