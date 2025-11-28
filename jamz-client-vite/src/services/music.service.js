@@ -412,8 +412,50 @@ class MusicService {
         }
       };
       
-      platformMusicService.onError = (platform, error) => {
+      platformMusicService.onError = async (platform, error) => {
         console.error(`❌ ${platform} error:`, error);
+        
+        // Error 150 = video can't be embedded, fall back to Spotify preview
+        if (error.code === 150 && track.spotifyPreviewUrl) {
+          console.log('⚠️ YouTube embed blocked, falling back to Spotify preview');
+          this.platformMode = false;
+          
+          if (!this.audioElement) {
+            this.initialize();
+          }
+          
+          try {
+            const blob = await musicCacheService.getTrack(
+              track.id || track._id,
+              track.spotifyPreviewUrl,
+              {
+                title: track.title,
+                artist: track.artist,
+                album: track.album,
+                source: 'spotify-preview-fallback'
+              }
+            );
+            
+            const blobUrl = URL.createObjectURL(blob);
+            if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
+              URL.revokeObjectURL(this.audioElement.src);
+            }
+            this.audioElement.src = blobUrl;
+            console.log('✅ Loaded Spotify preview as fallback');
+            
+            // Auto-play if we were trying to play
+            if (this.isPlaying) {
+              await this.audioElement.play();
+            }
+          } catch (err) {
+            console.error('❌ Fallback to Spotify preview failed:', err);
+            // Try direct URL as last resort
+            this.audioElement.src = track.spotifyPreviewUrl;
+            if (this.isPlaying) {
+              await this.audioElement.play();
+            }
+          }
+        }
       };
       
     } else {
