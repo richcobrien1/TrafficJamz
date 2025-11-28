@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth.middleware');
+const passport = require('passport');
 
 /**
  * Search YouTube for alternative videos
  * GET /api/music/search/youtube?q=search+term&limit=5
  */
 router.get('/search/youtube',
-  auth,
+  passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
       const { q, limit = 5 } = req.query;
