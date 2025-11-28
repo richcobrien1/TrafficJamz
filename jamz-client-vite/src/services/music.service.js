@@ -488,13 +488,16 @@ class MusicService {
               });
             }
             
-            // Auto-skip to next track after 2 seconds
-            console.log('⏭️ Auto-skipping to next track in 2 seconds...');
-            setTimeout(async () => {
-              if (this.onTrackChange) {
-                await this.playNext();
-              }
-            }, 2000);
+            // Auto-skip to next track immediately
+            console.log('⏭️ Auto-skipping to next track...');
+            const wasPlaying = this.isPlaying;
+            await this.playNext();
+            
+            // Resume playback if we were playing before
+            if (wasPlaying && !this.isPlaying) {
+              console.log('▶️ Resuming playback after auto-skip');
+              await this.play();
+            }
           }
         }
       };
