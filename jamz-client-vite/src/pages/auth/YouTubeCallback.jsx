@@ -29,17 +29,18 @@ const YouTubeCallback = () => {
         const success = await youtubeClient.handleCallback(code);
         
         if (success) {
-          const returnTo = localStorage.getItem('youtube_auth_return') || '/dashboard';
-          localStorage.removeItem('youtube_auth_return');
+          // Redirect back to wherever the user came from
+          const returnTo = localStorage.getItem('youtube_return_to') || '/';
+          localStorage.removeItem('youtube_return_to');
           navigate(returnTo);
         } else {
           setError('Failed to complete YouTube authorization');
-          setTimeout(() => navigate('/dashboard'), 3000);
+          setTimeout(() => navigate('/'), 3000);
         }
       } catch (err) {
         console.error('YouTube callback error:', err);
         setError(err.message || 'An error occurred during authorization');
-        setTimeout(() => navigate('/dashboard'), 3000);
+        setTimeout(() => navigate('/'), 3000);
       }
     };
 
