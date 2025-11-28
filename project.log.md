@@ -1462,7 +1462,7 @@ git push origin main
 2. **Malformed .env.local File**: Mixed quotes, truncated values, wrong passwords from earlier `sed` operations
 3. **Port Mismatch**: Docker container on port 5000, nginx proxying to port 5050
 4. **Container Caching**: Old environment variables cached in Docker image despite file changes
-5. **MongoDB Auth Failure**: Wrong password (`1Topgun123` instead of `ZwzL6uJ42JxwAsAu`)
+5. **MongoDB Auth Failure**: Wrong password (`1Topgun123` instead of `***REDACTED***`)
 
 **Solution**: Complete environment reconstruction with validated configuration.
 
@@ -1507,26 +1507,26 @@ docker run -d \
 # Port (NO QUOTES)
 PORT=5000
 
-# MongoDB (Password: ZwzL6uJ42JxwAsAu - VERIFIED WORKING)
-MONGODB_URI=mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
+# MongoDB (Password: **************** - REDACTED FOR SECURITY)
+MONGODB_URI=mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
 
 # PostgreSQL (Supabase Pooler - VERIFIED WORKING)
 POSTGRES_HOST=aws-0-us-east-1.pooler.supabase.com
 POSTGRES_PORT=6543
 POSTGRES_DB=postgres
 POSTGRES_USER=postgres.zmgdzbhozobqojqhmfxd
-POSTGRES_PASSWORD=ZwzL6uJ42JxwAsAu
+POSTGRES_PASSWORD=***REDACTED***
 
 # InfluxDB (Location Time-Series - VERIFIED WORKING)
 INFLUXDB_URL=https://us-east-1-1.aws.cloud2.influxdata.com
-INFLUXDB_TOKEN=pyCrDBJuvbuQ99Jabku0t7-vX2CEvahFIYVvmfJTnOQU_BLvAg_Si_ne9gaE7mbfHHf93Vo8R0wpyz5tl_dBqQ==
+INFLUXDB_TOKEN=***REDACTED***
 INFLUXDB_ORG=V2U
 INFLUXDB_BUCKET=trafficjam
 
 # Cloudflare R2 (Music Storage)
 R2_ACCOUNT_ID=2bc2ea85ab9a04b8de6ddc6e83efc7eb
-R2_ACCESS_KEY_ID=f5deef6c50b7ed5f66c8a36b5d3be633
-R2_SECRET_ACCESS_KEY=41033fcfee914b7b32aeb4d5fb9bf6fac66c62fdc1b56c0fda07cd6e79ad93b7
+R2_ACCESS_KEY_ID=***REDACTED***
+R2_SECRET_ACCESS_KEY=***REDACTED***
 R2_BUCKET_NAME=trafficjamz
 R2_PUBLIC_URL=https://pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev
 ```
@@ -3184,10 +3184,10 @@ docker run -d --name trafficjamz -p 5050:5000 \
 - **Problem**: Groups not loading, MongoDB connection failing with "Invalid scheme" error
 - **Root Cause**: Multiple quote issues in `.env.prod`:
   - `MONGODB_URI="mongodb+srv://..."` - Quotes broke URI parsing
-  - Incorrect password: `1Topgun123` instead of `ZwzL6uJ42JxwAsAu`
+  - Incorrect password: `1Topgun123` instead of `***REDACTED***`
   - Missing database name in connection string
 - **Solution**: 
-  - Removed quotes: `MONGODB_URI=mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority&ssl=true&appName=trafficjam`
+  - Removed quotes: `MONGODB_URI=mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority&ssl=true&appName=trafficjam`
   - Added database name: `/trafficjamz` in the URI
   - Corrected password to match MongoDB Atlas credentials
 - **Result**: MongoDB Atlas connected successfully, groups now loading ✅
@@ -4145,7 +4145,7 @@ if (user.profile_image_url.includes('supabase.co/storage') ||
 - **Issue**: `.env.prod` had malformed values with double quotes causing parse errors
 - **Examples**: `INFLUXDB_URL=""https://..."` (double quote), Supabase keys truncated with `...`
 - **Solution**: Removed quotes, disabled InfluxDB (not needed), commented out invalid Supabase keys
-- **MongoDB password**: Corrected from `1Topgun123` to `ZwzL6uJ42JxwAsAu`
+- **MongoDB password**: Corrected from `1Topgun123` to `***REDACTED***`
 
 ### Files Changed
 - `jamz-server/src/services/s3.service.js`:
@@ -4178,7 +4178,7 @@ Restart: unless-stopped
 
 #### Environment Variables (Working)
 ```
-MONGODB_URI=mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
+MONGODB_URI=mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
 DATABASE_URL=postgresql://postgres.aws-0-us-east-1.pooler.supabase.com:6543/postgres?user=postgres.ohbuqqvhxqqilpjrqxhr&password=topgun123
 JWT_SECRET=your-secret-key-here
 FRONTEND_URL=https://jamz.v2u.us
@@ -4355,7 +4355,7 @@ Timeouts: 300s (5 minutes)
 ```bash
 # Reconnect to MongoDB Atlas (production data)
 docker run -d --name trafficjamz -p 5050:5000 \
-  -e MONGODB_URI='mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority' \
+  -e MONGODB_URI='mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority' \
   -e DATABASE_URL='postgresql://postgres.aws-0-us-east-1.pooler.supabase.com:6543/postgres?user=postgres.ohbuqqvhxqqilpjrqxhr&password=topgun123' \
   -e JWT_SECRET=your-secret-key-here \
   -e FRONTEND_URL=https://jamz.v2u.us \
@@ -4722,7 +4722,7 @@ This ensures continuity across all chat sessions.
 ## Session: November 12, 2025 (Evening - Database Migration & Groups API Fix)
 
 ### Work Completed
-- **Fixed MongoDB Atlas authentication**: Updated password to `ZwzL6uJ42JxwAsAu`
+- **Fixed MongoDB Atlas authentication**: Updated password to `***REDACTED***`
 - **Successfully connected to MongoDB Atlas "test" database**: Backend retrieved groups data
 - **Migrated all data from "test" to "trafficjamz" database**:
   - groups: 3 documents
@@ -4746,7 +4746,7 @@ This ensures continuity across all chat sessions.
 ### Infrastructure Updates
 - **MongoDB**: Successfully migrated from local instance to MongoDB Atlas
 - **Database**: "trafficjamz" database now contains all production data
-- **Connection String**: `mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz`
+- **Connection String**: `mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/trafficjamz`
 
 ### Current Status
 - ✅ Backend running on DigitalOcean with MongoDB Atlas connection
@@ -4893,7 +4893,7 @@ docker run -d --name trafficjamz \
   -p 10000:10000 \
   -e NODE_ENV=production \
   -e PORT=10000 \
-  -e MONGODB_URI="mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority" \
+  -e MONGODB_URI="mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/trafficjamz?retryWrites=true&w=majority" \
   -e JWT_SECRET="eyJhbGciOiJIUzI1NiJ9..." \
   -e SUPABASE_URL="https://nrlaqkpojtvvheosnpaz.supabase.co" \
   -e SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
