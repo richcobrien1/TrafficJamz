@@ -40,6 +40,7 @@ import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import AIChatAssistant from '../../components/AIChatAssistant';
 import sessionService from '../../services/session.service';
+import { dbManager } from '../../services/indexedDBManager';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Dashboard = () => {

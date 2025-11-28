@@ -2,7 +2,7 @@
 // Stores track metadata, download status, and cache info
 
 const DB_NAME = 'TrafficJamzDB';
-const DB_VERSION = 6; // Incremented for groups store
+const DB_VERSION = 7; // Bumped for groups_cache keyPath fix (_id instead of group_id)
 const STORE_TRACKS = 'cachedTracks';
 const STORE_PLAYLISTS = 'playlists';
 const STORE_INVITATIONS = 'group_invitations';
@@ -106,7 +106,7 @@ class IndexedDBManager {
 
         // Create groups cache store
         if (!db.objectStoreNames.contains(STORE_GROUPS)) {
-          const groupsStore = db.createObjectStore(STORE_GROUPS, { keyPath: 'group_id' });
+          const groupsStore = db.createObjectStore(STORE_GROUPS, { keyPath: '_id' });
           groupsStore.createIndex('name', 'name', { unique: false });
           groupsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
           console.log('Created groups_cache object store');
@@ -736,7 +736,8 @@ class IndexedDBManager {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORE_GROUPS], 'readonly');
       const store = transaction.objectStore(STORE_GROUPS);
-      const request = store.get(parseInt(groupId));
+      // MongoDB uses string _id, don't parseInt
+      const request = store.get(groupId);
 
       request.onsuccess = () => {
         console.log('📦 Retrieved group', groupId, 'from IndexedDB');
