@@ -52,6 +52,40 @@ const MusicPlatformIntegration = ({ onPlaylistImport, sessionId }) => {
 
   useEffect(() => {
     loadPlatformStatuses();
+    
+    // Listen for OAuth success message from popup window
+    const handleMessage = (event) => {
+      // Verify origin for security
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+      
+      if (event.data.type === 'SPOTIFY_AUTH_SUCCESS') {
+        console.log('🎵 Received Spotify auth success from popup');
+        
+        // Update connected status
+        setPlatforms(prev => ({ 
+          ...prev, 
+          spotify: { connected: true, loading: false } 
+        }));
+        
+        // Open playlist import dialog
+        setShowImportDialog(true);
+      } else if (event.data.type === 'SPOTIFY_AUTH_FAILED') {
+        console.error('❌ Spotify auth failed:', event.data.error);
+        setError(`Spotify authorization failed: ${event.data.error}`);
+        setPlatforms(prev => ({ 
+          ...prev, 
+          spotify: { connected: false, loading: false } 
+        }));
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
   }, []);
 
   /**
@@ -86,31 +120,35 @@ const MusicPlatformIntegration = ({ onPlaylistImport, sessionId }) => {
     try {
       const result = await spotify.initiateAuth();
       if (result.authUrl) {
-        // Open Spotify OAuth in new window
-        window.open(result.authUrl, '_blank', 'width=600,height=800');
+        // Open Spotify OAuth in popup window
+        // The popup will send a message back when auth completes
+        const popup = window.open(result.authUrl, 'spotify-auth', 'width=600,height=800');
         
-        // Poll for connection status
-        const checkInterval = setInterval(async () => {
-          try {
-            const status = await spotify.getStatus();
-            if (status.connected) {
-              clearInterval(checkInterval);
-              setPlatforms(prev => ({ 
-                ...prev, 
-                spotify: { connected: true, loading: false } 
-              }));
-            }
-          } catch (err) {
-            // Continue polling
+        // Check if popup was blocked
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          throw new Error('Popup was blocked. Please allow popups for this site.');
+        }
+        
+        // If popup closes without success, reset loading state
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            setPlatforms(prev => {
+              // Only reset if still loading (success message would have set connected)
+              if (prev.spotify.loading) {
+                return { 
+                  ...prev, 
+                  spotify: { connected: prev.spotify.connected, loading: false } 
+                };
+              }
+              return prev;
+            });
           }
-        }, 2000);
-
-        // Stop polling after 5 minutes
-        setTimeout(() => clearInterval(checkInterval), 300000);
+        }, 500);
       }
     } catch (err) {
       console.error('Spotify connection error:', err);
-      setError('Failed to connect to Spotify');
+      setError(err.message || 'Failed to connect to Spotify');
       setPlatforms(prev => ({ ...prev, spotify: { ...prev.spotify, loading: false } }));
     }
   };
