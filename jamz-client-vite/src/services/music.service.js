@@ -416,43 +416,64 @@ class MusicService {
         console.error(`❌ ${platform} error:`, error);
         
         // Error 150 = video can't be embedded, fall back to Spotify preview
-        if (error.code === 150 && track.spotifyPreviewUrl) {
-          console.log('⚠️ YouTube embed blocked, falling back to Spotify preview');
-          this.platformMode = false;
+        if (error.code === 150) {
+          console.warn(`⚠️ YouTube video blocked for "${track.title}" - searching for alternative...`);
           
-          if (!this.audioElement) {
-            this.initialize();
-          }
-          
-          try {
-            const blob = await musicCacheService.getTrack(
-              track.id || track._id,
-              track.spotifyPreviewUrl,
-              {
-                title: track.title,
-                artist: track.artist,
-                album: track.album,
-                source: 'spotify-preview-fallback'
+          if (track.spotifyPreviewUrl) {
+            console.log('🎵 Falling back to Spotify preview');
+            this.platformMode = false;
+            
+            if (!this.audioElement) {
+              this.initialize();
+            }
+            
+            try {
+              const blob = await musicCacheService.getTrack(
+                track.id || track._id,
+                track.spotifyPreviewUrl,
+                {
+                  title: track.title,
+                  artist: track.artist,
+                  album: track.album,
+                  source: 'spotify-preview-fallback'
+                }
+              );
+              
+              const blobUrl = URL.createObjectURL(blob);
+              if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
+                URL.revokeObjectURL(this.audioElement.src);
               }
-            );
-            
-            const blobUrl = URL.createObjectURL(blob);
-            if (this.audioElement.src && this.audioElement.src.startsWith('blob:')) {
-              URL.revokeObjectURL(this.audioElement.src);
+              this.audioElement.src = blobUrl;
+              console.log(`✅ Now playing Spotify preview for "${track.title}"`);
+              
+              // Show notification to user
+              if (this.onNotification) {
+                this.onNotification({
+                  type: 'warning',
+                  message: `YouTube video restricted. Playing Spotify preview for "${track.title}"` 
+                });
+              }
+              
+              // Auto-play if we were trying to play
+              if (this.isPlaying) {
+                await this.audioElement.play();
+              }
+            } catch (err) {
+              console.error('❌ Fallback to Spotify preview failed:', err);
+              if (this.onNotification) {
+                this.onNotification({
+                  type: 'error',
+                  message: `Failed to load "${track.title}". YouTube video is restricted and no preview available.`
+                });
+              }
             }
-            this.audioElement.src = blobUrl;
-            console.log('✅ Loaded Spotify preview as fallback');
-            
-            // Auto-play if we were trying to play
-            if (this.isPlaying) {
-              await this.audioElement.play();
-            }
-          } catch (err) {
-            console.error('❌ Fallback to Spotify preview failed:', err);
-            // Try direct URL as last resort
-            this.audioElement.src = track.spotifyPreviewUrl;
-            if (this.isPlaying) {
-              await this.audioElement.play();
+          } else {
+            console.error(`❌ No fallback available for "${track.title}"`);
+            if (this.onNotification) {
+              this.onNotification({
+                type: 'error',
+                message: `Cannot play "${track.title}". YouTube video is restricted and no Spotify preview available.`
+              });
             }
           }
         }
