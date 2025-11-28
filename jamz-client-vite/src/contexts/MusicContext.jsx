@@ -11,6 +11,7 @@ import {
 import { downloadManager } from '../services/audioDownloadManager';
 import { dbManager } from '../services/indexedDBManager';
 import { swManager } from '../services/serviceWorkerManager';
+import TrackAlternativeDialog from '../components/music/TrackAlternativeDialog';
 
 const MusicContext = createContext();
 
@@ -38,6 +39,10 @@ export const MusicProvider = ({ children }) => {
   const [cachedTracks, setCachedTracks] = useState(new Set());
   const [downloadProgress, setDownloadProgress] = useState(new Map());
   const [storageStats, setStorageStats] = useState(null);
+  
+  // Track alternative dialog state
+  const [alternativeDialogOpen, setAlternativeDialogOpen] = useState(false);
+  const [alternativeTrack, setAlternativeTrack] = useState(null);
   
   // Refs
   const socketRef = useRef(null);
@@ -214,6 +219,22 @@ export const MusicProvider = ({ children }) => {
     musicService.onTimeUpdate = (time) => {
       setCurrentTime(time);
       setDuration(musicService.getDuration());
+    };
+    
+    // Set up error handler for YouTube blocked videos
+    musicService.onError = (platform, error) => {
+      console.log('🎵 [MusicContext] Music error:', platform, error);
+      
+      // Check if this is a YouTube error 150 (blocked video)
+      const errorCode = typeof error === 'string' ? 
+        parseInt(error.replace(/[^0-9]/g, '')) : 
+        error.code;
+      
+      if (platform === 'youtube' && errorCode === 150 && currentTrack) {
+        console.log('🎵 [MusicContext] YouTube video blocked, opening alternative dialog');
+        setAlternativeTrack(currentTrack);
+        setAlternativeDialogOpen(true);
+      }
     };
     
     // Connect to socket if not already connected
@@ -1244,6 +1265,38 @@ export const MusicProvider = ({ children }) => {
     }
   };
   
+  /**
+   * Handle selection of alternative YouTube video
+   */
+  const handleSelectAlternative = async (updatedTrack) => {
+    console.log('🎵 [MusicContext] Selected alternative track:', updatedTrack);
+    
+    // Update current track
+    setCurrentTrack(updatedTrack);
+    
+    // Load and play the alternative
+    await musicService.loadTrack(updatedTrack);
+    if (isPlaying) {
+      await musicService.play();
+    }
+    
+    // Update playlist if track exists in it
+    const trackIndex = playlist.findIndex(t => t.id === updatedTrack.id);
+    if (trackIndex !== -1) {
+      const updatedPlaylist = [...playlist];
+      updatedPlaylist[trackIndex] = updatedTrack;
+      setPlaylist(updatedPlaylist);
+      
+      // Broadcast update to other users
+      if (socketRef.current && activeSessionId) {
+        socketRef.current.emit('playlist:update', {
+          sessionId: activeSessionId,
+          playlist: updatedPlaylist
+        });
+      }
+    }
+  };
+  
   const value = {
     // State
     currentTrack,
@@ -1286,6 +1339,14 @@ export const MusicProvider = ({ children }) => {
   return (
     <MusicContext.Provider value={value}>
       {children}
+      
+      {/* Track Alternative Dialog */}
+      <TrackAlternativeDialog
+        open={alternativeDialogOpen}
+        onClose={() => setAlternativeDialogOpen(false)}
+        track={alternativeTrack}
+        onSelectAlternative={handleSelectAlternative}
+      />
     </MusicContext.Provider>
   );
 };
