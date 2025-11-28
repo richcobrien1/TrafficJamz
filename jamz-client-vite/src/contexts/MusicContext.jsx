@@ -230,10 +230,17 @@ export const MusicProvider = ({ children }) => {
         parseInt(error.replace(/[^0-9]/g, '')) : 
         error.code;
       
-      if (platform === 'youtube' && errorCode === 150 && currentTrack) {
-        console.log('🎵 [MusicContext] YouTube video blocked, opening alternative dialog');
-        setAlternativeTrack(currentTrack);
-        setAlternativeDialogOpen(true);
+      if (platform === 'youtube' && errorCode === 150) {
+        const track = musicService.currentTrack || currentTrack;
+        console.log('🎵 [MusicContext] YouTube error 150 detected, track:', track?.title);
+        
+        if (track) {
+          console.log('🎵 [MusicContext] Opening alternative dialog for:', track.title);
+          setAlternativeTrack(track);
+          setAlternativeDialogOpen(true);
+        } else {
+          console.warn('🎵 [MusicContext] No track available to show alternative dialog');
+        }
       }
     };
     
