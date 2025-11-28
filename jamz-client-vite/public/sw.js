@@ -1,11 +1,11 @@
 // TrafficJamz Service Worker - Full Offline Support
-// Version: 3.0.0 - FIXED: Proper cache versioning to prevent stale code
+// Version: 3.0.1 - FIXED: Force cache clear for IndexedDB keyPath fix
 
-const BUILD_VERSION = '3.0.0-' + Date.now(); // Unique version per build
-const CACHE_VERSION = 'trafficjamz-v3';
-const AUDIO_CACHE = 'trafficjamz-audio-v3';
-const STATIC_CACHE = 'trafficjamz-static-v3';
-const APP_CACHE = 'trafficjamz-app-v3';
+const BUILD_VERSION = '3.0.1-' + Date.now(); // Unique version per build
+const CACHE_VERSION = 'trafficjamz-v3.1';
+const AUDIO_CACHE = 'trafficjamz-audio-v3.1';
+const STATIC_CACHE = 'trafficjamz-static-v3.1';
+const APP_CACHE = 'trafficjamz-app-v3.1';
 
 // R2 domain for audio files
 const R2_DOMAIN = 'pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev';
