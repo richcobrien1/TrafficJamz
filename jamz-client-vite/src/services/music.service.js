@@ -207,14 +207,21 @@ class MusicService {
   async loadTrack(track) {
     // CRITICAL: Stop any currently playing audio before loading new track
     if (this.audioElement && !this.audioElement.paused) {
-      console.log('🛑 Stopping previous track before loading new one');
+      console.log('🛑 Stopping HTML5 audio element');
       this.audioElement.pause();
       this.audioElement.currentTime = 0;
     }
     
-    // Stop platform player if active
-    if (this.platformMode && platformMusicService.spotifyPlayer) {
-      await platformMusicService.pause();
+    // Stop platform players if active (Spotify OR YouTube)
+    if (this.platformMode) {
+      if (platformMusicService.spotifyPlayer) {
+        console.log('🛑 Stopping Spotify player');
+        await platformMusicService.pause();
+      }
+      if (platformMusicService.youtubePlayer) {
+        console.log('🛑 Stopping YouTube player');
+        await platformMusicService.pause();
+      }
     }
     
     // Ensure track has id field (normalize _id to id)
