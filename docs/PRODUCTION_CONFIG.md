@@ -53,7 +53,7 @@ PORT=5000
 
 #### MongoDB (Music Library, Groups, Sessions)
 ```bash
-MONGODB_URI=mongodb+srv://richcobrien:ZwzL6uJ42JxwAsAu@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
+MONGODB_URI=mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
 ```
 
 #### PostgreSQL (Users, Auth)
@@ -62,13 +62,13 @@ POSTGRES_HOST=aws-0-us-east-1.pooler.supabase.com
 POSTGRES_PORT=6543
 POSTGRES_DB=postgres
 POSTGRES_USER=postgres.zmgdzbhozobqojqhmfxd
-POSTGRES_PASSWORD=ZwzL6uJ42JxwAsAu
+POSTGRES_PASSWORD=***REDACTED***
 ```
 
 #### InfluxDB (Location Time-Series Data)
 ```bash
 INFLUXDB_URL=https://us-east-1-1.aws.cloud2.influxdata.com
-INFLUXDB_TOKEN=pyCrDBJuvbuQ99Jabku0t7-vX2CEvahFIYVvmfJTnOQU_BLvAg_Si_ne9gaE7mbfHHf93Vo8R0wpyz5tl_dBqQ==
+INFLUXDB_TOKEN=***REDACTED***
 INFLUXDB_ORG=V2U
 INFLUXDB_BUCKET=trafficjam
 ```
@@ -76,8 +76,8 @@ INFLUXDB_BUCKET=trafficjam
 #### Cloudflare R2 (Music Storage)
 ```bash
 R2_ACCOUNT_ID=2bc2ea85ab9a04b8de6ddc6e83efc7eb
-R2_ACCESS_KEY_ID=f5deef6c50b7ed5f66c8a36b5d3be633
-R2_SECRET_ACCESS_KEY=41033fcfee914b7b32aeb4d5fb9bf6fac66c62fdc1b56c0fda07cd6e79ad93b7
+R2_ACCESS_KEY_ID=***REDACTED***
+R2_SECRET_ACCESS_KEY=***REDACTED***
 R2_BUCKET_NAME=trafficjamz
 R2_PUBLIC_URL=https://pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev
 ```
@@ -149,7 +149,7 @@ nginx -t && systemctl reload nginx
 # Check env file
 grep MONGODB_URI /root/TrafficJamz/jamz-server/.env.local
 # Should have NO quotes around value
-# Password must be: ZwzL6uJ42JxwAsAu
+# Password must be: ***REDACTED***
 ```
 
 ### Issue: InfluxDB Parse Error
