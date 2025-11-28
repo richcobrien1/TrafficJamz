@@ -287,6 +287,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
 const groupRoutes = require('./routes/groups.routes');
 const audioRoutes = require('./routes/audio.routes');
+const youtubeSearchRoutes = require('./routes/youtube-search.routes');
 const locationRoutes = require('./routes/location.routes');
 const subscriptionRoutes = require('./routes/subscriptions.routes');
 const notificationRoutes = require('./routes/notifications.routes');
@@ -1426,7 +1427,7 @@ function setupServer() {
   app.use('/api/groups', groupRoutes);
   app.use('/api', placesRoutes);
   app.use('/api/audio', audioRoutes);
-  app.use('/api/music', audioRoutes); // Alias for music-related endpoints
+  app.use('/api/music', youtubeSearchRoutes); // YouTube search for alternatives
   app.use('/api/location', locationRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/notifications', notificationRoutes);
