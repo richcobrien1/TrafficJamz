@@ -48,6 +48,30 @@ zoom/             # Zoom recording cache
 *.msg             # Outlook messages
 *.pst             # Outlook data files
 
+# --- SECURITY: Environment & Credentials ---
+.env              # Environment variables
+.env.local        # Local environment
+.env.*.local      # Environment-specific local
+.env.production   # Production environment
+.env.development  # Development environment
+.env.test         # Test environment
+.env.prod         # Production shorthand
+.env.dev          # Development shorthand
+*.env             # All env files
+**/.env*          # Nested env files
+*.pem             # Private keys
+*.key             # Key files
+*.crt             # Certificates
+*.p12             # PKCS12 certificates
+*.pfx             # Certificate files
+secrets.json      # Secrets
+credentials.json  # Credentials
+auth.json         # Auth tokens
+config.local.js   # Local configs
+config.secret.js  # Secret configs
+*.secret.*        # Any secret files
+project.log.md    # Session logs may contain credentials
+
 # --- Specialized Comms Tools ---
 .screenflow       # Screenflow project files
 grammarly/       # Grammarly desktop app data
