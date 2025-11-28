@@ -4,6 +4,234 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 28, 2025 - Music Platform OAuth Integration (Spotify, YouTube, Apple Music) 🎵
+
+### Objective
+Complete OAuth integration for all major music streaming platforms with secure backend token exchange.
+
+### Problems Addressed
+
+1. **Spotify OAuth Broken** ❌
+   - User clicks "Connect Spotify" → OAuth popup → Redirects to `/settings/integrations` (doesn't exist)
+   - No playlist selection UI shown
+   - User cannot add music to sessions
+   - **Root Cause**: Backend redirected to non-existent page, no popup communication with parent window
+
+2. **YouTube OAuth Security Issue** 🔐
+   - Frontend using PKCE flow but attempting token exchange with `client_secret`
+   - Error: `client_secret is missing` (400 Bad Request)
+   - **Security Risk**: Client secrets must NEVER be in frontend code
+   - **Root Cause**: Token exchange happening in `youtube-client.service.js` instead of backend
+
+3. **Apple Music MusicKit Not Loading** ❌
+   - Error: `MusicKit not loaded` / `Cannot read properties of null (reading 'authorize')`
+   - **Root Cause**: MusicKit SDK script tag missing from `index.html`
+
+### Solutions Implemented ✅
+
+#### 1. Spotify OAuth Popup Flow Fix
+**Files Modified**:
+- `jamz-server/src/routes/integrations.spotify.routes.js` - Changed redirect URLs
+- `jamz-client-vite/src/pages/auth/SpotifyIntegrationCallback.jsx` - NEW popup handler
+- `jamz-client-vite/src/components/music/MusicPlatformIntegration.jsx` - Window messaging
+- `jamz-client-vite/src/App.jsx` - Added integration callback route
+
+**Changes**:
+- Backend now redirects to `/auth/spotify/integration-callback` instead of `/settings/integrations`
+- Created `SpotifyIntegrationCallback.jsx` that:
+  - Receives OAuth success/failure from backend
+  - Uses `window.opener.postMessage()` to notify parent window
+  - Automatically closes popup after 1.5 seconds on success
+- Added `window.addEventListener('message')` in `MusicPlatformIntegration`:
+  - Listens for OAuth success from popup
+  - Sets connection status
+  - **Automatically opens playlist import dialog**
+- Removed polling logic (no longer needed)
+
+**Flow**:
+```
+1. User clicks "Connect Spotify"
+2. Popup opens with OAuth URL from backend
+3. User authorizes on Spotify
+4. Backend redirects to /auth/spotify/integration-callback
+5. Callback page sends postMessage to parent
+6. Popup closes automatically
+7. Parent receives message → Shows playlist dialog ✅
+```
+
+#### 2. YouTube OAuth Backend Token Exchange (SECURITY FIX)
+**Files Modified**:
+- `jamz-server/src/routes/integrations.youtube.routes.js` - Complete OAuth implementation
+- `jamz-client-vite/src/services/youtube-client.service.js` - Complete rewrite
+- `jamz-client-vite/src/pages/auth/YouTubeCallback.jsx` - Updated for backend flow
+
+**Backend Routes Added**:
+```javascript
+GET  /api/integrations/auth/youtube           // Initiate OAuth
+POST /api/integrations/auth/youtube/callback  // Exchange code for tokens (with client_secret)
+GET  /api/integrations/youtube/status         // Check connection
+GET  /api/integrations/youtube/playlists      // Get user playlists (OAuth)
+GET  /api/integrations/youtube/playlists/:id/tracks  // Get tracks (OAuth)
+DELETE /api/integrations/auth/youtube         // Disconnect
+```
+
+**Frontend Changes**:
+- Removed entire PKCE client-side flow (300+ lines removed)
+- Removed `client_secret` references completely
+- Now calls backend APIs:
+  ```javascript
+  authorize()         // Returns authUrl from backend
+  handleCallback()    // Sends code to backend for token exchange
+  getPlaylists()      // Fetches user playlists via backend
+  getPlaylistTracks() // Fetches tracks via backend
+  ```
+
+**Security Improvement**: 
+- ✅ Client secrets now ONLY on backend
+- ✅ Tokens stored in database, never sent to frontend
+- ✅ All API calls authenticated through backend
+- ✅ Frontend only handles UI and user interactions
+
+#### 3. Apple Music MusicKit SDK Loading
+**Files Modified**:
+- `jamz-client-vite/index.html` - Added MusicKit script tag
+
+**Changes**:
+```html
+<!-- Apple Music MusicKit JS -->
+<script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
+```
+
+**Backend Routes** (already existed):
+- `POST /api/integrations/auth/apple-music` - Save user token
+- `GET /api/integrations/apple-music/developer-token` - Get developer token
+- `GET /api/integrations/apple-music/status` - Check connection
+- `GET /api/integrations/apple-music/playlists` - Get user playlists
+- `GET /api/integrations/apple-music/playlists/:id/tracks` - Get tracks
+- `DELETE /api/integrations/auth/apple-music` - Disconnect
+
+### Deployment Status ✅
+
+**Backend Deployed**:
+- `integrations.spotify.routes.js` → Production server
+- `integrations.youtube.routes.js` → Production server
+- Docker container restarted
+
+**Frontend Deployed**:
+- Updated YouTube client service (backend OAuth)
+- Updated Spotify integration callback
+- MusicKit SDK script tag
+- All built and deployed to `/var/www/html/`
+
+**Git Commits**:
+- `c8e6569e` - Fix Spotify OAuth popup flow
+- `c65a31ec` - Complete YouTube and Apple Music OAuth fixes
+- `38db192a` - Add music platform status documentation
+
+### Environment Variables Added to Production
+
+Added to `/root/TrafficJamz/jamz-server/.env` (with placeholders):
+```bash
+# YouTube OAuth
+YOUTUBE_CLIENT_ID=882773733351-501lsh97cpv23qi3rgffrskd0cnm3r9l.apps.googleusercontent.com
+YOUTUBE_CLIENT_SECRET=GOCSPX-placeholder-get-from-google-cloud-console
+
+# Spotify OAuth
+SPOTIFY_CLIENT_ID=f8c4e1d2b3a4f5e6d7c8b9a0f1e2d3c4
+SPOTIFY_CLIENT_SECRET=placeholder-get-from-spotify-developer-dashboard
+SPOTIFY_REDIRECT_URI=https://jamz.v2u.us/auth/spotify/callback
+
+# Apple Music
+APPLE_TEAM_ID=placeholder-get-from-apple-developer
+APPLE_KEY_ID=placeholder-get-from-apple-developer
+APPLE_PRIVATE_KEY_PATH=/root/TrafficJamz/certs/AuthKey_Apple.p8
+```
+
+### Next Steps Required 🔑
+
+**To Complete Integration**:
+1. Get **YouTube Client Secret** from Google Cloud Console
+2. Get **real Spotify Client ID & Secret** from Spotify Developer Dashboard
+3. Get **Apple Music credentials** from Apple Developer account
+4. Update placeholders in production `.env`
+5. Restart Docker: `docker restart trafficjamz`
+6. Test all three OAuth flows end-to-end
+
+**Testing Checklist**:
+- [ ] Spotify: OAuth popup → Authorize → Playlist dialog opens → Import tracks
+- [ ] YouTube: OAuth redirect → Authorize → Playlists load → Import tracks
+- [ ] Apple Music: MusicKit loads → Authorize → Playlists load → Import tracks
+
+### Future Work (Tomorrow)
+
+**Amazon Music Integration**:
+- Research if public Web API exists for third-party developers
+- Check OAuth requirements, rate limits, playlist access
+- May not have public API (unlike Spotify/YouTube/Apple)
+
+**YouTube Music vs YouTube API**:
+- Clarify if YouTube Music is separate API
+- Current implementation uses YouTube Data API v3 with `youtube.readonly` scope
+- May already cover YouTube Music playlists (needs verification)
+
+**Additional Platforms**:
+- Pandora, Deezer, SoundCloud, Tidal (evaluate API availability)
+
+### Architecture Summary
+
+**OAuth Security Pattern** (All Platforms):
+```
+1. Frontend calls GET /api/integrations/auth/{platform}
+2. Backend generates OAuth URL with state/CSRF protection
+3. Frontend redirects to OAuth provider
+4. User authorizes
+5. Provider redirects to callback
+6. Frontend calls POST /api/integrations/auth/{platform}/callback with code
+7. Backend exchanges code for tokens (WITH client_secret - secure!)
+8. Backend stores tokens in UserIntegration model
+9. Frontend receives success response
+10. Frontend fetches playlists/tracks via authenticated backend endpoints
+```
+
+**Security Features**:
+- ✅ Client secrets NEVER exposed to frontend
+- ✅ CSRF protection with state parameter
+- ✅ Tokens stored securely in database
+- ✅ JWT authentication required for all integration endpoints
+- ✅ Refresh tokens stored for long-term access
+
+### Known Issues
+
+1. **YouTube Error 150** - "Left Me Like Summer" track still blocked
+   - Alternative video selection dialog implemented
+   - Search API endpoint ready: `GET /api/music/search/youtube`
+   - Needs testing after hard refresh
+
+2. **Missing OAuth Credentials** - Placeholders need real values
+   - YouTube CLIENT_SECRET required
+   - Spotify CLIENT_ID & SECRET required
+   - Apple Music credentials required
+
+### Files Changed This Session
+
+**Backend**:
+- `jamz-server/src/routes/integrations.spotify.routes.js` - OAuth redirect fix
+- `jamz-server/src/routes/integrations.youtube.routes.js` - Complete OAuth rewrite
+- `jamz-server/.env` - Added OAuth credential placeholders
+
+**Frontend**:
+- `jamz-client-vite/src/pages/auth/SpotifyIntegrationCallback.jsx` - NEW
+- `jamz-client-vite/src/pages/auth/YouTubeCallback.jsx` - Backend OAuth flow
+- `jamz-client-vite/src/services/youtube-client.service.js` - Complete rewrite (90% smaller)
+- `jamz-client-vite/src/components/music/MusicPlatformIntegration.jsx` - Window messaging
+- `jamz-client-vite/index.html` - Added MusicKit SDK
+- `jamz-client-vite/src/App.jsx` - Integration callback route
+
+**Documentation**:
+- `MUSIC_PLATFORM_STATUS.md` - NEW comprehensive roadmap
+
+---
+
 ## Session: November 27, 2025 - Critical White Screen Fix with Session Persistence 🚨
 
 ### Problem Reported
