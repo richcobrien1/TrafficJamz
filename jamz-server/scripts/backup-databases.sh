@@ -37,7 +37,7 @@ fi
 # MongoDB Atlas Backup (using mongodump)
 echo "📊 Backing up MongoDB Atlas..."
 mongodump \
-  --uri="mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/trafficjamz" \
+  --uri="mongodb+srv://richcobrien:1MongoDB123$@trafficjam.xk2uszk.mongodb.net/trafficjamz" \
   --out="$BACKUP_DIR/mongodb_${DATE}" \
   --gzip
 

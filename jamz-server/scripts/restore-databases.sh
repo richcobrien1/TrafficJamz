@@ -80,7 +80,7 @@ restore_mongodb() {
     
     echo "🔄 Restoring MongoDB..."
     mongorestore \
-      --uri="mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/trafficjamz" \
+      --uri="mongodb+srv://richcobrien:1MongoDB123$@trafficjam.xk2uszk.mongodb.net/trafficjamz" \
       --drop \
       --gzip \
       /tmp/mongodb_restore/mongodb_*/trafficjamz

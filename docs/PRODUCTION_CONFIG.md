@@ -53,7 +53,7 @@ PORT=5000
 
 #### MongoDB (Music Library, Groups, Sessions)
 ```bash
-MONGODB_URI=mongodb+srv://richcobrien:***REDACTED***@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
+MONGODB_URI=mongodb+srv://richcobrien:1MongoDB123$@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
 ```
 
 #### PostgreSQL (Users, Auth)
@@ -149,7 +149,7 @@ nginx -t && systemctl reload nginx
 # Check env file
 grep MONGODB_URI /root/TrafficJamz/jamz-server/.env.local
 # Should have NO quotes around value
-# Password must be: ***REDACTED***
+# Password must be: 1MongoDB123$
 ```
 
 ### Issue: InfluxDB Parse Error
