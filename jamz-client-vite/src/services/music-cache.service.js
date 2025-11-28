@@ -84,6 +84,17 @@ class MusicCacheService {
     try {
       await this.initPromise;
 
+      // Validate trackId - must be a valid key
+      if (!trackId || trackId === null || trackId === undefined) {
+        console.warn(`⚠️ Cannot cache track without valid ID: ${metadata.title || 'unknown'}`);
+        // Fetch and return blob without caching
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch track: ${response.status}`);
+        }
+        return await response.blob();
+      }
+
       console.log(`💾 Caching track: ${metadata.title || trackId}`);
 
       // Fetch the audio file
