@@ -2,7 +2,7 @@
 // Stores track metadata, download status, and cache info
 
 const DB_NAME = 'TrafficJamzDB';
-const DB_VERSION = 7; // Bumped for groups_cache keyPath fix (_id instead of group_id)
+const DB_VERSION = 8; // Bumped for groups_cache keyPath fix ('id' - from API response)
 const STORE_TRACKS = 'cachedTracks';
 const STORE_PLAYLISTS = 'playlists';
 const STORE_INVITATIONS = 'group_invitations';
@@ -106,7 +106,7 @@ class IndexedDBManager {
 
         // Create groups cache store
         if (!db.objectStoreNames.contains(STORE_GROUPS)) {
-          const groupsStore = db.createObjectStore(STORE_GROUPS, { keyPath: '_id' });
+          const groupsStore = db.createObjectStore(STORE_GROUPS, { keyPath: 'id' });
           groupsStore.createIndex('name', 'name', { unique: false });
           groupsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
           console.log('Created groups_cache object store');
