@@ -484,9 +484,17 @@ class MusicService {
             if (this.onNotification) {
               this.onNotification({
                 type: 'error',
-                message: `Cannot play "${track.title}". YouTube video is restricted and no Spotify preview available.`
+                message: `Cannot play "${track.title}". YouTube video is restricted and no Spotify preview available. Skipping...`
               });
             }
+            
+            // Auto-skip to next track after 2 seconds
+            console.log('⏭️ Auto-skipping to next track in 2 seconds...');
+            setTimeout(async () => {
+              if (this.onTrackChange) {
+                await this.playNext();
+              }
+            }, 2000);
           }
         }
       };
