@@ -178,6 +178,11 @@ class MusicCacheService {
     try {
       await this.initPromise;
 
+      // Safety check: if no trackId, return null immediately
+      if (!trackId) {
+        return null;
+      }
+
       return new Promise((resolve, reject) => {
         const transaction = this.db.transaction([this.storeName], 'readonly');
         const objectStore = transaction.objectStore(this.storeName);
