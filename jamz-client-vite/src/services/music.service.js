@@ -422,8 +422,13 @@ class MusicService {
       platformMusicService.onError = async (platform, error) => {
         console.error(`❌ ${platform} error:`, error);
         
+        // Parse error code from string or object
+        const errorCode = typeof error === 'string' ? 
+          parseInt(error.replace(/[^0-9]/g, '')) : 
+          error.code;
+        
         // Error 150 = video can't be embedded, fall back to Spotify preview
-        if (error.code === 150) {
+        if (errorCode === 150) {
           console.warn(`⚠️ YouTube video blocked for "${track.title}" - searching for alternative...`);
           
           if (track.spotifyPreviewUrl) {
