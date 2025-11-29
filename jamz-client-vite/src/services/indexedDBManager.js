@@ -2,7 +2,7 @@
 // Stores track metadata, download status, and cache info
 
 const DB_NAME = 'TrafficJamzDB';
-const DB_VERSION = 8; // Bumped for groups_cache keyPath fix ('id' - from API response)
+const DB_VERSION = 9; // Bumped for group_members store
 const STORE_TRACKS = 'cachedTracks';
 const STORE_PLAYLISTS = 'playlists';
 const STORE_INVITATIONS = 'group_invitations';
@@ -11,6 +11,7 @@ const STORE_PLACES = 'saved_places';
 const STORE_AVATARS = 'avatar_cache';
 const STORE_OFFLINE_QUEUE = 'offline_queue';
 const STORE_GROUPS = 'groups_cache';
+const STORE_MEMBERS = 'group_members';
 
 class IndexedDBManager {
   constructor() {
@@ -110,6 +111,15 @@ class IndexedDBManager {
           groupsStore.createIndex('name', 'name', { unique: false });
           groupsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
           console.log('Created groups_cache object store');
+        }
+
+        // Create group members store
+        if (!db.objectStoreNames.contains(STORE_MEMBERS)) {
+          const membersStore = db.createObjectStore(STORE_MEMBERS, { keyPath: 'id', autoIncrement: true });
+          membersStore.createIndex('groupId', 'groupId', { unique: false });
+          membersStore.createIndex('userId', 'userId', { unique: false });
+          membersStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+          console.log('Created group_members object store');
         }
       };
     });
@@ -554,10 +564,19 @@ class IndexedDBManager {
     await this.ensureDB();
     const transaction = this.db.transaction([STORE_PLACES], 'readwrite');
     const store = transaction.objectStore(STORE_PLACES);
+    const index = store.index('groupId');
 
-    for (const place of places) {
-      store.put({ ...place, groupId });
-    }
+    // Clear old places for this group first
+    const oldPlacesRequest = index.getAllKeys(groupId);
+    oldPlacesRequest.onsuccess = () => {
+      const oldKeys = oldPlacesRequest.result;
+      oldKeys.forEach(key => store.delete(key));
+
+      // Add new places
+      for (const place of places) {
+        store.put({ ...place, groupId });
+      }
+    };
 
     return new Promise((resolve) => {
       transaction.oncomplete = () => {
@@ -572,6 +591,55 @@ class IndexedDBManager {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORE_PLACES], 'readonly');
       const store = transaction.objectStore(STORE_PLACES);
+      const index = store.index('groupId');
+      const request = index.getAll(groupId);
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============================================
+  // GROUP MEMBERS METHODS
+  // ============================================
+
+  async saveMembers(groupId, members) {
+    await this.ensureDB();
+    const transaction = this.db.transaction([STORE_MEMBERS], 'readwrite');
+    const store = transaction.objectStore(STORE_MEMBERS);
+    const index = store.index('groupId');
+
+    // Clear old members for this group first
+    const oldMembersRequest = index.getAllKeys(groupId);
+    oldMembersRequest.onsuccess = () => {
+      const oldKeys = oldMembersRequest.result;
+      oldKeys.forEach(key => store.delete(key));
+
+      // Add new members
+      const cachedAt = Date.now();
+      for (const member of members) {
+        store.put({ 
+          ...member, 
+          groupId, 
+          userId: member.user_id || member.userId,
+          cachedAt 
+        });
+      }
+    };
+
+    return new Promise((resolve) => {
+      transaction.oncomplete = () => {
+        console.log('💾 Cached members for group:', groupId);
+        resolve(true);
+      };
+    });
+  }
+
+  async getMembers(groupId) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORE_MEMBERS], 'readonly');
+      const store = transaction.objectStore(STORE_MEMBERS);
       const index = store.index('groupId');
       const request = index.getAll(groupId);
 

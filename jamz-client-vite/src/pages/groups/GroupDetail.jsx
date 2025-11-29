@@ -445,6 +445,13 @@ const GroupDetail = () => {
           const idbGroup = await dbManager.getGroup(groupId);
           if (idbGroup) {
             console.log('📦 Using cached group data from IndexedDB');
+            
+            // Load cached members
+            const cachedMembers = await dbManager.getMembers(groupId);
+            if (cachedMembers && cachedMembers.length > 0) {
+              idbGroup.members = cachedMembers;
+            }
+            
             setGroup(idbGroup);
             setEditName(idbGroup.name);
             setCreatedAt(idbGroup.createdAt);
@@ -474,6 +481,11 @@ const GroupDetail = () => {
       setEditDescription(response.data.group.description || '');
       setError('');
       
+      // Cache members if available
+      if (response.data.group.members && Array.isArray(response.data.group.members)) {
+        await dbManager.saveMembers(groupId, response.data.group.members);
+      }
+      
       // Update cache with fresh group data
       if (cachedGroups && Array.isArray(cachedGroups)) {
         const updatedGroups = cachedGroups.map(g => 
@@ -502,6 +514,17 @@ const GroupDetail = () => {
         const idbGroup = await dbManager.getGroup(groupId);
         if (idbGroup) {
           console.log('⚠️ Using IndexedDB group due to fetch error');
+          
+          // Load cached members
+          const cachedMembers = await dbManager.getMembers(groupId);
+          if (cachedMembers && cachedMembers.length > 0) {
+            idbGroup.members = cachedMembers;
+            setGroup(idbGroup);
+            setEditName(idbGroup.name);
+            setCreatedAt(idbGroup.createdAt);
+            setEditDescription(idbGroup.description || '');
+          }
+          
           setError('');
           setLoading(false);
           return;
