@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const audioService = require('../services/audio.service');
-const auth = require('../middleware/auth');
 const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
 const s3Service = require('../services/s3.service');
@@ -814,7 +813,7 @@ router.post('/sessions/:sessionId/import-track',
  * GET /api/music/search/youtube?q=search+term&limit=5
  */
 router.get('/search/youtube',
-  auth,
+  passport.authenticate('jwt', { session: false }),
   async (req, res) => {
     try {
       const { q, limit = 5 } = req.query;
