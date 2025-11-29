@@ -181,6 +181,7 @@ const AudioSession = () => {
   const mediasoupDeviceRef = useRef(null); // Store mediasoup device
   const recvTransportRef = useRef(null); // Store receive transport for consuming
   const consumersRef = useRef(new Map()); // Store consumers
+  const monitoringIntervalRef = useRef(null);
   
   // Initialize component
   useEffect(() => {
