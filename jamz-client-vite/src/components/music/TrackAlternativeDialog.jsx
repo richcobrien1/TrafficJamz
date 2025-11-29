@@ -60,8 +60,7 @@ const TrackAlternativeDialog = ({
       setSearchResults(response.data.results || []);
     } catch (err) {
       console.error('Failed to search YouTube:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to search for alternatives. Please try again.';
-      setError(errorMessage);
+      setError('Failed to search for alternatives. Please try again.');
     } finally {
       setSearching(false);
     }

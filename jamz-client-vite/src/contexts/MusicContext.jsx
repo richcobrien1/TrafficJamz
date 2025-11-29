@@ -200,7 +200,7 @@ export const MusicProvider = ({ children }) => {
     
     // Initialize music service (idempotent - safe to call multiple times)
     try {
-      await musicService.initialize();
+      musicService.initialize();
     } catch (err) {
       console.warn('⚠️ Music service initialization warning:', err.message);
     }
