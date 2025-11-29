@@ -492,33 +492,13 @@ class PlatformMusicService {
         break;
       case 'youtube':
         if (this.youtubePlayer) {
-          const playerState = this.youtubePlayer.getPlayerState?.();
-          console.log('🎵 YouTube player state:', playerState, '(-1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued)');
-
-          // If player is unstarted (-1), we need to load the video first
-          if (playerState === -1 || playerState === undefined) {
-            if (this.currentTrack) {
-              const videoId = this.currentTrack.youtubeId || this.currentTrack.externalId;
-              if (videoId) {
-                console.log('🎵 Player unstarted, loading video:', videoId);
-                this.youtubePlayer.loadVideoById(videoId);
-                // loadVideoById auto-plays, no need to call playVideo()
-              } else {
-                throw new Error('No video ID to load');
-              }
-            } else {
-              throw new Error('No current track to play');
-            }
-          } else {
-            // Player has a video, just resume playback
-            console.log('🎵 Calling YouTube playVideo()...');
-            try {
-              this.youtubePlayer.playVideo();
-              console.log('✅ YouTube playVideo() called successfully');
-            } catch (error) {
-              console.error('❌ YouTube playVideo() failed:', error);
-              throw error;
-            }
+          console.log('🎵 Calling YouTube playVideo()...');
+          try {
+            this.youtubePlayer.playVideo();
+            console.log('✅ YouTube playVideo() called successfully');
+          } catch (error) {
+            console.error('❌ YouTube playVideo() failed:', error);
+            throw error;
           }
         } else {
           console.error('❌ YouTube player not initialized!');
