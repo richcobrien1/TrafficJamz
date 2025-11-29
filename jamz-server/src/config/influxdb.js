@@ -7,42 +7,54 @@ const dotenv = require('dotenv');
 // InfluxDB connection configuration
 // Strip surrounding quotes if present (can happen with some .env parsers)
 const stripQuotes = (str) => str && str.replace(/^["']|["']$/g, '');
-const url = stripQuotes(process.env.INFLUXDB_URL) || 'https://us-east-1-1.aws.cloud2.influxdata.com';
-const token = stripQuotes(process.env.INFLUXDB_TOKEN) || 'Vy57uArV5tf17mCqoqPCbzL4xXnMM0uQIcqglnA4d8vWEJSoc66WJJu37ntxTK8PF4XA9SYQ9u1nhIaBkZMKug==';
-const org = stripQuotes(process.env.INFLUXDB_ORG) || 'a48c228a5a10b4c7';
-const bucket = stripQuotes(process.env.INFLUXDB_BUCKET) || 'trafficjam';
+const url = stripQuotes(process.env.INFLUXDB_URL);
+const token = stripQuotes(process.env.INFLUXDB_TOKEN);
+const org = stripQuotes(process.env.INFLUXDB_ORG);
+const bucket = stripQuotes(process.env.INFLUXDB_BUCKET);
 
-// Create InfluxDB client
-const influxClient = new InfluxDB({ url, token });
+// Check if InfluxDB is configured
+const isConfigured = url && token && org && bucket;
 
-// Get write API for the specified org and bucket
-const writeApi = influxClient.getWriteApi(org, bucket);
-writeApi.useDefaultTags({ host: 'host1' });
+let influxClient = null;
+let writeApi = null;
+let queryApi = null;
 
-// Get query API for the specified org
-const queryApi = influxClient.getQueryApi(org);
+if (isConfigured) {
+  // Create InfluxDB client
+  influxClient = new InfluxDB({ url, token });
 
-// Test connection by writing a test point
-const testConnection = async () => {
-  try {
-    const point = new Point('system')
-      .tag('test', 'connection')
-      .floatField('value', 1.0);
-    
-    writeApi.writePoint(point);
-    await writeApi.flush();
-    console.log('InfluxDB connection has been established successfully.');
-  } catch (error) {
-    console.error('Unable to connect to InfluxDB:', error);
-  }
-};
+  // Get write API for the specified org and bucket
+  writeApi = influxClient.getWriteApi(org, bucket);
+  writeApi.useDefaultTags({ host: 'trafficjamz-server' });
 
-// Call the test function
-testConnection();
+  // Get query API for the specified org
+  queryApi = influxClient.getQueryApi(org);
+
+  // Test connection by writing a test point
+  const testConnection = async () => {
+    try {
+      const point = new Point('system')
+        .tag('test', 'connection')
+        .floatField('value', 1.0);
+      
+      writeApi.writePoint(point);
+      await writeApi.flush();
+      console.log('✅ InfluxDB connection established successfully.');
+    } catch (error) {
+      console.error('⚠️ Unable to connect to InfluxDB:', error.message);
+    }
+  };
+
+  // Call the test function
+  testConnection();
+} else {
+  console.log('ℹ️ InfluxDB disabled - metrics will not be collected (missing credentials)');
+}
 
 module.exports = {
   influxClient,
   writeApi,
   queryApi,
-  Point
+  Point,
+  isConfigured
 };
