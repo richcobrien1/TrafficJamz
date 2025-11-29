@@ -88,7 +88,10 @@ class LocationService {
         .floatField('speed', location.coordinates.speed || 0)
         .floatField('battery_level', location.battery_level || 0);
 
-      influxConfig.writeApi.writePoint(point);
+      // Only write if InfluxDB is configured
+      if (influxConfig.isConfigured && influxConfig.writeApi) {
+        influxConfig.writeApi.writePoint(point);
+      }
     } catch (error) {
       console.error('Error storing location in InfluxDB:', error);
     }
