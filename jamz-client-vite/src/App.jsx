@@ -21,6 +21,7 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MusicProvider } from './contexts/MusicContext';
@@ -91,6 +92,7 @@ function App() {
   });
   const [wakeupAttempts, setWakeupAttempts] = useState(0);
   const [appError, setAppError] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const theme = createTheme({
     palette: {
@@ -249,6 +251,26 @@ function App() {
     return () => clearInterval(keepAliveInterval);
   }, [backendReady]);
 
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('📡 Network: ONLINE');
+      setIsOnline(true);
+    };
+    const handleOffline = () => {
+      console.log('📴 Network: OFFLINE');
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // Debug logging
   console.log('🚀 App component rendering');
   console.log('Current location:', location.pathname);
@@ -277,6 +299,26 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {!isOnline && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bgcolor: 'warning.main',
+            color: 'warning.contrastText',
+            py: 1,
+            px: 2,
+            textAlign: 'center',
+            zIndex: 9999,
+            fontSize: '0.9rem',
+            fontWeight: 500,
+          }}
+        >
+          📴 OFFLINE MODE - Showing last known data. Connect to internet for live updates.
+        </Box>
+      )}
       <ErrorBoundary>
         <AuthProvider>
           <MusicProvider>
