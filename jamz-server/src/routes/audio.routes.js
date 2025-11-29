@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const audioService = require('../services/audio.service');
+const auth = require('../middleware/auth');
 const passport = require('passport');
 const { body, param, validationResult } = require('express-validator');
 const s3Service = require('../services/s3.service');
