@@ -134,6 +134,11 @@ export const AuthProvider = ({ children }) => {
   // Login with email and password
   const login = async (email, password) => {
     try {
+      // Check if online before attempting login
+      if (!navigator.onLine) {
+        throw new Error('📴 Cannot log in while offline. Please connect to the internet and try again.');
+      }
+
       setLoading(true);
       setError(null);
 
@@ -187,6 +192,11 @@ export const AuthProvider = ({ children }) => {
   // Register new user
   const register = async (userData) => {
     try {
+      // Check if online before attempting registration
+      if (!navigator.onLine) {
+        throw new Error('📴 Cannot register while offline. Please connect to the internet and try again.');
+      }
+
       setLoading(true);
       setError(null);
       
