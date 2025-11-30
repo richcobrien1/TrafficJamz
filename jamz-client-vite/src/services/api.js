@@ -191,8 +191,12 @@ api.interceptors.response.use(
     ) {
       const refreshToken = localStorage.getItem('refresh_token');
       if (!refreshToken) {
-        console.warn('⚠️ No refresh token found. Redirecting to login.');
-        window.location.href = '/login';
+        // Silently clear any stale tokens and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+        if (window.location.pathname !== '/auth/login') {
+          window.location.href = '/auth/login';
+        }
         return Promise.reject(error);
       }
 
@@ -204,7 +208,15 @@ api.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return api(originalRequest);
           })
-          .catch((err) => Promise.reject(err));
+          .catch((err) => {
+            // Silently redirect to login on refresh failure
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            if (window.location.pathname !== '/auth/login') {
+              window.location.href = '/auth/login';
+            }
+            return Promise.reject(err);
+          });
       }
 
       originalRequest._retry = true;
@@ -224,11 +236,13 @@ api.interceptors.response.use(
         processQueue(null, access_token);
         return api(originalRequest);
       } catch (refreshError) {
+        // Silently clear tokens and redirect - no console errors
         processQueue(refreshError, null);
-        console.error('❌ Token refresh failed. Redirecting to login.');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        if (window.location.pathname !== '/auth/login') {
+          window.location.href = '/auth/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
