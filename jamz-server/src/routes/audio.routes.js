@@ -80,15 +80,12 @@ router.get('/sessions/group/:groupId',
  * @access Private
  */
 router.get('/sessions/:sessionId',
-  // TODO: Re-enable authentication after testing
-  // passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', { session: false }),
   [
     param('sessionId').isMongoId().withMessage('Valid session ID is required'),
     validate
   ],
   async (req, res) => {
-    // TEMPORARY: Hardcode user for testing
-    req.user = { user_id: '2f089fec-0f70-47c2-b485-fa83ec034e0f' };
     
     // Set no-cache headers to prevent 304 responses
     res.set({
@@ -549,12 +546,9 @@ router.patch('/sessions/:sessionId/enable-music',
  * @note Music files are stored in Cloudflare R2 bucket for free egress and CDN
  */
 router.post('/sessions/:sessionId/upload-music',
-  // TODO: Re-enable authentication after testing
-  // passport.authenticate('jwt', { session: false }),
+  passport.authenticate('jwt', { session: false }),
   s3Service.audioUpload.single('file'),
   async (req, res) => {
-    // TEMPORARY: Hardcode user for testing
-    req.user = { user_id: '2f089fec-0f70-47c2-b485-fa83ec034e0f' };
     try {
       if (!req.file) {
         return res.status(400).json({
