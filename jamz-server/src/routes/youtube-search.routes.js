@@ -34,7 +34,14 @@ router.get('/search/youtube',
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || 'YouTube API error');
+        const errorMsg = data.error?.message || 'YouTube API error';
+        console.error('YouTube API error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: data.error,
+          message: errorMsg
+        });
+        throw new Error(errorMsg);
       }
 
       const results = data.items.map(item => ({
@@ -51,9 +58,17 @@ router.get('/search/youtube',
       });
     } catch (error) {
       console.error('YouTube search error:', error);
+      
+      // Provide helpful error message
+      let userMessage = 'Failed to search YouTube';
+      if (error.message && error.message.includes('API key')) {
+        userMessage = 'YouTube API key is invalid or expired. Please contact support.';
+      }
+      
       res.status(500).json({
         success: false,
-        message: error.message || 'Failed to search YouTube'
+        message: userMessage,
+        details: error.message
       });
     }
   }
