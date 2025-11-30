@@ -114,3 +114,8 @@ grammarly/       # Grammarly desktop app data
 !.gitkeep        # Keep empty directories
 node_modules
 .vercel
+
+# --- Environment Backups (Security - Never Commit) ---
+env-backups/*.sh
+env-backups/*_env_*
+!env-backups/README.md
