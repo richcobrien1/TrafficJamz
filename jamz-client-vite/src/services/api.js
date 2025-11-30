@@ -170,17 +170,19 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Enhanced error logging for mobile debugging
-    console.error('❌ API Error:', {
-      message: error.message,
-      status: error.response?.status,
-      url: error.config?.url,
-      baseURL: error.config?.baseURL,
-      fullURL: error.config?.baseURL + error.config?.url,
-      code: error.code,
-      isNetworkError: !error.response,
-      platform: window.Capacitor ? 'MOBILE' : 'WEB'
-    });
+    // Only log non-401 errors (401s are handled silently below)
+    if (error.response?.status !== 401) {
+      console.error('❌ API Error:', {
+        message: error.message,
+        status: error.response?.status,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        fullURL: error.config?.baseURL + error.config?.url,
+        code: error.code,
+        isNetworkError: !error.response,
+        platform: window.Capacitor ? 'MOBILE' : 'WEB'
+      });
+    }
     
     const originalRequest = error.config;
 
