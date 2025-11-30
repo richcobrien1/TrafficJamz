@@ -3,7 +3,7 @@
 
 const mongoose = require('mongoose');
 const sequelize = require('../config/database');
-const Group = require('../models/mongodb/group.model');
+const Group = require('../models/group.model');
 
 class DataSyncService {
   constructor() {
