@@ -172,6 +172,15 @@ router.post('/upload-profile-image',
         return res.status(400).json({ success: false, message: 'No file uploaded' });
       }
 
+      // CRITICAL: Validate file size (5MB max) before upload
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      if (req.file.size > MAX_SIZE) {
+        return res.status(413).json({ 
+          success: false, 
+          message: `File too large. Maximum size is ${Math.round(MAX_SIZE / 1024 / 1024)}MB. Your file is ${Math.round(req.file.size / 1024 / 1024)}MB.` 
+        });
+      }
+
       let imageUrl;
       let storageType;
 

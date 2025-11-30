@@ -217,6 +217,15 @@ router.post('/upload-avatar',
         });
       }
       
+      // CRITICAL: Validate file size (5MB max)
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      if (req.file.size > MAX_SIZE) {
+        return res.status(413).json({ 
+          success: false, 
+          message: `File too large. Maximum size is ${Math.round(MAX_SIZE / 1024 / 1024)}MB` 
+        });
+      }
+
       // Generate unique filename for group avatar
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const extension = path.extname(req.file.originalname);

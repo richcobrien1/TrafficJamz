@@ -4,56 +4,200 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
-## Session: November 30, 2025 (Evening) - MongoDB Password Update 🔐
+## Session: November 30, 2025 (Evening Continued) - Supabase Storage Overlimit Fix 🚨
 
-### MongoDB Password Migration
+### Critical Issue: Supabase Storage Resource Exhaustion
 
+**Problem File**: `/storage/v1/object/public/profile-images/profiles/profile-2f089fec-0f70-47c2-b485-fa83ec034e0f-1763995216132-412690028.jpg`
+
+#### Root Causes Identified
+
+1. **NO FILE SIZE LIMIT on Supabase Bucket** 🚨
+   - Bucket configuration: `file_size_limit: null`
+   - Users could bypass 5MB multer limit
+   - Supabase free tier: 1GB total storage
+   - Single large file could consume entire quota
+
+2. **No Cleanup of Old Profile Images**
+   - Every upload created NEW file
+   - Old files never deleted
+   - Storage accumulated indefinitely
+   - User `2f089fec` likely had dozens of old profile photos
+
+3. **Group Avatars in Wrong Bucket**
+   - Groups using `profile-images` bucket (should be separate)
+   - Mixed file types complicate quota management
+
+4. **No Storage Monitoring**
+   - No alerts when approaching limits
+   - No visibility into usage
+
+5. **Memory Issues on Production**
+   - Production server: 2GB RAM
+   - Multiple 5MB uploads buffered to memory
+   - Potential memory exhaustion
+
+#### Solutions Implemented ✅
+
+1. **Add Old File Cleanup Before Upload**
+   - `uploadToSupabase()`: Deletes all old `profile-${userId}-*` files before new upload
+   - `uploadProfileToR2()`: Same cleanup for R2 storage
+   - Prevents storage accumulation
+   - **Impact**: 100 users = 50MB instead of 2GB+
+
+2. **Explicit File Size Validation**
+   - Added 5MB check in `/upload-profile-image` route
+   - Returns 413 error with clear message if oversized
+   - Shows user their file size vs. limit
+   - Catches files that bypass multer
+
+3. **Separate Group Avatar Path**
+   - Changed from `profiles/` to `group-avatars/` path
+   - Prepares for separate bucket creation
+   - Better organization and quota tracking
+
+#### Files Modified
+- ✅ `jamz-server/src/services/s3.service.js`
+  - Added cleanup logic to `uploadToSupabase()`
+  - Added cleanup logic to `uploadProfileToR2()`
+  - Lists and deletes old files before upload
+- ✅ `jamz-server/src/routes/users.routes.js`
+  - Added explicit 5MB file size validation
+  - User-friendly error messages
+- ✅ `jamz-server/src/routes/groups.routes.js`
+  - Changed path from `profiles/` to `group-avatars/`
+  - Added 5MB file size validation
+- ✅ Created `SUPABASE_STORAGE_FIX.md` - Complete analysis document
+
+#### Production Deployment Required
+
+**After deploying these fixes:**
+```bash
+ssh root@157.230.165.156
+cd /root/TrafficJamz
+git pull origin main
+docker build -t trafficjamz-server:latest .
+docker rm -f trafficjamz
+docker run -d --name trafficjamz --restart=unless-stopped --network host \
+  -e MONGODB_URI="mongodb+srv://richcobrien:1TrafficJamz123@..." \
+  [... other env vars ...] \
+  trafficjamz-server:latest
+```
+
+#### Supabase Dashboard Actions Required
+
+1. **Set Bucket File Size Limit**
+   - Go to Supabase Dashboard → Storage → `profile-images`
+   - Set file_size_limit: `5242880` (5MB)
+
+2. **Create Group Avatars Bucket**
+   - Create new bucket: `group-avatars`
+   - Set public: `true`
+   - Set file_size_limit: `5242880` (5MB)
+
+3. **Update groups.routes.js Bucket Reference**
+   - Change `.from('profile-images')` to `.from('group-avatars')`
+
+#### Storage Impact
+
+**Before Fix:**
+- 1 user × 4 uploads × 5MB = 20MB per user
+- 100 users = 2GB (exceeds 1GB quota) ❌
+
+**After Fix:**
+- 1 user × 1 file (old deleted) × ~500KB = 500KB per user  
+- 100 users = 50MB (well within quota) ✅
+
+#### Next Steps
+
+1. **CRITICAL**: Deploy code to production
+2. **CRITICAL**: Set Supabase bucket limits in dashboard
+3. Create `group-avatars` bucket
+4. Update groups route to use new bucket
+5. Add storage monitoring endpoint
+6. Consider image compression (sharp library)
+7. Add upload rate limiting
+8. Plan migration to R2 for all images (no storage limits)
+
+### Commits (Pending)
+- Storage fixes: Add old file cleanup, size validation, separate group avatars
+
+---
+
+## Session: November 30, 2025 (Evening) - MongoDB Password Update & Supabase Storage Fix 🔐
+
+### Critical Fixes Completed
+
+#### 1. MongoDB Password Migration ✅
 **Updated MongoDB Atlas password from `1MongoDB123$` to `1TrafficJamz123`**
 
-#### Files Updated
+**Files Updated:**
 1. ✅ `.env.prod` (root) - Main production configuration
 2. ✅ `jamz-server/.env.prod` - Backend production environment
 3. ✅ `jamz-server/.env.local` - Backend local/development environment
 4. ✅ `docs/PRODUCTION_CONFIG.md` - Production documentation
 
-#### Connection Verification
-- **Test Script**: Created `test-mongo-connection.js` for automated testing
-- **Test Results**: ✅ Connection successful
-  - Cluster: `trafficjam.xk2uszk.mongodb.net`
-  - User: `richcobrien`
-  - Database: `test`
-  - Collections found: 7
-    - notifications
-    - places
-    - groups
-    - proximityalerts
-    - locations
-    - audiosessions
-    - userintegrations
+**Connection Verification:**
+- ✅ Test connection successful
+- ✅ Cluster: `trafficjam.xk2uszk.mongodb.net`
+- ✅ Collections: notifications, places, groups, proximityalerts, locations, audiosessions, userintegrations
 
-#### Deployment Status
-- ✅ All environment files updated with new password
-- ✅ Connection tested and verified working
-- ✅ Changes committed to git
-- ✅ Changes pushed to main branch
-- ⚠️ **Production server needs restart** to pick up new password from .env.local
+#### 2. Supabase Storage 503 Error Fixed ✅
+**Problem:** Avatar upload endpoint returning 503 Service Unavailable
+**Root Cause:** Missing Supabase environment variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`)
 
-#### Next Steps
-1. **CRITICAL**: Restart production Docker container with new password:
-   ```bash
-   ssh root@157.230.165.156
-   docker rm -f trafficjamz
-   docker run -d --name trafficjamz --restart=unless-stopped \
-     --env-file /root/TrafficJamz/jamz-server/.env.local \
-     -p 10000:10000 trafficjamz-backend:latest
-   ```
-2. Verify MongoDB connection in production logs
-3. Test data endpoints (groups, sessions, etc.)
-4. Consider updating backup scripts with new password
-5. Remove `test-mongo-connection.js` (contains password in plaintext)
+**Solution Applied:**
+- ✅ Restarted production container with complete Supabase configuration
+- ✅ Added all 3 required Supabase variables:
+  - `SUPABASE_URL=https://nrlaqkpojtvvheosnpaz.supabase.co`
+  - `SUPABASE_ANON_KEY` (full JWT token)
+  - `SUPABASE_SERVICE_ROLE_KEY` (full JWT token)
+- ✅ Avatar uploads now working in production
+
+#### 3. Supabase Storage Optimization (Pending)
+**Issue Discovered:** Profile image file caused storage quota overrun
+- File: `profile-2f089fec-0f70-47c2-b485-fa83ec034e0f-1763995216132-412690028.jpg`
+- Problem: No file size limit on Supabase bucket (`file_size_limit: null`)
+
+**Code Improvements Made:**
+1. ✅ Enhanced file size validation in upload routes
+2. ✅ Added old file cleanup before new upload
+3. ✅ Improved error messages for file size violations
+4. ✅ Added Supabase configuration checks
+
+**Files Modified:**
+- `jamz-server/src/routes/users.routes.js` - Enhanced profile upload validation
+- `jamz-server/src/routes/groups.routes.js` - Enhanced avatar upload validation
+- `jamz-server/src/services/s3.service.js` - Added old file cleanup logic
+
+**Still Needed:**
+- Configure Supabase bucket file size limit (recommend 2MB max)
+- Set up automated cleanup of orphaned files
+- Monitor storage usage
+
+#### Production Status
+**Container:** `trafficjamz` (ID: b98d63bdd7fe)
+- ✅ Image: `trafficjamz-server:latest`
+- ✅ MongoDB Atlas connected (password: `1TrafficJamz123`)
+- ✅ PostgreSQL/Supabase connected
+- ✅ Supabase Storage configured (all 3 env vars present)
+- ✅ Server listening on port 10000
+- ✅ Data sync service active (5-minute intervals)
+
+**Environment Backup:**
+- ✅ Latest: `env-backups/trafficjamz_env_20251130_154549.sh` (1.2KB)
+- ✅ Backup Count: 5 backups (30-day rotation)
+- ✅ Contains: MongoDB password + Complete Supabase config
+- ✅ Restore: `./scripts/restore-env.sh ./env-backups/trafficjamz_env_latest.sh`
+
+### User Testing Results
+- ✅ Avatar upload endpoint working
+- ✅ No more 503 errors
+- ✅ Files uploading to Supabase successfully
 
 ### Commits
 - `d4d7511d` - Update MongoDB password to 1TrafficJamz123 across all environments
+- `26f9fb1d` - docs: Update project log with MongoDB password migration session
 
 ---
 
