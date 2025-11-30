@@ -160,7 +160,7 @@ export const MusicProvider = ({ children }) => {
       const stats = await downloadManager.getStorageStats();
       setStorageStats(stats);
     } catch (error) {
-      console.error('Failed to update storage stats:', error);
+      // Silently ignore storage stats errors (Service Worker may not be ready yet)
     }
   };
   
