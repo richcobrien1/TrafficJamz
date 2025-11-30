@@ -53,7 +53,7 @@ PORT=5000
 
 #### MongoDB (Music Library, Groups, Sessions)
 ```bash
-MONGODB_URI=mongodb+srv://richcobrien:1MongoDB123$@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&ssl=true&appName=trafficjam
+MONGODB_URI=mongodb+srv://richcobrien:1TrafficJamz123@trafficjam.xk2uszk.mongodb.net/?retryWrites=true&w=majority&appName=trafficjam
 ```
 
 #### PostgreSQL (Users, Auth)
