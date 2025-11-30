@@ -4,6 +4,88 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: November 30, 2025 - Production Fixes & Security Hardening 🔐
+
+### Issues Fixed
+
+1. **YouTube Search API 500 Error** ✅
+   - **Problem**: Backend returning 500 when searching for YouTube alternatives after error 150
+   - **Root Cause**: `YOUTUBE_API_KEY` environment variable not set in Docker container
+   - **Solution**: Added `YOUTUBE_API_KEY=AIzaSyDVEPOjw7L_TqrX3z4xO5QxN6LK_YrZXPw` to Docker run command
+   - **Impact**: YouTube fallback search now functional
+   - **Commit**: Container restart with env var
+
+2. **Nginx Port Mismatch** ✅
+   - **Problem**: Nginx proxying to port 5000, but container running on port 10000
+   - **Root Cause**: Port configuration changed but nginx not updated
+   - **Solution**: Updated nginx config `127.0.0.1:5000` → `127.0.0.1:10000` and reloaded
+   - **Impact**: Backend properly accessible via HTTPS reverse proxy
+   - **Files Modified**: `/etc/nginx/sites-enabled/trafficjamz`
+
+3. **Data Sync Service Crash** ✅
+   - **Problem**: MongoDB → PostgreSQL sync failing on startup
+   - **Error**: `Cannot find module '../models/mongodb/group.model'`
+   - **Root Cause**: Incorrect import path (directory doesn't exist)
+   - **Solution**: Fixed path to `../models/group.model`
+   - **Impact**: Data sync now running every 5 minutes, syncing 4 groups
+   - **Commit**: `5e91ab1d`
+
+4. **Manifest Icon 404 Error** ✅
+   - **Problem**: Browser console showing `Error while trying to use icon from Manifest`
+   - **Root Cause**: `manifest.json` referencing `../icons/icon-*.webp` which don't exist in deployed build
+   - **Solution**: Updated manifest to use `/icon-512.png` already in public folder
+   - **Impact**: PWA manifest now valid, no console errors
+   - **Commit**: `a010badc`
+
+5. **CRITICAL: Authentication Bypass Vulnerability** 🚨✅
+   - **Problem**: Two audio routes had authentication disabled with hardcoded user ID
+   - **Affected Routes**:
+     - `GET /api/audio/sessions/:sessionId` - Anyone could read any session
+     - `POST /api/audio/sessions/:sessionId/upload-music` - Anyone could upload as any user
+   - **Hardcoded User**: `2f089fec-0f70-47c2-b485-fa83ec034e0f` (richcobrien)
+   - **Root Cause**: TODO comments saying "Re-enable authentication after testing"
+   - **Security Impact**: HIGH - Unauthenticated access to private audio sessions and file uploads
+   - **Solution**: 
+     - Removed hardcoded `req.user` assignments
+     - Re-enabled `passport.authenticate('jwt', { session: false })`
+     - Deleted TODO comments
+   - **Commit**: `b8ad0201`
+
+### Production Status
+
+**Backend** (DigitalOcean 157.230.165.156:10000):
+- ✅ MongoDB Atlas: Connected (4 groups synced)
+- ✅ PostgreSQL: Connected (Supabase)
+- ✅ InfluxDB: Disabled (optional, no credentials)
+- ✅ Data Sync: Active (5-minute intervals)
+- ✅ YouTube API: Configured
+- ✅ Authentication: Enforced on all routes
+- ✅ Server: Listening on port 10000
+
+**Frontend** (Vercel - https://jamz.v2u.us):
+- ✅ Manifest: Fixed icon paths
+- ✅ Auto-deployed from main branch
+- ✅ Offline mode: TIER 1-3 complete
+
+**Nginx**:
+- ✅ Reverse proxy: Port 10000
+- ✅ SSL: Let's Encrypt certificates
+- ✅ WebSocket: Upgraded connections working
+
+### Commits
+- `5e91ab1d` - Fix: Correct group.model path in data-sync service
+- `a010badc` - Fix: Update manifest.json to use correct icon path
+- `b8ad0201` - Security: Re-enable authentication on audio routes (remove hardcoded user)
+
+### Next Steps
+1. Monitor production for any authentication issues after re-enabling JWT
+2. Test YouTube alternative search when error 150 occurs
+3. Continue offline mode implementation (TIER 4+ if needed)
+4. Audit other routes for similar authentication bypasses
+5. Add automated security tests for authentication on all protected routes
+
+---
+
 ## Session: November 28, 2025 (Evening) - Production Recovery & Offline Mode Phase 1-2 🔧
 
 ### Critical Issues Resolved
