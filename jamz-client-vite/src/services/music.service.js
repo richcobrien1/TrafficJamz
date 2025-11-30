@@ -205,6 +205,12 @@ class MusicService {
    * @param {Object} track - Track object with url, title, artist, etc.
    */
   async loadTrack(track) {
+    // Validate track has minimum required data
+    if (!track || (!track.title && !track.url && !track.fileUrl && !track.youtubeId && !track.spotifyId)) {
+      console.warn('⚠️ [loadTrack] Invalid track - skipping load:', track);
+      return;
+    }
+    
     // CRITICAL: Stop any currently playing audio before loading new track
     if (this.audioElement && !this.audioElement.paused) {
       console.log('🛑 Stopping HTML5 audio element');
