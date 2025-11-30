@@ -109,6 +109,33 @@ const uploadProfileToR2 = async (file, userId) => {
   }
 
   try {
+    // CRITICAL: Delete old profile images first to prevent storage accumulation
+    console.log(`Cleaning up old R2 profile images for user ${userId}...`);
+    try {
+      const listParams = {
+        Bucket: process.env.R2_BUCKET_PUBLIC || process.env.R2_BUCKET_MUSIC || 'music',
+        Prefix: `profiles/profile-${userId}-`
+      };
+      
+      const existingFiles = await s3.listObjectsV2(listParams).promise();
+      
+      if (existingFiles.Contents && existingFiles.Contents.length > 0) {
+        console.log(`Deleting ${existingFiles.Contents.length} old R2 profile images`);
+        const deleteParams = {
+          Bucket: listParams.Bucket,
+          Delete: {
+            Objects: existingFiles.Contents.map(obj => ({ Key: obj.Key }))
+          }
+        };
+        
+        await s3.deleteObjects(deleteParams).promise();
+        console.log('✅ Old R2 profile images cleaned up');
+      }
+    } catch (cleanupError) {
+      console.warn('Failed to cleanup old R2 files:', cleanupError);
+      // Don't fail upload if cleanup fails
+    }
+
     // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const extension = path.extname(file.originalname);
@@ -154,6 +181,29 @@ const uploadToSupabase = async (file, userId) => {
   }
 
   try {
+    // CRITICAL: Delete old profile images first to prevent storage accumulation
+    console.log(`Cleaning up old profile images for user ${userId}...`);
+    const { data: existingFiles, error: listError } = await supabase.storage
+      .from('profile-images')
+      .list('profiles', {
+        search: `profile-${userId}-`
+      });
+
+    if (existingFiles && existingFiles.length > 0) {
+      const filesToDelete = existingFiles.map(f => `profiles/${f.name}`);
+      console.log(`Deleting ${filesToDelete.length} old profile images`);
+      const { error: deleteError } = await supabase.storage
+        .from('profile-images')
+        .remove(filesToDelete);
+      
+      if (deleteError) {
+        console.warn('Failed to delete old files:', deleteError);
+        // Don't fail upload if cleanup fails
+      } else {
+        console.log('✅ Old profile images cleaned up');
+      }
+    }
+
     // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const extension = path.extname(file.originalname);
