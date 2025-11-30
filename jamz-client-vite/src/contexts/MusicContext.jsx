@@ -234,12 +234,12 @@ export const MusicProvider = ({ children }) => {
         const track = musicService.currentTrack || currentTrack;
         console.log('🎵 [MusicContext] YouTube error 150 detected, track:', track?.title);
         
+        // Skip to next track automatically instead of showing dialog
         if (track) {
-          console.log('🎵 [MusicContext] Opening alternative dialog for:', track.title);
-          setAlternativeTrack(track);
-          setAlternativeDialogOpen(true);
-        } else {
-          console.warn('🎵 [MusicContext] No track available to show alternative dialog');
+          console.log('🎵 [MusicContext] Video blocked, skipping to next track...');
+          setTimeout(() => {
+            handleNext();
+          }, 500);
         }
       }
     };
@@ -867,6 +867,9 @@ export const MusicProvider = ({ children }) => {
       console.warn('🎵 [MusicContext] Cannot play - no track loaded and playlist is empty');
       return;
     }
+    
+    // Set isPlaying immediately for responsive UI
+    setIsPlaying(true);
     
     await musicService.play();
     
