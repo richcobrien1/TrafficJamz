@@ -559,7 +559,7 @@ const MusicPlayerPage = () => {
             whiteSpace: 'nowrap',
           }}
         >
-          {group?.name || 'Music Player'}
+          {group?.name || ''}
         </Typography>
       </Box>
 
