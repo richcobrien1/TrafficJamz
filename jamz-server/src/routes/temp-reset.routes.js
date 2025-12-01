@@ -21,7 +21,7 @@ router.get('/test', (req, res) => {
 router.post('/fix-password', async (req, res) => {
   try {
     const email = 'richcobrien@hotmail.com';
-    const newPassword = 'Rich0brien';
+    const newPassword = '1Topgun123$';
 
     console.log(`🔑 Resetting password for: ${email}`);
 
