@@ -43,6 +43,7 @@ const routerOptions = {
 const getAnnouncedIp = () => {
   // Auto-detect announced IP based on environment
   if (process.env.MEDIASOUP_ANNOUNCED_IP && process.env.MEDIASOUP_ANNOUNCED_IP !== '127.0.0.1') {
+    console.log('🎤 Using MEDIASOUP_ANNOUNCED_IP:', process.env.MEDIASOUP_ANNOUNCED_IP);
     return process.env.MEDIASOUP_ANNOUNCED_IP;
   }
   
