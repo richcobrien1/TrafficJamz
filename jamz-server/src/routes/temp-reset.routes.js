@@ -5,6 +5,15 @@ const sequelize = require('../config/database');
 const { Sequelize } = require('sequelize');
 
 /**
+ * @route GET /api/temp-reset/test
+ * @desc Test if route is loaded
+ * @access Public
+ */
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'Temp reset routes are loaded!' });
+});
+
+/**
  * @route POST /api/temp-reset/fix-password
  * @desc ONE-TIME password reset for production debugging
  * @access Public (TEMPORARY - REMOVE AFTER USE)
