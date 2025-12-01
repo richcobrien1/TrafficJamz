@@ -3968,7 +3968,7 @@ const LocationTracking = () => {
             whiteSpace: 'nowrap',
           }}
         >
-          {group?.name || 'Location Tracking'}
+          {group?.name || ''}
         </Typography>
       </Box>
       

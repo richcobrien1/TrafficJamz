@@ -88,7 +88,7 @@ const AudioSettings = () => {
               whiteSpace: 'nowrap',
             }}
           >
-            {group?.name || 'Voice Settings'}
+            {group?.name || ''}
           </Typography>
         </Box>
 
