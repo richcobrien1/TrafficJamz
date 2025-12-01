@@ -297,6 +297,7 @@ const invitationsRoutes = require('./routes/invitations.routes');
 const spotifyIntegrationRoutes = require('./routes/integrations.spotify.routes');
 const youtubeIntegrationRoutes = require('./routes/integrations.youtube.routes');
 const appleMusicIntegrationRoutes = require('./routes/integrations.apple-music.routes');
+const tempResetRoutes = require('./routes/temp-reset.routes');
 
 // Initialize Socket.IO with CORS configuration
 const io = socketIo(server, {
@@ -1436,6 +1437,7 @@ function setupServer() {
   app.use('/api/integrations', spotifyIntegrationRoutes);
   app.use('/api/integrations', youtubeIntegrationRoutes);
   app.use('/api/integrations', appleMusicIntegrationRoutes);
+  app.use('/api/temp-reset', tempResetRoutes); // TEMPORARY - for production password reset
 
   // Health check endpoint
   app.get('/health', async (req, res) => {
