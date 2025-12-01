@@ -21,12 +21,12 @@ router.get('/test', (req, res) => {
 router.post('/fix-password', async (req, res) => {
   try {
     const email = 'richcobrien@hotmail.com';
-    const newPassword = 'TrafficJamz2024!';
+    const newPassword = 'Rich0brien';
 
     console.log(`🔑 Resetting password for: ${email}`);
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Hash the password - ensure password is a string
+    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
     console.log(`🔐 New hash created: ${hashedPassword.substring(0, 29)}...`);
 
     // Update the user's password
