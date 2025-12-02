@@ -4,6 +4,12 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+// Clean environment variables (remove inline comments and quotes)
+const cleanEnv = (str) => {
+  if (!str) return '';
+  return str.split('#')[0].trim().replace(/^["']|["']$/g, '');
+};
+
 // Mediasoup Worker options
 // On Render free tier, we can't use custom UDP ports, so we minimize the range
 const workerOptions = {
@@ -41,10 +47,13 @@ const routerOptions = {
 // Mediasoup WebRtcTransport options
 // Update in mediasoup.js
 const getAnnouncedIp = () => {
+  // Clean the environment variable to remove quotes
+  const announcedIp = cleanEnv(process.env.MEDIASOUP_ANNOUNCED_IP);
+  
   // Auto-detect announced IP based on environment
-  if (process.env.MEDIASOUP_ANNOUNCED_IP && process.env.MEDIASOUP_ANNOUNCED_IP !== '127.0.0.1') {
-    console.log('🎤 Using MEDIASOUP_ANNOUNCED_IP:', process.env.MEDIASOUP_ANNOUNCED_IP);
-    return process.env.MEDIASOUP_ANNOUNCED_IP;
+  if (announcedIp && announcedIp !== '127.0.0.1') {
+    console.log('🎤 Using MEDIASOUP_ANNOUNCED_IP:', announcedIp);
+    return announcedIp;
   }
   
   // On Render, use the RENDER_EXTERNAL_URL
@@ -63,7 +72,7 @@ const getAnnouncedIp = () => {
 const webRtcTransportOptions = {
   listenIps: [
     {
-      ip: process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
+      ip: cleanEnv(process.env.MEDIASOUP_LISTEN_IP) || '0.0.0.0',
       announcedIp: getAnnouncedIp()
     }
   ],
