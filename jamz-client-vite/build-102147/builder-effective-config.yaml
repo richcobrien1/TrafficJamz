@@ -1,0 +1,36 @@
+directories:
+  output: build-102147
+  buildResources: build
+appId: com.trafficjamz.app
+productName: TrafficJamz
+copyright: Copyright © 2025 TrafficJamz
+files:
+  - filter:
+      - dist/**/*
+      - electron/**/*
+      - package.json
+win:
+  target:
+    - target: dir
+      arch:
+        - x64
+  icon: build/icon.ico
+  signAndEditExecutable: false
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.social-networking
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Network
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+forceCodeSigning: false
+electronVersion: 39.2.3

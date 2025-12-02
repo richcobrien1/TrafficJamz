@@ -18,7 +18,9 @@ import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 // Use HashRouter in Electron (file:// protocol), BrowserRouter for web
-const Router = window.electron ? HashRouter : BrowserRouter;
+// Check for both window.electron and window.electronAPI, plus file:// protocol
+const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
+const Router = isElectron ? HashRouter : BrowserRouter;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
