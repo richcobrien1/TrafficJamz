@@ -1365,6 +1365,13 @@ const LocationTracking = () => {
 
   // Continuous location tracking with watchPosition
   useEffect(() => {
+    // Check if running in Electron (desktop) - skip GPS
+    const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
+    if (isElectron) {
+      console.log('🖥️ Desktop app detected - GPS tracking disabled');
+      return;
+    }
+
     if (!sharingLocation || !groupId) {
       // Stop watching if location sharing is disabled
       if (watchIdRef.current !== null) {

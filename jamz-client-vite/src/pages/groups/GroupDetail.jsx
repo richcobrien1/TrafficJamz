@@ -331,6 +331,14 @@ const GroupDetail = () => {
 
     console.log('🎯 Auto-starting location tracking for group:', groupId, 'userId:', userId);
 
+    // Check if running in Electron (desktop) - skip GPS
+    const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
+    if (isElectron) {
+      console.log('🖥️ Desktop app detected - GPS tracking disabled');
+      setIsLocationWatchActive(false);
+      return;
+    }
+
     // Request permission first
     if (!navigator.geolocation) {
       console.error('❌ Geolocation not supported');
