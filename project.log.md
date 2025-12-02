@@ -4,6 +4,94 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: December 1, 2025 - UI Alignment Fix & Supabase Storage Cleanup 🧹
+
+### UI Quality Improvements
+
+#### 1. Feature Bar Icon Alignment Fixed ✅
+- **Problem**: Group Detail page feature bars had inconsistent heights and icon alignment
+- **Issue**: Music bar used plain text musical note (`♪`) with custom inline styling while Voice and Location used Material-UI icons
+- **Impact**: Different left margins and potentially different heights
+- **Solution**: 
+  - Changed Music bar to use `<MusicNoteIcon />` (Material-UI component)
+  - Removed custom inline styling (`fontSize: '28px', marginRight: '8px'`)
+  - All three bars now use consistent `p: 2` padding and `gap: 2` spacing
+- **Files Modified**:
+  - `jamz-client-vite/src/pages/groups/GroupDetail.jsx`
+- **Result**: All three feature bars (Voice, Music, Location) now have identical height and left margin alignment
+- **Commit**: `b1aaf004`
+
+### Critical Storage Cleanup
+
+#### 2. Supabase Storage Deduplication ✅
+- **Problem**: Supabase `profile-images` bucket exceeded 1GB limit with 1.12 GB used (147 music files)
+- **Root Cause**: Migration to R2 storage was successful, but old Supabase files were never deleted
+- **Analysis**:
+  - 147 files in Supabase `Session-Music` folder
+  - 0 files actually referenced in active playlists
+  - All 15 active tracks now using R2 storage or external sources
+  - 100% of Session-Music files were duplicates/orphaned
+- **Solution**: Created comprehensive cleanup script
+  - `scripts/cleanup-supabase-music.js` - Automated storage analysis and cleanup tool
+  - Analyzes all Supabase files vs database track references
+  - Identifies unused/orphaned files
+  - Supports dry-run preview and deletion modes
+- **Cleanup Results**:
+  - ✅ Deleted: 147 unused music files
+  - ✅ Space Freed: 1,149.62 MB (1.12 GB)
+  - ✅ Storage Savings: 100% of Session-Music folder
+  - ✅ Active Tracks: 15 tracks remain safe (12 in R2 + 3 external)
+- **Files Created**:
+  - `scripts/cleanup-supabase-music.js` - Reusable storage cleanup utility
+- **Commit**: `430391bf`
+
+### Script Features
+
+**Cleanup Script Capabilities**:
+- Lists all files in Supabase storage with sizes and dates
+- Queries MongoDB for all active music tracks in playlists
+- Identifies unused files not referenced in any playlist
+- Calculates total storage usage and potential savings
+- Shows top largest unused files
+- Supports dry-run mode (preview only)
+- Supports delete mode (actual cleanup)
+- Provides detailed logging and progress reporting
+
+**Usage**:
+```bash
+# Preview what would be deleted
+node scripts/cleanup-supabase-music.js --dry-run
+
+# Actually delete unused files
+node scripts/cleanup-supabase-music.js --delete
+```
+
+### Production Status
+
+**Storage After Cleanup**:
+- Supabase `profile-images` bucket: Back under 1GB limit ✅
+- Active music files: 15 tracks in R2 storage (unlimited) ✅
+- No data loss - all playlist tracks intact ✅
+
+**Frontend** (https://jamz.v2u.us):
+- Group Detail page feature bars aligned and consistent ✅
+- All Material-UI icons properly sized ✅
+
+### Lessons Learned
+
+1. **Migration Cleanup**: When migrating storage backends, always clean up old data
+2. **Storage Monitoring**: Need proactive alerts before hitting limits
+3. **Automated Cleanup**: Reusable scripts prevent future storage issues
+4. **UI Consistency**: Always use same component types for similar UI elements (Material-UI icons vs plain text)
+
+### Next Steps
+- [ ] Set up automated monthly cleanup job for orphaned files
+- [ ] Add storage usage monitoring/alerts
+- [ ] Consider creating similar cleanup scripts for profile images
+- [ ] Document storage migration procedures
+
+---
+
 ## Session: November 30, 2025 (Late Evening) - Production Auth + WebRTC Fixes 🔧
 
 ### Critical Production Issues Resolved
