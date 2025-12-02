@@ -15,6 +15,54 @@ const socketIo = require('socket.io'); // You'll need to install this package
 // Load environment variables
 dotenv.config();
 
+// Clean environment variables - remove quotes and inline comments
+// This prevents issues where .env files have quoted values like PORT="10000"
+const cleanEnv = (key) => {
+  const value = process.env[key];
+  if (!value) return value;
+  // Remove inline comments (everything after #)
+  let cleaned = value.split('#')[0].trim();
+  // Remove surrounding quotes (both single and double)
+  cleaned = cleaned.replace(/^["']|["']$/g, '');
+  return cleaned;
+};
+
+// Validate and clean critical environment variables
+const criticalEnvVars = [
+  'PORT',
+  'MONGODB_URI',
+  'MEDIASOUP_ANNOUNCED_IP',
+  'MEDIASOUP_LISTEN_IP',
+  'JWT_SECRET',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY'
+];
+
+console.log('🔍 Validating and cleaning environment variables...');
+criticalEnvVars.forEach(key => {
+  if (process.env[key]) {
+    const original = process.env[key];
+    const cleaned = cleanEnv(key);
+    if (original !== cleaned) {
+      console.log(`⚠️  Cleaned ${key}: "${original}" → "${cleaned}"`);
+      process.env[key] = cleaned;
+    }
+  }
+});
+
+// Validate PORT is a valid number
+if (process.env.PORT) {
+  const port = parseInt(process.env.PORT, 10);
+  if (isNaN(port) || port < 1 || port > 65535) {
+    console.error(`❌ Invalid PORT value: "${process.env.PORT}". Must be a number between 1-65535.`);
+    process.exit(1);
+  }
+  process.env.PORT = port.toString(); // Ensure it's a clean number string
+  console.log(`✅ PORT validated: ${port}`);
+}
+
+console.log('✅ Environment variables validated and cleaned');
+
 // Runtime toggle for audio signaling — can be changed without restarting the process
 let audioSignalingEnabled = process.env.DISABLE_AUDIO_SIGNALING !== 'true';
 
