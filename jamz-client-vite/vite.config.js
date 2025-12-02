@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 
 export default defineConfig({
-  base: '/', // Absolute paths for web deployment
+  base: process.env.ELECTRON === 'true' ? './' : '/', // Relative paths for Electron, absolute for web
   plugins: [react()],
   server: {
     host: true, // Listen on all interfaces for mobile access
