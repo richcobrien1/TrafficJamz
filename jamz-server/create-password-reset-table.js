@@ -3,6 +3,7 @@ const sequelize = require('./src/config/database');
 
 const createTable = async () => {
   try {
+    // Create table
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,6 +18,51 @@ const createTable = async () => {
     `);
     
     console.log('✅ Table password_reset_tokens created successfully');
+    
+    // Enable Row Level Security
+    await sequelize.query(`
+      ALTER TABLE password_reset_tokens ENABLE ROW LEVEL SECURITY;
+    `);
+    
+    console.log('✅ Row Level Security enabled on password_reset_tokens');
+    
+    // Create RLS policies
+    await sequelize.query(`
+      -- Users can only view their own tokens
+      CREATE POLICY "Users can only view their own password reset tokens"
+      ON password_reset_tokens
+      FOR SELECT
+      USING (
+        auth.uid() = user_id
+        OR
+        email = (SELECT email FROM users WHERE user_id = auth.uid())
+      );
+      
+      -- System can insert tokens
+      CREATE POLICY "System can insert password reset tokens"
+      ON password_reset_tokens
+      FOR INSERT
+      WITH CHECK (true);
+      
+      -- Users can update their own tokens
+      CREATE POLICY "Users can update their own password reset tokens"
+      ON password_reset_tokens
+      FOR UPDATE
+      USING (
+        auth.uid() = user_id
+        OR
+        email = (SELECT email FROM users WHERE user_id = auth.uid())
+      );
+      
+      -- System can delete expired tokens
+      CREATE POLICY "System can delete expired tokens"
+      ON password_reset_tokens
+      FOR DELETE
+      USING (true);
+    `);
+    
+    console.log('✅ RLS policies created successfully');
+    
     process.exit(0);
   } catch (error) {
     console.error('❌ Error creating table:', error.message);
