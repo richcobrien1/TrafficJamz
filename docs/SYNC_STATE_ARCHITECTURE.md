@@ -148,6 +148,101 @@
 │    • RPO (Recovery Point Objective): < 24 hours                 │
 │    • Failover to backup region                                  │
 │    • DR testing quarterly                                       │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ TIER 6: AI/ML INTELLIGENCE LAYER (Master Agent & RAG)          │
+│                                                                  │
+│ CURRENT STATE: Basic AI Chat (Simulated)                        │
+│ ✅ AIChatAssistant.jsx component (keyword-based responses)      │
+│ ⚠️  No real LLM integration                                     │
+│ ❌ No RAG (Retrieval-Augmented Generation)                      │
+│ ❌ No vector database for embeddings                            │
+│ ❌ No master agent orchestration                                │
+│                                                                  │
+│ STRATEGY NEEDED:                                                │
+│                                                                  │
+│ A. MASTER AGENT ARCHITECTURE                                    │
+│    • Centralized AI orchestration service                       │
+│    • Multi-agent coordination (music, location, social agents)  │
+│    • Context management across user sessions                    │
+│    • LLM integration (OpenAI GPT-4, Anthropic Claude, Llama)   │
+│    • Function calling for TrafficJamz actions                   │
+│    • Agent memory and state persistence                         │
+│                                                                  │
+│ B. RAG (RETRIEVAL-AUGMENTED GENERATION)                         │
+│    • Vector Database: Pinecone, Weaviate, or ChromaDB           │
+│    • Embedding Model: OpenAI text-embedding-3-large             │
+│    • Indexed Content:                                           │
+│      - User group messages and chat history                     │
+│      - Music playlist metadata and preferences                  │
+│      - Location history and saved places                        │
+│      - User behavior patterns and interactions                  │
+│      - App documentation and help articles                      │
+│    • Semantic search for context-aware responses                │
+│    • Real-time embedding generation on new content              │
+│                                                                  │
+│ C. AI-POWERED FEATURES                                          │
+│    1. Smart Music Recommendations                               │
+│       • Analyze group listening patterns                        │
+│       • Suggest tracks based on mood/location/time              │
+│       • Collaborative filtering across groups                   │
+│                                                                  │
+│    2. Intelligent Location Suggestions                          │
+│       • Predict likely destinations based on history            │
+│       • Suggest meeting points for groups                       │
+│       • Real-time traffic-aware routing                         │
+│                                                                  │
+│    3. Natural Language Commands                                 │
+│       • "Play upbeat music for our road trip"                   │
+│       • "Find midpoint between all group members"               │
+│       • "Show me where we went last weekend"                    │
+│                                                                  │
+│    4. Contextual Support Assistant                              │
+│       • Answer questions using RAG from user history            │
+│       • Personalized onboarding and feature discovery           │
+│       • Proactive suggestions based on context                  │
+│                                                                  │
+│    5. Automated Group Management                                │
+│       • Suggest optimal audio session times                     │
+│       • Auto-generate group avatars (AI image generation)       │
+│       • Smart member matching and invitations                   │
+│                                                                  │
+│ D. DATA FLOW FOR AI LAYER                                       │
+│                                                                  │
+│    User Interaction                                             │
+│         ↓                                                        │
+│    Frontend Agent Client                                        │
+│         ↓                                                        │
+│    Backend Master Agent API                                     │
+│         ↓                                                        │
+│    ┌─────────────────┬──────────────────┐                      │
+│    │                 │                  │                       │
+│    ▼                 ▼                  ▼                       │
+│  LLM Service   Vector DB (RAG)   Function Executor              │
+│  (GPT-4/Claude) (Pinecone)       (TrafficJamz APIs)            │
+│    │                 │                  │                       │
+│    └─────────────────┴──────────────────┘                      │
+│                      ↓                                          │
+│            Contextualized Response                              │
+│                      ↓                                          │
+│            Store in MongoDB + IndexedDB                         │
+│                                                                  │
+│ E. STORAGE REQUIREMENTS FOR AI                                  │
+│    • Vector Database: Store embeddings (768-3072 dimensions)    │
+│    • Conversation History: MongoDB with TTL (30 days)           │
+│    • Agent State: Redis for fast context retrieval              │
+│    • Model Cache: Local LLM cache for offline AI (optional)     │
+│    • Training Data: S3/R2 for model fine-tuning datasets        │
+│                                                                  │
+│ F. SECURITY & PRIVACY FOR AI                                    │
+│    • User data anonymization before embedding                   │
+│    • Opt-in/opt-out for AI features                             │
+│    • Local AI processing option (privacy mode)                  │
+│    • GDPR compliance for AI-generated content                   │
+│    • Rate limiting to prevent abuse                             │
+│    • Content filtering for harmful outputs                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -178,8 +273,6 @@
    - MongoDB for structured data
    - Supabase Storage for files
    - REST API for CRUD operations
-
----
 
 ## ⚠️ GAPS & NEEDED IMPROVEMENTS
 
@@ -327,6 +420,329 @@ const ConflictDialog = ({ localData, serverData, onResolve }) => {
     </Dialog>
   );
 };
+```
+
+### 6. RAG AI Source & Master Agent (NEW - Critical Gap)
+**Problem**: Basic AI chat is simulated with no real intelligence
+**Solution Needed**:
+
+**A. Master Agent Service Architecture**
+```javascript
+// jamz-server/src/services/master-agent.service.js
+class MasterAgentService {
+  constructor() {
+    this.llmClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    this.vectorDB = new PineconeClient({ /* config */ });
+    this.agentMemory = new Map(); // In-memory or Redis
+  }
+
+  // Orchestrate AI request with RAG context
+  async processRequest(userId, message, context = {}) {
+    // 1. Retrieve relevant context from vector DB (RAG)
+    const relevantDocs = await this.vectorDB.query({
+      vector: await this.getEmbedding(message),
+      topK: 5,
+      filter: { userId } // User-specific data only
+    });
+
+    // 2. Build context for LLM
+    const systemPrompt = this.buildSystemPrompt(relevantDocs, context);
+
+    // 3. Call LLM with function calling
+    const completion = await this.llmClient.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message }
+      ],
+      functions: this.getAvailableFunctions(), // TrafficJamz actions
+      function_call: 'auto'
+    });
+
+    // 4. Execute function if requested
+    if (completion.choices[0].finish_reason === 'function_call') {
+      const result = await this.executeFunction(
+        completion.choices[0].message.function_call
+      );
+      return { type: 'action', result, message: result.message };
+    }
+
+    // 5. Store conversation in vector DB for future RAG
+    await this.storeConversation(userId, message, completion.choices[0].message.content);
+
+    return { type: 'message', content: completion.choices[0].message.content };
+  }
+
+  // Generate embedding for RAG
+  async getEmbedding(text) {
+    const response = await this.llmClient.embeddings.create({
+      model: 'text-embedding-3-large',
+      input: text
+    });
+    return response.data[0].embedding;
+  }
+
+  // Available TrafficJamz functions for agent
+  getAvailableFunctions() {
+    return [
+      {
+        name: 'play_music',
+        description: 'Control music playback in a group session',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['play', 'pause', 'skip', 'previous'] },
+            sessionId: { type: 'string' }
+          },
+          required: ['action', 'sessionId']
+        }
+      },
+      {
+        name: 'get_group_location',
+        description: 'Get real-time location of group members',
+        parameters: {
+          type: 'object',
+          properties: {
+            groupId: { type: 'string' }
+          },
+          required: ['groupId']
+        }
+      },
+      {
+        name: 'suggest_meeting_point',
+        description: 'Calculate optimal meeting point for group members',
+        parameters: {
+          type: 'object',
+          properties: {
+            groupId: { type: 'string' },
+            preferences: { type: 'array', items: { type: 'string' } }
+          },
+          required: ['groupId']
+        }
+      },
+      {
+        name: 'recommend_music',
+        description: 'Suggest music based on group preferences and context',
+        parameters: {
+          type: 'object',
+          properties: {
+            groupId: { type: 'string' },
+            mood: { type: 'string' },
+            genre: { type: 'string' }
+          },
+          required: ['groupId']
+        }
+      }
+    ];
+  }
+
+  // Execute agent function call
+  async executeFunction(functionCall) {
+    const { name, arguments: args } = functionCall;
+    const parsedArgs = JSON.parse(args);
+
+    switch (name) {
+      case 'play_music':
+        return await musicService.controlPlayback(parsedArgs);
+      case 'get_group_location':
+        return await locationService.getGroupLocations(parsedArgs.groupId);
+      case 'suggest_meeting_point':
+        return await locationService.calculateMidpoint(parsedArgs.groupId);
+      case 'recommend_music':
+        return await musicService.getRecommendations(parsedArgs);
+      default:
+        throw new Error(`Unknown function: ${name}`);
+    }
+  }
+
+  // Store conversation for future RAG
+  async storeConversation(userId, userMessage, aiResponse) {
+    const embedding = await this.getEmbedding(`${userMessage} ${aiResponse}`);
+    
+    await this.vectorDB.upsert([{
+      id: `conv_${userId}_${Date.now()}`,
+      values: embedding,
+      metadata: {
+        userId,
+        userMessage,
+        aiResponse,
+        timestamp: new Date().toISOString(),
+        type: 'conversation'
+      }
+    }]);
+  }
+
+  // Build system prompt with RAG context
+  buildSystemPrompt(relevantDocs, context) {
+    const ragContext = relevantDocs.map(doc => doc.metadata).join('\n\n');
+    
+    return `You are TrafficJamz AI, an intelligent assistant for a music collaboration and location sharing app.
+
+Context from user history:
+${ragContext}
+
+Current context:
+- User's current group: ${context.groupName || 'None'}
+- Active audio session: ${context.sessionId || 'None'}
+- Current location: ${context.location || 'Unknown'}
+- Time: ${new Date().toLocaleString()}
+
+You can help users with:
+1. Music playback control and recommendations
+2. Group coordination and location sharing
+3. Feature explanations and troubleshooting
+4. Natural language commands for app actions
+
+When appropriate, use function calls to execute actions. Always be helpful, concise, and context-aware.`;
+  }
+}
+
+module.exports = new MasterAgentService();
+```
+
+**B. Vector Database Setup (Pinecone)**
+```javascript
+// jamz-server/src/config/pinecone.config.js
+const { Pinecone } = require('@pinecone-database/pinecone');
+
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY
+});
+
+const index = pinecone.index('trafficjamz-rag');
+
+// Index structure:
+// - Namespace: Per-user isolation
+// - Dimensions: 3072 (text-embedding-3-large)
+// - Metadata: userId, type, content, timestamp
+
+module.exports = { pinecone, index };
+```
+
+**C. Frontend Agent Client**
+```javascript
+// jamz-client-vite/src/services/ai-agent.service.js
+class AIAgentService {
+  async sendMessage(message, context = {}) {
+    const response = await api.post('/ai/chat', {
+      message,
+      context: {
+        groupId: context.currentGroup?.id,
+        sessionId: context.currentSession?.id,
+        location: context.userLocation,
+        ...context
+      }
+    });
+
+    // Handle different response types
+    if (response.data.type === 'action') {
+      // AI executed an action
+      return {
+        message: response.data.result.message,
+        action: response.data.result.action,
+        actionResult: response.data.result
+      };
+    }
+
+    // Regular message response
+    return {
+      message: response.data.content,
+      type: 'message'
+    };
+  }
+
+  // Embed user data for RAG on events
+  async indexUserEvent(eventType, data) {
+    await api.post('/ai/index-event', {
+      eventType,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+export default new AIAgentService();
+```
+
+**D. Background Indexing Service**
+```javascript
+// jamz-server/src/services/rag-indexer.service.js
+class RAGIndexerService {
+  async indexGroupMessage(groupId, userId, message) {
+    const embedding = await openai.embeddings.create({
+      model: 'text-embedding-3-large',
+      input: message
+    });
+
+    await vectorDB.upsert([{
+      id: `msg_${groupId}_${Date.now()}`,
+      values: embedding.data[0].embedding,
+      metadata: {
+        type: 'group_message',
+        groupId,
+        userId,
+        content: message,
+        timestamp: new Date().toISOString()
+      }
+    }]);
+  }
+
+  async indexMusicPreference(userId, trackId, action) {
+    // Track likes, skips, plays for recommendations
+    const embedding = await openai.embeddings.create({
+      model: 'text-embedding-3-large',
+      input: `User ${action} track ${trackId}`
+    });
+
+    await vectorDB.upsert([{
+      id: `pref_${userId}_${trackId}_${Date.now()}`,
+      values: embedding.data[0].embedding,
+      metadata: {
+        type: 'music_preference',
+        userId,
+        trackId,
+        action, // 'play', 'like', 'skip'
+        timestamp: new Date().toISOString()
+      }
+    }]);
+  }
+
+  async indexLocationHistory(userId, location, placeType) {
+    const embedding = await openai.embeddings.create({
+      model: 'text-embedding-3-large',
+      input: `User visited ${placeType} at ${location.lat}, ${location.lng}`
+    });
+
+    await vectorDB.upsert([{
+      id: `loc_${userId}_${Date.now()}`,
+      values: embedding.data[0].embedding,
+      metadata: {
+        type: 'location_history',
+        userId,
+        location,
+        placeType,
+        timestamp: new Date().toISOString()
+      }
+    }]);
+  }
+}
+
+module.exports = new RAGIndexerService();
+```
+
+**E. Environment Variables Needed**
+```env
+# .env additions for AI
+OPENAI_API_KEY=sk-...
+PINECONE_API_KEY=...
+PINECONE_ENVIRONMENT=us-west1-gcp
+PINECONE_INDEX=trafficjamz-rag
+
+# Optional: Anthropic Claude as alternative
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional: Local LLM for privacy mode
+OLLAMA_HOST=http://localhost:11434
 ```
 
 ---
