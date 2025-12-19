@@ -47,6 +47,17 @@ export const AuthProvider = ({ children }) => {
         const cachedConfig = sessionService.getCachedConfigData();
         
         if (cachedUser) {
+          // Validate cached user has a valid ID
+          const userId = cachedUser?.id || cachedUser?.user_id || cachedUser?._id;
+          if (!userId) {
+            console.warn('⚠️ Cached user data invalid (no user ID) - clearing cache');
+            sessionService.clearAll();
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
+            setLoading(false);
+            return;
+          }
+          
           console.log('📦 Using cached user data for instant display');
           setUser(cachedUser);
           if (cachedConfig) {
@@ -68,6 +79,14 @@ export const AuthProvider = ({ children }) => {
           if (response.data) {
             // Normalize user data - handle both response.data.user and response.data formats
             const userData = response.data.user || response.data;
+            
+            // Validate that user data has a valid ID
+            const userId = userData?.id || userData?.user_id || userData?._id;
+            if (!userId) {
+              console.error('❌ Invalid user data: No user ID found', userData);
+              throw new Error('Invalid user data: missing user ID');
+            }
+            
             setUser(userData);
             
             // Cache fresh user data
@@ -97,8 +116,14 @@ export const AuthProvider = ({ children }) => {
         } catch (fetchError) {
           // If we have cached data and just failed to refresh, keep using cached data
           if (cachedUser) {
+            // Validate cached user still has valid ID
+            const userId = cachedUser?.id || cachedUser?.user_id || cachedUser?._id;
+            if (!userId) {
+              console.error('❌ Cached user data invalid (no ID) - clearing auth');
+              throw new Error('Invalid cached user data: missing user ID');
+            }
             console.log('⚠️ Failed to refresh user data, using cached version');
-            // Don't throw error if we have cached data
+            // Don't throw error if we have valid cached data
           } else {
             // No cached data and fetch failed - this is a real error
             throw fetchError;
@@ -114,9 +139,13 @@ export const AuthProvider = ({ children }) => {
           platform: window.electron ? 'DESKTOP' : 'WEB'
         });
         
-        // Only clear token if it's a 401 (unauthorized) - keep token for network errors
-        if (error.response?.status === 401) {
-          console.log('🔐 Token invalid (401) - clearing auth data');
+        // Clear auth data for: 401 (unauthorized), 403 (forbidden), or invalid user data
+        const shouldClearAuth = error.response?.status === 401 || 
+                                error.response?.status === 403 ||
+                                error.message.includes('missing user ID');
+        
+        if (shouldClearAuth) {
+          console.log('🔐 Clearing auth data - invalid session or missing user ID');
           localStorage.removeItem('token');
           localStorage.removeItem('refresh_token');
           sessionService.clearAll();
@@ -148,6 +177,14 @@ export const AuthProvider = ({ children }) => {
       if (response.data) {
         // Normalize user data - handle both response.data.user and response.data formats
         const userData = response.data.user || response.data;
+        
+        // Validate that user data has a valid ID
+        const userId = userData?.id || userData?.user_id || userData?._id;
+        if (!userId) {
+          console.error('❌ Login failed: No user ID in response', userData);
+          throw new Error('Login failed: Invalid user data received from server');
+        }
+        
         setUser(userData);
         
         // Cache user data for session persistence
