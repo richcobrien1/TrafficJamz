@@ -4,6 +4,27 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: January 13, 2026 - Urgent: Leaked GitHub PAT (Action Required)
+
+### Summary
+
+- **Event:** A GitHub Personal Access Token (PAT) was accidentally exposed in a chat and may be present in the workspace.
+- **Secret value:** NOT STORED HERE.
+- **Immediate actions taken:**  
+  - Searched the workspace (including ignored files) for token occurrences — some searches timed out in parts of the tree.  
+  - Appended this incident to the project log and committed this entry.
+
+### Recommended next steps
+
+- **Revoke the leaked PAT immediately** via GitHub Settings → Developer settings → Personal access tokens.
+- **Rotate any secrets** that used that PAT (CI, services, local machines).
+- **Remove the secret from git history** using `git-filter-repo` or BFG, then force-push cleaned history.
+- **Add secret scanning / pre-commit hooks** to prevent future leaks.
+
+### Notes
+
+- This entry intentionally omits the token value. Do not paste the token into repository files or PRs.
+
 ## Session: December 11, 2025 - Security Hardening & PostgreSQL Upgrade 🔒🚀
 
 ### Supabase Security Warnings Resolution
