@@ -4,6 +4,7 @@
 .DS_Store             # macOS folder attributes
 Thumbs.db             # Windows thumbnail cache
 Desktop.ini          # Windows folder customization
+nul                  # Windows null device file artifact
 
 # --- Editors/IDEs ---
 .vscode/             # VS Code configurations
@@ -88,3 +89,4 @@ grammarly/       # Grammarly desktop app data
 !.gitkeep        # Keep empty directories
 node_modules
 .vercel
+api/package-lock.json
