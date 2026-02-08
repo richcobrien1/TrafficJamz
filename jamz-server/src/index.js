@@ -45,6 +45,9 @@ app.set('trust proxy', 1);
 // Import passport configuration
 require('./config/passport');
 
+// Import Clerk middleware for authentication
+const { requireAuth, withAuth, getUserInfo } = require('./middleware/clerk.middleware');
+
 // Import database connection
 const sequelize = require('./config/database');
 
@@ -67,7 +70,8 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   process.env.CORS_ORIGIN_DEV || 'http://localhost:5175',      // TrafficJamz frontend dev
   process.env.CORS_ORIGIN_PROD || 'http://localhost:8080',     // TrafficJamz frontend prod
-  'https://trafficjam.v2u.us',       // Production client
+  'https://jamz.v2u.us',             // Production client
+  'https://trafficjam.v2u.us',       // Alternative production client domain
   'capacitor://trafficjam.v2u.us',   // iOS apps
   'ionic://trafficjam.v2u.us',       // Android apps
   'http://192.176.58.146:5173',      // User's network IP for mobile testing
@@ -796,6 +800,49 @@ function setupServer() {
     res.status(200).json({
       success: true,
       message: 'TrafficJamz backend is live',
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Health endpoint (alias for /health with /api prefix)
+  app.get('/api/health', async (req, res) => {
+    let postgresStatus = 'disconnected';
+    try {
+      await sequelize.authenticate();
+      postgresStatus = 'connected';
+    } catch (err) {
+      postgresStatus = 'disconnected';
+    }
+
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date(),
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      postgres: postgresStatus,
+      socketio: io ? 'initialized' : 'not initialized'
+    });
+  });
+
+  // Example Clerk-protected endpoint
+  app.get('/api/user/profile', requireAuth(), (req, res) => {
+    const userInfo = getUserInfo(req);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Authenticated user profile',
+      user: userInfo,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Example optionally-authenticated endpoint
+  app.get('/api/public/info', withAuth(), (req, res) => {
+    const userInfo = getUserInfo(req);
+    
+    res.status(200).json({
+      success: true,
+      message: userInfo ? 'Authenticated request' : 'Anonymous request',
+      user: userInfo || 'anonymous',
       timestamp: new Date().toISOString()
     });
   });

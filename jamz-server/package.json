@@ -25,6 +25,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@clerk/express": "^1.7.69",
     "@influxdata/influxdb-client": "^1.35.0",
     "@supabase/supabase-js": "^2.49.4",
     "aws-sdk": "^2.1531.0",
