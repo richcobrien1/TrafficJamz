@@ -19,15 +19,23 @@
 
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 import MapboxMap from './components/MapboxMap';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+// Get Clerk publishable key from environment
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!clerkPubKey) {
+  throw new Error('Missing Clerk Publishable Key');
+}
 
 // Lazy-loaded pages
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -47,13 +55,13 @@ const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
 
 // Root redirect component that checks auth status
 const RootRedirect = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isLoaded, isSignedIn } = useUser();
 
-  if (loading) {
+  if (!isLoaded) {
     return <div>Loading...</div>;
   }
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
+  return isSignedIn ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
 };
 
 function App() {
@@ -76,81 +84,83 @@ function App() {
   console.log('Current location:', location.pathname);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <Suspense fallback={<div>Loading...</div>}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
-            >
-              <Routes>
-                {/* Public routes */}
-                <Route path="/auth/login" element={<Login />} />
-                <Route path="/auth/register" element={<Register />} />
-                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                <Route path="/invitations/:groupId/:invitationIndex" element={<InvitationAccept />} />
+    <ClerkProvider publishableKey={clerkPubKey}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <Suspense fallback={<div>Loading...</div>}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+              >
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/auth/login" element={<Login />} />
+                  <Route path="/auth/register" element={<Register />} />
+                  <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/invitations/:groupId/:invitationIndex" element={<InvitationAccept />} />
 
-                {/* Protected routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/groups/:groupId" element={
-                  <ProtectedRoute>
-                    <GroupDetail />
-                  </ProtectedRoute>
-                } />
-                <Route path="/audio-session/:sessionId" element={
-                  <ProtectedRoute>
-                    <AudioSession />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dev/map" element={
-                  <ProtectedRoute>
-                    <MapboxMap />
-                  </ProtectedRoute>
-                } />
-                {/* Dev-only debug console (no auth required) */}
-                {import.meta.env.DEV && (
-                  <Route path="/dev/debug" element={<DevDebug />} />
-                )}
-                <Route path="/location-tracking/:groupId" element={
-                  <ProtectedRoute>
-                    <LocationTracking />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/subscription-plans" element={
-                  <ProtectedRoute>
-                    <SubscriptionPlans />
-                  </ProtectedRoute>
-                } />
+                  {/* Protected routes */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/groups/:groupId" element={
+                    <ProtectedRoute>
+                      <GroupDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/audio-session/:sessionId" element={
+                    <ProtectedRoute>
+                      <AudioSession />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/dev/map" element={
+                    <ProtectedRoute>
+                      <MapboxMap />
+                    </ProtectedRoute>
+                  } />
+                  {/* Dev-only debug console (no auth required) */}
+                  {import.meta.env.DEV && (
+                    <Route path="/dev/debug" element={<DevDebug />} />
+                  )}
+                  <Route path="/location-tracking/:groupId" element={
+                    <ProtectedRoute>
+                      <LocationTracking />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/subscription-plans" element={
+                    <ProtectedRoute>
+                      <SubscriptionPlans />
+                    </ProtectedRoute>
+                  } />
 
-                {/* Redirect root based on auth status */}
-                <Route path="/" element={<RootRedirect />} />
+                  {/* Redirect root based on auth status */}
+                  <Route path="/" element={<RootRedirect />} />
 
-                {/* Catch-all - redirect to login if not authenticated */}
-                <Route path="*" element={
-                  <ProtectedRoute>
-                    <NotFound />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
-        </Suspense>
-      </AuthProvider>
-    </ThemeProvider>
+                  {/* Catch-all - redirect to login if not authenticated */}
+                  <Route path="*" element={
+                    <ProtectedRoute>
+                      <NotFound />
+                    </ProtectedRoute>
+                  } />
+                </Routes>
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
+        </AuthProvider>
+      </ThemeProvider>
+    </ClerkProvider>
   );
 }
 
