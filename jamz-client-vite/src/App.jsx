@@ -301,6 +301,7 @@ function App() {
             error={appError}
           onRetry={() => window.location.reload()}
         />
+        </ThemeProvider>
       </ClerkProvider>
     );
   }
@@ -415,6 +416,7 @@ function App() {
           </MusicProvider>
         </AuthProvider>
       </ErrorBoundary>
+      </ThemeProvider>
     </ClerkProvider>
   );
 }
