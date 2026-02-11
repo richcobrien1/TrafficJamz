@@ -19,6 +19,7 @@
 
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Box } from '@mui/material';
@@ -34,6 +35,13 @@ import MapboxMap from './components/MapboxMap';
 import musicService from './services/music.service';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+// Get Clerk publishable key from environment
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!clerkPubKey) {
+  console.warn('Missing Clerk Publishable Key - authentication may not work');
+}
 
 // Lazy-loaded pages
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -59,13 +67,13 @@ const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
 
 // Root redirect component that checks auth status
 const RootRedirect = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isLoaded, isSignedIn } = useUser();
 
-  if (loading) {
+  if (!isLoaded) {
     return <AppLoader message="Checking authentication..." />;
   }
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
+  return isSignedIn ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/register" replace />;
 };
 
 function App() {
@@ -285,20 +293,22 @@ function App() {
     };
 
     return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AppLoader 
-          message={getMessage()}
-          error={appError}
+      <ClerkProvider publishableKey={clerkPubKey}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AppLoader 
+            message={getMessage()}
+            error={appError}
           onRetry={() => window.location.reload()}
         />
-      </ThemeProvider>
+      </ClerkProvider>
     );
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ClerkProvider publishableKey={clerkPubKey}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
       {!isOnline && (
         <Box
           sx={{
@@ -339,6 +349,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/auth/login" element={<Login />} />
                   <Route path="/auth/register" element={<Register />} />
+                  <Route path="/auth/register/*" element={<Register />} />
                   <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
@@ -404,7 +415,7 @@ function App() {
           </MusicProvider>
         </AuthProvider>
       </ErrorBoundary>
-    </ThemeProvider>
+    </ClerkProvider>
   );
 }
 

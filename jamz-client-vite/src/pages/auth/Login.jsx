@@ -1,33 +1,46 @@
-// jamz-client-vite/src/pages/auth/Login.jsx
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Grid, 
-  Link, 
-  Paper,
-  Avatar,
-  CircularProgress,
-  Alert,
-  Divider
-} from '@mui/material';
-// Replaced Lock icon with the TrafficJamz logo (served from public/)
-import { useAuth } from '../../contexts/AuthContext';
+// Clerk-based Login component
+import React from 'react';
+import { SignIn } from '@clerk/clerk-react';
+import { Container, Box, Paper } from '@mui/material';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const { login, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  return (
+    <Container component="main" maxWidth="sm">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: 'linear-gradient(180deg, rgb(0, 255, 0) 0%, rgb(0, 0, 255) 50%, rgb(255, 0, 0) 100%)',
+        }}
+      >
+        <Paper elevation={3} sx={{ p: 4, width: '100%', mt: 4 }}>
+          <SignIn
+            routing="path"
+            path="/auth/login"
+            signUpUrl="/auth/register"
+            redirectUrl="/dashboard"
+            appearance={{
+              elements: {
+                rootBox: {
+                  width: '100%',
+                },
+                card: {
+                  boxShadow: 'none',
+                  background: 'transparent',
+                },
+              },
+            }}
+          />
+        </Paper>
+      </Box>
+    </Container>
+  );
+};
+
+export default Login;
 
   // If a protected route redirected here, capture the origin and persist
   // it so the redirect helper can navigate back after login.

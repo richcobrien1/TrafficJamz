@@ -1,48 +1,46 @@
-// jamz-client-vite/src/pages/auth/Register.jsx
-// This file contains the registration component for the Traffic Jamz application.
-
-import React, { useState } from 'react';
-import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Grid, 
-  Link, 
-  Paper,
-  Avatar,
-  CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
-  Alert,
-  Stepper,
-  Step,
-  StepLabel
-} from '@mui/material';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { useAuth } from '../../contexts/AuthContext';
+// Clerk-based Register component
+import React from 'react';
+import { SignUp } from '@clerk/clerk-react';
+import { Container, Box, Paper } from '@mui/material';
 
 const Register = () => {
-  const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    gender: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const { register } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from || '/';
+  return (
+    <Container component="main" maxWidth="sm">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: 'linear-gradient(180deg, rgb(0, 255, 0) 0%, rgb(0, 0, 255) 50%, rgb(255, 0, 0) 100%)',
+        }}
+      >
+        <Paper elevation={3} sx={{ p: 4, width: '100%', mt: 4 }}>
+          <SignUp
+            routing="path"
+            path="/auth/register"
+            signInUrl="/auth/login"
+            redirectUrl="/dashboard"
+            appearance={{
+              elements: {
+                rootBox: {
+                  width: '100%',
+                },
+                card: {
+                  boxShadow: 'none',
+                  background: 'transparent',
+                },
+              },
+            }}
+          />
+        </Paper>
+      </Box>
+    </Container>
+  );
+};
+
+export default Register;
   
   const handleChange = (e) => {
     const { name, value } = e.target;
