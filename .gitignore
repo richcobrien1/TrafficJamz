@@ -119,3 +119,6 @@ node_modules
 env-backups/*.sh
 env-backups/*_env_*
 !env-backups/README.md
+
+# Per-instance droplet env (local, MUST NOT be committed)
+.env.droplet
