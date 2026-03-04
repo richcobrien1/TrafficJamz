@@ -9,39 +9,42 @@ console.log('Current environment:', isProduction ? 'Production' : 'Development')
 // Configure database based on environment
 let sequelize;
 
-if (isProduction) {
-  // Production: Use Supabase connection pooler with SSL parameters
-  const connectionUrl = 'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=no-verify&supa=base-pooler.x';
+// Build connection from env vars (falls back to known values if not set)
+const pgHost = process.env.POSTGRES_HOST || 'db.nrlaqkpojtvvheosnpaz.supabase.co';
+const pgPort = parseInt(process.env.POSTGRES_PORT || '5432', 10);
+const pgUser = process.env.POSTGRES_USER || 'postgres';
+const pgPassword = process.env.POSTGRES_PASSWORD || 'TJamz_Feb2026_SecureP9wR';
+const pgDb = process.env.POSTGRES_DB || 'postgres';
 
-  console.log('=====     Using production database connection with pooler     =====');
-
-  sequelize = new Sequelize(connectionUrl, {
-    dialect: 'postgres',
-    dialectModule: require('pg'),
-    logging: console.log
-  });
-
-} else {
-  // Development: Use Supabase connection pooler (same as production for now)
-  console.log('=====     Using development database connection (Supabase pooler)     =====');
-
-  const connectionUrl = 'postgres://postgres.nrlaqkpojtvvheosnpaz:tMRyyxjADUl63z44@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=no-verify&supa=base-pooler.x';
-
-  sequelize = new Sequelize(connectionUrl, {
-    dialect: 'postgres',
-    dialectModule: require('pg'),
-    logging: console.log,
-    // Make connection more resilient
-    retry: {
-      max: 3
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
+const sequelizeOptions = {
+  dialect: 'postgres',
+  dialectModule: require('pg'),
+  host: pgHost,
+  port: pgPort,
+  username: pgUser,
+  password: pgPassword,
+  database: pgDb,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
     }
-  });
+  },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  logging: isProduction ? false : console.log
+};
+
+if (isProduction) {
+  console.log(`=====     Using production database: ${pgHost}:${pgPort}     =====`);
+  sequelize = new Sequelize(sequelizeOptions);
+} else {
+  console.log(`=====     Using development database: ${pgHost}:${pgPort}     =====`);
+  sequelize = new Sequelize(sequelizeOptions);
 }
 
 // Test the connection asynchronously (don't block module loading)
