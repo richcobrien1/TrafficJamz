@@ -57,7 +57,7 @@ const Login = () => {
                 margin: '0',
               },
               form: {
-                padding: '0',
+                padding: '10px',
                 margin: '10px 0',
               },
               formFieldRow: {
