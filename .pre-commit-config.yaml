@@ -1,0 +1,64 @@
+# Pre-commit framework configuration
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Secret detection with multiple tools
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package-lock.json|yarn.lock
+
+  # Gitleaks - comprehensive secret scanner
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+
+  # Check for private keys
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      
+  # Prevent committing to main branch directly (optional)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+        stages: [commit]
+
+  # AWS credentials detection
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+
+# Configure file exclusions
+exclude: |
+  (?x)^(
+    .*\.min\.js|
+    .*\.min\.css|
+    node_modules/|
+    dist/|
+    build/|
+    \.git/|
+    \.next/|
+    \.vercel/|
+    coverage/|
+    .*-lock\.json|
+    .*\.lock
+  )$

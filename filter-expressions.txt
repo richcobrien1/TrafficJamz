@@ -1,0 +1,3 @@
+regex:ghp_[A-Za-z0-9]{36}==>***GITHUB_PAT_REMOVED***
+regex:pk\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+==>***MAPBOX_PUBLIC_TOKEN_REMOVED***
+regex:sk\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+==>***MAPBOX_SECRET_TOKEN_REMOVED***

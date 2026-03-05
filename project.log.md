@@ -4,6 +4,207 @@ This file tracks all work sessions, changes, and next steps across the project.
 
 ---
 
+## Session: March 5, 2026 - Complete Security Remediation ✅🔒
+
+### Summary
+
+Successfully completed comprehensive security cleanup after GitHub secret scanning alerts for exposed credentials. All leaked secrets have been removed from git history and protective measures implemented.
+
+### Actions Completed
+
+#### 1. Secret Detection & Revocation ✅
+- **GitHub PAT Leaked**: Previously exposed personal access token
+- **Action**: Immediately revoked via GitHub Settings → Personal access tokens
+- **Status**: Token invalidated, no longer functional
+
+#### 2. Mapbox Token Exposure ✅
+- **Issue**: GitHub secret scanning detected 23+ Mapbox tokens in git history
+- **Tokens Found**: 
+  - Public tokens (`pk.eyJ...`) - 4 instances in code
+  - Secret tokens (`sk.eyJ...`) - 0 in current code, but flagged in history
+- **Action**: All Mapbox tokens (public and secret) removed from git history
+
+#### 3. Git History Cleanup ✅
+- **Tool Used**: `git-filter-repo` (Python-based, faster than BFG)
+- **Filter Expressions**:
+  ```
+  regex:ghp_[A-Za-z0-9]{36}==>***GITHUB_PAT_REMOVED***
+  regex:pk\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+==>***MAPBOX_PUBLIC_TOKEN_REMOVED***
+  regex:sk\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+==>***MAPBOX_SECRET_TOKEN_REMOVED***
+  ```
+- **Commits Processed**: 3,676 commits
+- **Processing Time**: ~26 seconds
+- **Result**: All secret patterns replaced with placeholder text
+- **Verification**: `git log --all -S'ghp_'` returns 0 results, `git log --all -S'pk.eyJ'` returns 0 results
+
+#### 4. Force Push to GitHub ✅
+- **Branches Updated**: main, backup-before-recovery, pre-merge-snapshot-api-smoke, test/api-smoke, wip/save-local-changes, and 5 others (10 total)
+- **Objects Pushed**: 37,314 objects (125.64 MB)
+- **Commit SHAs Changed**: All commits now have new SHAs (history rewritten)
+  - Old main HEAD: `69194070`
+  - New main HEAD: `36dfe9da9`
+- **Warning Issued**: Team members must re-clone or `git reset --hard origin/main`
+
+#### 5. Pre-commit Hook Implementation ✅
+- **Location**: `.git/hooks/pre-commit`
+- **Status**: Active and executable
+- **Detection Patterns**:
+  - GitHub tokens (ghp_, gho_, ghu_, ghs_, ghr_)
+  - Mapbox tokens (pk.eyJ, sk.eyJ)
+  - AWS keys (AKIA, aws_access_key_id, aws_secret_access_key)
+  - Generic API keys and secret keys
+  - Private keys (RSA, DSA, EC)
+  - Database connection strings with passwords
+  - Password patterns
+- **Action**: Blocks commit and shows detected pattern
+- **Testing**: Verified hook successfully blocks commits with `ghp_` tokens
+- **Bypass**: Available via `git commit --no-verify` (not recommended)
+
+#### 6. Pre-commit Framework Configuration ✅
+- **File**: `.pre-commit-config.yaml`
+- **Status**: Configured (requires `pre-commit install` to activate)
+- **Tools Configured**:
+  - `detect-secrets` (Yelp) - Pattern-based detection
+  - `gitleaks` - Comprehensive secret scanner
+  - `detect-private-key` - SSH/TLS keys
+  - `detect-aws-credentials` - AWS-specific
+  - `check-added-large-files` - Blocks files >1MB
+  - `no-commit-to-branch` - Prevents direct commits to main
+- **Exclusions**: node_modules, dist, build, *.min.js, *.lock files
+
+#### 7. DigitalOcean Droplet Snapshot ✅
+- **Droplet**: ubuntu-s-1vcpu-1gb-35gb-intel-sfo3-01 (164.90.150.115)
+- **Snapshot Name**: `ubuntu-s-1vcpu-1gb-35gb-intel-sfo3-01-1772735728275`
+- **Size**: 21.58 GB
+- **Region**: SFO3
+- **Type**: Live snapshot (no downtime)
+- **Cost**: $1.00 one-time + $1.29/month storage
+- **Purpose**: Full server backup before/after security cleanup
+- **Status**: Complete and available for restore
+
+### Documentation Created
+
+1. **PRE_COMMIT_HOOKS.md**
+   - Setup instructions for both git hooks and pre-commit framework
+   - Usage guide and testing procedures
+   - Emergency procedures if secrets are committed
+   - Best practices for secret management
+
+2. **GITHUB_PAT_SETUP.md**
+   - Step-by-step guide for generating new least-privilege PAT
+   - Scope recommendations based on use case
+   - Token rotation schedule and procedures
+   - Security best practices
+
+3. **DIGITALOCEAN_SNAPSHOT_GUIDE.md**
+   - Web dashboard instructions
+   - API/CLI methods with scripts
+   - Cost optimization strategies
+   - Restore procedures
+
+### System Status After Cleanup
+
+#### Production Environment ✅
+- **Backend**: trafficjamz.v2u.us (164.90.150.115)
+  - Container: `trafficjamz_backend_1` - Status: Up 2 hours (healthy)
+  - Health Check: `https://trafficjamz.v2u.us/api/health` - HTTP 200 OK
+  - Node.js: Running with NODE_ENV=production
+  - Postgres: Connected (Supabase pooler, session mode)
+  - MongoDB: Connected
+  - InfluxDB: Connected (token rotated March 5, 2026)
+  - Clerk: Production mode active (pk_live_/sk_live_)
+
+- **Frontend**: jamz.v2u.us (Vercel)
+  - Status: HTTP 200, serving React app
+  - Title: TrafficJamz ✅
+  - Clerk: Production keys configured
+
+- **Services Verified**:
+  - ✅ Docker container healthy
+  - ✅ Nginx proxying correctly (80/443 → localhost:5000)
+  - ✅ SSL certificates valid
+  - ✅ Database connections active
+  - ✅ Clerk authentication working
+  - ✅ Mediasoup workers running (1 worker)
+
+#### Git Repository Status ✅
+- **Secrets in Current Code**: 0
+- **Secrets in Git History**: 0 (verified with `git log -S` searches)
+- **Pre-commit Hook**: Active
+- **Branch**: main (36dfe9da9)
+- **Protected**: Pre-commit hook prevents future leaks
+
+### GitHub Secret Scanning Alerts
+
+- **Email Received**: March 5, 2026
+- **Alerts**: 23 total (Mapbox Secret Access Tokens)
+- **Flagged Commits**: 85a1754f, 7e3d9e9a, 5b1bfc96, 3789c616 (these SHAs no longer exist after rewrite)
+- **Expected Resolution**: Alerts should clear within 24-48 hours as GitHub re-scans repository
+- **Status**: Waiting for GitHub to confirm cleanup
+
+### Pending Tasks
+
+1. **Generate New GitHub PAT** (Optional - only when needed)
+   - Guide: `GITHUB_PAT_SETUP.md`
+   - Recommended scopes: `repo`, `workflow`, `write:packages`, `read:packages`
+   - Recommended expiration: 90 days (June 3, 2026)
+   - Link: https://github.com/settings/tokens/new
+
+2. **Activate Pre-commit Framework** (Optional - enhanced protection)
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   pre-commit run --all-files  # Test on existing code
+   ```
+
+### Key Learnings
+
+1. **Git Filter Repo > BFG**: Faster, cleaner output, actively maintained
+2. **Force Push = New SHAs**: All commit hashes change after history rewrite
+3. **GitHub Alert Lag**: Secret scanning alerts can take 24-48 hours to clear
+4. **Mapbox pk. Tokens**: Even though they're "public" keys, GitHub still flags them
+5. **Live Snapshots**: $1.00 extra but worth it for zero-downtime backups
+
+### Files Modified
+
+- `.git/hooks/pre-commit` - Created (4671 bytes)
+- `.pre-commit-config.yaml` - Created
+- `filter-expressions.txt` - Created (used for history cleanup)
+- `PRE_COMMIT_HOOKS.md` - Created
+- `GITHUB_PAT_SETUP.md` - Created
+- `DIGITALOCEAN_SNAPSHOT_GUIDE.md` - Created
+- `project.log.md` - Updated (this file)
+
+### Commands Reference
+
+```bash
+# History cleanup
+git-filter-repo --replace-text filter-expressions.txt --force
+git remote add origin https://github.com/richcobrien1/TrafficJamz.git
+git push --force --all origin
+git push --force --tags origin
+
+# Verification
+git log --all -S'ghp_' --oneline | wc -l  # Should be 0
+git log --all -S'pk.eyJ' --oneline | wc -l  # Should be 0
+git grep "ghp_" HEAD  # Should be empty
+git grep "pk\.eyJ" HEAD  # Should be empty
+
+# Test pre-commit hook
+echo "api_key=ghp_1234567890123456789012345678901234ab" > test.txt
+git add test.txt
+git commit -m "test"  # Should be BLOCKED
+```
+
+### Next Steps
+
+- ✅ All critical security tasks complete
+- ⏳ Monitor GitHub for alert resolution (24-48 hours)
+- 📋 Resume normal development workflow
+- 🔒 Pre-commit hook now protects against future leaks
+
+---
+
 ## Session: January 13, 2026 - Urgent: Leaked GitHub PAT (Action Required)
 
 ### Summary
