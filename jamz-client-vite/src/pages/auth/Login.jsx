@@ -22,7 +22,7 @@ const Login = () => {
           background: 'rgba(255, 255, 255, 0.98)',
           borderRadius: '16px',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          padding: { xs: '48px 40px', sm: '64px 56px' },
+          padding: { xs: '32px 24px', sm: '56px 48px', md: '72px 64px' },
           overflow: 'visible',
         }}
       >
