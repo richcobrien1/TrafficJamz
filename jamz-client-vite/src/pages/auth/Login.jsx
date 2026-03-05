@@ -35,13 +35,26 @@ const Login = () => {
             elements: {
               rootBox: {
                 width: '100%',
-                margin: '0 auto',
+                margin: '0',
+                padding: '0',
               },
               card: {
                 boxShadow: 'none',
                 background: 'transparent',
-                padding: 0,
-                margin: 0,
+                border: 'none',
+                padding: '0',
+                margin: '0',
+              },
+              main: {
+                boxShadow: 'none',
+                background: 'transparent',
+                border: 'none',
+                padding: '0',
+                margin: '0',
+              },
+              form: {
+                padding: '0',
+                margin: '0',
               },
               headerTitle: {
                 fontSize: '28px',
