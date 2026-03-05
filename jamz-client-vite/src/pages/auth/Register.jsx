@@ -24,6 +24,10 @@ const Register = () => {
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
           padding: { xs: '40px 32px', sm: '56px 48px' },
           margin: { xs: 2, sm: 3 },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <SignUp
@@ -35,8 +39,11 @@ const Register = () => {
             elements: {
               rootBox: {
                 width: '100%',
-                margin: '0',
+                margin: '0 auto',
                 padding: '0',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
               },
               card: {
                 boxShadow: 'none',
