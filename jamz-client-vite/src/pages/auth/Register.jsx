@@ -41,8 +41,7 @@ const Register = () => {
 };
 
 export default Register;
-  
-  const handleChange = (e) => {
+
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
