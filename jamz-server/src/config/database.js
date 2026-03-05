@@ -13,17 +13,16 @@ let sequelize;
 const pgHost = process.env.POSTGRES_HOST || 'aws-0-us-east-1.pooler.supabase.com';
 const pgPort = parseInt(process.env.POSTGRES_PORT || '5432', 10);
 const pgUser = process.env.POSTGRES_USER || 'postgres.nrlaqkpojtvvheosnpaz';
-const pgPassword = process.env.POSTGRES_PASSWORD || 'TJamz_Feb2026_SecureP9wR';
+const pgPassword = process.env.POSTGRES_PASSWORD || '';
 const pgDb = process.env.POSTGRES_DB || 'postgres';
+
+// Use URI with ?pgBouncer=true so PgBouncer uses password auth (not SCRAM-SHA-256)
+// This avoids "SCRAM-SERVER-FINAL-MESSAGE: server signature is missing" error
+const pgUri = `postgres://${encodeURIComponent(pgUser)}:${encodeURIComponent(pgPassword)}@${pgHost}:${pgPort}/${pgDb}?pgBouncer=true`;
 
 const sequelizeOptions = {
   dialect: 'postgres',
   dialectModule: require('pg'),
-  host: pgHost,
-  port: pgPort,
-  username: pgUser,
-  password: pgPassword,
-  database: pgDb,
   dialectOptions: {
     ssl: {
       require: true,
@@ -39,13 +38,8 @@ const sequelizeOptions = {
   logging: isProduction ? false : console.log
 };
 
-if (isProduction) {
-  console.log(`=====     Using production database: ${pgHost}:${pgPort}     =====`);
-  sequelize = new Sequelize(sequelizeOptions);
-} else {
-  console.log(`=====     Using development database: ${pgHost}:${pgPort}     =====`);
-  sequelize = new Sequelize(sequelizeOptions);
-}
+console.log(`=====     Using database: ${pgHost}:${pgPort}/${pgDb} (user: ${pgUser})     =====`);
+sequelize = new Sequelize(pgUri, sequelizeOptions);
 
 // Test the connection asynchronously (don't block module loading)
 sequelize.authenticate()
