@@ -22,10 +22,8 @@ COPY jamz-server/package*.json ./
 # 🔧 Install production-only dependencies to reduce image size
 RUN npm install --omit=dev
 
-# 🚚 Copy application code and shared logic after dependencies
+# 🚚 Copy application code after dependencies
 COPY jamz-server/src ./src
-COPY jamz-server/public ./public
-COPY shared ./shared
 
 # 🌱 Set runtime environment variable
 ENV NODE_ENV=production
