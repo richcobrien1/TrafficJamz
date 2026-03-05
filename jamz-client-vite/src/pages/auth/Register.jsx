@@ -21,7 +21,7 @@ const Register = () => {
           background: 'rgba(255, 255, 255, 0.98)',
           borderRadius: '16px',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          padding: { xs: '32px', sm: '48px', md: '64px' },
+          padding: { xs: '24px', sm: '32px', md: '40px' },
           overflow: 'visible',
         }}
       >
@@ -59,6 +59,9 @@ const Register = () => {
               form: {
                 padding: '0',
                 margin: '10px 0',
+              },
+              formFieldRow: {
+                marginBottom: '16px',
               },
               headerTitle: {
                 fontSize: '28px',
