@@ -34,20 +34,27 @@ const Login = () => {
             elements: {
               rootBox: {
                 width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
               },
               card: {
                 boxShadow: 'none',
                 background: 'transparent',
                 border: 'none',
                 padding: '0',
-                margin: '0',
+                margin: '0 auto',
+                width: '100%',
               },
               cardBox: {
                 boxShadow: 'none',
                 background: 'transparent',
                 border: 'none',
                 padding: '0',
-                margin: '0',
+                margin: '0 auto',
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
               },
               main: {
                 boxShadow: 'none',
