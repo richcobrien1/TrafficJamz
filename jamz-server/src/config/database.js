@@ -10,9 +10,9 @@ console.log('Current environment:', isProduction ? 'Production' : 'Development')
 let sequelize;
 
 // Build connection from env vars (falls back to known values if not set)
-const pgHost = process.env.POSTGRES_HOST || 'db.nrlaqkpojtvvheosnpaz.supabase.co';
+const pgHost = process.env.POSTGRES_HOST || 'aws-0-us-east-1.pooler.supabase.com';
 const pgPort = parseInt(process.env.POSTGRES_PORT || '5432', 10);
-const pgUser = process.env.POSTGRES_USER || 'postgres';
+const pgUser = process.env.POSTGRES_USER || 'postgres.nrlaqkpojtvvheosnpaz';
 const pgPassword = process.env.POSTGRES_PASSWORD || 'TJamz_Feb2026_SecureP9wR';
 const pgDb = process.env.POSTGRES_DB || 'postgres';
 
