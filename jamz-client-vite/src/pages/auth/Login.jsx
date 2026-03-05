@@ -18,16 +18,12 @@ const Login = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: '480px',
+          maxWidth: '500px',
           background: 'rgba(255, 255, 255, 0.98)',
           borderRadius: '16px',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          padding: { xs: '40px 32px', sm: '56px 48px' },
-          margin: { xs: 2, sm: 3 },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          padding: { xs: '48px 40px', sm: '64px 56px' },
+          overflow: 'visible',
         }}
       >
         <SignIn
@@ -39,32 +35,27 @@ const Login = () => {
             elements: {
               rootBox: {
                 width: '100%',
-                margin: '0 auto',
-                padding: '0',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
               },
               card: {
-                boxShadow: 'none !important',
-                background: 'transparent !important',
-                border: 'none !important',
-                padding: '0 !important',
-                margin: '0 !important',
+                boxShadow: 'none',
+                background: 'transparent',
+                border: 'none',
+                padding: '0',
+                margin: '0',
               },
               cardBox: {
-                boxShadow: 'none !important',
-                background: 'transparent !important',
-                border: 'none !important',
-                padding: '0 !important',
-                margin: '0 !important',
+                boxShadow: 'none',
+                background: 'transparent',
+                border: 'none',
+                padding: '0',
+                margin: '0',
               },
               main: {
-                boxShadow: 'none !important',
-                background: 'transparent !important',
-                border: 'none !important',
-                padding: '0 !important',
-                margin: '0 !important',
+                boxShadow: 'none',
+                background: 'transparent',
+                border: 'none',
+                padding: '0',
+                margin: '0',
               },
               form: {
                 padding: '0',
