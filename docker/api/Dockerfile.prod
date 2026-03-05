@@ -2,19 +2,19 @@
 # Production-ready Dockerfile for the TrafficJamz backend
 
 # ─── Base Image ─────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:20-slim
 
 # 📁 Define working directory
 WORKDIR /app
 
 # 🧰 Install native build tools required for node modules with C bindings
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
   python3 \
-  py3-pip \
+  python3-pip \
   make \
   g++ \
-  linux-headers \
-  curl
+  curl \
+  && rm -rf /var/lib/apt/lists/*
 
 # 📦 Copy only package manifest files to leverage Docker layer caching
 COPY jamz-server/package*.json ./
