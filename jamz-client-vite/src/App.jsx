@@ -74,7 +74,7 @@ const RootRedirect = () => {
     return <AppLoader message="Checking authentication..." />;
   }
 
-  return isSignedIn ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/register" replace />;
+  return isSignedIn ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
 };
 
 function App() {
