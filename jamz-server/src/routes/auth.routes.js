@@ -102,6 +102,84 @@ router.post('/login', [
 });
 
 /**
+ * @route POST /api/auth/clerk-sync
+ * @desc Sync Clerk-authenticated user with backend (create or find user, issue JWT tokens)
+ * @access Public (but should only be called by frontend after Clerk auth)
+ */
+router.post('/clerk-sync', [
+  body('clerkUserId').exists().withMessage('Clerk user ID is required'),
+  body('email').isEmail().withMessage('Must be a valid email address'),
+  validate
+], async (req, res) => {
+  try {
+    const { clerkUserId, email, username, fullName } = req.body;
+    console.log('Clerk sync request for:', email, 'Clerk ID:', clerkUserId);
+
+    // Import User model to query directly
+    const User = require('../models/user.model');
+    
+    // Find user by email (Clerk handles email verification)
+    let userRecord = await User.findOne({ where: { email: email } });
+
+    if (!userRecord) {
+      // Create new user for this Clerk account
+      console.log('Creating new user from Clerk account:', email);
+      
+      const [firstName, ...lastNameParts] = (fullName || username || email.split('@')[0]).split(' ');
+      const userData = {
+        username: username || email.split('@')[0],
+        email: email,
+        password_hash: `clerk_sync_${clerkUserId}`, // Dummy password, won't be used
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || '',
+        clerk_user_id: clerkUserId
+      };
+
+      const user = await userService.register(userData);
+      console.log('New user created with ID:', user.user_id);
+      
+      // Generate tokens
+      const tokens = userService.generateTokens(user);
+      
+      return res.status(200).json({
+        success: true,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: tokens.token_type,
+        user: user
+      });
+    } else {
+      console.log('Existing user found with ID:', userRecord.user_id);
+      
+      // Update clerk_user_id if not set
+      if (!userRecord.clerk_user_id) {
+        await userRecord.update({ clerk_user_id: clerkUserId });
+        console.log('Updated user with Clerk ID');
+      }
+      
+      // Get normalized user data
+      const userJson = userRecord.toJSON();
+      delete userJson.password_hash;
+      const user = userService.normalizeUserJson(userJson);
+      
+      // Generate tokens
+      const tokens = userService.generateTokens(user);
+      
+      return res.status(200).json({
+        success: true,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: tokens.token_type,
+        user: user
+      });
+    }
+  } catch (error) {
+    console.error('Clerk sync error:', error);
+    res.status(500).json({ success: false, message: 'Failed to sync Clerk user: ' + error.message });
+  }
+});
+
+/**
  * @route POST /api/auth/refresh-token
  * @desc Refresh access token
  * @access Public

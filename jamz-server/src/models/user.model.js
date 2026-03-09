@@ -93,6 +93,11 @@ const User = sequelize.define('users', {
   mfa_methods: {
     type: DataTypes.STRING, // Changed from ARRAY to STRING to match database
     allowNull: true
+  },
+  clerk_user_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
   }
 }, {
   timestamps: true,

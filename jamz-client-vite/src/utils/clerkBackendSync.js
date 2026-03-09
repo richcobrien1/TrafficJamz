@@ -90,8 +90,10 @@ export async function syncClerkWithBackend(clerkUser) {
           console.error('❌ Register failed:', {
             status: registerError.response?.status,
             data: registerError.response?.data,
-            message: registerError.message
+            message: registerError.message,
+            fullError: registerError.response?.data
           });
+          console.error('📋 Registration payload was:', { email, username, first_name: fullName.split(' ')[0] || username });
           
           // If register failed with 409 (user exists), try login
           if (registerError.response?.status === 409 || 
