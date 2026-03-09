@@ -29,6 +29,7 @@ import { MusicProvider } from './contexts/MusicContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AppLoader from './components/AppLoader';
 import ErrorBoundary from './components/ErrorBoundary';
+import ClerkBackendSync from './components/ClerkBackendSync';
 import api from './services/api';
 
 import MapboxMap from './components/MapboxMap';
@@ -308,6 +309,7 @@ function App() {
 
   return (
     <ClerkProvider publishableKey={clerkPubKey}>
+      <ClerkBackendSync />
       <ThemeProvider theme={theme}>
         <CssBaseline />
       {!isOnline && (
