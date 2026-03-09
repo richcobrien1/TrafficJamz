@@ -37,11 +37,12 @@ import {
   SmartToy as AIIcon
 } from '@mui/icons-material';
 import api from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import AIChatAssistant from '../../components/AIChatAssistant';
 import sessionService from '../../services/session.service';
 import { dbManager } from '../../services/indexedDBManager';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
+import { clearBackendTokens } from '../../utils/clerkBackendSync';
 
 const Dashboard = () => {
   const [groups, setGroups] = useState([]);
@@ -56,8 +57,18 @@ const Dashboard = () => {
   const [createGroupError, setCreateGroupError] = useState('');
   const [showAIChat, setShowAIChat] = useState(false);
 
-  const { user: currentUser, logout } = useAuth();
+  const { user: clerkUser } = useUser();
+  const { signOut } = useClerk();
   const navigate = useNavigate();
+
+  // Map Clerk user to format expected by avatar utils
+  const currentUser = clerkUser ? {
+    profile_image_url: clerkUser.imageUrl,
+    full_name: clerkUser.fullName,
+    username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
+    firstName: clerkUser.firstName,
+    lastName: clerkUser.lastName
+  } : null;
 
   const fetchGroups = React.useCallback(async () => {
     try {
@@ -142,8 +153,14 @@ const Dashboard = () => {
     fetchGroups();
   }, [fetchGroups]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Clear backend JWT tokens
+    clearBackendTokens();
+    
+    // Sign out from Clerk
+    await signOut();
+    
+    // Navigate to login page
     navigate('/auth/login');
   };
 
