@@ -41,6 +41,9 @@ export async function syncClerkWithBackend(clerkUser) {
     const email = clerkUser.primaryEmailAddress?.emailAddress;
     const username = clerkUser.username || email?.split('@')[0] || `user_${clerkUser.id.slice(-8)}`;
     const fullName = clerkUser.fullName || username;
+    
+    // Generate a secure dummy password (backend requires 8+ chars)
+    const dummyPassword = `Clerk_${clerkUser.id}_Auth2024!`;
 
     // Try to login first (if user exists)
     try {
@@ -54,9 +57,9 @@ export async function syncClerkWithBackend(clerkUser) {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      if (loginResponse.data.token && loginResponse.data.refreshToken) {
-        localStorage.setItem('token', loginResponse.data.token);
-        localStorage.setItem('refresh_token', loginResponse.data.refreshToken);
+      if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
+        localStorage.setItem('token', loginResponse.data.access_token);
+        localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
         console.log('✅ Backend JWT tokens stored successfully');
         return true;
       }
@@ -65,21 +68,61 @@ export async function syncClerkWithBackend(clerkUser) {
       if (syncError.response?.status === 404) {
         console.log('📝 Backend clerk-sync endpoint not found, attempting register...');
         
-        const registerResponse = await axios.post(`${backendURL}/auth/register`, {
-          email,
-          username,
-          password: `clerk_${clerkUser.id}`, // Dummy password since Clerk handles auth
-          fullName
-        }, {
-          timeout: 10000,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        try {
+          const registerResponse = await axios.post(`${backendURL}/auth/register`, {
+            email,
+            username,
+            password: dummyPassword,
+            first_name: fullName.split(' ')[0] || username,
+            last_name: fullName.split(' ').slice(1).join(' ') || ''
+          }, {
+            timeout: 10000,
+            headers: { 'Content-Type': 'application/json' }
+          });
 
-        if (registerResponse.data.token && registerResponse.data.refreshToken) {
-          localStorage.setItem('token', registerResponse.data.token);
-          localStorage.setItem('refresh_token', registerResponse.data.refreshToken);
-          console.log('✅ User registered on backend, JWT tokens stored');
-          return true;
+          if (registerResponse.data.access_token && registerResponse.data.refresh_token) {
+            localStorage.setItem('token', registerResponse.data.access_token);
+            localStorage.setItem('refresh_token', registerResponse.data.refresh_token);
+            console.log('✅ User registered on backend, JWT tokens stored');
+            return true;
+          }
+        } catch (registerError) {
+          console.error('❌ Register failed:', {
+            status: registerError.response?.status,
+            data: registerError.response?.data,
+            message: registerError.message
+          });
+          
+          // If register failed with 409 (user exists), try login
+          if (registerError.response?.status === 409 || 
+              registerError.response?.status === 400) {
+            console.log('📝 User may already exist, attempting login...');
+            
+            try {
+              const loginResponse = await axios.post(`${backendURL}/auth/login`, {
+                email,
+                password: dummyPassword
+              }, {
+                timeout: 10000,
+                headers: { 'Content-Type': 'application/json' }
+              });
+
+              if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
+                localStorage.setItem('token', loginResponse.data.access_token);
+                localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
+                console.log('✅ Backend login successful, JWT tokens stored');
+                return true;
+              }
+            } catch (loginError) {
+              console.error('❌ Login also failed:', {
+                status: loginError.response?.status,
+                data: loginError.response?.data
+              });
+              throw loginError;
+            }
+          } else {
+            throw registerError;
+          }
         }
       } else if (syncError.response?.status === 409) {
         // User exists, try login
@@ -87,15 +130,15 @@ export async function syncClerkWithBackend(clerkUser) {
         
         const loginResponse = await axios.post(`${backendURL}/auth/login`, {
           email,
-          password: `clerk_${clerkUser.id}`
+          password: dummyPassword
         }, {
           timeout: 10000,
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (loginResponse.data.token && loginResponse.data.refreshToken) {
-          localStorage.setItem('token', loginResponse.data.token);
-          localStorage.setItem('refresh_token', loginResponse.data.refreshToken);
+        if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
+          localStorage.setItem('token', loginResponse.data.access_token);
+          localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
           console.log('✅ Backend login successful, JWT tokens stored');
           return true;
         }
