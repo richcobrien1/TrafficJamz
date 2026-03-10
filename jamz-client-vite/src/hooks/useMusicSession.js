@@ -2,12 +2,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import musicService from '../services/music.service';
-import { useAuth } from '../contexts/AuthContext';
 
 const API_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'https://trafficjamz.v2u.us';
 
-export const useMusicSession = (groupId, audioSessionId) => {
-  const { user } = useAuth();
+export const useMusicSession = (groupId, audioSessionId, user) => {
   
   // State
   const [currentTrack, setCurrentTrack] = useState(null);

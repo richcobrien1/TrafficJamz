@@ -8,7 +8,8 @@
 
 import React, { useState, useEffect, useRef, useContext, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
+import sessionService from '../../services/session.service';
 import api, { MAPBOX_TOKEN } from '../../services/api';
 import { dbManager } from '../../services/indexedDBManager';
 import offlineQueue from '../../services/offline-queue.service';
@@ -117,11 +118,31 @@ const LocationTracking = () => {
   // =======================================================================
 
   // Get hooks
-  const { user } = useAuth();
+  // Clerk authentication
+  const { user: clerkUser, isLoaded } = useUser();
+  const [backendUser, setBackendUser] = useState(() => sessionService.getCachedUserData());
+  
+  // Merge user data
+  const user = React.useMemo(() => {
+    if (!clerkUser || !backendUser) return null;
+    return { id: backendUser.id, ...backendUser };
+  }, [clerkUser, backendUser]);
+  
+  // Fetch backend profile if not cached
+  useEffect(() => {
+    if (clerkUser && !backendUser) {
+      api.get('/users/profile')
+        .then(response => {
+          setBackendUser(response.data.user);
+          sessionService.cacheUserData(response.data.user);
+        })
+        .catch(error => console.error('Error fetching user profile:', error));
+    }
+  }, [clerkUser, backendUser]);
   const { groupId } = useParams();
   const navigate = useNavigate();
   
-  // Audio session hook
+  // Audio session hook (pass user to hook)
   const { 
     isInSession, 
     isMuted, 
@@ -138,7 +159,7 @@ const LocationTracking = () => {
     muteBroadcastAudio,
     unmuteBroadcastAudio,
     setBroadcastVolume
-  } = useAudioSession(groupId);
+  } = useAudioSession(groupId, user);
   
   // Desktop audio sharing state
   const [isSharingDesktopAudio, setIsSharingDesktopAudio] = useState(false);

@@ -17,7 +17,9 @@ import {
   TextField,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
+import sessionService from '../../services/session.service';
+import api from '../../services/api';
 
 const InvitationAccept = () => {
   const { groupId, invitationIndex } = useParams();
@@ -31,7 +33,27 @@ const InvitationAccept = () => {
     mobilePhone: ''
   });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  
+  // Clerk authentication
+  const { user: clerkUser, isLoaded } = useUser();
+  const [backendUser, setBackendUser] = useState(() => sessionService.getCachedUserData());
+  
+  const user = React.useMemo(() => {
+    if (!clerkUser || !backendUser) return null;
+    return { id: backendUser.id, ...backendUser };
+  }, [clerkUser, backendUser]);
+  
+  // Fetch backend profile if not cached
+  useEffect(() => {
+    if (clerkUser && !backendUser) {
+      api.get('/users/profile')
+        .then(response => {
+          setBackendUser(response.data.user);
+          sessionService.cacheUserData(response.data.user);
+        })
+        .catch(error => console.error('Error fetching user profile:', error));
+    }
+  }, [clerkUser, backendUser]);
   
   useEffect(() => {
     const checkInvitation = async () => {

@@ -2,12 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import sessionService from './services/session.service';
 
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setUser } = useAuth();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +46,8 @@ const AuthCallback = () => {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.user) {
-            setUser(data.user);
+            // Cache user data
+            sessionService.cacheUserData(data.user);
             // Redirect to dashboard
             navigate('/dashboard');
           } else {
@@ -65,7 +65,7 @@ const AuthCallback = () => {
     };
 
     handleAuthCallback();
-  }, [searchParams, navigate, setUser]);
+  }, [searchParams, navigate]);
 
   if (loading) {
     return (

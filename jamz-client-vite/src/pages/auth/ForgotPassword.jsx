@@ -13,7 +13,7 @@ import {
   Alert
 } from '@mui/material';
 // Replaced Lock icon with the TrafficJamz logo (served from public/)
-import { useAuth } from '../../contexts/AuthContext';
+import { useClerk } from '@clerk/clerk-react';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -21,8 +21,16 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const { resetPassword } = useAuth();
+  const { client } = useClerk();
   const navigate = useNavigate();
+  
+  const resetPassword = async (email) => {
+    // Use Clerk's password reset
+    await client.signIn.create({
+      strategy: 'reset_password_email_code',
+      identifier: email
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();

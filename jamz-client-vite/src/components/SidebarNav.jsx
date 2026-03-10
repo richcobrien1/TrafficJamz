@@ -1,10 +1,13 @@
 import React from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useUser } from "@clerk/clerk-react";
+import sessionService from "../services/session.service";
 import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../routes";
 
 export default function SidebarNav() {
-  const { role } = useAuth();
+  const { user: clerkUser } = useUser();
+  const backendUser = sessionService.getCachedUserData();
+  const role = backendUser?.role || 'user'; // Default to 'user' role
   const location = useLocation();
 
   const filteredRoutes = ROUTES.filter((r) =>

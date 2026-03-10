@@ -10,12 +10,21 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { useAuth } from '../../contexts/AuthContext';
+import { useClerk } from '@clerk/clerk-react';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { confirmPasswordReset } = useAuth();
+  const { client } = useClerk();
+  
+  const confirmPasswordReset = async (token, email, password) => {
+    // Use Clerk's password reset confirmation
+    await client.signIn.attemptFirstFactor({
+      strategy: 'reset_password_email_code',
+      code: token,
+      password: password
+    });
+  };
 
   const [formData, setFormData] = useState({
     password: '',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -25,12 +25,34 @@ import {
   Close as CloseIcon,
   Star as StarIcon
 } from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
+import sessionService from '../../services/session.service';
+import api from '../../services/api';
 
 const SubscriptionPlans = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Clerk authentication
+  const { user: clerkUser, isLoaded } = useUser();
+  const [backendUser, setBackendUser] = useState(() => sessionService.getCachedUserData());
+  
+  const currentUser = React.useMemo(() => {
+    if (!clerkUser || !backendUser) return null;
+    return { id: backendUser.id, ...backendUser };
+  }, [clerkUser, backendUser]);
+  
+  // Fetch backend profile if not cached
+  useEffect(() => {
+    if (clerkUser && !backendUser) {
+      api.get('/users/profile')
+        .then(response => {
+          setBackendUser(response.data.user);
+          sessionService.cacheUserData(response.data.user);
+        })
+        .catch(error => console.error('Error fetching user profile:', error));
+    }
+  }, [clerkUser, backendUser]);
   
   const plans = [
     {

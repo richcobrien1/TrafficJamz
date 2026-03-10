@@ -2,13 +2,33 @@
 // This hook resolves the user's role in a group, preferring client-side checks first,
 // then falling back to a Supabase RPC call if necessary.
 
-import { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
+import sessionService from "../../services/session.service";
 import { supabase } from "../services/client"; // assumes shared Supabase client
+import api from "../../services/api";
 
 export function useResolvedGroupRole(group) {
-  const { currentUser } = useAuth();
+  const { user: clerkUser, isLoaded } = useUser();
+  const [backendUser, setBackendUser] = useState(() => sessionService.getCachedUserData());
   const [resolvedRole, setResolvedRole] = useState(null);
+  
+  const currentUser = React.useMemo(() => {
+    if (!clerkUser || !backendUser) return null;
+    return { id: backendUser.id, ...backendUser };
+  }, [clerkUser, backendUser]);
+  
+  // Fetch backend profile if not cached
+  useEffect(() => {
+    if (clerkUser && !backendUser) {
+      api.get('/users/profile')
+        .then(response => {
+          setBackendUser(response.data.user);
+          sessionService.cacheUserData(response.data.user);
+        })
+        .catch(error => console.error('Error fetching user profile:', error));
+    }
+  }, [clerkUser, backendUser]);
 
   useEffect(() => {
     if (!group || !currentUser) return;

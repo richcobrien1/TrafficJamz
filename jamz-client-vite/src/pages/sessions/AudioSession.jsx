@@ -47,7 +47,8 @@ import {
   LocationOn as MapIcon
 } from '@mui/icons-material';
 import api from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
+import sessionService from '../../services/session.service';
 import { useMusic } from '../../contexts/MusicContext';
 import MusicUpload from '../../components/music/MusicUpload';
 import MusicPlaylist from '../../components/music/MusicPlaylist';
@@ -58,7 +59,28 @@ import NativeAudio from '../../services/native-audio.service';
 const AudioSession = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  
+  // Clerk authentication
+  const { user: clerkUser, isLoaded } = useUser();
+  const [backendUser, setBackendUser] = useState(() => sessionService.getCachedUserData());
+  
+  // Merge user data
+  const user = React.useMemo(() => {
+    if (!clerkUser || !backendUser) return null;
+    return { id: backendUser.id, ...backendUser };
+  }, [clerkUser, backendUser]);
+  
+  // Fetch backend profile if not cached
+  useEffect(() => {
+    if (clerkUser && !backendUser) {
+      api.get('/users/profile')
+        .then(response => {
+          setBackendUser(response.data.user);
+          sessionService.cacheUserData(response.data.user);
+        })
+        .catch(error => console.error('Error fetching user profile:', error));
+    }
+  }, [clerkUser, backendUser]);
   
   // Better mobile detection - avoid false positives from devtools responsive mode
   const isMobile = (() => {
