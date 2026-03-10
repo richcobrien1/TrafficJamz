@@ -44,14 +44,17 @@ import {
   Add as AddIcon,
   PhotoCamera as PhotoCameraIcon
 } from '@mui/icons-material';
-import { useAuth } from '../../contexts//AuthContext';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import api from '../../services/api';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Profile = () => {
-  const { user, loading: authLoading, updateProfile, updateNotificationSettings, updatePassword, enable2FA, verify2FA, disable2FA, setUser, refreshUser } = useAuth();
+  const { user: clerkUser, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const navigate = useNavigate();
+  const [backendUser, setBackendUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  const authLoading = !isLoaded;
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -112,6 +115,36 @@ const Profile = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
   
+  // Fetch backend user profile to get full user data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (token && clerkUser) {
+        try {
+          const response = await api.get('/users/profile');
+          if (response.data.success && response.data.user) {
+            setBackendUser(response.data.user);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not fetch backend user profile:', error.message);
+        }
+      }
+    };
+    
+    if (clerkUser) {
+      fetchUserProfile();
+    }
+  }, [clerkUser]);
+
+  // Map Clerk user + backend profile to format expected by this component
+  const user = (clerkUser && backendUser) ? {
+    ...backendUser,
+    profile_image_url: backendUser?.profile_image_url || clerkUser.imageUrl || clerkUser.profileImageUrl,
+    full_name: backendUser?.full_name || clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+    firstName: clerkUser.firstName,
+    lastName: clerkUser.lastName
+  } : null;
+  
   // Initialize form data from user data
   useEffect(() => {
     if (user) {
@@ -162,7 +195,15 @@ const Profile = () => {
       };
 
       // Update database and get updated user data
-      await updateProfile(updateData);
+      const response = await api.put('/users/profile', updateData);
+      
+      if (response.data.success) {
+        // Update backend user state with new data
+        setBackendUser(prev => ({
+          ...prev,
+          ...updateData
+        }));
+      }
 
       // Show success notification
       setPersonalInfoSuccess('Profile updated successfully');
@@ -188,14 +229,15 @@ const Profile = () => {
       setNotificationsSuccess('');
 
       // Update notification settings in database and get updated user data
-      await updateNotificationSettings(notificationSettings);
-
-      // Update the user object to reflect the saved settings
-      // This ensures the notificationSettings state stays in sync
-      setUser(prevUser => ({
-        ...prevUser,
-        ...notificationSettings
-      }));
+      const response = await api.put('/users/profile', notificationSettings);
+      
+      if (response.data.success) {
+        // Update backend user state with notification settings
+        setBackendUser(prev => ({
+          ...prev,
+          ...notificationSettings
+        }));
+      }
 
       // Show success notification
       setNotificationsSuccess('Notification settings saved successfully');
@@ -239,8 +281,9 @@ const Profile = () => {
         return;
       }
 
-      // Update password
-      await updatePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      // Password changes now handled through Clerk
+      setSecurityError('Password changes must be made through your Clerk account settings');
+      return;
 
       // Show success notification
       setSecuritySuccess('Password changed successfully');
@@ -267,81 +310,15 @@ const Profile = () => {
   };
   
   const handleEnable2FA = async () => {
-    try {
-      setLoading(true);
-      setSecurityError('');
-      
-      const response = await enable2FA();
-      
-      // Set the 2FA secret and QR code
-      setTwoFactorSecret(response.secret);
-      setTwoFactorQR(response.qr_code_url);
-      setEnable2FAOpen(true);
-      
-    } catch (error) {
-      console.error('Enable 2FA error:', error);
-      setSecurityError(error.response?.data?.message || 'Failed to enable 2FA. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setSecurityError('Two-factor authentication is now managed through your Clerk account settings');
   };
   
   const handleVerify2FA = async () => {
-    try {
-      setLoading(true);
-      setSecurityError('');
-      
-      await verify2FA(twoFactorToken);
-      
-      // Show success notification
-      setSecuritySuccess('Two-factor authentication enabled successfully');
-      
-      // Reset form and close modal
-      setTwoFactorSecret('');
-      setTwoFactorQR('');
-      setTwoFactorToken('');
-      setEnable2FAOpen(false);
-      
-      // Auto-clear success message after 5 seconds
-      setTimeout(() => {
-        setSecuritySuccess('');
-      }, 5000);
-
-    } catch (error) {
-      console.error('Verify 2FA error:', error);
-      setSecurityError(error.response?.data?.message || 'Invalid 2FA code. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setSecurityError('Two-factor authentication is now managed through your Clerk account settings');
   };
   
   const handleDisable2FA = async () => {
-    // For simplicity, we'll just show a confirmation dialog
-    // In a real implementation, you'd want a proper confirmation modal
-    if (window.confirm('Are you sure you want to disable two-factor authentication? This will make your account less secure.')) {
-      try {
-        setLoading(true);
-        setSecurityError('');
-        
-        // For disable, we might need the user's password
-        const password = prompt('Please enter your password to confirm:');
-        if (!password) return;
-        
-        await disable2FA(password);
-        
-        setSecuritySuccess('Two-factor authentication disabled successfully');
-        
-        setTimeout(() => {
-          setSecuritySuccess('');
-        }, 5000);
-        
-      } catch (error) {
-        console.error('Disable 2FA error:', error);
-        setSecurityError(error.response?.data?.message || 'Failed to disable 2FA. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    }
+    setSecurityError('Two-factor authentication is now managed through your Clerk account settings');
   };
   
   // AI Chat Support Handlers
@@ -440,8 +417,8 @@ const Profile = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Update user data to reflect unlinked account
-        setUser(prevUser => ({
+        // Update backend user state to reflect unlinked account
+        setBackendUser(prevUser => ({
           ...prevUser,
           social_accounts: {
             ...prevUser.social_accounts,
@@ -511,8 +488,15 @@ const Profile = () => {
       if (data.success) {
         console.log('🖼️ Profile upload success, refreshing user from backend...');
         
-        // Refresh user profile from backend to get updated data
-        await refreshUser();
+        // Refresh backend user profile to get updated data
+        try {
+          const profileResponse = await api.get('/users/profile');
+          if (profileResponse.data.success && profileResponse.data.user) {
+            setBackendUser(profileResponse.data.user);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not refresh profile:', error.message);
+        }
         
         setPersonalInfoSuccess('Profile photo updated successfully');
       } else {
