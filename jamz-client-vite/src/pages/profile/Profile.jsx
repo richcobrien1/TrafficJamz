@@ -114,12 +114,14 @@ const Profile = () => {
   // Profile photo upload
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
+  const profileFetchedRef = useRef(false);
   
   // Fetch backend user profile to get full user data
   useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('token');
-      if (token && clerkUser) {
+      if (token && clerkUser && !profileFetchedRef.current) {
+        profileFetchedRef.current = true;
         try {
           const response = await api.get('/users/profile');
           if (response.data.success && response.data.user) {
@@ -127,6 +129,7 @@ const Profile = () => {
           }
         } catch (error) {
           console.warn('⚠️ Could not fetch backend user profile:', error.message);
+          profileFetchedRef.current = false; // Reset on error for retry
         }
       }
     };

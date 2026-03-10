@@ -61,12 +61,14 @@ const Dashboard = () => {
   const { signOut } = useClerk();
   const navigate = useNavigate();
   const [backendUser, setBackendUser] = React.useState(null);
+  const profileFetchedRef = React.useRef(false);
 
   // Fetch backend user profile to get actual profile image from Supabase
   React.useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('token');
-      if (token && clerkUser) {
+      if (token && clerkUser && !profileFetchedRef.current) {
+        profileFetchedRef.current = true;
         try {
           const response = await api.get('/users/profile');
           if (response.data.success && response.data.user) {
@@ -74,6 +76,7 @@ const Dashboard = () => {
           }
         } catch (error) {
           console.warn('⚠️ Could not fetch backend user profile:', error.message);
+          profileFetchedRef.current = false; // Reset on error for retry
         }
       }
     };
