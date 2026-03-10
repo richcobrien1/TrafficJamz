@@ -60,27 +60,37 @@ const Dashboard = () => {
   const { user: clerkUser } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  const [backendUser, setBackendUser] = React.useState(null);
 
-  // Map Clerk user to format expected by avatar utils
+  // Fetch backend user profile to get actual profile image from Supabase
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (token && clerkUser) {
+        try {
+          const response = await api.get('/users/profile');
+          if (response.data.success && response.data.user) {
+            setBackendUser(response.data.user);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not fetch backend user profile:', error.message);
+        }
+      }
+    };
+    
+    if (clerkUser) {
+      fetchUserProfile();
+    }
+  }, [clerkUser]);
+
+  // Map Clerk user + backend profile to format expected by avatar utils
   const currentUser = clerkUser ? {
-    profile_image_url: clerkUser.imageUrl || clerkUser.profileImageUrl || clerkUser.image_url,
-    full_name: clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
-    username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
+    profile_image_url: backendUser?.profile_image_url || clerkUser.imageUrl || clerkUser.profileImageUrl,
+    full_name: backendUser?.full_name || clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+    username: backendUser?.username || clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
     firstName: clerkUser.firstName,
     lastName: clerkUser.lastName
   } : null;
-  
-  // Debug log for avatar troubleshooting
-  React.useEffect(() => {
-    if (clerkUser) {
-      console.log('🔍 Clerk user data:', {
-        imageUrl: clerkUser.imageUrl,
-        profileImageUrl: clerkUser.profileImageUrl,
-        hasImageUrl: clerkUser.hasImage,
-        fullName: clerkUser.fullName
-      });
-    }
-  }, [clerkUser]);
 
   const fetchGroups = React.useCallback(async () => {
     try {
