@@ -46,15 +46,21 @@ import {
 } from '@mui/icons-material';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import api from '../../services/api';
+import sessionService from '../../services/session.service';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 
 const Profile = () => {
   const { user: clerkUser, isLoaded } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
-  const [backendUser, setBackendUser] = useState(null);
+  const [backendUser, setBackendUser] = useState(() => {
+    // Try to load from cache on first render for instant display
+    const cached = sessionService.getCachedUserData();
+    return cached || null;
+  });
   const [loading, setLoading] = useState(false);
   const authLoading = !isLoaded;
+  const profileFetchedRef = useRef(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -126,6 +132,8 @@ const Profile = () => {
           const response = await api.get('/users/profile');
           if (response.data.success && response.data.user) {
             setBackendUser(response.data.user);
+            // Cache for next time
+            sessionService.cacheUserData(response.data.user);
           }
         } catch (error) {
           console.warn('⚠️ Could not fetch backend user profile:', error.message);

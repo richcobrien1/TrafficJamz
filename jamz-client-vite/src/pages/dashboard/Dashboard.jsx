@@ -60,7 +60,11 @@ const Dashboard = () => {
   const { user: clerkUser } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
-  const [backendUser, setBackendUser] = React.useState(null);
+  const [backendUser, setBackendUser] = React.useState(() => {
+    // Try to load from cache on first render for instant display
+    const cached = sessionService.getCachedUserData();
+    return cached || null;
+  });
   const profileFetchedRef = React.useRef(false);
 
   // Fetch backend user profile to get actual profile image from Supabase
@@ -73,6 +77,8 @@ const Dashboard = () => {
           const response = await api.get('/users/profile');
           if (response.data.success && response.data.user) {
             setBackendUser(response.data.user);
+            // Cache for next time
+            sessionService.cacheUserData(response.data.user);
           }
         } catch (error) {
           console.warn('⚠️ Could not fetch backend user profile:', error.message);
@@ -98,6 +104,7 @@ const Dashboard = () => {
   const fetchGroups = React.useCallback(async () => {
     try {
       setLoading(true);
+      let cacheLoaded = false;
       
       // Try cached data first for instant display (localStorage - fast)
       const cachedGroups = sessionService.getCachedGroupsData();
@@ -105,6 +112,7 @@ const Dashboard = () => {
         console.log('📦 Using cached groups data from localStorage');
         setGroups(cachedGroups);
         setLoading(false); // Turn off loading immediately when we have cache
+        cacheLoaded = true;
       } else {
         // Fallback to IndexedDB if localStorage is empty/expired
         try {
@@ -115,6 +123,7 @@ const Dashboard = () => {
             // Restore to localStorage for faster access next time
             sessionService.cacheGroupsData(idbGroups);
             setLoading(false);
+            cacheLoaded = true;
           }
         } catch (idbError) {
           console.warn('Failed to load from IndexedDB:', idbError);
@@ -124,15 +133,19 @@ const Dashboard = () => {
       // Only fetch if online
       if (!navigator.onLine) {
         console.log('📴 Offline - using cached data only');
-        if (!group) {
+        if (!cacheLoaded) {
           setError('📴 Offline mode - Connect to internet to load groups.');
         }
         return;
       }
       
-      // Fetch fresh data in background
+      // Fetch fresh data (silently in background if we have cache)
       const response = await api.get('/groups');
-      setGroups(response.data.groups);
+      
+      // Only update if data actually changed (prevent unnecessary re-render)
+      if (!cacheLoaded || JSON.stringify(response.data.groups) !== JSON.stringify(groups)) {
+        setGroups(response.data.groups);
+      }
       
       // Cache fresh data in BOTH locations
       sessionService.cacheGroupsData(response.data.groups);
@@ -172,7 +185,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false); // CRITICAL: Always turn off loading
     }
-  }, []);
+  }, [groups]);
 
   useEffect(() => {
     fetchGroups();
