@@ -24,7 +24,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MusicProvider } from './contexts/MusicContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AppLoader from './components/AppLoader';
@@ -333,9 +332,8 @@ function App() {
         </Box>
       )}
       <ErrorBoundary>
-        <AuthProvider>
-          <MusicProvider>
-            <Suspense fallback={<AppLoader message="Loading page..." />}>
+        <MusicProvider>
+          <Suspense fallback={<AppLoader message="Loading page..." />}>
             {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
             {/*<AnimatePresence mode="wait">*/}
               <motion.div
@@ -415,8 +413,7 @@ function App() {
               </motion.div>
             {/*</AnimatePresence>*/}
           </Suspense>
-          </MusicProvider>
-        </AuthProvider>
+        </MusicProvider>
       </ErrorBoundary>
       </ThemeProvider>
     </ClerkProvider>
