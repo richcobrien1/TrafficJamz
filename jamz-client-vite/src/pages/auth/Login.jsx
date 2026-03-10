@@ -29,7 +29,6 @@ const Login = () => {
           routing="path"
           path="/auth/login"
           signUpUrl="/auth/register"
-          fallbackRedirectUrl="/dashboard"
           appearance={{
             elements: {
               rootBox: {
