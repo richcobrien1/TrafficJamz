@@ -14,9 +14,9 @@ const CACHE_KEYS = {
 
 // Cache TTL in milliseconds
 const CACHE_TTL = {
-  USER: 30 * 60 * 1000,     // 30 minutes - user data changes infrequently
-  GROUPS: 2 * 60 * 60 * 1000,   // 2 hours - more stable data
-  CONFIG: 30 * 60 * 1000    // 30 minutes - rarely changes
+  USER: 24 * 60 * 60 * 1000,     // 24 hours - user data persists across sessions
+  GROUPS: 24 * 60 * 60 * 1000,   // 24 hours - stable data
+  CONFIG: 24 * 60 * 60 * 1000    // 24 hours - rarely changes
 };
 
 class SessionService {

@@ -21,14 +21,14 @@ export const MusicProvider = ({ children }) => {
   // Get user from session cache (set by Dashboard/Profile Clerk sync)
   const [user, setUser] = useState(() => sessionService.getCachedUserData());
   
-  // Update user when cache changes
+  // Update user when cache changes (check less frequently to reduce overhead)
   useEffect(() => {
     const checkUserCache = setInterval(() => {
       const cachedUser = sessionService.getCachedUserData();
       if (cachedUser && cachedUser.id !== user?.id) {
         setUser(cachedUser);
       }
-    }, 1000); // Check every second
+    }, 10000); // Check every 10 seconds
     
     return () => clearInterval(checkUserCache);
   }, [user]);
