@@ -1,7 +1,7 @@
 // jamz-client-vite/src/pages/dashboard/Dashboard.jsx
 // This file is part of the TrafficJamz project.
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -93,13 +93,18 @@ const Dashboard = () => {
   }, [clerkUser]);
 
   // Map Clerk user + backend profile to format expected by avatar utils
-  const currentUser = clerkUser ? {
-    profile_image_url: backendUser?.profile_image_url || clerkUser.imageUrl || clerkUser.profileImageUrl,
-    full_name: backendUser?.full_name || clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
-    username: backendUser?.username || clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
-    firstName: clerkUser.firstName,
-    lastName: clerkUser.lastName
-  } : null;
+  // Memoized to prevent unnecessary re-renders
+  const currentUser = useMemo(() => {
+    if (!clerkUser) return null;
+    
+    return {
+      profile_image_url: backendUser?.profile_image_url || clerkUser.imageUrl || clerkUser.profileImageUrl,
+      full_name: backendUser?.full_name || clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+      username: backendUser?.username || clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
+      firstName: clerkUser.firstName,
+      lastName: clerkUser.lastName
+    };
+  }, [clerkUser, backendUser]);
 
   const fetchGroups = React.useCallback(async () => {
     try {
