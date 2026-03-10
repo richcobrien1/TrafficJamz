@@ -28,7 +28,7 @@ export function useResolvedGroupRole(group) {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
 
   useEffect(() => {
     if (!group || !currentUser) return;

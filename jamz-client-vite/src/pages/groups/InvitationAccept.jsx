@@ -52,7 +52,7 @@ const InvitationAccept = () => {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
   
   useEffect(() => {
     const checkInvitation = async () => {

@@ -52,7 +52,7 @@ const SubscriptionPlans = () => {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
   
   const plans = [
     {

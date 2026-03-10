@@ -80,7 +80,7 @@ const AudioSession = () => {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
   
   // Better mobile detection - avoid false positives from devtools responsive mode
   const isMobile = (() => {

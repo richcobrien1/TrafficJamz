@@ -137,7 +137,7 @@ const LocationTracking = () => {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
   const { groupId } = useParams();
   const navigate = useNavigate();
   

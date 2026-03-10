@@ -28,7 +28,7 @@ export function useGroupInvites() {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
 
   useEffect(() => {
     if (!currentUser) return;

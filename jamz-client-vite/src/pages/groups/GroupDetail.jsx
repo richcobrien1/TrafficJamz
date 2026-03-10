@@ -148,7 +148,7 @@ const GroupDetail = () => {
         })
         .catch(error => console.error('Error fetching user profile:', error));
     }
-  }, [clerkUser, backendUser]);
+  }, [clerkUser]);
   
   const generateEditAvatarOptions = async (groupName, description = '') => {
     if (!groupName.trim()) {
