@@ -120,7 +120,6 @@ const Profile = () => {
   // Profile photo upload
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
-  const profileFetchedRef = useRef(false);
   
   // Fetch backend user profile to get full user data
   useEffect(() => {
