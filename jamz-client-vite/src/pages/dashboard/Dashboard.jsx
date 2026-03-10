@@ -63,12 +63,24 @@ const Dashboard = () => {
 
   // Map Clerk user to format expected by avatar utils
   const currentUser = clerkUser ? {
-    profile_image_url: clerkUser.imageUrl,
-    full_name: clerkUser.fullName,
+    profile_image_url: clerkUser.imageUrl || clerkUser.profileImageUrl || clerkUser.image_url,
+    full_name: clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
     username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
     firstName: clerkUser.firstName,
     lastName: clerkUser.lastName
   } : null;
+  
+  // Debug log for avatar troubleshooting
+  React.useEffect(() => {
+    if (clerkUser) {
+      console.log('🔍 Clerk user data:', {
+        imageUrl: clerkUser.imageUrl,
+        profileImageUrl: clerkUser.profileImageUrl,
+        hasImageUrl: clerkUser.hasImage,
+        fullName: clerkUser.fullName
+      });
+    }
+  }, [clerkUser]);
 
   const fetchGroups = React.useCallback(async () => {
     try {

@@ -29,7 +29,7 @@ const Register = () => {
           routing="path"
           path="/auth/register"
           signInUrl="/auth/login"
-          redirectUrl="/dashboard"
+          fallbackRedirectUrl="/dashboard"
           appearance={{
             elements: {
               rootBox: {
