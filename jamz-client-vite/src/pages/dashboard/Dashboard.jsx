@@ -195,8 +195,11 @@ const Dashboard = () => {
     // Clear backend JWT tokens
     clearBackendTokens();
     
-    // Sign out from Clerk (this will trigger Clerk redirect)
-    await signOut();
+    // Clear user cache
+    sessionService.clearUserCache();
+    
+    // Sign out from Clerk with explicit redirect
+    await signOut({ redirectUrl: '/auth/login' });
   };
 
   const generateAvatarOptions = (groupName) => {
