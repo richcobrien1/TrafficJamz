@@ -142,10 +142,8 @@ const Dashboard = () => {
       // Fetch fresh data (silently in background if we have cache)
       const response = await api.get('/groups');
       
-      // Only update if data actually changed (prevent unnecessary re-render)
-      if (!cacheLoaded || JSON.stringify(response.data.groups) !== JSON.stringify(groups)) {
-        setGroups(response.data.groups);
-      }
+      // Always update with fresh data
+      setGroups(response.data.groups);
       
       // Cache fresh data in BOTH locations
       sessionService.cacheGroupsData(response.data.groups);
@@ -185,7 +183,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false); // CRITICAL: Always turn off loading
     }
-  }, [groups]);
+  }, []); // No dependencies - fetchGroups doesn't need to recreate
 
   useEffect(() => {
     fetchGroups();
