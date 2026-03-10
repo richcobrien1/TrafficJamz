@@ -13,7 +13,6 @@ import sessionService from '../../services/session.service';
 import api, { MAPBOX_TOKEN } from '../../services/api';
 import { dbManager } from '../../services/indexedDBManager';
 import offlineQueue from '../../services/offline-queue.service';
-import sessionService from '../../services/session.service';
 import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
