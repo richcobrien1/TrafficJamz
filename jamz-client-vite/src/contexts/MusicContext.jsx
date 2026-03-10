@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import musicService from '../services/music.service';
-import { useAuth } from './AuthContext';
+import sessionService from '../services/session.service';
 import { 
   loadPlaylistFromCache, 
   savePlaylistToCache, 
@@ -18,7 +18,20 @@ const MusicContext = createContext();
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://trafficjamz.v2u.us';
 
 export const MusicProvider = ({ children }) => {
-  const { user } = useAuth();
+  // Get user from session cache (set by Dashboard/Profile Clerk sync)
+  const [user, setUser] = useState(() => sessionService.getCachedUserData());
+  
+  // Update user when cache changes
+  useEffect(() => {
+    const checkUserCache = setInterval(() => {
+      const cachedUser = sessionService.getCachedUserData();
+      if (cachedUser && cachedUser.id !== user?.id) {
+        setUser(cachedUser);
+      }
+    }, 1000); // Check every second
+    
+    return () => clearInterval(checkUserCache);
+  }, [user]);
   
   // Centralized music state - persists across components
   const [currentTrack, setCurrentTrack] = useState(null);
