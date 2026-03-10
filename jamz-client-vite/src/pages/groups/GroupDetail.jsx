@@ -48,7 +48,7 @@ import {
 } from '@mui/icons-material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api'; // Adjust the path as needed to point to your api.js file
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import sessionService from '../../services/session.service';
 import { dbManager } from '../../services/indexedDBManager';
 import offlineQueue from '../../services/offline-queue.service';
@@ -102,7 +102,22 @@ const GroupDetail = () => {
   const [serviceStatusError, setServiceStatusError] = useState(false); // Track if status check is failing
   const [pollInterval, setPollInterval] = useState(10000); // Dynamic poll interval (10s default)
   const [isLocationWatchActive, setIsLocationWatchActive] = useState(false); // Track if location watch is running
-  const { user, loading: userLoading } = useAuth();
+  
+  // Clerk authentication
+  const { user: clerkUser, isLoaded } = useUser();
+  const [backendUser, setBackendUser] = useState(() => sessionService.getCachedUserData());
+  const userLoading = !isLoaded || !backendUser;
+  
+  // Merge user data for component usage
+  const user = React.useMemo(() => {
+    if (!clerkUser || !backendUser) return null;
+    return {
+      id: backendUser.id,
+      user_id: backendUser.id, // Alias for member comparisons
+      ...backendUser
+    };
+  }, [clerkUser, backendUser]);
+  
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState('');
@@ -122,6 +137,18 @@ const GroupDetail = () => {
       setAvatarUrl(group.avatar_url || '');
     }
   }, [group]);
+  
+  // Fetch backend profile if not cached
+  useEffect(() => {
+    if (clerkUser && !backendUser) {
+      api.get('/users/profile')
+        .then(response => {
+          setBackendUser(response.data.user);
+          sessionService.cacheUserData(response.data.user);
+        })
+        .catch(error => console.error('Error fetching user profile:', error));
+    }
+  }, [clerkUser, backendUser]);
   
   const generateEditAvatarOptions = async (groupName, description = '') => {
     if (!groupName.trim()) {
