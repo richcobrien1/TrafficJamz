@@ -19,7 +19,6 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import { useUser } from '@clerk/clerk-react';
 import sessionService from '../../services/session.service';
-import api from '../../services/api';
 
 const InvitationAccept = () => {
   const { groupId, invitationIndex } = useParams();
