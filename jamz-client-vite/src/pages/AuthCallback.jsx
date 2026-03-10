@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import sessionService from './services/session.service';
+import sessionService from '../services/session.service';
 
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
