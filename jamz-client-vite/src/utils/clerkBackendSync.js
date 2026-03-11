@@ -177,8 +177,7 @@ export async function syncClerkWithBackend(clerkUser) {
     console.error('❌ Failed to obtain backend tokens');
     return false;
 
-  sessionService.clearUserCache();
-  console.log('🧹 Backend tokens and user cache
+  } catch (error) {
     console.error('❌ Clerk-Backend sync failed:', {
       message: error.message,
       status: error.response?.status,
@@ -194,5 +193,6 @@ export async function syncClerkWithBackend(clerkUser) {
 export function clearBackendTokens() {
   localStorage.removeItem('token');
   localStorage.removeItem('refresh_token');
-  console.log('🧹 Backend tokens cleared');
+  sessionService.clearUserCache();
+  console.log('🧹 Backend tokens and user cache cleared');
 }
