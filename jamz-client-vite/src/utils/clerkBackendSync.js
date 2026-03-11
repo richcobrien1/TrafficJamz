@@ -3,6 +3,7 @@
 
 import axios from 'axios';
 import sessionService from '../services/session.service';
+import pLog from './persistentLogger';
 
 const getBackendURL = () => {
   const isLocalDev = window.location?.hostname === 'localhost' || 
@@ -32,7 +33,7 @@ export async function syncClerkWithBackend(clerkUser) {
 
   try {
     const backendURL = getBackendURL();
-    console.log('🔄 Syncing Clerk user with backend...', {
+    pLog.log('🔄 Syncing Clerk user with backend...', {
       clerkUserId: clerkUser.id,
       email: clerkUser.primaryEmailAddress?.emailAddress,
       backendURL
@@ -49,13 +50,13 @@ export async function syncClerkWithBackend(clerkUser) {
     // Check if we already have valid tokens (skip sync if so)
     const existingToken = localStorage.getItem('token');
     if (existingToken) {
-      console.log('✅ Backend tokens already exist, skipping sync');
+      pLog.log('✅ Backend tokens already exist, skipping sync');
       return true;
     }
 
     // Try to login first (if user exists)
     try {
-      console.log('🌐 Sending clerk-sync request to backend...');
+      pLog.log('🌐 Sending clerk-sync request to backend...');
       const loginResponse = await axios.post(`${backendURL}/auth/clerk-sync`, {
         clerkUserId: clerkUser.id,
         email,
@@ -66,7 +67,7 @@ export async function syncClerkWithBackend(clerkUser) {
         headers: { 'Content-Type': 'application/json' }
       });
       
-      console.log('✅ Clerk-sync response received:', { 
+      pLog.log('✅ Clerk-sync response received:', { 
         status: loginResponse.status,
         hasData: !!loginResponse.data,
         hasToken: !!loginResponse.data?.access_token,
@@ -75,7 +76,7 @@ export async function syncClerkWithBackend(clerkUser) {
 
       // Check if response has data
       if (!loginResponse.data) {
-        console.error('❌ Clerk-sync returned empty response body');
+        pLog.log('❌ Clerk-sync returned empty response body');
         throw new Error('Empty response from clerk-sync endpoint');
       }
 
@@ -86,22 +87,22 @@ export async function syncClerkWithBackend(clerkUser) {
         // Cache user data if provided
         if (loginResponse.data.user) {
           sessionService.cacheUserData(loginResponse.data.user);
-          console.log('✅ Backend JWT tokens and user data stored successfully');
+          pLog.log('✅ Backend JWT tokens and user data stored successfully');
         } else {
-          console.log('✅ Backend JWT tokens stored successfully');
+          pLog.log('✅ Backend JWT tokens stored successfully');
         }
         
         return true;
       } else {
-        console.error('❌ Clerk-sync response missing tokens:', loginResponse.data);
+        pLog.log('❌ Clerk-sync response missing tokens:', loginResponse.data);
         throw new Error('No tokens in clerk-sync response');
       }
     } catch (syncError) {
       // Log timeout specifically
       if (syncError.code === 'ECONNABORTED') {
-        console.error('❌ Clerk-sync request timed out after 5 seconds');
+        pLog.log('❌ Clerk-sync request timed out after 5 seconds');
       } else {
-        console.error('❌ Clerk-sync error:', {
+        pLog.log('❌ Clerk-sync error:', {
           status: syncError.response?.status,
           message: syncError.message,
           code: syncError.code

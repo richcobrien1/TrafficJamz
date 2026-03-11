@@ -16,6 +16,16 @@ import { BrowserRouter, HashRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import pLog from './utils/persistentLogger';
+
+// Display startup banner
+console.log('%c📜 JAMZ DIAGNOSTIC MODE', 'background: #2196F3; color: white; font-size: 16px; padding: 8px; font-weight: bold;');
+console.log('%cLogs preserved across reloads!', 'color: #4CAF50; font-size: 14px; font-weight: bold;');
+console.log('%cView logs: %cwindow.viewLogs()', 'color: #666; font-size: 12px;', 'color: #FF9800; font-weight: bold; font-family: monospace;');
+console.log('%cClear logs: %cwindow.clearLogs()', 'color: #666; font-size: 12px;', 'color: #FF9800; font-weight: bold; font-family: monospace;');
+console.log('─'.repeat(50));
+
+pLog.log('🚀 Application starting...', { url: window.location.href });
 
 // Global error handler for chunk loading errors
 window.addEventListener('error', (event) => {
