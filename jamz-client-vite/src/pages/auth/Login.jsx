@@ -29,7 +29,8 @@ const Login = () => {
           routing="path"
           path="/auth/login"
           signUpUrl="/auth/register"
-          forceRedirectUrl="/dashboard"
+          afterSignInUrl={null}
+          afterSignUpUrl={null}
           appearance={{
             elements: {
               rootBox: {

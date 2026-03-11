@@ -315,8 +315,13 @@ function App() {
     return (
       <ClerkProvider 
         publishableKey={clerkPubKey}
+        routing="path"
+        afterSignInUrl={null}
+        afterSignUpUrl={null}
+        signInUrl={null}
+        signUpUrl={null}
         navigate={(to) => {
-          pLog.log('🚫 Clerk navigate blocked (loading):', { to });
+          pLog.log('🔀 Clerk navigate (loading):', { to });
           return Promise.resolve();
         }}
       >
@@ -335,9 +340,14 @@ function App() {
   return (
     <ClerkProvider 
       publishableKey={clerkPubKey}
+      routing="path"
+      afterSignInUrl={null}
+      afterSignUpUrl={null}
+      signInUrl={null}
+      signUpUrl={null}
       navigate={(to) => {
-        pLog.log('🚫 Clerk navigate blocked:', { to });
-        // Block Clerk from managing navigation - we handle it ourselves
+        pLog.log('🔀 Clerk attempting navigate:', { to });
+        // Return empty promise to prevent navigation
         return Promise.resolve();
       }}
     >
