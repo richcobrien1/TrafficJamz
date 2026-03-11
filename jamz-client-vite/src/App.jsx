@@ -96,6 +96,8 @@ const RootRedirect = () => {
 function App() {
   const location = useLocation();
   
+  pLog.log('🚀 App component rendering', { path: location.pathname });
+  
   // State for backend wake-up - use localStorage for iOS persistence, with timestamp check
   const [backendReady, setBackendReady] = useState(() => {
     try {
@@ -153,6 +155,7 @@ function App() {
           
           const response = await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
           console.log('✅ Backend is ready!', response.data);
+          pLog.log('✅ Backend health check passed, setting backendReady=true');
           setBackendReady(true);
           localStorage.setItem('backendReady', 'true');
           localStorage.setItem('backendReadyTimestamp', Date.now().toString());
