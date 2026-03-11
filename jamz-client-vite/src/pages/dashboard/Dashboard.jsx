@@ -75,11 +75,11 @@ const Dashboard = () => {
   });
   const profileFetchedRef = React.useRef(false);
   const groupsFetchedRef = React.useRef(false);
-  const hasInitialGroupsRef = React.useRef(() => {
+  const hasInitialGroupsRef = React.useRef((() => {
     // Check if we have cached groups on mount
     const cached = sessionService.getCachedGroupsData();
     return !!cached && cached.length > 0;
-  }());
+  })());
 
   // Fetch backend user profile to get actual profile image from Supabase
   React.useEffect(() => {
