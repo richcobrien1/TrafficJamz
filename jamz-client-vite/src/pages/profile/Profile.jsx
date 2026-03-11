@@ -229,10 +229,13 @@ const Profile = () => {
       
       if (response.data.success) {
         // Update backend user state with new data
-        setBackendUser(prev => ({
-          ...prev,
+        const updatedUser = {
+          ...backendUser,
           ...updateData
-        }));
+        };
+        setBackendUser(updatedUser);
+        // Update cache so Dashboard knows to refresh
+        sessionService.cacheUserData(updatedUser);
       }
 
       // Show success notification
@@ -263,10 +266,13 @@ const Profile = () => {
       
       if (response.data.success) {
         // Update backend user state with notification settings
-        setBackendUser(prev => ({
-          ...prev,
+        const updatedUser = {
+          ...backendUser,
           ...notificationSettings
-        }));
+        };
+        setBackendUser(updatedUser);
+        // Update cache so Dashboard knows to refresh
+        sessionService.cacheUserData(updatedUser);
       }
 
       // Show success notification
@@ -523,6 +529,9 @@ const Profile = () => {
           const profileResponse = await api.get('/users/profile');
           if (profileResponse.data.success && profileResponse.data.user) {
             setBackendUser(profileResponse.data.user);
+            // Update cache so Dashboard knows to refresh
+            sessionService.cacheUserData(profileResponse.data.user);
+            console.log('💾 Profile cache updated with new avatar');
           }
         } catch (error) {
           console.warn('⚠️ Could not refresh profile:', error.message);

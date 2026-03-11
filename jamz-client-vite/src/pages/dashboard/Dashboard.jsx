@@ -74,6 +74,7 @@ const Dashboard = () => {
     return cached || null;
   });
   const profileFetchedRef = React.useRef(false);
+  const lastUserCacheTimestamp = React.useRef(null);
   const groupsFetchedRef = React.useRef(false);
   const hasInitialGroupsRef = React.useRef((() => {
     // Check if we have cached groups on mount
@@ -85,18 +86,28 @@ const Dashboard = () => {
   React.useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('token');
-      if (token && clerkUser && !profileFetchedRef.current) {
-        profileFetchedRef.current = true;
-        try {
-          const response = await api.get('/users/profile');
-          if (response.data.success && response.data.user) {
-            setBackendUser(response.data.user);
-            // Cache for next time
-            sessionService.cacheUserData(response.data.user);
+      if (token && clerkUser) {
+        // Check if cache was updated since our last fetch
+        const cacheTimestamp = localStorage.getItem('jamz_user_timestamp');
+        const shouldRefetch = !profileFetchedRef.current || 
+                             (cacheTimestamp && cacheTimestamp !== lastUserCacheTimestamp.current);
+        
+        if (shouldRefetch) {
+          profileFetchedRef.current = true;
+          lastUserCacheTimestamp.current = cacheTimestamp;
+          
+          try {
+            const response = await api.get('/users/profile');
+            if (response.data.success && response.data.user) {
+              setBackendUser(response.data.user);
+              // Cache for next time
+              sessionService.cacheUserData(response.data.user);
+              console.log('✅ User profile refreshed with latest avatar');
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not fetch backend user profile:', error.message);
+            profileFetchedRef.current = false; // Reset on error for retry
           }
-        } catch (error) {
-          console.warn('⚠️ Could not fetch backend user profile:', error.message);
-          profileFetchedRef.current = false; // Reset on error for retry
         }
       }
     };
