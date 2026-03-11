@@ -53,6 +53,17 @@ const Profile = () => {
   const { user: clerkUser, isLoaded } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  
+  // Handle back button navigation
+  const handleBackClick = () => {
+    console.log('🔙 Profile back button clicked');
+    console.log('🔙 Current path:', window.location.pathname);
+    console.log('🔙 Navigating to /dashboard');
+    
+    // Force full page navigation as a workaround
+    window.location.href = '/dashboard';
+  };
+  
   const [backendUser, setBackendUser] = useState(() => {
     // Try to load from cache on first render for instant display
     const cached = sessionService.getCachedUserData();
@@ -555,7 +566,7 @@ const Profile = () => {
               color="inherit"
               aria-label="back"
               sx={{ mr: 2 }}
-              onClick={() => navigate('/dashboard')}
+              onClick={handleBackClick}
             >
               <ArrowBackIcon />
             </IconButton>
@@ -589,7 +600,7 @@ const Profile = () => {
               color="inherit"
               aria-label="back"
               sx={{ mr: 2 }}
-              onClick={() => navigate('/dashboard')}
+              onClick={handleBackClick}
             >
               <ArrowBackIcon />
             </IconButton>
@@ -603,7 +614,7 @@ const Profile = () => {
             <Typography variant="h6" color="error" sx={{ mb: 2 }}>
               Unable to load profile data
             </Typography>
-            <Button variant="contained" onClick={() => navigate('/dashboard', { replace: true })}>
+            <Button variant="contained" onClick={handleBackClick}>
               Go Back
             </Button>
           </Box>
@@ -625,7 +636,7 @@ const Profile = () => {
             color="inherit"
             aria-label="back"
             sx={{ mr: 2 }}
-            onClick={() => navigate('/dashboard', { replace: true })}
+            onClick={handleBackClick}
           >
             <ArrowBackIcon />
           </IconButton>
