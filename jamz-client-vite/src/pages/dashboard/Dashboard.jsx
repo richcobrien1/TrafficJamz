@@ -73,6 +73,7 @@ const Dashboard = () => {
     const cached = sessionService.getCachedUserData();
     return cached || null;
   });
+  const [hasToken, setHasToken] = React.useState(() => !!localStorage.getItem('token'));
   const profileFetchedRef = React.useRef(false);
   const lastUserCacheTimestamp = React.useRef(null);
   const groupsFetchedRef = React.useRef(false);
@@ -81,6 +82,30 @@ const Dashboard = () => {
     const cached = sessionService.getCachedGroupsData();
     return !!cached && cached.length > 0;
   })());
+
+  // Monitor token changes (clerk-sync completion)
+  React.useEffect(() => {
+    const checkToken = () => {
+      const token = !!localStorage.getItem('token');
+      if (token !== hasToken) {
+        setHasToken(token);
+        // When token appears, reload cached user data immediately
+        if (token && !hasToken) {
+          const cached = sessionService.getCachedUserData();
+          if (cached) {
+            setBackendUser(cached);
+            console.log('✅ Loaded backend user from cache after clerk-sync');
+          }
+        }
+      }
+    };
+    
+    // Check immediately and set up interval
+    checkToken();
+    const interval = setInterval(checkToken, 200); // Check every 200ms
+    
+    return () => clearInterval(interval);
+  }, [hasToken]);
 
   // Fetch backend user profile to get actual profile image from Supabase
   React.useEffect(() => {
@@ -112,10 +137,10 @@ const Dashboard = () => {
       }
     };
     
-    if (clerkUser) {
+    if (clerkUser && hasToken) {
       fetchUserProfile();
     }
-  }, [clerkUser]);
+  }, [clerkUser, hasToken]);
 
   // Map Clerk user + backend profile to format expected by avatar utils
   // Memoized to prevent unnecessary re-renders
