@@ -113,17 +113,18 @@ router.post('/clerk-sync', [
 ], async (req, res) => {
   try {
     const { clerkUserId, email, username, fullName } = req.body;
-    console.log('Clerk sync request for:', email, 'Clerk ID:', clerkUserId);
+    console.log('🔄 Clerk sync request received:', { email, clerkUserId, username, fullName });
 
     // Import User model to query directly
     const User = require('../models/user.model');
     
     // Find user by email (Clerk handles email verification)
+    console.log('🔍 Searching for user by email:', email);
     let userRecord = await User.findOne({ where: { email: email } });
 
     if (!userRecord) {
       // Create new user for this Clerk account
-      console.log('Creating new user from Clerk account:', email);
+      console.log('➕ Creating new user from Clerk account:', email);
       
       const [firstName, ...lastNameParts] = (fullName || username || email.split('@')[0]).split(' ');
       const userData = {
@@ -135,47 +136,65 @@ router.post('/clerk-sync', [
         clerk_user_id: clerkUserId
       };
 
+      console.log('📝 User data prepared:', { ...userData, password_hash: '[REDACTED]' });
       const user = await userService.register(userData);
-      console.log('New user created with ID:', user.user_id);
+      console.log('✅ New user created with ID:', user.user_id);
       
       // Generate tokens
+      console.log('🔑 Generating JWT tokens for new user...');
       const tokens = userService.generateTokens(user);
+      console.log('✅ Tokens generated successfully');
       
-      return res.status(200).json({
+      const response = {
         success: true,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_type: tokens.token_type,
         user: user
-      });
+      };
+      
+      console.log('📤 Sending response with tokens');
+      return res.status(200).json(response);
     } else {
-      console.log('Existing user found with ID:', userRecord.user_id);
+      console.log('✅ Existing user found with ID:', userRecord.user_id);
       
       // Update clerk_user_id if not set
       if (!userRecord.clerk_user_id) {
+        console.log('🔗 Linking user to Clerk ID...');
         await userRecord.update({ clerk_user_id: clerkUserId });
-        console.log('Updated user with Clerk ID');
+        console.log('✅ User linked to Clerk ID');
       }
       
       // Get normalized user data
+      console.log('📊 Normalizing user data...');
       const userJson = userRecord.toJSON();
       delete userJson.password_hash;
       const user = userService.normalizeUserJson(userJson);
       
       // Generate tokens
+      console.log('🔑 Generating JWT tokens for existing user...');
       const tokens = userService.generateTokens(user);
+      console.log('✅ Tokens generated successfully');
       
-      return res.status(200).json({
+      const response = {
         success: true,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_type: tokens.token_type,
         user: user
-      });
+      };
+      
+      console.log('📤 Sending response with tokens');
+      return res.status(200).json(response);
     }
   } catch (error) {
-    console.error('Clerk sync error:', error);
-    res.status(500).json({ success: false, message: 'Failed to sync Clerk user: ' + error.message });
+    console.error('❌ Clerk sync error:', error);
+    console.error('❌ Error stack:', error.stack);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to sync Clerk user: ' + error.message,
+      error: error.toString()
+    });
   }
 });
 

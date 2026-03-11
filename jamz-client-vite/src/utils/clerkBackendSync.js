@@ -66,7 +66,18 @@ export async function syncClerkWithBackend(clerkUser) {
         headers: { 'Content-Type': 'application/json' }
       });
       
-      console.log('✅ Clerk-sync response received:', { status: loginResponse.status });
+      console.log('✅ Clerk-sync response received:', { 
+        status: loginResponse.status,
+        hasData: !!loginResponse.data,
+        hasToken: !!loginResponse.data?.access_token,
+        responseKeys: loginResponse.data ? Object.keys(loginResponse.data) : []
+      });
+
+      // Check if response has data
+      if (!loginResponse.data) {
+        console.error('❌ Clerk-sync returned empty response body');
+        throw new Error('Empty response from clerk-sync endpoint');
+      }
 
       if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
         localStorage.setItem('token', loginResponse.data.access_token);
@@ -81,6 +92,9 @@ export async function syncClerkWithBackend(clerkUser) {
         }
         
         return true;
+      } else {
+        console.error('❌ Clerk-sync response missing tokens:', loginResponse.data);
+        throw new Error('No tokens in clerk-sync response');
       }
     } catch (syncError) {
       // Log timeout specifically
