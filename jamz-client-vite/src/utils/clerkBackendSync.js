@@ -121,7 +121,15 @@ export async function syncClerkWithBackend(clerkUser) {
               const loginResponse = await axios.post(`${backendURL}/auth/login`, {
                 email,
                 password: dummyPassword
-              },
+              }, {
+                timeout: 10000,
+                headers: { 'Content-Type': 'application/json' }
+              });
+
+              if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
+                localStorage.setItem('token', loginResponse.data.access_token);
+                localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
+                
                 // Cache user data if provided
                 if (loginResponse.data.user) {
                   sessionService.cacheUserData(loginResponse.data.user);
@@ -130,14 +138,6 @@ export async function syncClerkWithBackend(clerkUser) {
                   console.log('✅ Backend login successful, JWT tokens stored');
                 }
                 
-                timeout: 10000,
-                headers: { 'Content-Type': 'application/json' }
-              });
-
-              if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
-                localStorage.setItem('token', loginResponse.data.access_token);
-                localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
-                console.log('✅ Backend login successful, JWT tokens stored');
                 return true;
               }
             } catch (loginError) {
@@ -151,14 +151,6 @@ export async function syncClerkWithBackend(clerkUser) {
             throw registerError;
           }
         }
-          // Cache user data if provided
-          if (loginResponse.data.user) {
-            sessionService.cacheUserData(loginResponse.data.user);
-            console.log('✅ Backend login successful, JWT tokens and user data stored');
-          } else {
-            console.log('✅ Backend login successful, JWT tokens stored');
-          }
-          
       } else if (syncError.response?.status === 409) {
         // User exists, try login
         console.log('📝 User exists, attempting login...');
