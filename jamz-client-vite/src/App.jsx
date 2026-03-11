@@ -67,12 +67,22 @@ const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
 
 // Root redirect component that checks auth status
 const RootRedirect = () => {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
+  
+  // Check localStorage for token to speed up redirect decision
+  const hasToken = !!localStorage.getItem('token');
 
-  console.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasUser: !!user });
+  console.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasToken });
 
+  // If we have a token, assume authenticated and go to dashboard immediately
+  if (hasToken && !isLoaded) {
+    console.log('🎯 RootRedirect: Token found, navigating to dashboard immediately');
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Don't show any loading UI - just return null to prevent flicker
   if (!isLoaded) {
-    return <AppLoader message="Checking authentication..." />;
+    return null;
   }
 
   const destination = isSignedIn ? "/dashboard" : "/auth/login";
@@ -338,7 +348,7 @@ function App() {
       )}
       <ErrorBoundary>
         <MusicProvider>
-          <Suspense fallback={<AppLoader message="Loading page..." />}>
+          <Suspense fallback={null}>
             {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
             {/*<AnimatePresence mode="wait">*/}
               {/*<motion.div
