@@ -46,17 +46,27 @@ export async function syncClerkWithBackend(clerkUser) {
     // Generate a secure dummy password (backend requires 8+ chars)
     const dummyPassword = `Clerk_${clerkUser.id}_Auth2024!`;
 
+    // Check if we already have valid tokens (skip sync if so)
+    const existingToken = localStorage.getItem('token');
+    if (existingToken) {
+      console.log('✅ Backend tokens already exist, skipping sync');
+      return true;
+    }
+
     // Try to login first (if user exists)
     try {
+      console.log('🌐 Sending clerk-sync request to backend...');
       const loginResponse = await axios.post(`${backendURL}/auth/clerk-sync`, {
         clerkUserId: clerkUser.id,
         email,
         username,
         fullName
       }, {
-        timeout: 10000,
+        timeout: 5000, // Reduced from 10s to 5s
         headers: { 'Content-Type': 'application/json' }
       });
+      
+      console.log('✅ Clerk-sync response received:', { status: loginResponse.status });
 
       if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
         localStorage.setItem('token', loginResponse.data.access_token);
@@ -73,6 +83,17 @@ export async function syncClerkWithBackend(clerkUser) {
         return true;
       }
     } catch (syncError) {
+      // Log timeout specifically
+      if (syncError.code === 'ECONNABORTED') {
+        console.error('❌ Clerk-sync request timed out after 5 seconds');
+      } else {
+        console.error('❌ Clerk-sync error:', {
+          status: syncError.response?.status,
+          message: syncError.message,
+          code: syncError.code
+        });
+      }
+      
       // If clerk-sync endpoint doesn't exist (404), fall back to register
       if (syncError.response?.status === 404) {
         console.log('📝 Backend clerk-sync endpoint not found, attempting register...');
