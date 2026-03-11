@@ -84,7 +84,15 @@ export async function syncClerkWithBackend(clerkUser) {
             password: dummyPassword,
             first_name: fullName.split(' ')[0] || username,
             last_name: fullName.split(' ').slice(1).join(' ') || ''
-          },
+          }, {
+            timeout: 10000,
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (registerResponse.data.access_token && registerResponse.data.refresh_token) {
+            localStorage.setItem('token', registerResponse.data.access_token);
+            localStorage.setItem('refresh_token', registerResponse.data.refresh_token);
+            
             // Cache user data if provided
             if (registerResponse.data.user) {
               sessionService.cacheUserData(registerResponse.data.user);
@@ -93,14 +101,6 @@ export async function syncClerkWithBackend(clerkUser) {
               console.log('✅ User registered on backend, JWT tokens stored');
             }
             
-            timeout: 10000,
-            headers: { 'Content-Type': 'application/json' }
-          });
-
-          if (registerResponse.data.access_token && registerResponse.data.refresh_token) {
-            localStorage.setItem('token', registerResponse.data.access_token);
-            localStorage.setItem('refresh_token', registerResponse.data.refresh_token);
-            console.log('✅ User registered on backend, JWT tokens stored');
             return true;
           }
         } catch (registerError) {
