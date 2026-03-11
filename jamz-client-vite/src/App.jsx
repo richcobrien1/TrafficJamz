@@ -30,6 +30,7 @@ import AppLoader from './components/AppLoader';
 import ErrorBoundary from './components/ErrorBoundary';
 import ClerkBackendSync from './components/ClerkBackendSync';
 import api from './services/api';
+import pLog from './utils/persistentLogger';
 
 import MapboxMap from './components/MapboxMap';
 import musicService from './services/music.service';
@@ -72,21 +73,22 @@ const RootRedirect = () => {
   // Check localStorage for token to speed up redirect decision
   const hasToken = !!localStorage.getItem('token');
 
-  console.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasToken });
+  pLog.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasToken });
 
   // If we have a token, assume authenticated and go to dashboard immediately
   if (hasToken && !isLoaded) {
-    console.log('🎯 RootRedirect: Token found, navigating to dashboard immediately');
+    pLog.log('🎯 RootRedirect: Token found, NAVIGATING TO /dashboard (replace=true)');
     return <Navigate to="/dashboard" replace />;
   }
 
   // Don't show any loading UI - just return null to prevent flicker
   if (!isLoaded) {
+    pLog.log('⏳ RootRedirect: Clerk not loaded, returning null');
     return null;
   }
 
   const destination = isSignedIn ? "/dashboard" : "/auth/login";
-  console.log('🎯 RootRedirect navigating to:', destination);
+  pLog.log('🎯 RootRedirect: NAVIGATING TO ' + destination + ' (replace=true)', { isSignedIn });
   
   return <Navigate to={destination} replace />;
 };

@@ -4,6 +4,7 @@
 import { useEffect, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { syncClerkWithBackend, clearBackendTokens } from '../utils/clerkBackendSync';
+import pLog from '../utils/persistentLogger';
 
 /**
  * Background component that syncs Clerk authentication with backend
@@ -16,7 +17,7 @@ export default function ClerkBackendSync() {
 
   useEffect(() => {
     if (!isLoaded) {
-      console.log('🔄 ClerkBackendSync: Waiting for Clerk to load...');
+      pLog.log('🔄 ClerkBackendSync: Waiting for Clerk to load...');
       return; // Wait for Clerk to load
     }
 
@@ -25,36 +26,36 @@ export default function ClerkBackendSync() {
       // Check if we already have tokens (skip sync if so)
       const hasToken = !!localStorage.getItem('token');
       if (hasToken) {
-        console.log('✅ ClerkBackendSync: Backend tokens already exist, skipping sync');
+        pLog.log('✅ ClerkBackendSync: Backend tokens already exist, skipping sync');
         return;
       }
       
-      console.log('🔄 ClerkBackendSync: User signed in', { userId: user.id, email: user.primaryEmailAddress?.emailAddress });
+      pLog.log('🔄 ClerkBackendSync: User signed in', { userId: user.id, email: user.primaryEmailAddress?.emailAddress });
       
       // Only sync if we haven't synced this user yet or user changed
       if (!syncAttempted.current || currentUserId.current !== user.id) {
-        console.log('🔄 Clerk user detected, syncing with backend...');
+        pLog.log('🔄 ClerkBackendSync: Starting sync with backend...');
         currentUserId.current = user.id;
         syncAttempted.current = true;
         
         syncClerkWithBackend(user).then(success => {
           if (success) {
-            console.log('✅ Clerk-Backend sync completed successfully');
+            pLog.log('✅ ClerkBackendSync: Sync completed successfully');
           } else {
-            console.error('❌ Clerk-Backend sync failed, API calls may not work');
+            pLog.log('❌ ClerkBackendSync: Sync failed, API calls may not work');
           }
         }).catch(error => {
-          console.error('❌ Clerk-Backend sync error:', error);
+          pLog.log('❌ ClerkBackendSync: Sync error: ' + error.message);
           syncAttempted.current = false; // Allow retry
         });
       } else {
-        console.log('✅ ClerkBackendSync: Already synced for user', user.id);
+        pLog.log('✅ ClerkBackendSync: Already synced for user ' + user.id);
       }
     } else if (!isSignedIn) {
-      console.log('🔄 ClerkBackendSync: User not signed in');
+      pLog.log('🔄 ClerkBackendSync: User not signed in');
       // User signed out - clear backend tokens
       if (syncAttempted.current) {
-        console.log('🔄 Clerk user signed out, clearing backend tokens');
+        pLog.log('🔄 ClerkBackendSync: Clearing backend tokens...');
         clearBackendTokens();
         syncAttempted.current = false;
         currentUserId.current = null;
