@@ -357,11 +357,8 @@ const Dashboard = () => {
 
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : groups?.length === 0 ? (
+        {/* Don't show loading spinner - just show content immediately */}
+        {groups?.length === 0 && !loading ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="h6" gutterBottom>
               You don't have any groups yet
@@ -377,6 +374,9 @@ const Dashboard = () => {
               Create Group
             </Button>
           </Paper>
+        ) : groups?.length === 0 && loading ? (
+          // First load - show nothing instead of spinner to avoid flicker
+          <Box sx={{ height: 200 }} />
         ) : (groups && groups.length > 0) ? (
           <Grid container spacing={3}>
             {groups.map((group) => (
