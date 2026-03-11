@@ -603,7 +603,7 @@ const Profile = () => {
             <Typography variant="h6" color="error" sx={{ mb: 2 }}>
               Unable to load profile data
             </Typography>
-            <Button variant="contained" onClick={() => navigate('/dashboard')}>
+            <Button variant="contained" onClick={() => navigate('/dashboard', { replace: true })}>
               Go Back
             </Button>
           </Box>
@@ -625,7 +625,7 @@ const Profile = () => {
             color="inherit"
             aria-label="back"
             sx={{ mr: 2 }}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/dashboard', { replace: true })}
           >
             <ArrowBackIcon />
           </IconButton>
