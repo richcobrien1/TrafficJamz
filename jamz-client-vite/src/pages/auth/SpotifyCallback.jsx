@@ -15,13 +15,13 @@ const SpotifyCallback = () => {
 
       if (errorParam) {
         setError(`Spotify authorization failed: ${errorParam}`);
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => navigate('/dashboard'), 3000);
         return;
       }
 
       if (!code) {
         setError('No authorization code received');
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => navigate('/dashboard'), 3000);
         return;
       }
 
@@ -35,12 +35,12 @@ const SpotifyCallback = () => {
           navigate(returnTo);
         } else {
           setError('Failed to authenticate with Spotify');
-          setTimeout(() => navigate('/'), 3000);
+          setTimeout(() => navigate('/dashboard'), 3000);
         }
       } catch (err) {
         console.error('Spotify callback error:', err);
         setError('Authentication error occurred');
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => navigate('/dashboard'), 3000);
       }
     };
 

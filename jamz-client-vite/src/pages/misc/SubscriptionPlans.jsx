@@ -131,7 +131,7 @@ const SubscriptionPlans = () => {
             color="inherit"
             aria-label="back"
             sx={{ mr: 2 }}
-            onClick={() => navigate(currentUser ? '/' : '/login')}
+            onClick={() => navigate(currentUser ? '/dashboard' : '/auth/login')}
           >
             <ArrowBackIcon />
           </IconButton>

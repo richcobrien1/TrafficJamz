@@ -821,7 +821,7 @@ const GroupDetail = () => {
         }
       });
       
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error deleting group:', error);
       console.error('Response data:', error.response?.data);
@@ -837,7 +837,7 @@ const GroupDetail = () => {
     try {
       await api.delete(`/groups/${groupId}/members/${user_id}`);
       if (navigateAway) {
-        navigate('/');
+        navigate('/dashboard');
       } else {
         // Refresh group details so the members list updates in-place
         await fetchGroupDetails();
@@ -878,7 +878,7 @@ const GroupDetail = () => {
             color="inherit"
             aria-label="back"
             sx={{ mr: 2 }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
           >
             <ArrowBackIcon />
           </IconButton>

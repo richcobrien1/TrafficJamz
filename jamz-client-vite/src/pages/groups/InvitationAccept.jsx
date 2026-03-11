@@ -172,10 +172,10 @@ const InvitationAccept = () => {
         </Typography>
         <Button 
           variant="contained" 
-          onClick={() => navigate('/')} 
+          onClick={() => navigate('/dashboard')} 
           sx={{ mt: 3 }}
         >
-          Return to Home
+          Return to Dashboard
         </Button>
       </Box>
     );
@@ -240,7 +240,7 @@ const InvitationAccept = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
               <Button
                 variant="outlined"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/dashboard')}
               >
                 Cancel
               </Button>

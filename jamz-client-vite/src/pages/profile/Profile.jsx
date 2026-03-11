@@ -555,7 +555,7 @@ const Profile = () => {
               color="inherit"
               aria-label="back"
               sx={{ mr: 2 }}
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
             >
               <ArrowBackIcon />
             </IconButton>
@@ -589,7 +589,7 @@ const Profile = () => {
               color="inherit"
               aria-label="back"
               sx={{ mr: 2 }}
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
             >
               <ArrowBackIcon />
             </IconButton>
@@ -603,7 +603,7 @@ const Profile = () => {
             <Typography variant="h6" color="error" sx={{ mb: 2 }}>
               Unable to load profile data
             </Typography>
-            <Button variant="contained" onClick={() => navigate('/')}>
+            <Button variant="contained" onClick={() => navigate('/dashboard')}>
               Go Back
             </Button>
           </Box>
@@ -625,7 +625,7 @@ const Profile = () => {
             color="inherit"
             aria-label="back"
             sx={{ mr: 2 }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
           >
             <ArrowBackIcon />
           </IconButton>

@@ -35,12 +35,12 @@ const YouTubeCallback = () => {
           navigate(returnTo);
         } else {
           setError('Failed to complete YouTube authorization');
-          setTimeout(() => navigate('/'), 3000);
+          setTimeout(() => navigate('/dashboard'), 3000);
         }
       } catch (err) {
         console.error('YouTube callback error:', err);
         setError(err.message || 'An error occurred during authorization');
-        setTimeout(() => navigate('/'), 3000);
+        setTimeout(() => navigate('/dashboard'), 3000);
       }
     };
 
