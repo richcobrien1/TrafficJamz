@@ -191,6 +191,12 @@ api.interceptors.response.use(
       error.response.status === 401 &&
       !originalRequest._retry
     ) {
+      // Don't redirect if clerk-sync is in progress
+      if (window.__CLERK_SYNC_IN_PROGRESS__) {
+        console.log('⏳ 401 during clerk-sync, waiting...');
+        return Promise.reject(error);
+      }
+      
       const refreshToken = localStorage.getItem('refresh_token');
       if (!refreshToken) {
         // Silently clear any stale tokens and redirect
@@ -211,6 +217,12 @@ api.interceptors.response.use(
             return api(originalRequest);
           })
           .catch((err) => {
+            // Don't redirect if clerk-sync is in progress
+            if (window.__CLERK_SYNC_IN_PROGRESS__) {
+              console.log('⏳ Refresh failed during clerk-sync');
+              return Promise.reject(err);
+            }
+            
             // Silently redirect to login on refresh failure
             localStorage.removeItem('token');
             localStorage.removeItem('refresh_token');
@@ -238,6 +250,13 @@ api.interceptors.response.use(
         processQueue(null, access_token);
         return api(originalRequest);
       } catch (refreshError) {
+        // Don't redirect if clerk-sync is in progress
+        if (window.__CLERK_SYNC_IN_PROGRESS__) {
+          console.log('⏳ Refresh error during clerk-sync');
+          processQueue(refreshError, null);
+          return Promise.reject(refreshError);
+        }
+        
         // Silently clear tokens and redirect - no console errors
         processQueue(refreshError, null);
         localStorage.removeItem('token');

@@ -5,6 +5,9 @@ import axios from 'axios';
 import sessionService from '../services/session.service';
 import pLog from './persistentLogger';
 
+// Global flag to prevent API redirects during clerk-sync
+window.__CLERK_SYNC_IN_PROGRESS__ = false;
+
 const getBackendURL = () => {
   const isLocalDev = window.location?.hostname === 'localhost' || 
                      window.location?.hostname === '127.0.0.1';
@@ -53,6 +56,10 @@ export async function syncClerkWithBackend(clerkUser) {
       pLog.log('✅ Backend tokens already exist, skipping sync');
       return true;
     }
+
+    // Set flag to prevent API redirects during sync
+    window.__CLERK_SYNC_IN_PROGRESS__ = true;
+    pLog.log('🔒 Clerk sync starting, blocking API redirects...');
 
     // Try to login first (if user exists)
     try {
