@@ -341,7 +341,7 @@ function App() {
           <Suspense fallback={<AppLoader message="Loading page..." />}>
             {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
             {/*<AnimatePresence mode="wait">*/}
-              <motion.div
+              {/*<motion.div
                 key={location.pathname}
                 initial={{ opacity: 1, y: 0 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -349,7 +349,7 @@ function App() {
                 transition={{ duration: 0.25 }}
                 style={{ minHeight: '100vh' }}
                 onAnimationComplete={() => console.log('✅ Page animation completed')}
-              >
+              >*/}
                 <Routes>
                   {/* Public routes */}
                   <Route path="/login" element={<Login />} />
@@ -415,7 +415,7 @@ function App() {
                   {/* Catch-all - redirect to root instead of showing 404 */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-              </motion.div>
+              {/*</motion.div>*/}
             {/*</AnimatePresence>*/}
           </Suspense>
         </MusicProvider>
