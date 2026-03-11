@@ -45,8 +45,16 @@ import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { clearBackendTokens } from '../../utils/clerkBackendSync';
 
 const Dashboard = () => {
-  const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [groups, setGroups] = useState(() => {
+    // Try to load cached groups immediately for instant display
+    const cached = sessionService.getCachedGroupsData();
+    return cached || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    // Start with loading=false if we have cached data
+    const cached = sessionService.getCachedGroupsData();
+    return !cached;
+  });
   const [error, setError] = useState('');
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -66,6 +74,11 @@ const Dashboard = () => {
     return cached || null;
   });
   const profileFetchedRef = React.useRef(false);
+  const hasInitialGroupsRef = React.useRef(() => {
+    // Check if we have cached groups on mount
+    const cached = sessionService.getCachedGroupsData();
+    return !!cached && cached.length > 0;
+  }());
 
   // Fetch backend user profile to get actual profile image from Supabase
   React.useEffect(() => {
@@ -108,30 +121,38 @@ const Dashboard = () => {
 
   const fetchGroups = React.useCallback(async () => {
     try {
-      setLoading(true);
-      let cacheLoaded = false;
+      // If we already have groups loaded from initial state, don't show loading spinner
+      const hasInitialData = hasInitialGroupsRef.current;
+      if (!hasInitialData) {
+        setLoading(true);
+      }
       
-      // Try cached data first for instant display (localStorage - fast)
-      const cachedGroups = sessionService.getCachedGroupsData();
-      if (cachedGroups) {
-        console.log('📦 Using cached groups data from localStorage');
-        setGroups(cachedGroups);
-        setLoading(false); // Turn off loading immediately when we have cache
-        cacheLoaded = true;
-      } else {
-        // Fallback to IndexedDB if localStorage is empty/expired
-        try {
-          const idbGroups = await dbManager.getGroups();
-          if (idbGroups && idbGroups.length > 0) {
-            console.log('📦 Using cached groups data from IndexedDB (localStorage was empty)');
-            setGroups(idbGroups);
-            // Restore to localStorage for faster access next time
-            sessionService.cacheGroupsData(idbGroups);
-            setLoading(false);
-            cacheLoaded = true;
+      let cacheLoaded = hasInitialData; // Already loaded in initial state
+      
+      // Only check cache if we don't already have data
+      if (!hasInitialData) {
+        // Try cached data first for instant display (localStorage - fast)
+        const cachedGroups = sessionService.getCachedGroupsData();
+        if (cachedGroups) {
+          console.log('📦 Using cached groups data from localStorage');
+          setGroups(cachedGroups);
+          setLoading(false); // Turn off loading immediately when we have cache
+          cacheLoaded = true;
+        } else {
+          // Fallback to IndexedDB if localStorage is empty/expired
+          try {
+            const idbGroups = await dbManager.getGroups();
+            if (idbGroups && idbGroups.length > 0) {
+              console.log('📦 Using cached groups data from IndexedDB (localStorage was empty)');
+              setGroups(idbGroups);
+              // Restore to localStorage for faster access next time
+              sessionService.cacheGroupsData(idbGroups);
+              setLoading(false);
+              cacheLoaded = true;
+            }
+          } catch (idbError) {
+            console.warn('Failed to load from IndexedDB:', idbError);
           }
-        } catch (idbError) {
-          console.warn('Failed to load from IndexedDB:', idbError);
         }
       }
       
@@ -140,6 +161,9 @@ const Dashboard = () => {
         console.log('📴 Offline - using cached data only');
         if (!cacheLoaded) {
           setError('📴 Offline mode - Connect to internet to load groups.');
+        }
+        if (!hasInitialData) {
+          setLoading(false);
         }
         return;
       }
