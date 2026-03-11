@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.jsx
 
-import React from "react";
+import React, { useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 import pLog from '../utils/persistentLogger';
@@ -8,29 +8,32 @@ import pLog from '../utils/persistentLogger';
 const ProtectedRoute = ({ children }) => {
   const { isLoaded, isSignedIn } = useClerkAuth();
   const location = useLocation();
+  const hasRenderedPath = useRef('');
 
   // Check if we already have backend token (indicates user was recently authenticated)
   const hasToken = !!localStorage.getItem('token');
 
-  pLog.log('🔒 ProtectedRoute check:', { 
-    isLoaded, 
-    isSignedIn, 
-    hasToken, 
-    path: location.pathname
-  });
-
-  // If not loaded yet but we have a token, render immediately to avoid flash
-  // This happens when navigating between protected routes after initial auth
-  if (!isLoaded && hasToken) {
-    pLog.log('✅ ProtectedRoute: Rendering immediately with token for ' + location.pathname);
-    return children;
+  // Only log once per unique state change to avoid spam
+  const stateKey = `${isLoaded}-${isSignedIn}-${hasToken}-${location.pathname}`;
+  const lastStateKey = useRef('');
+  
+  if (stateKey !== lastStateKey.current) {
+    pLog.log('🔒 ProtectedRoute check:', { 
+      isLoaded, 
+      isSignedIn, 
+      hasToken, 
+      path: location.pathname,
+      renderCount: (lastStateKey.current.match(/true/g) || []).length
+    });
+    lastStateKey.current = stateKey;
   }
 
-  // Show nothing while loading (instead of full-screen spinner)
-  // This prevents the "double blink" on login
+  // CRITICAL FIX: Wait for Clerk to load before rendering children
+  // Even if we have a token, rendering children before Clerk loads causes re-renders
+  // when Clerk's state changes from isLoaded:false to isLoaded:true
   if (!isLoaded) {
-    pLog.log('⏳ ProtectedRoute: Waiting for Clerk to load... (path: ' + location.pathname + ')');
-    return null;
+    pLog.log('⏳ ProtectedRoute: Waiting for Clerk (hasToken=' + hasToken + ')');
+    return null; // Return nothing - prevents multiple renders
   }
 
   // Redirect to login if not signed in, save original location to redirect back after login
@@ -39,7 +42,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
 
-  pLog.log('✅ ProtectedRoute: Rendering protected content for ' + location.pathname);
+  // Only log the first render for this path
+  if (hasRenderedPath.current !== location.pathname) {
+    pLog.log('✅ ProtectedRoute: Rendering protected content for ' + location.pathname);
+    hasRenderedPath.current = location.pathname;
+  }
+  
   return children;
 };
 
