@@ -22,6 +22,27 @@ class ErrorBoundary extends React.Component {
     // Log the error to console for debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
+    // Check if this is a chunk loading error (dynamic import failure)
+    const isChunkError = 
+      error.message?.includes('Failed to fetch dynamically imported module') ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes('ChunkLoadError');
+    
+    if (isChunkError) {
+      console.warn('🔄 Chunk loading error detected - reloading page to fetch new assets');
+      // Clear caches and reload
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => caches.delete(name));
+        });
+      }
+      // Reload after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      return;
+    }
+    
     this.setState({
       error,
       errorInfo

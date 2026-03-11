@@ -1,11 +1,11 @@
 // TrafficJamz Service Worker - Full Offline Support
-// Version: 3.0.2 - FORCE CACHE CLEAR for sign-in fix
+// Version: 3.0.3 - Fix dynamic import cache issues
 
-const BUILD_VERSION = '3.0.2-' + Date.now(); // Unique version per build
-const CACHE_VERSION = 'trafficjamz-v3.2';
-const AUDIO_CACHE = 'trafficjamz-audio-v3.2';
-const STATIC_CACHE = 'trafficjamz-static-v3.2';
-const APP_CACHE = 'trafficjamz-app-v3.2';
+const BUILD_VERSION = '3.0.3-' + Date.now(); // Unique version per build
+const CACHE_VERSION = 'trafficjamz-v3.3';
+const AUDIO_CACHE = 'trafficjamz-audio-v3.3';
+const STATIC_CACHE = 'trafficjamz-static-v3.3';
+const APP_CACHE = 'trafficjamz-app-v3.3';
 
 // R2 domain for audio files
 const R2_DOMAIN = 'pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev';
@@ -90,15 +90,20 @@ self.addEventListener('fetch', (event) => {
 // Handle app assets (HTML, JS, CSS) - NETWORK FIRST with cache fallback
 async function handleAppRequest(request) {
   const cache = await caches.open(APP_CACHE);
+  const url = new URL(request.url);
   
   try {
     // ALWAYS try network first for app assets to prevent stale code
     const networkResponse = await fetch(request, { cache: 'no-cache' });
     
     if (networkResponse.ok) {
-      // Only cache successful responses
-      cache.put(request, networkResponse.clone());
-      console.log('[SW] Cached fresh app asset:', request.url);
+      // Only cache HTML documents, not JS modules (to prevent dynamic import issues)
+      if (request.destination === 'document') {
+        cache.put(request, networkResponse.clone());
+        console.log('[SW] Cached fresh HTML:', request.url);
+      } else {
+        console.log('[SW] Skipping cache for JS/CSS to prevent hash issues:', url.pathname);
+      }
     }
     
     return networkResponse;
