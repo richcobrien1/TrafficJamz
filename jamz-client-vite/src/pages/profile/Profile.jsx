@@ -42,7 +42,8 @@ import {
   Link as LinkIcon,
   LinkOff as UnlinkIcon,
   Add as AddIcon,
-  PhotoCamera as PhotoCameraIcon
+  PhotoCamera as PhotoCameraIcon,
+  Share as ShareIcon
 } from '@mui/icons-material';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import api from '../../services/api';
@@ -62,6 +63,14 @@ const Profile = () => {
     
     // Force full page navigation as a workaround
     window.location.href = '/dashboard';
+  };
+  
+  // Handle scroll to section
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
   
   const [backendUser, setBackendUser] = useState(() => {
@@ -724,6 +733,18 @@ const Profile = () => {
               </Box>
               
               <List sx={{ width: '100%' }}>
+                <ListItem button onClick={() => scrollToSection('personal-info')} sx={{ borderRadius: 1 }}>
+                  <ListItemAvatar>
+                    <Avatar>
+                      <AccountCircleIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText 
+                    primary="Personal Information" 
+                    secondary="View and edit your details" 
+                  />
+                </ListItem>
+                <Divider />
                 <ListItem button onClick={() => navigate('/subscription-plans')} sx={{ borderRadius: 1 }}>
                   <ListItemAvatar>
                     <Avatar>
@@ -736,7 +757,7 @@ const Profile = () => {
                   />
                 </ListItem>
                 <Divider />
-                <ListItem button sx={{ borderRadius: 1 }}>
+                <ListItem button onClick={() => scrollToSection('notifications')} sx={{ borderRadius: 1 }}>
                   <ListItemAvatar>
                     <Avatar>
                       <NotificationsIcon />
@@ -748,7 +769,7 @@ const Profile = () => {
                   />
                 </ListItem>
                 <Divider />
-                <ListItem button sx={{ borderRadius: 1 }}>
+                <ListItem button onClick={() => scrollToSection('security')} sx={{ borderRadius: 1 }}>
                   <ListItemAvatar>
                     <Avatar>
                       <SecurityIcon />
@@ -760,7 +781,19 @@ const Profile = () => {
                   />
                 </ListItem>
                 <Divider />
-                <ListItem button sx={{ borderRadius: 1 }}>
+                <ListItem button onClick={() => scrollToSection('social-media')} sx={{ borderRadius: 1 }}>
+                  <ListItemAvatar>
+                    <Avatar>
+                      <ShareIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText 
+                    primary="Social Media" 
+                    secondary="Connect social accounts" 
+                  />
+                </ListItem>
+                <Divider />
+                <ListItem button onClick={() => scrollToSection('help-support')} sx={{ borderRadius: 1 }}>
                   <ListItemAvatar>
                     <Avatar>
                       <HelpIcon />
@@ -777,7 +810,7 @@ const Profile = () => {
           
           {/* Right column - Forms */}
           <Box sx={{ flex: 1, mt: { md: 3 } }}>
-            <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+            <Paper id="personal-info" sx={{ p: 3, mb: 3, borderRadius: 2, scrollMarginTop: '100px' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">
                   Personal Information
@@ -910,7 +943,7 @@ const Profile = () => {
               )}
             </Paper>
             
-            <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+            <Paper id="notifications" sx={{ p: 3, mb: 3, borderRadius: 2, scrollMarginTop: '100px' }}>
               <Typography variant="h6" gutterBottom>
                 Notifications
               </Typography>
@@ -993,7 +1026,7 @@ const Profile = () => {
               </Button>
             </Paper>
             
-            <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+            <Paper id="security" sx={{ p: 3, mb: 3, borderRadius: 2, scrollMarginTop: '100px' }}>
               <Typography variant="h6" gutterBottom>
                 Security
               </Typography>
@@ -1081,7 +1114,7 @@ const Profile = () => {
               </Box>
             </Paper>
             
-            <Paper sx={{ p: 3, borderRadius: 2 }}>
+            <Paper id="help-support" sx={{ p: 3, mb: 3, borderRadius: 2, scrollMarginTop: '100px' }}>
               <Typography variant="h6" gutterBottom>
                 Help & Support
               </Typography>
@@ -1121,7 +1154,7 @@ const Profile = () => {
               </Button>
             </Paper>
             
-            <Paper sx={{ p: 3, mt: 3, borderRadius: 2 }}>
+            <Paper id="social-media" sx={{ p: 3, mt: 3, borderRadius: 2, scrollMarginTop: '100px' }}>
               <Typography variant="h6" gutterBottom>
                 Social Accounts
               </Typography>
