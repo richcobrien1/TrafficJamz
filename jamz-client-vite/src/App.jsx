@@ -313,7 +313,13 @@ function App() {
     };
 
     return (
-      <ClerkProvider publishableKey={clerkPubKey}>
+      <ClerkProvider 
+        publishableKey={clerkPubKey}
+        navigate={(to) => {
+          pLog.log('🚫 Clerk navigate blocked (loading):', { to });
+          return Promise.resolve();
+        }}
+      >
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <AppLoader 
@@ -327,7 +333,14 @@ function App() {
   }
 
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
+    <ClerkProvider 
+      publishableKey={clerkPubKey}
+      navigate={(to) => {
+        pLog.log('🚫 Clerk navigate blocked:', { to });
+        // Block Clerk from managing navigation - we handle it ourselves
+        return Promise.resolve();
+      }}
+    >
       <ClerkBackendSync />
       <ThemeProvider theme={theme}>
         <CssBaseline />
