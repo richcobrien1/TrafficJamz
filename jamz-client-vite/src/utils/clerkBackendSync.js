@@ -2,6 +2,7 @@
 // Bridges Clerk authentication with backend JWT system
 
 import axios from 'axios';
+import sessionService from '../services/session.service';
 
 const getBackendURL = () => {
   const isLocalDev = window.location?.hostname === 'localhost' || 
@@ -60,7 +61,15 @@ export async function syncClerkWithBackend(clerkUser) {
       if (loginResponse.data.access_token && loginResponse.data.refresh_token) {
         localStorage.setItem('token', loginResponse.data.access_token);
         localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
-        console.log('✅ Backend JWT tokens stored successfully');
+        
+        // Cache user data if provided
+        if (loginResponse.data.user) {
+          sessionService.cacheUserData(loginResponse.data.user);
+          console.log('✅ Backend JWT tokens and user data stored successfully');
+        } else {
+          console.log('✅ Backend JWT tokens stored successfully');
+        }
+        
         return true;
       }
     } catch (syncError) {
@@ -75,7 +84,15 @@ export async function syncClerkWithBackend(clerkUser) {
             password: dummyPassword,
             first_name: fullName.split(' ')[0] || username,
             last_name: fullName.split(' ').slice(1).join(' ') || ''
-          }, {
+          },
+            // Cache user data if provided
+            if (registerResponse.data.user) {
+              sessionService.cacheUserData(registerResponse.data.user);
+              console.log('✅ User registered on backend, JWT tokens and user data stored');
+            } else {
+              console.log('✅ User registered on backend, JWT tokens stored');
+            }
+            
             timeout: 10000,
             headers: { 'Content-Type': 'application/json' }
           });
@@ -104,7 +121,15 @@ export async function syncClerkWithBackend(clerkUser) {
               const loginResponse = await axios.post(`${backendURL}/auth/login`, {
                 email,
                 password: dummyPassword
-              }, {
+              },
+                // Cache user data if provided
+                if (loginResponse.data.user) {
+                  sessionService.cacheUserData(loginResponse.data.user);
+                  console.log('✅ Backend login successful, JWT tokens and user data stored');
+                } else {
+                  console.log('✅ Backend login successful, JWT tokens stored');
+                }
+                
                 timeout: 10000,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -126,6 +151,14 @@ export async function syncClerkWithBackend(clerkUser) {
             throw registerError;
           }
         }
+          // Cache user data if provided
+          if (loginResponse.data.user) {
+            sessionService.cacheUserData(loginResponse.data.user);
+            console.log('✅ Backend login successful, JWT tokens and user data stored');
+          } else {
+            console.log('✅ Backend login successful, JWT tokens stored');
+          }
+          
       } else if (syncError.response?.status === 409) {
         // User exists, try login
         console.log('📝 User exists, attempting login...');
@@ -152,7 +185,8 @@ export async function syncClerkWithBackend(clerkUser) {
     console.error('❌ Failed to obtain backend tokens');
     return false;
 
-  } catch (error) {
+  sessionService.clearUserCache();
+  console.log('🧹 Backend tokens and user cache
     console.error('❌ Clerk-Backend sync failed:', {
       message: error.message,
       status: error.response?.status,

@@ -67,13 +67,18 @@ const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
 
 // Root redirect component that checks auth status
 const RootRedirect = () => {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  console.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasUser: !!user });
 
   if (!isLoaded) {
     return <AppLoader message="Checking authentication..." />;
   }
 
-  return isSignedIn ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth/login" replace />;
+  const destination = isSignedIn ? "/dashboard" : "/auth/login";
+  console.log('🎯 RootRedirect navigating to:', destination);
+  
+  return <Navigate to={destination} replace />;
 };
 
 function App() {
