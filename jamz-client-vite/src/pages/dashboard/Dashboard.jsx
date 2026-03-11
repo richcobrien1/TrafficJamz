@@ -74,6 +74,7 @@ const Dashboard = () => {
     return cached || null;
   });
   const profileFetchedRef = React.useRef(false);
+  const groupsFetchedRef = React.useRef(false);
   const hasInitialGroupsRef = React.useRef(() => {
     // Check if we have cached groups on mount
     const cached = sessionService.getCachedGroupsData();
@@ -120,6 +121,19 @@ const Dashboard = () => {
   }, [clerkUser, backendUser]);
 
   const fetchGroups = React.useCallback(async () => {
+    console.log('🔄 fetchGroups() called', { 
+      alreadyFetched: groupsFetchedRef.current, 
+      hasInitialData: hasInitialGroupsRef.current,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Prevent multiple simultaneous fetches
+    if (groupsFetchedRef.current) {
+      console.log('⏭️ Skipping groups fetch - already fetched');
+      return;
+    }
+    groupsFetchedRef.current = true;
+    
     try {
       // If we already have groups loaded from initial state, don't show loading spinner
       const hasInitialData = hasInitialGroupsRef.current;
@@ -169,7 +183,9 @@ const Dashboard = () => {
       }
       
       // Fetch fresh data (silently in background if we have cache)
+      console.log('🌐 Fetching fresh groups from API...', new Date().toISOString());
       const response = await api.get('/groups');
+      console.log('✅ Groups API response received', response.data.groups?.length, 'groups');
       
       // Always update with fresh data
       setGroups(response.data.groups);
@@ -216,7 +232,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const handleLogout = async () => {
     // Clear backend JWT tokens
