@@ -18,7 +18,7 @@
 //   - Mapbox dev route (/dev/map) is currently unprotected for testing
 
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -95,6 +95,7 @@ const RootRedirect = () => {
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   
   pLog.log('🚀 App component rendering', { path: location.pathname });
   
@@ -346,9 +347,8 @@ function App() {
       signInUrl={null}
       signUpUrl={null}
       navigate={(to) => {
-        pLog.log('🔀 Clerk attempting navigate:', { to });
-        // Return empty promise to prevent navigation
-        return Promise.resolve();
+        pLog.log('🔀 Clerk navigate:', { to });
+        return navigate(to);
       }}
     >
       <ClerkBackendSync />

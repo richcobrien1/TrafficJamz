@@ -286,6 +286,21 @@ const LocationTracking = () => {
     return [-104.882029, 39.573640];
   };
 
+  // Get initial user location from localStorage if available
+  const getInitialUserLocation = () => {
+    try {
+      const lastLocation = localStorage.getItem('lastUserLocation');
+      if (lastLocation) {
+        const parsed = JSON.parse(lastLocation);
+        console.log('🗺️ Initializing with cached user location:', parsed);
+        return parsed;
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+    return null;
+  };
+
   const [defaultCenter] = useState(getDefaultCenter);
     
   // State variables
@@ -296,7 +311,7 @@ const LocationTracking = () => {
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [locations, setLocations] = useState([]);
   const [showProximityAlerts, setShowProximityAlerts] = useState(true);
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(getInitialUserLocation);
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -371,6 +386,7 @@ const LocationTracking = () => {
   const clusterModeRef = useRef(false);
   const clusterSourceIdRef = useRef('tj_members_source');
   const userLocationRef = useRef(null); // Keep userLocation in sync for event handlers
+  const hasInitiallyCenteredRef = useRef(false); // Track if we've centered on user location on initial load
   const [clusterThreshold, setClusterThreshold] = useState(150); // above this, switch to clustered layer rendering
 
   // Create cluster layers and source for large numbers of markers
@@ -670,6 +686,33 @@ const LocationTracking = () => {
   useEffect(() => { locationsRef.current = locations; }, [locations]);
   useEffect(() => { placesRef.current = places; }, [places]);
   useEffect(() => { userLocationRef.current = userLocation; }, [userLocation]);
+  
+  // Center map on user location when both map and location are available
+  useEffect(() => {
+    if (mapLoaded && userLocation && mapRef.current) {
+      // On first load, always center
+      if (!hasInitiallyCenteredRef.current) {
+        console.log('🎯 Initial map centering on user location:', userLocation);
+        hasInitiallyCenteredRef.current = true;
+        centerMapOnLocation(userLocation);
+      } else {
+        // On subsequent updates, only re-center if location changed significantly (>50 meters)
+        const currentCenter = mapRef.current.getCenter();
+        const distance = calculateDistance(
+          currentCenter.lat,
+          currentCenter.lng,
+          userLocation.latitude,
+          userLocation.longitude
+        );
+        
+        if (distance > 50) {
+          console.log('🎯 Re-centering map - location changed by', distance.toFixed(1), 'meters');
+          centerMapOnLocation(userLocation);
+        }
+      }
+    }
+  }, [mapLoaded, userLocation]);
+  
   // Persist screenThreshold so tuning remains between sessions
   useEffect(() => {
     try { localStorage.setItem('screenThreshold', String(screenThreshold)); } catch (e) {}

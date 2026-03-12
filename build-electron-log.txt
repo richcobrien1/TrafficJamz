@@ -1,0 +1,5 @@
+npm error Missing script: "electron:build:win"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: C:\Users\richc\AppData\Local\npm-cache\_logs\2026-03-11T21_10_33_809Z-debug-0.log
