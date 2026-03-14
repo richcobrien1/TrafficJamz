@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.jsx
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 import pLog from '../utils/persistentLogger';
@@ -13,10 +13,6 @@ const ProtectedRoute = ({ children }) => {
   // Check if we already have backend token (indicates user was recently authenticated)
   const hasToken = !!localStorage.getItem('token');
 
-  // Chrome iOS fix: Add grace period when tokens exist but Clerk not signed in
-  const [waitingForClerk, setWaitingForClerk] = useState(false);
-  const gracePeriodRef = useRef(null);
-
   // Only log once per unique state change to avoid spam
   const stateKey = `${isLoaded}-${isSignedIn}-${hasToken}-${location.pathname}`;
   const lastStateKey = useRef('');
@@ -27,7 +23,6 @@ const ProtectedRoute = ({ children }) => {
       isSignedIn, 
       hasToken, 
       path: location.pathname,
-      waitingForClerk,
       renderCount: (lastStateKey.current.match(/true/g) || []).length
     });
     lastStateKey.current = stateKey;
@@ -39,34 +34,6 @@ const ProtectedRoute = ({ children }) => {
   if (!isLoaded) {
     pLog.log('⏳ ProtectedRoute: Waiting for Clerk (hasToken=' + hasToken + ')');
     return null; // Return nothing - prevents multiple renders
-  }
-
-  // Chrome iOS Race Condition Fix: If we have tokens but Clerk says not signed in,
-  // give Clerk 2 more seconds to sync before redirecting (prevents MFA redirect loop)
-  useEffect(() => {
-    if (isLoaded && !isSignedIn && hasToken && !waitingForClerk) {
-      pLog.log('⏳ ProtectedRoute: Token exists but Clerk not signed in - starting grace period (2s)');
-      setWaitingForClerk(true);
-      
-      gracePeriodRef.current = setTimeout(() => {
-        pLog.log('⏱️ ProtectedRoute: Grace period expired, will redirect if still not signed in');
-        setWaitingForClerk(false);
-      }, 2000); // 2 second grace period for Chrome iOS
-    }
-
-    // Clean up timeout if component unmounts or state changes
-    return () => {
-      if (gracePeriodRef.current) {
-        clearTimeout(gracePeriodRef.current);
-        gracePeriodRef.current = null;
-      }
-    };
-  }, [isLoaded, isSignedIn, hasToken]);
-
-  // If we're in the grace period, show nothing (waiting for Clerk to catch up)
-  if (waitingForClerk) {
-    pLog.log('⏳ ProtectedRoute: In grace period, waiting for Clerk to sync...');
-    return null;
   }
 
   // Redirect to login if not signed in, save original location to redirect back after login
