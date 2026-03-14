@@ -141,14 +141,34 @@ const GroupDetail = () => {
   // Fetch backend profile if not cached
   useEffect(() => {
     if (clerkUser && !backendUser) {
+      console.log('🔄 Fetching backend user profile...');
+      
+      // iOS Safari failsafe: proceed after 3 seconds even if profile fetch fails
+      const failsafeTimeout = setTimeout(() => {
+        console.warn('⚠️ Backend user fetch timeout - proceeding with Clerk user only (iOS Safari failsafe)');
+        // Create a minimal user object from Clerk data
+        const fallbackUser = {
+          id: clerkUser.id,
+          email: clerkUser.primaryEmailAddress?.emailAddress,
+          username: clerkUser.username || clerkUser.firstName || 'User',
+          full_name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'User'
+        };
+        setBackendUser(fallbackUser);
+      }, 3000);
+      
       api.get('/users/profile')
         .then(response => {
+          clearTimeout(failsafeTimeout);
+          console.log('✅ Backend user profile loaded');
           setBackendUser(response.data.user);
           sessionService.cacheUserData(response.data.user);
         })
-        .catch(error => console.error('Error fetching user profile:', error));
+        .catch(error => {
+          console.error('❌ Error fetching user profile:', error);
+          // Don't clear the timeout - let it fire to set fallback user
+        });
     }
-  }, [clerkUser]);
+  }, [clerkUser, backendUser]);
   
   const generateEditAvatarOptions = async (groupName, description = '') => {
     if (!groupName.trim()) {
