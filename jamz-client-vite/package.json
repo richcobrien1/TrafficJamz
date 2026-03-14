@@ -30,7 +30,19 @@
     "build:all": "bash build-all.sh --all",
     "build:web": "bash build-all.sh --web",
     "build:mobile": "bash build-all.sh --mobile",
-    "build:desktop": "bash build-all.sh --electron"
+    "build:desktop": "bash build-all.sh --electron",
+    "test": "playwright test",
+    "test:quick": "node tests/quick-test.mjs",
+    "test:auth": "playwright test auth.spec.js",
+    "test:navigation": "playwright test navigation.spec.js",
+    "test:groups": "playwright test groups.spec.js",
+    "test:chrome": "playwright test --project=chromium-desktop",
+    "test:safari": "playwright test --project=webkit-desktop",
+    "test:firefox": "playwright test --project=firefox-desktop",
+    "test:mobile": "playwright test --project=mobile-safari --project=mobile-chrome-ios --project=mobile-chrome-android",
+    "test:all": "node tests/run-all-tests.mjs",
+    "test:report": "playwright show-report test-reports/html",
+    "test:ui": "playwright test --ui"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.3",
@@ -57,6 +69,7 @@
     "@capacitor/core": "^7.4.4",
     "@capacitor/ios": "^7.4.4",
     "@eslint/js": "^9.30.1",
+    "@playwright/test": "^1.58.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
@@ -69,6 +82,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "playwright": "^1.58.2",
     "vite": "^5.4.20",
     "wait-on": "^9.0.3"
   },
@@ -82,7 +96,9 @@
     "copyright": "Copyright © 2025 TrafficJamz",
     "protocols": {
       "name": "trafficjamz",
-      "schemes": ["trafficjamz"]
+      "schemes": [
+        "trafficjamz"
+      ]
     },
     "directories": {
       "output": "dist-electron",

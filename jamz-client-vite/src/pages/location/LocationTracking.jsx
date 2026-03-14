@@ -1899,6 +1899,18 @@ const LocationTracking = () => {
       }
       // console.log('Map container ref is available, proceeding with map creation');
       
+      // Validate Mapbox token
+      if (!MAPBOX_TOKEN || MAPBOX_TOKEN === 'undefined' || MAPBOX_TOKEN.length < 10) {
+        throw new Error('Mapbox access token is not configured properly. Please contact support.');
+      }
+      
+      // Check WebGL support (required for Mapbox GL JS)
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        throw new Error('Your device does not support WebGL, which is required for maps. Please try a different browser or update your device.');
+      }
+      
       mapboxgl.accessToken = MAPBOX_TOKEN;
       // console.log('Mapbox token set:', MAPBOX_TOKEN ? 'YES' : 'NO');
       
@@ -2119,7 +2131,9 @@ const LocationTracking = () => {
 
     } catch (error) {
       console.error('Error initializing map:', error);
-      setMapLoaded(true); // Set to true anyway to show the UI
+      setError(`Failed to load map: ${error.message || 'Unknown error'}. Please refresh the page.`);
+      setMapLoaded(false); // Don't set to true on error - show error UI instead
+      showNotification(`Map failed to load: ${error.message}`, 'error');
     }
   };
 
@@ -3745,7 +3759,7 @@ const LocationTracking = () => {
           }}
         />
 
-        {/* Loading overlay is rendered as a sibling, absolutely positioned over the map container */}
+        {/* Loading or Error overlay */}
         {!mapLoaded && (
           <Box sx={{
             position: 'absolute',
@@ -3754,15 +3768,43 @@ const LocationTracking = () => {
             right: 0,
             bottom: 0,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             bgcolor: 'action.hover',
-            zIndex: 1
+            zIndex: 1,
+            gap: 2,
+            p: 3
           }}>
-            <CircularProgress size={60} />
-            <Typography sx={{ position: 'absolute', top: '60%', color: 'text.secondary', fontSize: '12px' }}>
-              Loading map...
-            </Typography>
+            {!error ? (
+              <>
+                <CircularProgress size={60} />
+                <Typography sx={{ color: 'text.secondary', fontSize: '12px' }}>
+                  Loading map...
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Alert severity="error" sx={{ maxWidth: '400px', mb: 2 }}>
+                  <AlertTitle>Map Failed to Load</AlertTitle>
+                  {error}
+                </Alert>
+                <Button 
+                  variant="contained" 
+                  onClick={() => window.location.reload()}
+                  startIcon={<MyLocationIcon />}
+                >
+                  Reload Page
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/dashboard')}
+                  startIcon={<ArrowBackIcon />}
+                >
+                  Back to Dashboard
+                </Button>
+              </>
+            )}
           </Box>
         )}
       </Box>

@@ -1,0 +1,748 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\playwright.config.js",
+    "rootDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-desktop",
+        "name": "chromium-desktop",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox-desktop",
+        "name": "firefox-desktop",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-desktop",
+        "name": "webkit-desktop",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome-ios",
+        "name": "mobile-chrome-ios",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome-android",
+        "name": "mobile-chrome-android",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-ipad",
+        "name": "tablet-ipad",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz/jamz-client-vite/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "test-reports/html"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-reports/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5174",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "auth.spec.js",
+      "file": "auth.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication Flow",
+          "file": "auth.spec.js",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load login page",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1195,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:22:30.631Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-load-login-page-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-load-login-page-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-e5577aa9bbd60d52f195",
+              "file": "auth.spec.js",
+              "line": 31,
+              "column": 3
+            },
+            {
+              "title": "should redirect unauthenticated users to login",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 853,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:22:35.647Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-a82f8-uthenticated-users-to-login-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-a82f8-uthenticated-users-to-login-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-2820c2094cc5963ebbd4",
+              "file": "auth.spec.js",
+              "line": 43,
+              "column": 3
+            },
+            {
+              "title": "should complete email + password login",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1097,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:22:42.258Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-08b45-mplete-email-password-login-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-08b45-mplete-email-password-login-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-d377d5962b578f2ace25",
+              "file": "auth.spec.js",
+              "line": 55,
+              "column": 3
+            },
+            {
+              "title": "should handle MFA verification",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1318,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:22:49.743Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-MFA-verification-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-MFA-verification-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-23b66960475a764694e2",
+              "file": "auth.spec.js",
+              "line": 88,
+              "column": 3
+            },
+            {
+              "title": "should maintain session after reload",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1322,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:22:59.649Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-d327a-intain-session-after-reload-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-d327a-intain-session-after-reload-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-5522f8dd592ff195d4f0",
+              "file": "auth.spec.js",
+              "line": 115,
+              "column": 3
+            },
+            {
+              "title": "should logout successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1308,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:23:07.605Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-logout-successfully-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-logout-successfully-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-675ce24181f456eb77b2",
+              "file": "auth.spec.js",
+              "line": 146,
+              "column": 3
+            },
+            {
+              "title": "should handle invalid credentials",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1366,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:23:15.366Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-invalid-credentials-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-invalid-credentials-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-d7de3a59970cf797f13d",
+              "file": "auth.spec.js",
+              "line": 188,
+              "column": 3
+            },
+            {
+              "title": "should register new user",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1222,
+                      "error": {
+                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                          "column": 16,
+                          "line": 21
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                            "column": 16,
+                            "line": 21
+                          },
+                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T19:23:25.306Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-register-new-user-chromium-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-register-new-user-chromium-desktop\\video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
+                        "column": 16,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "d5ed79a6b333c2ba7209-824490271e27c10af7a6",
+              "file": "auth.spec.js",
+              "line": 212,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-03-14T19:22:26.404Z",
+    "duration": 62542.221,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 8,
+    "flaky": 0
+  }
+}

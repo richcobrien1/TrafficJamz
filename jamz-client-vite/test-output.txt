@@ -1,0 +1,159 @@
+
+Running 8 tests using 4 workers
+
+[2m[WebServer] [22m[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+  ✘  2 [chromium-desktop] › tests\e2e\auth.spec.js:47:3 › Authentication Flow › should complete email + password login (1.1s)
+  ✘  4 [chromium-desktop] › tests\e2e\auth.spec.js:23:3 › Authentication Flow › should load login page (1.2s)
+  ✘  1 [chromium-desktop] › tests\e2e\auth.spec.js:80:3 › Authentication Flow › should handle MFA verification (947ms)
+  ✘  3 [chromium-desktop] › tests\e2e\auth.spec.js:35:3 › Authentication Flow › should redirect unauthenticated users to login (1.1s)
+  ✘  5 [chromium-desktop] › tests\e2e\auth.spec.js:107:3 › Authentication Flow › should maintain session after reload (917ms)
+  ✘  7 [chromium-desktop] › tests\e2e\auth.spec.js:180:3 › Authentication Flow › should handle invalid credentials (952ms)
+  ✘  6 [chromium-desktop] › tests\e2e\auth.spec.js:138:3 › Authentication Flow › should logout successfully (1.0s)
+  ✘  8 [chromium-desktop] › tests\e2e\auth.spec.js:204:3 › Authentication Flow › should register new user (821ms)
+
+
+  1) [chromium-desktop] › tests\e2e\auth.spec.js:23:3 › Authentication Flow › should load login page 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-load-login-page-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-load-login-page-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium-desktop] › tests\e2e\auth.spec.js:35:3 › Authentication Flow › should redirect unauthenticated users to login 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-s-a82f8-uthenticated-users-to-login-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-s-a82f8-uthenticated-users-to-login-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium-desktop] › tests\e2e\auth.spec.js:47:3 › Authentication Flow › should complete email + password login 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-s-08b45-mplete-email-password-login-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-s-08b45-mplete-email-password-login-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium-desktop] › tests\e2e\auth.spec.js:80:3 › Authentication Flow › should handle MFA verification 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-handle-MFA-verification-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-handle-MFA-verification-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium-desktop] › tests\e2e\auth.spec.js:107:3 › Authentication Flow › should maintain session after reload 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-s-d327a-intain-session-after-reload-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-s-d327a-intain-session-after-reload-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium-desktop] › tests\e2e\auth.spec.js:138:3 › Authentication Flow › should logout successfully 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-logout-successfully-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-logout-successfully-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium-desktop] › tests\e2e\auth.spec.js:180:3 › Authentication Flow › should handle invalid credentials 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-handle-invalid-credentials-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-handle-invalid-credentials-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium-desktop] › tests\e2e\auth.spec.js:204:3 › Authentication Flow › should register new user 
+
+    Error: page.evaluate: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\richc\Projects\TrafficJamz\jamz-client-vite\tests\e2e\auth.spec.js:17:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-register-new-user-chromium-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Authentication-Flow-should-register-new-user-chromium-desktop\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8 failed
+    [chromium-desktop] › tests\e2e\auth.spec.js:23:3 › Authentication Flow › should load login page 
+    [chromium-desktop] › tests\e2e\auth.spec.js:35:3 › Authentication Flow › should redirect unauthenticated users to login 
+    [chromium-desktop] › tests\e2e\auth.spec.js:47:3 › Authentication Flow › should complete email + password login 
+    [chromium-desktop] › tests\e2e\auth.spec.js:80:3 › Authentication Flow › should handle MFA verification 
+    [chromium-desktop] › tests\e2e\auth.spec.js:107:3 › Authentication Flow › should maintain session after reload 
+    [chromium-desktop] › tests\e2e\auth.spec.js:138:3 › Authentication Flow › should logout successfully 
+    [chromium-desktop] › tests\e2e\auth.spec.js:180:3 › Authentication Flow › should handle invalid credentials 
+    [chromium-desktop] › tests\e2e\auth.spec.js:204:3 › Authentication Flow › should register new user 

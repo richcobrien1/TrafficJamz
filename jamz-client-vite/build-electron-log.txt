@@ -1,0 +1,8 @@
+
+> jamz-client-vite@1.0.0 electron:build
+> npm run build:electron && electron-builder
+
+
+> jamz-client-vite@1.0.0 build:electron
+> cross-env ELECTRON=true vite build
+

@@ -1,0 +1,80 @@
+{
+  "config": {
+    "rootDir": "C:/Users/richc/Projects/TrafficJamz",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/richc/Projects/TrafficJamz/test-reports/results.json",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/richc/Projects/TrafficJamz",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\groups.spec.js: Unexpected token, expected \",\" (92:76)\n\n\u001b[0m \u001b[90m 90 |\u001b[39m     \n \u001b[90m 91 |\u001b[39m     \u001b[90m// Should not still be loading\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 92 |\u001b[39m     \u001b[36mconst\u001b[39m loadingIndicator \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/loading|spinner|.../'\u001b[39mi)\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 93 |\u001b[39m     \n \u001b[90m 94 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ Group detail page loaded (loading indicators: ${loadingIndicator})`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 95 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m",
+      "stack": "SyntaxError: C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\groups.spec.js: Unexpected token, expected \",\" (92:76)\n\n\u001b[0m \u001b[90m 90 |\u001b[39m     \n \u001b[90m 91 |\u001b[39m     \u001b[90m// Should not still be loading\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 92 |\u001b[39m     \u001b[36mconst\u001b[39m loadingIndicator \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/loading|spinner|.../'\u001b[39mi)\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 93 |\u001b[39m     \n \u001b[90m 94 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ Group detail page loaded (loading indicators: ${loadingIndicator})`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 95 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m",
+      "location": {
+        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\groups.spec.js",
+        "line": 92,
+        "column": 76
+      },
+      "snippet": "\u001b[90m   at \u001b[39mjamz-client-vite\\tests\\e2e\\groups.spec.js:92\n\n\u001b[0m \u001b[90m 90 |\u001b[39m     \n \u001b[90m 91 |\u001b[39m     \u001b[90m// Should not still be loading\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 92 |\u001b[39m     \u001b[36mconst\u001b[39m loadingIndicator \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/loading|spinner|.../'\u001b[39mi)\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 93 |\u001b[39m     \n \u001b[90m 94 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ Group detail page loaded (loading indicators: ${loadingIndicator})`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 95 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
+    },
+    {
+      "message": "ReferenceError: describe is not defined",
+      "stack": "ReferenceError: describe is not defined\n    at Object.<anonymous> (C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-server\\tests\\socket-utils.test.js:3:1)",
+      "location": {
+        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-server\\tests\\socket-utils.test.js",
+        "column": 1,
+        "line": 3
+      },
+      "snippet": "\u001b[90m   at \u001b[39mjamz-server\\tests\\socket-utils.test.js:3\n\n\u001b[0m \u001b[90m 1 |\u001b[39m \u001b[36mconst\u001b[39m { requireSessionId } \u001b[33m=\u001b[39m require(\u001b[32m'../src/utils/socket-utils'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 2 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 3 |\u001b[39m describe(\u001b[32m'requireSessionId'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m   |\u001b[39m \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 4 |\u001b[39m   test(\u001b[32m'returns sessionId from data.sessionId'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 5 |\u001b[39m     \u001b[36mconst\u001b[39m data \u001b[33m=\u001b[39m { sessionId\u001b[33m:\u001b[39m \u001b[32m'abc123'\u001b[39m }\u001b[33m;\u001b[39m\n \u001b[90m 6 |\u001b[39m     expect(requireSessionId(data))\u001b[33m.\u001b[39mtoBe(\u001b[32m'abc123'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-03-14T19:21:45.049Z",
+    "duration": 2397.821,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
