@@ -83,10 +83,10 @@ const RootRedirect = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Don't show any loading UI - just return null to prevent flicker
+  // If Clerk isn't loaded and no token, default to login
   if (!isLoaded) {
-    pLog.log('⏳ RootRedirect: Clerk not loaded, returning null');
-    return null;
+    pLog.log('⏳ RootRedirect: Clerk not loaded, defaulting to /auth/login');
+    return <Navigate to="/auth/login" replace />;
   }
 
   const destination = isSignedIn ? "/dashboard" : "/auth/login";
@@ -460,8 +460,8 @@ function App() {
                   {/* Redirect root based on auth status */}
                   <Route path="/" element={<RootRedirect />} />
 
-                  {/* Catch-all - redirect to root instead of showing 404 */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  {/* Catch-all - show 404 page */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               {/*</motion.div>*/}
             {/*</AnimatePresence>*/}
