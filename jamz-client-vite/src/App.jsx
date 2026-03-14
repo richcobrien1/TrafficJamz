@@ -149,6 +149,14 @@ function App() {
   // Wake up backend on initial load only if not already ready
   useEffect(() => {
     if (!backendReady) {
+      // Max wait time before giving up and showing the app anyway (iOS Safari failsafe)
+      const maxWaitTimeout = setTimeout(() => {
+        console.warn('⚠️ Backend health check timeout - proceeding anyway (iOS Safari failsafe)');
+        setBackendReady(true);
+        localStorage.setItem('backendReady', 'true');
+        localStorage.setItem('backendReadyTimestamp', Date.now().toString());
+      }, 10000); // 10 seconds max wait
+
       const wakeUpBackend = async () => {
         try {
           console.log('🔄 Attempting to wake up backend... (attempt', wakeupAttempts + 1, ')');
@@ -156,9 +164,11 @@ function App() {
           console.log('🌐 Full health URL:', api.defaults.baseURL + '/health');
           setWakeupAttempts(prev => prev + 1);
           
-          const response = await api.get('/health', { timeout: 30000 }); // 30 second timeout for cold start
+          // Shorter timeout for iOS Safari (5 seconds instead of 30)
+          const response = await api.get('/health', { timeout: 5000 });
           console.log('✅ Backend is ready!', response.data);
           pLog.log('✅ Backend health check passed, setting backendReady=true');
+          clearTimeout(maxWaitTimeout);
           setBackendReady(true);
           localStorage.setItem('backendReady', 'true');
           localStorage.setItem('backendReadyTimestamp', Date.now().toString());
@@ -175,12 +185,12 @@ function App() {
               timeout: error.config?.timeout
             }
           });
-          // Retry after 2 seconds if it fails (max 5 attempts)
-          if (wakeupAttempts < 5) {
-            setTimeout(wakeUpBackend, 2000);
+          // Retry after 1.5 seconds if it fails (max 3 attempts for faster failover)
+          if (wakeupAttempts < 3) {
+            setTimeout(wakeUpBackend, 1500);
           } else {
-            console.error('❌ Backend failed to wake up after 5 attempts');
-            setAppError('Unable to connect to server. Please check your connection and refresh.');
+            console.error('❌ Backend failed to wake up after 3 attempts');
+            clearTimeout(maxWaitTimeout);
             setBackendReady(true); // Show app anyway, let individual requests fail
             localStorage.setItem('backendReady', 'true');
             localStorage.setItem('backendReadyTimestamp', Date.now().toString());
@@ -189,6 +199,8 @@ function App() {
       };
 
       wakeUpBackend();
+
+      return () => clearTimeout(maxWaitTimeout);
     }
   }, []); // Run only once on mount
 
