@@ -2,10 +2,6 @@
   "name": "trafficjamz",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "jamz-client-vite",
-    "jamz-server"
-  ],
   "scripts": {
     "build": "npm install --prefix jamz-client-vite && npm run build --prefix jamz-client-vite && npm install --prefix jamz-server",
     "dev": "cd jamz-server && npm run dev",

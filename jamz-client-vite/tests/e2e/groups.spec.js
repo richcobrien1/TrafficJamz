@@ -89,7 +89,7 @@ test.describe('Group Management', () => {
     await page.waitForTimeout(5000); // Wait for backend user fetch timeout
     
     // Should not still be loading
-    const loadingIndicator = await page.locator('text=/loading|spinner|.../'i).count();
+    const loadingIndicator = await page.locator('text=/loading|spinner/i').count();
     
     console.log(`✅ Group detail page loaded (loading indicators: ${loadingIndicator})`);
   });
