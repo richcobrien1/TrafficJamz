@@ -80,6 +80,10 @@
     "appId": "com.trafficjamz.app",
     "productName": "TrafficJamz",
     "copyright": "Copyright © 2025 TrafficJamz",
+    "protocols": {
+      "name": "trafficjamz",
+      "schemes": ["trafficjamz"]
+    },
     "directories": {
       "output": "dist-electron",
       "buildResources": "build"

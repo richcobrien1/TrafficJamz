@@ -27,8 +27,17 @@ function createWindow() {
   });
 
   // Load the app
-  const startUrl = process.env.ELECTRON_START_URL || 
-    `file://${path.join(__dirname, '..', 'dist', 'index.html')}`;
+  let startUrl;
+  if (process.env.ELECTRON_START_URL) {
+    // Development mode
+    startUrl = process.env.ELECTRON_START_URL;
+  } else {
+    // Production mode - use app.getAppPath() for proper packaged app paths
+    const indexPath = isDev 
+      ? path.join(__dirname, '..', 'dist', 'index.html')
+      : path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
+    startUrl = `file://${indexPath}`;
+  }
   
   mainWindow.loadURL(startUrl);
 

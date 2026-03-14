@@ -29,6 +29,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AppLoader from './components/AppLoader';
 import ErrorBoundary from './components/ErrorBoundary';
 import ClerkBackendSync from './components/ClerkBackendSync';
+import NativeAppPrompt from './components/NativeAppPrompt';
 import api from './services/api';
 import pLog from './utils/persistentLogger';
 
@@ -58,6 +59,7 @@ const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const GroupDetail = lazy(() => import('./pages/groups/GroupDetail'));
 const LocationTracking = lazy(() => import('./pages/location/LocationTracking'));
 const AudioSettings = lazy(() => import('./pages/audio/AudioSettings'));
+const Download = lazy(() => import('./pages/Download'));
 const AudioSession = lazy(() => import('./pages/sessions/AudioSession'));
 const MusicPlayer = lazy(() => import('./pages/music/MusicPlayer'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
@@ -316,15 +318,10 @@ function App() {
     return (
       <ClerkProvider 
         publishableKey={clerkPubKey}
-        routing="path"
-        afterSignInUrl={null}
-        afterSignUpUrl={null}
-        signInUrl={null}
-        signUpUrl={null}
-        navigate={(to) => {
-          pLog.log('🔀 Clerk navigate (loading):', { to });
-          return Promise.resolve();
-        }}
+        afterSignInUrl="/dashboard"
+        afterSignUpUrl="/dashboard"
+        signInUrl="/auth/login"
+        signUpUrl="/auth/register"
       >
         <ThemeProvider theme={theme}>
           <CssBaseline />
@@ -341,15 +338,10 @@ function App() {
   return (
     <ClerkProvider 
       publishableKey={clerkPubKey}
-      routing="path"
-      afterSignInUrl={null}
-      afterSignUpUrl={null}
-      signInUrl={null}
-      signUpUrl={null}
-      navigate={(to) => {
-        pLog.log('🔀 Clerk navigate:', { to });
-        return navigate(to);
-      }}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+      signInUrl="/auth/login"
+      signUpUrl="/auth/register"
     >
       <ClerkBackendSync />
       <ThemeProvider theme={theme}>
@@ -376,6 +368,7 @@ function App() {
       )}
       <ErrorBoundary>
         <MusicProvider>
+          <NativeAppPrompt />
           <Suspense fallback={null}>
             {/* TEMPORARILY DISABLED ANIMATION FOR DEBUGGING */}
             {/*<AnimatePresence mode="wait">*/}
@@ -439,6 +432,11 @@ function App() {
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/download" element={
+                    <ProtectedRoute>
+                      <Download />
                     </ProtectedRoute>
                   } />
                   <Route path="/subscription-plans" element={

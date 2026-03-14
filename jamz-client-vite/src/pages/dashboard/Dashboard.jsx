@@ -34,7 +34,8 @@ import {
   Mic as MicIcon,
   LocationOn as LocationIcon,
   ExitToApp as LogoutIcon,
-  SmartToy as AIIcon
+  SmartToy as AIIcon,
+  Download as DownloadIcon
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useUser, useClerk } from '@clerk/clerk-react';
@@ -363,6 +364,20 @@ const Dashboard = () => {
               {currentUser?.full_name || currentUser?.username || 'User'}
             </Typography>
           </Box>
+          
+          {/* Download Native App Button */}
+          <IconButton 
+            onClick={() => navigate('/download')}
+            aria-label="download app"
+            sx={{ 
+              color: '#4CAF50',
+              '&:hover': { 
+                bgcolor: 'rgba(76, 175, 80, 0.08)'
+              }
+            }}
+          >
+            <DownloadIcon />
+          </IconButton>
           
           {/* Logout Icon - Bright Red */}
           <IconButton 

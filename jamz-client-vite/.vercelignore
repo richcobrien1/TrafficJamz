@@ -1,0 +1,16 @@
+node_modules
+android
+ios
+dist-electron
+*.log
+.git
+.env
+.env.local
+.env.*.local
+build
+build-*
+*.apk
+*.exe
+*.dmg
+electron
+public/downloads
