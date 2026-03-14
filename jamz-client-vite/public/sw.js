@@ -1,11 +1,11 @@
 // TrafficJamz Service Worker - Full Offline Support
-// Version: 3.0.3 - Fix dynamic import cache issues
+// Version: 3.0.4 - iOS Safari cache fix
 
-const BUILD_VERSION = '3.0.3-' + Date.now(); // Unique version per build
-const CACHE_VERSION = 'trafficjamz-v3.3';
-const AUDIO_CACHE = 'trafficjamz-audio-v3.3';
-const STATIC_CACHE = 'trafficjamz-static-v3.3';
-const APP_CACHE = 'trafficjamz-app-v3.3';
+const BUILD_VERSION = '3.0.4-' + Date.now(); // Unique version per build
+const CACHE_VERSION = 'trafficjamz-v3.4';
+const AUDIO_CACHE = 'trafficjamz-audio-v3.4';
+const STATIC_CACHE = 'trafficjamz-static-v3.4';
+const APP_CACHE = 'trafficjamz-app-v3.4';
 
 // R2 domain for audio files
 const R2_DOMAIN = 'pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev';
