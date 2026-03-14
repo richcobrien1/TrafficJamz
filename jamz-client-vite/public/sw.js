@@ -1,11 +1,11 @@
 // TrafficJamz Service Worker - Full Offline Support
-// Version: 3.0.4 - iOS Safari cache fix
+// Version: 3.0.5 - Fix iOS Safari navigation
 
-const BUILD_VERSION = '3.0.4-' + Date.now(); // Unique version per build
-const CACHE_VERSION = 'trafficjamz-v3.4';
-const AUDIO_CACHE = 'trafficjamz-audio-v3.4';
-const STATIC_CACHE = 'trafficjamz-static-v3.4';
-const APP_CACHE = 'trafficjamz-app-v3.4';
+const BUILD_VERSION = '3.0.5-' + Date.now(); // Unique version per build
+const CACHE_VERSION = 'trafficjamz-v3.5';
+const AUDIO_CACHE = 'trafficjamz-audio-v3.5';
+const STATIC_CACHE = 'trafficjamz-static-v3.5';
+const APP_CACHE = 'trafficjamz-app-v3.5';
 
 // R2 domain for audio files
 const R2_DOMAIN = 'pub-3db25e1ebf6d46a38e8cffdd22a48c64.r2.dev';
@@ -64,6 +64,13 @@ self.addEventListener('activate', (event) => {
 // Fetch event - smart caching strategy
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  
+  // Skip service worker for same-origin navigation requests - let React Router handle it
+  // This fixes iOS Safari navigation issues
+  if (event.request.mode === 'navigate' && url.origin === self.location.origin) {
+    // Let the browser handle navigation normally
+    return;
+  }
   
   // Audio files: cache-first strategy
   if (url.hostname === R2_DOMAIN && isAudioFile(url.pathname)) {
