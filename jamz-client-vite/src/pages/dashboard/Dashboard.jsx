@@ -327,7 +327,16 @@ const Dashboard = () => {
     }
   };
 
-  const handleGroupClick = (groupId) => navigate(`/groups/${groupId}`);
+  const handleGroupClick = (groupId) => {
+    console.log('🔵 Group clicked, navigating to:', `/groups/${groupId}`);
+    try {
+      navigate(`/groups/${groupId}`);
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      // Fallback to window.location for iOS Safari
+      window.location.href = `/groups/${groupId}`;
+    }
+  };
 
   return (
     <Box sx={{ 
@@ -352,7 +361,15 @@ const Dashboard = () => {
               cursor: 'pointer',
               '&:hover': { opacity: 0.8 }
             }}
-            onClick={() => navigate('/profile')}
+            onClick={() => {
+              console.log('🔵 Profile clicked, navigating to /profile');
+              try {
+                navigate('/profile');
+              } catch (error) {
+                console.error('❌ Navigation error:', error);
+                window.location.href = '/profile';
+              }
+            }}
           >
             <Avatar 
               src={getAvatarContent(currentUser)}
@@ -367,7 +384,15 @@ const Dashboard = () => {
           
           {/* Download Native App Button */}
           <IconButton 
-            onClick={() => navigate('/download')}
+            onClick={() => {
+              console.log('🔵 Download clicked, navigating to /download');
+              try {
+                navigate('/download');
+              } catch (error) {
+                console.error('❌ Navigation error:', error);
+                window.location.href = '/download';
+              }
+            }}
             aria-label="download app"
             sx={{ 
               color: '#4CAF50',
