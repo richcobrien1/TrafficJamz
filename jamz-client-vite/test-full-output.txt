@@ -1,0 +1,28 @@
+
+Running 238 tests using 4 workers
+
+✅ Unauthenticated redirect working
+✅ Login page loaded successfully
+  ✓    3 [chromium-desktop] › tests\e2e\auth.spec.js:43:3 › Authentication Flow › should redirect unauthenticated users to login (6.9s)
+  -    1 [chromium-desktop] › tests\e2e\auth.spec.js:88:3 › Authentication Flow › should handle MFA verification
+  ✓    2 [chromium-desktop] › tests\e2e\auth.spec.js:31:3 › Authentication Flow › should load login page (7.6s)
+  ✘    4 [chromium-desktop] › tests\e2e\auth.spec.js:55:3 › Authentication Flow › should complete email + password login (1.0m)
+  ✘    5 [chromium-desktop] › tests\e2e\auth.spec.js:115:3 › Authentication Flow › should maintain session after reload (1.0m)
+  ✘    6 [chromium-desktop] › tests\e2e\auth.spec.js:146:3 › Authentication Flow › should logout successfully (1.0m)
+  ✘    7 [chromium-desktop] › tests\e2e\auth.spec.js:188:3 › Authentication Flow › should handle invalid credentials (1.0m)
+  ✘    8 [chromium-desktop] › tests\e2e\auth.spec.js:212:3 › Authentication Flow › should register new user (1.0m)
+  ✘    9 [chromium-desktop] › tests\e2e\groups.spec.js:37:3 › Group Management › should load groups list page (1.0m)
+  ✘   10 [chromium-desktop] › tests\e2e\groups.spec.js:51:3 › Group Management › should display existing groups (1.0m)
+  ✘   11 [chromium-desktop] › tests\e2e\groups.spec.js:68:3 › Group Management › should open group detail page (1.0m)
+  ✘   12 [chromium-desktop] › tests\e2e\groups.spec.js:97:3 › Group Management › should create new group (1.0m)
+  ✘   13 [chromium-desktop] › tests\e2e\groups.spec.js:135:3 › Group Management › should handle group loading timeout gracefully (1.0m)
+  ✘   14 [chromium-desktop] › tests\e2e\groups.spec.js:165:3 › Group Management › should handle backend user fetch failure (1.0m)
+  ✘   15 [chromium-desktop] › tests\e2e\groups.spec.js:193:3 › Group Management › should display group members (1.0m)
+  ✘   16 [chromium-desktop] › tests\e2e\navigation.spec.js:37:3 › Navigation Flow › should navigate from dashboard to groups (1.0m)
+  ✘   17 [chromium-desktop] › tests\e2e\navigation.spec.js:53:3 › Navigation Flow › should handle direct URL navigation to dashboard (1.0m)
+  ✘   18 [chromium-desktop] › tests\e2e\navigation.spec.js:67:3 › Navigation Flow › should handle direct URL navigation to groups (1.0m)
+  ✘   19 [chromium-desktop] › tests\e2e\navigation.spec.js:77:3 › Navigation Flow › should handle browser back button (1.0m)
+  ✘   20 [chromium-desktop] › tests\e2e\navigation.spec.js:95:3 › Navigation Flow › should handle browser forward button (1.0m)
+  ✘   21 [chromium-desktop] › tests\e2e\navigation.spec.js:117:3 › Navigation Flow › should handle 404 and invalid routes (1.0m)
+  ✘   22 [chromium-desktop] › tests\e2e\navigation.spec.js:131:3 › Navigation Flow › should navigate through full app flow (1.0m)
+  ✘   23 [chromium-desktop] › tests\e2e\navigation.spec.js:179:3 › Navigation Flow › should handle mobile swipe gestures (mobile only) (1.0m)
