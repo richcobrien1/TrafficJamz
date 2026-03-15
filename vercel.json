@@ -1,7 +1,8 @@
 {
-  "buildCommand": "cd jamz-client-vite && npm install && npm run build",
-  "outputDirectory": "jamz-client-vite/dist",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
   "installCommand": null,
+  "rootDirectory": "jamz-client-vite",
   "framework": null,
   "rewrites": [
     {
