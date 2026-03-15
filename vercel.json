@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": null,
   "rootDirectory": "jamz-client-vite",
   "framework": null,
   "rewrites": [
