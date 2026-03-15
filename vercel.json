@@ -1,6 +1,5 @@
 {
-  "buildCommand": "npm install --prefix jamz-client-vite && npm run build --prefix jamz-client-vite",
-  "installCommand": "npm install",
+  "buildCommand": "npm --prefix jamz-client-vite install && npm --prefix jamz-client-vite run build",
   "outputDirectory": "jamz-client-vite/dist",
   "rewrites": [
     {
