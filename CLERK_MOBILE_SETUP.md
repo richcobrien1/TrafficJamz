@@ -34,23 +34,32 @@ For local development, Clerk usually auto-allows `localhost` origins. If you hav
 - Find "Sign-up URL" and "Sign-in URL" sections
 - These control where Clerk redirects after auth
 
-### 5. Configure for Mobile (Critical)
+### 5. Configure Native Applications (Critical for Mobile)
 
-Clerk doesn't have a specific "Allowed Origins" setting for Capacitor apps. Instead:
+**Go to: Configure > User & authentication > Native applications**
 
-**Option A: Use Clerk's Mobile SDK** (Recommended)
-- Clerk may not fully support Capacitor's web view authentication
-- Consider using native auth or a custom backend token system
+1. **Enable Native API**
+   - Toggle "Enable Native API" to ON
+   - This allows Clerk to work with native iOS and Android apps
 
-**Option B: Configure Publishable Key Domain**
-- Your publishable key (`pk_live_...`) already works for your domain
-- The key in `.env.production` should work for the web app bundled in Capacitor
+2. **Add Android Application**
+   - Click the "Android" tab
+   - Click "+ Add Android app" button
+   - Configure your app (package name, etc.)
 
-**Option C: Add Custom Domain to Development Mode**
-**Go to: Domains** → Click your domain → **Development settings**
-- This might allow testing auth flows
+3. **Configure Redirect URLs**
+   - Scroll down to "Allowlist for mobile SSO redirect"
+   - Add redirect URLs for your Capacitor app:
+     - `https://jamz.v2u.us/oauth-callback` (production web)
+     - `https://localhost/oauth-callback` (Capacitor Android with androidScheme)
+     - `capacitor://localhost/oauth-callback` (fallback if androidScheme not working)
 
-### 5. Mobile App Configuration
+4. **Add iOS Application** (when ready)
+   - Click the "iOS" tab
+   - Click "+ Add iOS app" button
+   - Configure your iOS app
+
+### 6. Mobile App Configuration
 
 The app is already configured with:
 - `androidScheme: "https"` in capacitor.config.json
