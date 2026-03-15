@@ -2,13 +2,23 @@
   "appId": "com.trafficjamz.app",
   "appName": "TrafficJamz",
   "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true,
+    "hostname": "localhost",
+    "iosScheme": "https"
+  },
   "android": {
     "allowMixedContent": true,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": true,
+    "backgroundColor": "#ffffff"
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 0
+    },
+    "CapacitorHttp": {
+      "enabled": true
     }
   },
   "ios": {
