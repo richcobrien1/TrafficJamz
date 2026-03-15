@@ -27,27 +27,30 @@ function createWindow() {
   });
 
   // Load the app
-  let startUrl;
   if (process.env.ELECTRON_START_URL) {
-    // Development mode
-    startUrl = process.env.ELECTRON_START_URL;
+    // Development mode - use dev server
+    mainWindow.loadURL(process.env.ELECTRON_START_URL);
   } else {
-    // Production mode - use app.getAppPath() for proper packaged app paths
-    const indexPath = isDev 
-      ? path.join(__dirname, '..', 'dist', 'index.html')
-      : path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
-    startUrl = `file://${indexPath}`;
+    // Production mode - load from packaged files
+    const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
+    mainWindow.loadFile(indexPath);
   }
-  
-  mainWindow.loadURL(startUrl);
+
+  // Log any load errors
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('❌ Failed to load:', errorCode, errorDescription);
+  });
+
+  // Log successful load
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('✅ Page loaded successfully');
+  });
 
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    // Dev tools only open in development mode, not in production builds
-    if (isDev) {
-      mainWindow.webContents.openDevTools();
-    }
+    // Open DevTools to see any errors (temporary for debugging)
+    mainWindow.webContents.openDevTools();
   });
 
   // Handle external links
