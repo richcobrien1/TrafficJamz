@@ -1,7 +1,7 @@
 {
   "name": "jamz-client-vite",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "electron/main.cjs",
   "author": "TrafficJamz",
@@ -15,7 +15,7 @@
     "preview": "vite preview",
     "electron:dev": "concurrently \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:5174 && cross-env ELECTRON_START_URL=http://localhost:5174 electron .\"",
     "electron:build": "npm run build:electron && electron-builder",
-    "electron:build:win": "npm run build:electron && electron-builder --win",
+    "electron:build:win": "npm run build:electron && node scripts/build-electron-win.cjs",
     "electron:build:mac": "npm run build:electron && electron-builder --mac",
     "electron:build:linux": "npm run build:electron && electron-builder --linux",
     "cap:sync": "npm run build && npx cap sync",
@@ -40,11 +40,14 @@
     "test:audio": "playwright test audio.spec.js",
     "test:location": "playwright test location.spec.js",
     "test:music": "playwright test music.spec.js",
+    "test:build": "playwright test mobile-build.spec.js",
     "test:critical": "playwright test audio.spec.js location.spec.js music.spec.js",
     "test:chrome": "playwright test --project=chromium-desktop",
     "test:safari": "playwright test --project=webkit-desktop",
     "test:firefox": "playwright test --project=firefox-desktop",
     "test:mobile": "playwright test --project=mobile-safari --project=mobile-chrome-ios --project=mobile-chrome-android",
+    "test:electron": "playwright test --project=electron electron.spec.js",
+    "test:electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5174 && playwright test --project=electron electron.spec.js\"",
     "test:all": "node tests/run-all-tests.mjs",
     "test:smoke:prod": "TEST_URL=https://jamz.v2u.us playwright test smoke.spec.js",
     "test:all:prod": "TEST_URL=https://jamz.v2u.us playwright test",
@@ -121,8 +124,12 @@
       "dist/**/*",
       "electron/**/*",
       "build/icon.*",
-      "package.json"
+      "package.json",
+      "!node_modules"
     ],
+    "buildDependenciesFromSource": false,
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
     "win": {
       "target": [
         {

@@ -1,0 +1,59 @@
+appId: com.trafficjamz.app
+productName: TrafficJamz
+copyright: Copyright © 2025 TrafficJamz
+
+protocols:
+  name: trafficjamz
+  schemes:
+    - trafficjamz
+
+directories:
+  output: dist-electron
+  buildResources: build
+
+extraResources:
+  - from: build/icon.ico
+    to: icon.ico
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - build/icon.*
+  - package.json
+  - "!node_modules/**/*"
+  - "!src"
+  - "!public"
+  - "!scripts"
+
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  signAndEditExecutable: false
+
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.social-networking
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Network
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+forceCodeSigning: false

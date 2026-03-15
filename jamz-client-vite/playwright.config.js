@@ -94,6 +94,16 @@ export default defineConfig({
         ...devices['iPad Pro'],
       },
     },
+
+    // Electron Desktop App
+    {
+      name: 'electron',
+      use: {
+        viewport: { width: 1400, height: 900 },
+        // Electron tests will use the _electron fixture
+      },
+      testMatch: /.*electron.*\.spec\.js/,
+    },
   ],
 
   // Web server configuration (only for local testing)

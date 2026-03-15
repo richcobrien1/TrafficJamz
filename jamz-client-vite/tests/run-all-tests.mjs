@@ -21,6 +21,7 @@ const TEST_CONFIGS = [
   { name: 'mobile-safari', displayName: 'Safari (iOS)' },
   { name: 'mobile-chrome-ios', displayName: 'Chrome (iOS)' },
   { name: 'mobile-chrome-android', displayName: 'Chrome (Android)' },
+  { name: 'electron', displayName: 'Electron (Desktop App)' },
 ];
 
 const DASHBOARD_PATH = path.join(__dirname, '../../QA_TESTING_STATUS.md');

@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 1
+      "actualWorkers": 4
     },
     "preserveOutput": "always",
     "projects": [
@@ -20,7 +20,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "chromium-desktop",
         "name": "chromium-desktop",
@@ -36,7 +36,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "firefox-desktop",
         "name": "firefox-desktop",
@@ -52,7 +52,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "webkit-desktop",
         "name": "webkit-desktop",
@@ -68,7 +68,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "mobile-safari",
         "name": "mobile-safari",
@@ -84,7 +84,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "mobile-chrome-ios",
         "name": "mobile-chrome-ios",
@@ -100,7 +100,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "mobile-chrome-android",
         "name": "mobile-chrome-android",
@@ -116,7 +116,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "tablet-ipad",
         "name": "tablet-ipad",
@@ -157,7 +157,7 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.58.2",
-    "workers": 1,
+    "workers": 4,
     "webServer": {
       "command": "npm run dev",
       "url": "http://localhost:5174",
@@ -167,20 +167,20 @@
   },
   "suites": [
     {
-      "title": "auth.spec.js",
-      "file": "auth.spec.js",
+      "title": "smoke.spec.js",
+      "file": "smoke.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Authentication Flow",
-          "file": "auth.spec.js",
-          "line": 12,
+          "title": "Smoke Tests - Public Pages",
+          "file": "smoke.spec.js",
+          "line": 8,
           "column": 6,
           "specs": [
             {
-              "title": "should load login page",
+              "title": "homepage loads successfully",
               "ok": false,
               "tags": [],
               "tests": [
@@ -195,61 +195,206 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 1195,
+                      "duration": 9582,
                       "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
                         "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
                         },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
                           },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-14T19:22:30.631Z",
+                      "startTime": "2026-03-14T23:20:14.601Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-load-login-page-chromium-desktop\\test-failed-1.png"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-chromium-desktop\\test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-load-login-page-chromium-desktop\\video.webm"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-chromium-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-chromium-desktop\\error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
                       }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-e5577aa9bbd60d52f195",
-              "file": "auth.spec.js",
-              "line": 31,
+              "id": "2c14808d47b386fba9eb-550acc77e9ed8ef62f4c",
+              "file": "smoke.spec.js",
+              "line": 10,
               "column": 3
             },
             {
-              "title": "should redirect unauthenticated users to login",
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 9311,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:14.632Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-8bfe15bc7dffb3b1e5a1",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 9189,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:14.663Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-5bfcde38d480febbd7e8",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 9637,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:14.599Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-b51dd7f57c9d99fce346",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 7957,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Service Worker registered: true\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:24.581Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-565cd220ea76764629f1",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
               "ok": false,
               "tags": [],
               "tests": [
@@ -262,202 +407,69 @@
                   "results": [
                     {
                       "workerIndex": 1,
-                      "parallelIndex": 0,
+                      "parallelIndex": 1,
                       "status": "failed",
-                      "duration": 853,
+                      "duration": 6401,
                       "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
                         "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
                         },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
                           },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-14T19:22:35.647Z",
+                      "startTime": "2026-03-14T23:20:24.608Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-a82f8-uthenticated-users-to-login-chromium-desktop\\test-failed-1.png"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-chromium-desktop\\test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-a82f8-uthenticated-users-to-login-chromium-desktop\\video.webm"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-chromium-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-chromium-desktop\\error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
                       }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-2820c2094cc5963ebbd4",
-              "file": "auth.spec.js",
-              "line": 43,
+              "id": "2c14808d47b386fba9eb-c121b684898acc6c505e",
+              "file": "smoke.spec.js",
+              "line": 82,
               "column": 3
             },
             {
-              "title": "should complete email + password login",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium-desktop",
-                  "projectName": "chromium-desktop",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 1097,
-                      "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
-                        "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
-                          },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-14T19:22:42.258Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-08b45-mplete-email-password-login-chromium-desktop\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-08b45-mplete-email-password-login-chromium-desktop\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-d377d5962b578f2ace25",
-              "file": "auth.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should handle MFA verification",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium-desktop",
-                  "projectName": "chromium-desktop",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 1318,
-                      "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
-                        "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
-                          },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-14T19:22:49.743Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-MFA-verification-chromium-desktop\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-MFA-verification-chromium-desktop\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
-                      }
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-23b66960475a764694e2",
-              "file": "auth.spec.js",
-              "line": 88,
-              "column": 3
-            },
-            {
-              "title": "should maintain session after reload",
-              "ok": false,
+              "title": "loads without HTTPS errors",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -470,63 +482,2286 @@
                     {
                       "workerIndex": 4,
                       "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6436,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:28.220Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-e6b6b85ef32c191e05a6",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5978,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:25.257Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-9f057403f95d15be05d6",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            },
+            {
+              "title": "homepage loads successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 2,
                       "status": "failed",
-                      "duration": 1322,
+                      "duration": 14763,
                       "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
                         "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
                         },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
                           },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-14T19:22:59.649Z",
+                      "startTime": "2026-03-14T23:20:36.829Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-d327a-intain-session-after-reload-chromium-desktop\\test-failed-1.png"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-firefox-desktop\\test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-s-d327a-intain-session-after-reload-chromium-desktop\\video.webm"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-firefox-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-firefox-desktop\\error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
                       }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-5522f8dd592ff195d4f0",
-              "file": "auth.spec.js",
-              "line": 115,
+              "id": "2c14808d47b386fba9eb-4b78002bc20562fef848",
+              "file": "smoke.spec.js",
+              "line": 10,
               "column": 3
             },
             {
-              "title": "should logout successfully",
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17520,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:41.514Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-d92724c9df862efe6da4",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 20439,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:42.104Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-055c530a4447eae7cba8",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 22154,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:53.459Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-a2030030d307c0f7be76",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 28488,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Service Worker registered: true\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:02.020Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-0bf6585c878e1c76dbd2",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
               "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 17927,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:01.359Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-firefox-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-firefox-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-firefox-desktop\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-87b49c13df298ee65a55",
+              "file": "smoke.spec.js",
+              "line": 82,
+              "column": 3
+            },
+            {
+              "title": "loads without HTTPS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 19697,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:05.488Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-41cb88311a10bffd79ba",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 15718,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:17.162Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-428ed318db650d8c26ee",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            },
+            {
+              "title": "homepage loads successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 11346,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:43.824Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-webkit-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-webkit-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-webkit-desktop\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-7a226886cb39eebe6749",
+              "file": "smoke.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 12528,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:46.639Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-30c041d9a2b7652047d4",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 10778,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:55.294Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-7b982a423fbfe570ef9e",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 11390,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:02.130Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-4571ea2906b9bc0e7607",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "line": 64,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 2789,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:04.388Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "line": 64,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-4e9964bd997adf94e909",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 8742,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:21:59.711Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-webkit-desktop\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-webkit-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-webkit-desktop\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-3960a0afccf6bb22016d",
+              "file": "smoke.spec.js",
+              "line": 82,
+              "column": 3
+            },
+            {
+              "title": "loads without HTTPS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 7817,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:06.314Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-855750a1a63ba6bcbee2",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8446,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:07.441Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-4ec75f9f865bba42d79a",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            },
+            {
+              "title": "homepage loads successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 18,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 6479,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:19.611Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-safari\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-safari\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-safari\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-b8b2b108b9c322087aa9",
+              "file": "smoke.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 19,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5447,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:20.819Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-21a22b92f2ad16083dfd",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 20,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 6368,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:27.528Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-64e10f71cbf2d9df1ada",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 21,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6787,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:28.372Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-6a0f6b65c375a60408be",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "line": 64,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 22,
+                      "parallelIndex": 3,
+                      "status": "skipped",
+                      "duration": 1387,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:31.959Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "line": 64,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-80640b2163324b42c287",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 19,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6484,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:26.551Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-safari\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-safari\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-safari\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-c55f80e72f9180fac00e",
+              "file": "smoke.spec.js",
+              "line": 82,
+              "column": 3
+            },
+            {
+              "title": "loads without HTTPS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 23,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5671,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:39.035Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-8c83a0d3cf40f2882d90",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 22,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6275,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:33.624Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-7563066051dd7f5cb4e3",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            },
+            {
+              "title": "homepage loads successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 24,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 6996,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:45.537Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-chrome-ios\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-chrome-ios\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-chrome-ios\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-9845dd84f714c6b733d4",
+              "file": "smoke.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 25,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 7124,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:45.605Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-66167489eaf53863b94f",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 26,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6124,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:47.304Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-eb3ad1a23194fc8176dc",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 27,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6472,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:50.730Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-0c737e0e1f7579eecdab",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "line": 64,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 28,
+                      "parallelIndex": 2,
+                      "status": "skipped",
+                      "duration": 1478,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:58.614Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "line": 64,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-3b3274239ac7eb47611c",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 25,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 5645,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:52.981Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-chrome-ios\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-chrome-ios\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-chrome-ios\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-875397646ff5592a47d4",
+              "file": "smoke.spec.js",
+              "line": 82,
+              "column": 3
+            },
+            {
+              "title": "loads without HTTPS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 26,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5448,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:53.795Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-de81c24ec7d427e28d0c",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 27,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5683,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:57.502Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-f4b37e022169d86aafc5",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            },
+            {
+              "title": "homepage loads successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 30,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 7998,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:05.106Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-chrome-android\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-chrome-android\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-mobile-chrome-android\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-34f071428e487579e897",
+              "file": "smoke.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 31,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9260,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:08.214Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-ca66beb72510c72cd77a",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 32,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 8576,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:09.409Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-4cec503f1e2ea0d578c9",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 33,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 11746,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:14.831Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-71c1e5cbcbc899163c14",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 34,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 11068,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Service Worker registered: true\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:19.163Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-06603a9f8a262ffb94ff",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 31,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 9187,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:17.894Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-chrome-android\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-chrome-android\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-mobile-chrome-android\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-42dce877dc19beeb72f7",
+              "file": "smoke.spec.js",
+              "line": 82,
+              "column": 3
+            },
+            {
+              "title": "loads without HTTPS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 32,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 8971,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:18.450Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-397fea99906b5114bb6c",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 33,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 8426,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:27.136Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-82b6592366ec2952d7e0",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            },
+            {
+              "title": "homepage loads successfully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 36,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 7803,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 25,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     \u001b[36mconst\u001b[39m url \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39murl()\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m isValidPage \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'auth'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     expect(isValidPage)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m\n \u001b[90m 20 |\u001b[39m   test(\u001b[32m'login page loads successfully'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 25,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  15 |     const url = page.url();\n  16 |     const isValidPage = url.includes('login') || url.includes('dashboard') || url.includes('auth');\n> 17 |     expect(isValidPage).toBeTruthy();\n     |                         ^\n  18 |   });\n  19 |\n  20 |   test('login page loads successfully', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:17:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:35.505Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-tablet-ipad\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-tablet-ipad\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-Pages-homepage-loads-successfully-tablet-ipad\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 25,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-349306e1d1ff58fc723b",
+              "file": "smoke.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "login page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 37,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 8924,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:40.345Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-7e90e22aab025e80572c",
+              "file": "smoke.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "register page loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 38,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 9183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:40.553Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-99bb9c781408df7bbf01",
+              "file": "smoke.spec.js",
+              "line": 32,
+              "column": 3
+            },
+            {
+              "title": "no JavaScript errors on login page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 39,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:46.026Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-5f542d62a96cf053503b",
+              "file": "smoke.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "service worker registers correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 40,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 9889,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Service Worker registered: true\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:48.353Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-a6d6fa6b716a3a306db2",
+              "file": "smoke.spec.js",
+              "line": 61,
+              "column": 3
+            },
+            {
+              "title": "handles 404 routes gracefully",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 37,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 8629,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34",
+                        "location": {
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 34,
+                          "line": 91
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m redirected \u001b[33m=\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'login'\u001b[39m) \u001b[33m||\u001b[39m url\u001b[33m.\u001b[39mincludes(\u001b[32m'dashboard'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m     \n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 91 |\u001b[39m     expect(has404 \u001b[33m||\u001b[39m redirected)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 92 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m\n \u001b[90m 94 |\u001b[39m   test(\u001b[32m'loads without HTTPS errors'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 34,
+                            "line": 91
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  89 |     const redirected = url.includes('login') || url.includes('dashboard');\n  90 |     \n> 91 |     expect(has404 || redirected).toBeTruthy();\n     |                                  ^\n  92 |   });\n  93 |\n  94 |   test('loads without HTTPS errors', async ({ page }) => {\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:91:34"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:49.633Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-tablet-ipad\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-tablet-ipad\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Public-0fe3c-ndles-404-routes-gracefully-tablet-ipad\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 34,
+                        "line": 91
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-30c103e0ddde780fa045",
+              "file": "smoke.spec.js",
+              "line": 82,
+              "column": 3
+            },
+            {
+              "title": "loads without HTTPS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 38,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 8302,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:50.326Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-bfac828c253f689c70d5",
+              "file": "smoke.spec.js",
+              "line": 94,
+              "column": 3
+            },
+            {
+              "title": "backend API is reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 39,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8218,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:55.578Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-1db95a0d3e0798edda25",
+              "file": "smoke.spec.js",
+              "line": 116,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Smoke Tests - Performance",
+          "file": "smoke.spec.js",
+          "line": 123,
+          "column": 6,
+          "specs": [
+            {
+              "title": "login page loads within 10 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5277,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Login page loaded in 3608ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:20:31.266Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-ea26d3913c5a4ab23fdc",
+              "file": "smoke.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "page is responsive",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -538,63 +2773,28 @@
                   "results": [
                     {
                       "workerIndex": 5,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 1308,
-                      "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
-                        "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
-                          },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
-                        }
-                      ],
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6074,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-14T19:23:07.605Z",
+                      "startTime": "2026-03-14T23:20:35.105Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-logout-successfully-chromium-desktop\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-logout-successfully-chromium-desktop\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-675ce24181f456eb77b2",
-              "file": "auth.spec.js",
-              "line": 146,
+              "id": "2c14808d47b386fba9eb-398f5d01c8e6ee551ed6",
+              "file": "smoke.spec.js",
+              "line": 137,
               "column": 3
             },
             {
-              "title": "should handle invalid credentials",
+              "title": "login page loads within 10 seconds",
               "ok": false,
               "tags": [],
               "tests": [
@@ -602,133 +2802,463 @@
                   "timeout": 60000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium-desktop",
-                  "projectName": "chromium-desktop",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
                   "results": [
                     {
-                      "workerIndex": 6,
-                      "parallelIndex": 0,
+                      "workerIndex": 8,
+                      "parallelIndex": 3,
                       "status": "failed",
-                      "duration": 1366,
+                      "duration": 15230,
                       "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m10000\u001b[39m\nReceived:   \u001b[31m13748\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m10000\u001b[39m\nReceived:   \u001b[31m13748\u001b[39m\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:132:22",
                         "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
+                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                          "column": 22,
+                          "line": 132
                         },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 130 |\u001b[39m     \n \u001b[90m 131 |\u001b[39m     \u001b[36mconst\u001b[39m loadTime \u001b[33m=\u001b[39m \u001b[33mDate\u001b[39m\u001b[33m.\u001b[39mnow() \u001b[33m-\u001b[39m startTime\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 132 |\u001b[39m     expect(loadTime)\u001b[33m.\u001b[39mtoBeLessThan(\u001b[35m10000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 133 |\u001b[39m     \n \u001b[90m 134 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m`Login page loaded in ${loadTime}ms`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 135 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
+                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                            "column": 22,
+                            "line": 132
                           },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m10000\u001b[39m\nReceived:   \u001b[31m13748\u001b[39m\n\n  130 |     \n  131 |     const loadTime = Date.now() - startTime;\n> 132 |     expect(loadTime).toBeLessThan(10000);\n      |                      ^\n  133 |     \n  134 |     console.log(`Login page loaded in ${loadTime}ms`);\n  135 |   });\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js:132:22"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-14T19:23:15.366Z",
+                      "startTime": "2026-03-14T23:21:25.232Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-invalid-credentials-chromium-desktop\\test-failed-1.png"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Perfor-67f91-age-loads-within-10-seconds-firefox-desktop\\test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-handle-invalid-credentials-chromium-desktop\\video.webm"
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Perfor-67f91-age-loads-within-10-seconds-firefox-desktop\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\smoke-Smoke-Tests---Perfor-67f91-age-loads-within-10-seconds-firefox-desktop\\error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
+                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\smoke.spec.js",
+                        "column": 22,
+                        "line": 132
                       }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-d7de3a59970cf797f13d",
-              "file": "auth.spec.js",
-              "line": 188,
+              "id": "2c14808d47b386fba9eb-ad40339aece8e7577df2",
+              "file": "smoke.spec.js",
+              "line": 125,
               "column": 3
             },
             {
-              "title": "should register new user",
-              "ok": false,
+              "title": "page is responsive",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium-desktop",
-                  "projectName": "chromium-desktop",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
                   "results": [
                     {
-                      "workerIndex": 7,
+                      "workerIndex": 11,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 1222,
-                      "error": {
-                        "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
-                        "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16",
-                        "location": {
-                          "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                          "column": 16,
-                          "line": 21
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                            "column": 16,
-                            "line": 21
-                          },
-                          "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'domcontentloaded'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[90m// Now clear storage\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m       \u001b[36mtry\u001b[39m {\n \u001b[90m 23 |\u001b[39m         localStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m         sessionStorage\u001b[33m.\u001b[39mclear()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js:21:16\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 20865,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-14T19:23:25.306Z",
+                      "startTime": "2026-03-14T23:21:33.640Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-register-new-user-chromium-desktop\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\test-results\\auth-Authentication-Flow-should-register-new-user-chromium-desktop\\video.webm"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\richc\\Projects\\TrafficJamz\\jamz-client-vite\\tests\\e2e\\auth.spec.js",
-                        "column": 16,
-                        "line": 21
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-824490271e27c10af7a6",
-              "file": "auth.spec.js",
-              "line": 212,
+              "id": "2c14808d47b386fba9eb-1e83b48fb2da52929b6b",
+              "file": "smoke.spec.js",
+              "line": 137,
+              "column": 3
+            },
+            {
+              "title": "login page loads within 10 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 8384,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Login page loaded in 2940ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:13.779Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-5b19a6f2a0f2621d7987",
+              "file": "smoke.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "page is responsive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 9883,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:13.788Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-552081a242950900b771",
+              "file": "smoke.spec.js",
+              "line": 137,
+              "column": 3
+            },
+            {
+              "title": "login page loads within 10 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 20,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 5570,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Login page loaded in 2536ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:34.138Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-a66cca9a2e69cc96e3ad",
+              "file": "smoke.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "page is responsive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [
+                    {
+                      "workerIndex": 21,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6310,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:35.414Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-a858eeeb90ca6cc8066b",
+              "file": "smoke.spec.js",
+              "line": 137,
+              "column": 3
+            },
+            {
+              "title": "login page loads within 10 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 29,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6130,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Login page loaded in 4353ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:04.074Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-80605f3ed90e73fb2d87",
+              "file": "smoke.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "page is responsive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-ios",
+                  "projectName": "mobile-chrome-ios",
+                  "results": [
+                    {
+                      "workerIndex": 26,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4736,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:22:59.304Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-fa3b8e5109bda7b5af0e",
+              "file": "smoke.spec.js",
+              "line": 137,
+              "column": 3
+            },
+            {
+              "title": "login page loads within 10 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 35,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8215,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Login page loaded in 5645ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:31.960Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-c4a62ba69a56d4a48af6",
+              "file": "smoke.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "page is responsive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-chrome-android",
+                  "projectName": "mobile-chrome-android",
+                  "results": [
+                    {
+                      "workerIndex": 32,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 8640,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:27.511Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-113d40c52cd4759c8700",
+              "file": "smoke.spec.js",
+              "line": 137,
+              "column": 3
+            },
+            {
+              "title": "login page loads within 10 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 41,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 4378,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Login page loaded in 3372ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:24:02.019Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-0d545d326d7b5ac28cd7",
+              "file": "smoke.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "page is responsive",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "tablet-ipad",
+                  "projectName": "tablet-ipad",
+                  "results": [
+                    {
+                      "workerIndex": 40,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 5790,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-14T23:23:58.709Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c14808d47b386fba9eb-ffacec9f39378650125f",
+              "file": "smoke.spec.js",
+              "line": 137,
               "column": 3
             }
           ]
@@ -738,11 +3268,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-03-14T19:22:26.404Z",
-    "duration": 62542.221,
-    "expected": 0,
-    "skipped": 0,
-    "unexpected": 8,
+    "startTime": "2026-03-14T23:20:09.241Z",
+    "duration": 238352.725,
+    "expected": 52,
+    "skipped": 3,
+    "unexpected": 15,
     "flaky": 0
   }
 }

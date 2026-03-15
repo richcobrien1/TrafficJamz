@@ -116,6 +116,40 @@ build/
 - **AppImage**: Universal Linux package (run anywhere)
 - **DEB**: Debian/Ubuntu package
 
+## Testing
+
+### Automated Testing with Playwright
+TrafficJamz includes automated tests for the Electron desktop app:
+
+```bash
+# Run Electron tests (requires dev server running separately)
+npm run test:electron
+
+# Run Electron tests with dev server auto-start
+npm run test:electron:dev
+```
+
+**Test Coverage:**
+- ✅ Window initialization and configuration
+- ✅ Main page loading
+- ✅ Electron API availability
+- ✅ Navigation between pages
+- ✅ Environment detection
+- ✅ Backend URL configuration
+- ✅ Console error detection
+
+**Test Files:**
+- `tests/e2e/electron.spec.js` - All Electron-specific tests
+
+**View Test Results:**
+```bash
+# View HTML test report
+npm run test:report
+
+# Run tests with interactive UI
+npm run test:ui
+```
+
 ## Auto-Updates (Optional)
 
 Configure auto-updates in `package.json`:
