@@ -1,9 +1,9 @@
-name: Deploy to DigitalOcean Docker
+name: Deploy to DigitalOcean Docker (Manual Only)
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Manual trigger only
+  # push:
+  #   branches: [ main ]  # Disabled - enable when DO secrets configured
 
 jobs:
   deploy:

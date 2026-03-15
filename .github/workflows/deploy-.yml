@@ -1,13 +1,14 @@
-name: Build & Deploy
+name: Build & Deploy (Manual Only)
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:  # Manual trigger only
+  # push:
+  #   branches: [main]  # Disabled - enable when Docker Hub & K8s configured
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: bash ./scripts/build_push.sh
-      - run: bash ./scripts/deploy.sh prod jamz-prod
+      - run: bash ./build-push.sh
+      - run: bash ./deploy.sh prod jamz-prod
