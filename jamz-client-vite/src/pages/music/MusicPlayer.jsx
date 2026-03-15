@@ -531,7 +531,7 @@ const MusicPlayerPage = () => {
         sx={{
           position: 'absolute',
           left: 0,
-          top: 64,
+          top: 'calc(56px + env(safe-area-inset-top, 0px) + 8px)',
           bottom: 0,
           width: '32px',
           zIndex: 10,

@@ -4051,7 +4051,7 @@ const LocationTracking = () => {
         sx={{
           position: 'absolute',
           left: 0,
-          top: showMembersList ? -400 : (showControls ? 64 : 0),
+          top: showMembersList ? -400 : (showControls ? 'calc(56px + env(safe-area-inset-top, 0px) + 8px)' : 0),
           bottom: 0,
           width: '32px',
           zIndex: 10,
