@@ -45,21 +45,9 @@ if (!clerkPubKey) {
   console.warn('Missing Clerk Publishable Key - authentication may not work');
 }
 
-// Detect if running in native Capacitor app
-const isNativeApp = window.Capacitor?.isNativePlatform?.() || false;
-console.log('🔍 Platform detection:', { isNativeApp, hasCapacitor: !!window.Capacitor });
-
-// Lazy-loaded pages (use native-friendly auth on mobile)
-const Login = lazy(() => 
-  isNativeApp 
-    ? import('./pages/auth/NativeLogin')
-    : import('./pages/auth/Login')
-);
-const Register = lazy(() => 
-  isNativeApp 
-    ? import('./pages/auth/NativeRegister')
-    : import('./pages/auth/Register')
-);
+// Lazy-loaded pages
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
