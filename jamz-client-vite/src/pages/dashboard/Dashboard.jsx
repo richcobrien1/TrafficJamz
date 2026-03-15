@@ -272,6 +272,15 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
+  // Retry fetching groups when token becomes available (fixes initial load issue)
+  useEffect(() => {
+    if (hasToken && groups.length === 0 && !loading) {
+      console.log('🔄 Token available but no groups loaded - retrying fetch');
+      groupsFetchedRef.current = false; // Reset the flag to allow retry
+      fetchGroups();
+    }
+  }, [hasToken, groups.length, loading, fetchGroups]);
+
   const handleLogout = async () => {
     // Clear backend JWT tokens
     clearBackendTokens();
