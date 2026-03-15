@@ -1,5 +1,5 @@
 {
-  "buildCommand": "ls -la && pwd && (cd jamz-client-vite || cd ../jamz-client-vite) && npm ci && npm run build",
+  "buildCommand": "pwd && ls -la && if [ -d ../jamz-client-vite ]; then echo 'Found in parent, changing dir...' && cd ../jamz-client-vite; else echo 'Using current path' && cd jamz-client-vite; fi && pwd && npm ci && npm run build",
   "outputDirectory": "jamz-client-vite/dist",
   "rewrites": [
     {
