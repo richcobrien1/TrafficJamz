@@ -9,13 +9,34 @@ import pLog from './persistentLogger';
 window.__CLERK_SYNC_IN_PROGRESS__ = false;
 
 const getBackendURL = () => {
-  const isLocalDev = window.location?.hostname === 'localhost' || 
-                     window.location?.hostname === '127.0.0.1';
+  // Check if running in Electron desktop app
+  const isElectron = typeof window !== 'undefined' && 
+                     (window.electron !== undefined || window.electronAPI !== undefined);
+  
+  // Check if running in Capacitor native app
+  const isCapacitorProtocol = window.location && (
+    window.location.protocol === 'capacitor:' || 
+    window.location.protocol === 'ionic:' ||
+    window.location.protocol === 'file:'
+  );
+  
+  const hasCapacitorGlobal = typeof window !== 'undefined' && 
+                            window.Capacitor !== undefined;
+  
+  const isCapacitor = (hasCapacitorGlobal || isCapacitorProtocol) && !isElectron;
+  
+  // Mobile or desktop apps ALWAYS use production backend
+  const needsProductionBackend = isCapacitor || isElectron;
+  
+  // Only treat as local dev if localhost AND NOT Capacitor/Electron
+  const isLocalDev = (window.location?.hostname === 'localhost' || 
+                     window.location?.hostname === '127.0.0.1') && !needsProductionBackend;
   
   if (isLocalDev) {
     return '/api'; // Vite proxy in development
   }
   
+  // Capacitor, Electron, or production web - use full backend URL
   return import.meta.env.VITE_BACKEND_URL 
     ? `${import.meta.env.VITE_BACKEND_URL}/api`
     : 'https://trafficjamz.v2u.us/api';
