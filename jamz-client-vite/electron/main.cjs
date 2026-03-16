@@ -9,6 +9,23 @@ function createWindow() {
   // Configure session to allow Clerk authentication
   const ses = session.defaultSession;
   
+  // ⚡ CLEAR ALL CACHE ON STARTUP - ensures desktop app always loads latest version
+  console.log('🧹 Clearing Electron cache to ensure fresh app load...');
+  ses.clearCache().then(() => {
+    console.log('✅ Cache cleared successfully');
+  }).catch((err) => {
+    console.error('⚠️ Failed to clear cache:', err);
+  });
+  
+  // Also clear storage data (cookies, localStorage, etc.) for fresh start
+  ses.clearStorageData({
+    storages: ['appcache', 'serviceworkers', 'cachestorage']
+  }).then(() => {
+    console.log('✅ Storage data cleared');
+  }).catch((err) => {
+    console.error('⚠️ Failed to clear storage:', err);
+  });
+  
   // Allow CORS for Clerk domains
   ses.webRequest.onBeforeSendHeaders((details, callback) => {
     callback({ requestHeaders: { ...details.requestHeaders } });
@@ -109,6 +126,23 @@ function createWindow() {
     // ALWAYS open DevTools for debugging Clerk loading issues
     mainWindow.webContents.openDevTools();
     console.log('🔧 DevTools opened for debugging');
+  });
+  
+  // ⚡ KEYBOARD SHORTCUTS FOR FORCE RELOAD
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // F5 or Ctrl+R - Normal reload
+    if ((input.key === 'F5' || (input.control && input.key === 'r')) && input.type === 'keyDown') {
+      console.log('🔄 F5/Ctrl+R pressed - Reloading app...');
+      mainWindow.reload();
+    }
+    
+    // Ctrl+Shift+R or Ctrl+F5 - Force reload (clear cache first)
+    if (((input.control && input.shift && input.key === 'r') || (input.control && input.key === 'F5')) && input.type === 'keyDown') {
+      console.log('🔄 Ctrl+Shift+R pressed - Clearing cache and reloading...');
+      session.defaultSession.clearCache().then(() => {
+        mainWindow.reload();
+      });
+    }
   });
 
   // Handle external links

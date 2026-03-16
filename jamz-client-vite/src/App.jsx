@@ -67,52 +67,8 @@ const Profile = lazy(() => import('./pages/profile/Profile'));
 const SubscriptionPlans = lazy(() => import('./pages/misc/SubscriptionPlans'));
 const NotFound = lazy(() => import('./pages/misc/NotFound'));
 // Dev-only debug page
+// Dev-only debug page
 const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
-
-// Root redirect component that checks auth status
-const RootRedirect = () => {
-  const { isLoaded, isSignedIn } = useUser();
-  const navigate = useNavigate();
-  const hasRedirectedRef = React.useRef(false);
-  
-  // Check localStorage for token to speed up redirect decision
-  const hasToken = !!localStorage.getItem('token');
-
-  pLog.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasToken, hasRedirected: hasRedirectedRef.current });
-
-  // Prevent infinite redirect loops - only redirect once using ref that persists across renders
-  React.useEffect(() => {
-    if (hasRedirectedRef.current) {
-      pLog.log('⏹️ RootRedirect: Already redirected, preventing loop');
-      return;
-    }
-
-    // If we have a token, assume authenticated and go to dashboard immediately
-    if (hasToken && !isLoaded) {
-      pLog.log('🎯 RootRedirect: Token found, navigating to /dashboard');
-      hasRedirectedRef.current = true;
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-
-    // If Clerk isn't loaded and no token, default to login
-    if (!isLoaded) {
-      pLog.log('⏳ RootRedirect: Clerk not loaded, navigating to /auth/login');
-      hasRedirectedRef.current = true;
-      navigate('/auth/login', { replace: true });
-      return;
-    }
-
-    // Clerk is loaded, redirect based on sign-in status
-    const destination = isSignedIn ? "/dashboard" : "/auth/login";
-    pLog.log('🎯 RootRedirect: Navigating to ' + destination, { isSignedIn });
-    hasRedirectedRef.current = true;
-    navigate(destination, { replace: true });
-  }, [isLoaded, isSignedIn, hasToken, navigate]);
-
-  // Show nothing while redirecting
-  return null;
-};
 
 function App() {
   const location = useLocation();
@@ -476,8 +432,17 @@ function App() {
                     </ProtectedRoute>
                   } />
 
-                  {/* Redirect root based on auth status */}
-                  <Route path="/" element={<RootRedirect />} />
+                  {/* Root path - redirect to login, or dashboard if signed in */}
+                  <Route path="/" element={
+                    <>
+                      <SignedIn>
+                        <Navigate to="/dashboard" replace />
+                      </SignedIn>
+                      <SignedOut>
+                        <Navigate to="/auth/login" replace />
+                      </SignedOut>
+                    </>
+                  } />
 
                   {/* Catch-all - show 404 page */}
                   <Route path="*" element={<NotFound />} />
