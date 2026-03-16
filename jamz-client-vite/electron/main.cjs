@@ -5,6 +5,12 @@ const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_STA
 let mainWindow;
 let tray;
 
+// ⚡ WINDOWS ICON FIX - Set app user model ID for proper taskbar icon
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.trafficjamz.app');
+  console.log('✅ Set Windows App User Model ID for taskbar icon');
+}
+
 function createWindow() {
   // Configure session to allow Clerk authentication
   const ses = session.defaultSession;
@@ -41,19 +47,41 @@ function createWindow() {
   
   console.log('🔧 Configured session for Clerk authentication');
   
-  // Get icon path - use nativeImage for proper Windows icon handling
+  // ⚡ ICON LOADING - Get correct icon path for Windows
   let icon;
+  let iconPath;
+  
   if (process.platform === 'win32') {
-    const iconPath = isDev 
-      ? path.join(__dirname, '..', 'build', 'icon.ico')
-      : path.join(process.resourcesPath, 'icon.ico');
-    icon = nativeImage.createFromPath(iconPath);
-    console.log('🎨 Loading icon from:', iconPath);
-    if (icon.isEmpty()) {
-      console.warn('⚠️ Icon file not found or invalid');
+    // Windows needs .ico file
+    if (isDev) {
+      iconPath = path.join(__dirname, '..', 'build', 'icon.ico');
+    } else {
+      // Production: icon is in resources folder (extraResources in package.json)
+      iconPath = path.join(process.resourcesPath, 'icon.ico');
     }
+    
+    console.log('🎨 Windows icon path:', iconPath);
+    icon = nativeImage.createFromPath(iconPath);
+    
+    if (icon.isEmpty()) {
+      console.error('❌ Icon file not found at:', iconPath);
+      console.log('🔍 Trying alternative path...');
+      // Try alternative path (inside app.asar)
+      iconPath = path.join(__dirname, '..', 'build', 'icon.ico');
+      icon = nativeImage.createFromPath(iconPath);
+      console.log('🔍 Alternative path:', iconPath, 'isEmpty:', icon.isEmpty());
+    } else {
+      console.log('✅ Icon loaded successfully, size:', icon.getSize());
+    }
+  } else if (process.platform === 'darwin') {
+    // macOS uses .icns (but we're using .png for simplicity)
+    iconPath = isDev 
+      ? path.join(__dirname, '..', 'build', 'icon.png')
+      : path.join(process.resourcesPath, 'icon.png');
+    icon = nativeImage.createFromPath(iconPath);
   } else {
-    const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
+    // Linux uses .png
+    iconPath = path.join(__dirname, '..', 'build', 'icon.png');
     icon = nativeImage.createFromPath(iconPath);
   }
   
@@ -122,6 +150,14 @@ function createWindow() {
     console.log('🎬 Window ready to show');
     mainWindow.show();
     mainWindow.focus();
+    
+    // ⚡ SET ICON EXPLICITLY FOR WINDOWS TASKBAR
+    if (process.platform === 'win32' && !icon.isEmpty()) {
+      mainWindow.setIcon(icon);
+      // Also set overlay icon (appears in taskbar)
+      mainWindow.setOverlayIcon(icon, 'TrafficJamz');
+      console.log('✅ Windows taskbar icon set explicitly');
+    }
     
     // ALWAYS open DevTools for debugging Clerk loading issues
     mainWindow.webContents.openDevTools();

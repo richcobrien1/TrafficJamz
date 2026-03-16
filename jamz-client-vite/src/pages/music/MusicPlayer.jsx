@@ -23,7 +23,7 @@ import {
   ArrowBack as ArrowBackIcon,
   CloudUpload as UploadIcon,
   Link as LinkIcon,
-  MusicNote as MusicIcon,
+  MusicNote as MusicNoteIcon,
   People as PeopleIcon,
   MusicNoteOutlined as MusicNoteOutlinedIcon,
   Headset as HeadsetIcon,
@@ -424,50 +424,64 @@ const MusicPlayerPage = () => {
             gap: 3, 
             alignItems: 'center' 
           }}>
-            <Tooltip title="Music Player (Active)">
+            <Tooltip title={musicIsPlaying ? "Pause Music" : "Play Music"}>
               <IconButton 
                 color="inherit"
                 sx={{ 
                   bgcolor: 'rgba(255,255,255,0.2)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                  '@keyframes pulse': {
+                  animation: 'musicPulse 1.5s ease-in-out infinite',
+                  '@keyframes musicPulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
                     '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                   }
                 }}
+                onClick={async () => {
+                  try {
+                    if (musicIsPlaying) {
+                      await musicPause();
+                    } else {
+                      // Take control if not already
+                      if (!isMusicController) {
+                        await takeMusicControl();
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                      }
+                      
+                      // Play current track or first in playlist
+                      if (currentTrack) {
+                        await musicPlay();
+                      } else if (playlist?.length > 0) {
+                        await musicLoadAndPlay(playlist[0]);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Music error:', error);
+                  }
+                }}
               >
-                <MusicNoteOutlinedIcon />
+                {musicIsPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
               </IconButton>
             </Tooltip>
             
-            <Tooltip title="Voice Audio Off">
+            <Tooltip title="Voice Audio (No session active)">
               <IconButton 
                 color="inherit"
-                onClick={() => {/* TODO: Toggle voice */}}
+                disabled
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                  '@keyframes pulse': {
-                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
-                  }
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  opacity: 0.5
                 }}
               >
                 <HeadsetOffIcon />
               </IconButton>
             </Tooltip>
             
-            <Tooltip title="Microphone Off">
+            <Tooltip title="Microphone (No session active)">
               <IconButton 
                 color="inherit"
-                onClick={() => {/* TODO: Toggle mic */}}
+                disabled
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                  '@keyframes pulse': {
-                    '0%, 100%': { opacity: 1, transform: 'scale(1)' },
-                    '50%': { opacity: 0.5, transform: 'scale(1.15)' }
-                  }
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  opacity: 0.5
                 }}
               >
                 <MicOffIcon />

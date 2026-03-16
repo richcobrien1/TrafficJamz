@@ -2125,7 +2125,7 @@ const AudioSession = () => {
             gap: 3, 
             alignItems: 'center' 
           }}>
-            <Tooltip title={musicIsPlaying ? "Music Playing" : isMusicEnabled ? "Music Ready - Click to Play" : "Music Off"}>
+            <Tooltip title={musicIsPlaying ? "Pause Music" : "Play Music"}>
               <IconButton 
                 sx={{ 
                   color: '#000',
@@ -2133,15 +2133,38 @@ const AudioSession = () => {
                   '&:hover': {
                     bgcolor: 'rgba(255, 255, 255, 0.3)',
                   },
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                  '@keyframes pulse': {
+                  animation: 'musicPulse 1.5s ease-in-out infinite',
+                  '@keyframes musicPulse': {
                     '0%, 100%': { opacity: 1, transform: 'scale(1)' },
                     '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                   }
                 }}
-                onClick={() => setOpenMusicDialog(true)}
+                onClick={async () => {
+                  try {
+                    if (musicIsPlaying) {
+                      await musicPause();
+                    } else {
+                      // Take control if not already
+                      if (!isMusicController) {
+                        await takeMusicControl();
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                      }
+                      
+                      // Play current track or first in playlist
+                      if (currentTrack) {
+                        await musicPlay();
+                      } else if (playlist?.length > 0) {
+                        await musicLoadAndPlay(playlist[0]);
+                      } else {
+                        setOpenMusicDialog(true);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Music error:', error);
+                  }
+                }}
               >
-                <MusicNoteOutlinedIcon />
+                {musicIsPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
               </IconButton>
             </Tooltip>
             
