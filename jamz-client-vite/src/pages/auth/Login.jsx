@@ -27,7 +27,6 @@ const Login = () => {
       >
         <SignIn
           signUpUrl="/auth/register"
-          afterSignInUrl="/dashboard"
           forceRedirectUrl="/dashboard"
           fallbackRedirectUrl="/dashboard"
           appearance={{

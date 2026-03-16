@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, session } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_START_URL;
 
@@ -6,24 +6,6 @@ let mainWindow;
 let tray;
 
 function createWindow() {
-  // Configure session to allow Clerk authentication
-  const ses = session.defaultSession;
-  
-  // Allow CORS for Clerk domains
-  ses.webRequest.onBeforeSendHeaders((details, callback) => {
-    callback({ requestHeaders: { ...details.requestHeaders } });
-  });
-  
-  ses.webRequest.onHeadersReceived((details, callback) => {
-    const responseHeaders = { ...details.responseHeaders };
-    // Remove restrictive headers that might block Clerk
-    delete responseHeaders['x-frame-options'];
-    delete responseHeaders['X-Frame-Options'];
-    callback({ responseHeaders });
-  });
-  
-  console.log('🔧 Configured session for Clerk authentication');
-  
   // Get icon path - use nativeImage for proper Windows icon handling
   let icon;
   if (process.platform === 'win32') {
@@ -64,17 +46,20 @@ function createWindow() {
     console.log('📡 Loading from dev server:', process.env.ELECTRON_START_URL);
     mainWindow.loadURL(process.env.ELECTRON_START_URL);
   } else {
-    // Production mode - MUST load from HTTPS for Clerk to work
-    const productionUrl = 'https://jamz.v2u.us';
-    console.log('🌐 Loading production web app:', productionUrl);
-    console.log('✅ Clerk authentication requires HTTPS - loading from web');
+    // Production mode - use loadFile per Electron docs
+    const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
     
-    mainWindow.loadURL(productionUrl)
+    console.log('📂 App path:', app.getAppPath());
+    console.log('📂 __dirname:', __dirname);
+    console.log('📂 Loading file:', indexPath);
+    
+    // Use loadFile() as recommended by Electron docs for local files
+    mainWindow.loadFile(indexPath)
       .then(() => {
-        console.log('✅ Production app loaded successfully');
+        console.log('✅ File loaded successfully');
       })
       .catch((err) => {
-        console.error('❌ Failed to load production app:', err);
+        console.error('❌ Failed to load file:', err);
       });
   }
 
@@ -88,17 +73,6 @@ function createWindow() {
     console.log('✅ Page loaded successfully');
     console.log('📍 Current URL:', mainWindow.webContents.getURL());
   });
-  
-  // Log console messages from renderer (catch Clerk errors)
-  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    const logLevels = ['LOG', 'WARN', 'ERROR'];
-    console.log(`[Renderer ${logLevels[level]}]`, message);
-    
-    // Highlight Clerk-related messages
-    if (message.includes('Clerk') || message.includes('clerk')) {
-      console.log('🔐 CLERK MESSAGE:', message);
-    }
-  });
 
   // Show window when ready - Electron best practice to avoid visual flash
   mainWindow.once('ready-to-show', () => {
@@ -106,9 +80,10 @@ function createWindow() {
     mainWindow.show();
     mainWindow.focus();
     
-    // ALWAYS open DevTools for debugging Clerk loading issues
-    mainWindow.webContents.openDevTools();
-    console.log('🔧 DevTools opened for debugging');
+    // Only open DevTools in development
+    if (isDev) {
+      mainWindow.webContents.openDevTools();
+    }
   });
 
   // Handle external links

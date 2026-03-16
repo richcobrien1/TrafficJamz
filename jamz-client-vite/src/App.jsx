@@ -47,6 +47,7 @@ if (!clerkPubKey) {
 
 // Lazy-loaded pages
 const Login = lazy(() => import('./pages/auth/Login'));
+const ElectronLogin = lazy(() => import('./pages/auth/ElectronLogin'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
@@ -71,28 +72,46 @@ const DevDebug = lazy(() => import('./pages/misc/DevDebug'));
 // Root redirect component that checks auth status
 const RootRedirect = () => {
   const { isLoaded, isSignedIn } = useUser();
+  const navigate = useNavigate();
+  const hasRedirectedRef = React.useRef(false);
   
   // Check localStorage for token to speed up redirect decision
   const hasToken = !!localStorage.getItem('token');
 
-  pLog.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasToken });
+  pLog.log('🔄 RootRedirect check:', { isLoaded, isSignedIn, hasToken, hasRedirected: hasRedirectedRef.current });
 
-  // If we have a token, assume authenticated and go to dashboard immediately
-  if (hasToken && !isLoaded) {
-    pLog.log('🎯 RootRedirect: Token found, NAVIGATING TO /dashboard (replace=true)');
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Prevent infinite redirect loops - only redirect once using ref that persists across renders
+  React.useEffect(() => {
+    if (hasRedirectedRef.current) {
+      pLog.log('⏹️ RootRedirect: Already redirected, preventing loop');
+      return;
+    }
 
-  // If Clerk isn't loaded and no token, default to login
-  if (!isLoaded) {
-    pLog.log('⏳ RootRedirect: Clerk not loaded, defaulting to /auth/login');
-    return <Navigate to="/auth/login" replace />;
-  }
+    // If we have a token, assume authenticated and go to dashboard immediately
+    if (hasToken && !isLoaded) {
+      pLog.log('🎯 RootRedirect: Token found, navigating to /dashboard');
+      hasRedirectedRef.current = true;
+      navigate('/dashboard', { replace: true });
+      return;
+    }
 
-  const destination = isSignedIn ? "/dashboard" : "/auth/login";
-  pLog.log('🎯 RootRedirect: NAVIGATING TO ' + destination + ' (replace=true)', { isSignedIn });
-  
-  return <Navigate to={destination} replace />;
+    // If Clerk isn't loaded and no token, default to login
+    if (!isLoaded) {
+      pLog.log('⏳ RootRedirect: Clerk not loaded, navigating to /auth/login');
+      hasRedirectedRef.current = true;
+      navigate('/auth/login', { replace: true });
+      return;
+    }
+
+    // Clerk is loaded, redirect based on sign-in status
+    const destination = isSignedIn ? "/dashboard" : "/auth/login";
+    pLog.log('🎯 RootRedirect: Navigating to ' + destination, { isSignedIn });
+    hasRedirectedRef.current = true;
+    navigate(destination, { replace: true });
+  }, [isLoaded, isSignedIn, hasToken, navigate]);
+
+  // Show nothing while redirecting
+  return null;
 };
 
 function App() {
@@ -330,8 +349,8 @@ function App() {
     return (
       <ClerkProvider 
         publishableKey={clerkPubKey}
-        afterSignInUrl="/dashboard"
-        afterSignUpUrl="/dashboard"
+        signInFallbackRedirectUrl="/dashboard"
+        signUpFallbackRedirectUrl="/dashboard"
         signInUrl="/auth/login"
         signUpUrl="/auth/register"
       >
@@ -350,8 +369,8 @@ function App() {
   return (
     <ClerkProvider 
       publishableKey={clerkPubKey}
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/dashboard"
       signInUrl="/auth/login"
       signUpUrl="/auth/register"
     >

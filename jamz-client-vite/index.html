@@ -3,6 +3,18 @@
   <head>
     <meta charset="utf-8" />
     
+    <!-- Content Security Policy - Allow Clerk and all required resources -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https: http: data: blob: 'unsafe-inline' 'unsafe-eval';
+      script-src 'self' https: http: 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' https: 'unsafe-inline';
+      img-src 'self' https: http: data: blob:;
+      font-src 'self' https: data:;
+      connect-src 'self' https: http: ws: wss:;
+      frame-src 'self' https:;
+      worker-src 'self' blob:;
+    ">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" 
@@ -35,11 +47,85 @@
     <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
     
     <title>TrafficJamz</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+      background-size: 400% 400%;
+      animation: rainbowGradient 15s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes rainbowGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    #root {
+      width: 100%;
+      height: 100vh;
+    }
+    .loading-fallback {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      z-index: 1;
+    }
+    .loading-fallback h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .loading-fallback p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+  </style>
   </head>
   <body>
+    <div class="loading-fallback" id="loading-fallback">
+      <h1>🎵 TrafficJamz</h1>
+      <p>Loading application...</p>
+      <p style="font-size: 0.9rem; margin-top: 2rem; opacity: 0.7;">If this screen persists, check your internet connection</p>
+    </div>
     <div id="root"></div>
     <!-- YouTube Player Container (hidden) -->
     <div id="youtube-player" style="display:none;"></div>
+    <script>
+      // Detect Electron environment
+      const isElectron = window.electronAPI || window.electron;
+      console.log('🖥️ Running in Electron:', !!isElectron);
+      console.log('🌐 User Agent:', navigator.userAgent);
+      
+      // Monitor Clerk loading
+      let clerkLoadTimeout = setTimeout(() => {
+        console.warn('⚠️ Clerk taking longer than 10 seconds to load...');
+        const fallback = document.getElementById('loading-fallback');
+        if (fallback && fallback.style.display !== 'none') {
+          const p = fallback.querySelector('p');
+          if (p) p.textContent = 'Authentication system loading... Please wait.';
+        }
+      }, 10000);
+      
+      // Clear timeout when React mounts
+      window.addEventListener('DOMContentLoaded', () => {
+        console.log('✅ DOM loaded');
+        setTimeout(() => {
+          const root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            clearTimeout(clerkLoadTimeout);
+            console.log('✅ React app mounted successfully');
+          }
+        }, 2000);
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

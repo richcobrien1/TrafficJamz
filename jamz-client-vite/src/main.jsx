@@ -14,6 +14,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, HashRouter } from 'react-router-dom';
 import './index.css';
+
+// Hide loading fallback once React is ready
+setTimeout(() => {
+  const fallback = document.getElementById('loading-fallback');
+  if (fallback) fallback.style.display = 'none';
+}, 100);
 import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import pLog from './utils/persistentLogger';
@@ -27,35 +33,51 @@ console.log('─'.repeat(50));
 
 pLog.log('🚀 Application starting...', { url: window.location.href });
 
-// Global error handler for chunk loading errors
-window.addEventListener('error', (event) => {
-  const isChunkError = 
-    event.message?.includes('Failed to fetch dynamically imported module') ||
-    event.message?.includes('Loading chunk') ||
-    event.filename?.includes('.js');
-  
-  if (isChunkError) {
-    console.warn('🔄 Chunk loading error detected globally - clearing caches and reloading');
-    event.preventDefault();
+// Global error handler for chunk loading errors (disabled in Electron)
+const isElectronEnv = window.electron || window.electronAPI || window.location.protocol === 'file:';
+if (!isElectronEnv) {
+  window.addEventListener('error', (event) => {
+    const isChunkError = 
+      event.message?.includes('Failed to fetch dynamically imported module') ||
+      event.message?.includes('Loading chunk') ||
+      event.filename?.includes('.js');
     
-    // Clear all caches
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
-      });
+    if (isChunkError) {
+      console.warn('🔄 Chunk loading error detected globally - clearing caches and reloading');
+      event.preventDefault();
+      
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => caches.delete(name));
+        });
+      }
+      
+      // Reload after clearing caches
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     }
-    
-    // Reload after clearing caches
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-  }
+  });
+}
+
+// Use HashRouter ONLY for file:// protocol, BrowserRouter for web (including Electron loading web URLs)
+// This prevents routing conflicts when Electron loads https://jamz.v2u.us
+const isFileProtocol = window.location.protocol === 'file:';
+const Router = isFileProtocol ? HashRouter : BrowserRouter;
+
+// Log router selection for debugging
+console.log('🧭 Router selected:', isFileProtocol ? 'HashRouter (file://)' : 'BrowserRouter (https://)', {
+  protocol: window.location.protocol,
+  href: window.location.href
 });
 
-// Use HashRouter in Electron (file:// protocol), BrowserRouter for web
-// Check for both window.electron and window.electronAPI, plus file:// protocol
-const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
-const Router = isElectron ? HashRouter : BrowserRouter;
+// Clean up hash fragments in Electron when using BrowserRouter to prevent routing conflicts
+if (!isFileProtocol && (window.electron || window.electronAPI) && window.location.hash) {
+  console.warn('🧹 Cleaning up hash fragment in Electron BrowserRouter:', window.location.hash);
+  // Remove hash without triggering a page reload
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

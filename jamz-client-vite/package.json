@@ -1,7 +1,7 @@
 {
   "name": "jamz-client-vite",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.6",
   "type": "module",
   "main": "electron/main.cjs",
   "author": "TrafficJamz",
@@ -54,47 +54,9 @@
     "test:report": "playwright show-report test-reports/html",
     "test:ui": "playwright test --ui"
   },
-  "dependencies": {
-    "@clerk/clerk-react": "^5.61.3",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.2.0",
-    "@mui/material": "^7.2.0",
-    "axios": "^1.12.2",
-    "fdir": "^6.5.0",
-    "framer-motion": "^12.23.12",
-    "mapbox-gl": "^3.13.0",
-    "mediasoup-client": "^3.9.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^7.9.1",
-    "socket.io-client": "^4.8.1"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@babel/core": "^7.25.0",
-    "@babel/parser": "^7.25.0",
-    "@capacitor/android": "^7.4.4",
-    "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^7.4.4",
-    "@capacitor/core": "^7.4.4",
-    "@capacitor/ios": "^7.4.4",
-    "@eslint/js": "^9.30.1",
-    "@playwright/test": "^1.58.2",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
-    "concurrently": "^9.2.1",
-    "cross-env": "^7.0.3",
-    "electron": "39.2.3",
-    "electron-builder": "^26.0.12",
-    "electron-packager": "^17.1.2",
-    "eslint": "^9.30.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^16.3.0",
-    "playwright": "^1.58.2",
-    "vite": "^5.4.20",
-    "wait-on": "^9.0.3"
+    "electron": "39.2.3"
   },
   "overrides": {
     "@babel/parser": "^7.25.0",
@@ -140,9 +102,12 @@
         }
       ],
       "icon": "build/icon.ico",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false,
+      "forceCodeSigning": false
     },
     "mac": {
+      "icon": "build/icon.png",
       "target": [
         "dmg",
         "zip"
@@ -150,6 +115,7 @@
       "category": "public.app-category.social-networking"
     },
     "linux": {
+      "icon": "build/icon.png",
       "target": [
         "AppImage",
         "deb"
@@ -161,7 +127,11 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "deleteAppDataOnUninstall": false
     },
     "forceCodeSigning": false
   }

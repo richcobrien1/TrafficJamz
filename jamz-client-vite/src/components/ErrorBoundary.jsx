@@ -28,7 +28,10 @@ class ErrorBoundary extends React.Component {
       error.message?.includes('Loading chunk') ||
       error.message?.includes('ChunkLoadError');
     
-    if (isChunkError) {
+    // Don't auto-reload in Electron - show error instead
+    const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
+    
+    if (isChunkError && !isElectron) {
       console.warn('🔄 Chunk loading error detected - reloading page to fetch new assets');
       // Clear caches and reload
       if ('caches' in window) {
