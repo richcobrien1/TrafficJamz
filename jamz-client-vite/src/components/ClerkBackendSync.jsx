@@ -23,11 +23,22 @@ export default function ClerkBackendSync() {
 
     // User signed in - sync with backend
     if (isSignedIn && user) {
-      // Check if we already have tokens (skip sync if so)
+      // Check if we already have tokens AND user data
       const hasToken = !!localStorage.getItem('token');
-      if (hasToken) {
-        pLog.log('✅ ClerkBackendSync: Backend tokens already exist, skipping sync');
-        return;
+      const hasUserData = !!localStorage.getItem('user');
+      
+      // If we have both tokens and user data, verify they're not stale
+      if (hasToken && hasUserData) {
+        try {
+          const cachedUser = JSON.parse(localStorage.getItem('user'));
+          // Check if cached user matches Clerk user
+          if (cachedUser && cachedUser.clerk_id === user.id) {
+            pLog.log('✅ ClerkBackendSync: Valid tokens and user data exist, skipping sync');
+            return;
+          }
+        } catch (e) {
+          pLog.log('⚠️ ClerkBackendSync: Error parsing cached user, will re-sync');
+        }
       }
       
       pLog.log('🔄 ClerkBackendSync: User signed in', { userId: user.id, email: user.primaryEmailAddress?.emailAddress });
@@ -41,8 +52,11 @@ export default function ClerkBackendSync() {
         syncClerkWithBackend(user).then(success => {
           if (success) {
             pLog.log('✅ ClerkBackendSync: Sync completed successfully');
+            // Trigger a storage event so other components know to refresh
+            window.dispatchEvent(new Event('storage'));
           } else {
             pLog.log('❌ ClerkBackendSync: Sync failed, API calls may not work');
+            syncAttempted.current = false; // Allow retry
           }
         }).catch(error => {
           pLog.log('❌ ClerkBackendSync: Sync error: ' + error.message);

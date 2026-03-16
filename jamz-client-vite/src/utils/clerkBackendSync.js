@@ -120,6 +120,10 @@ export async function syncClerkWithBackend(clerkUser) {
           pLog.log('✅ Backend JWT tokens stored successfully');
         }
         
+        // Clear the sync-in-progress flag
+        window.__CLERK_SYNC_IN_PROGRESS__ = false;
+        pLog.log('🔓 Clerk sync succeeded, unblocking API redirects');
+        
         return true;
       } else {
         pLog.log('❌ Clerk-sync response missing tokens:', loginResponse.data);
@@ -247,7 +251,31 @@ export async function syncClerkWithBackend(clerkUser) {
       status: error.response?.status,
       data: error.response?.data
     });
+    
+    // FALLBACK: Even if backend sync fails, store Clerk user data
+    // This allows the app to at least have user identity info
+    pLog.log('⚠️ Backend sync failed - storing Clerk user data as fallback');
+    const fallbackUser = {
+      id: clerkUser.id,
+      clerk_id: clerkUser.id,
+      email: clerkUser.primaryEmailAddress?.emailAddress,
+      username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
+      first_name: clerkUser.firstName || '',
+      last_name: clerkUser.lastName || '',
+      full_name: clerkUser.fullName || clerkUser.username,
+      profile_image_url: clerkUser.imageUrl || clerkUser.profileImageUrl,
+      created_at: clerkUser.createdAt,
+      __clerk_only: true // Flag to indicate this is Clerk data only
+    };
+    
+    sessionService.cacheUserData(fallbackUser);
+    pLog.log('✅ Clerk user data cached as fallback');
+    
     return false;
+  } finally {
+    // Clear the sync-in-progress flag
+    window.__CLERK_SYNC_IN_PROGRESS__ = false;
+    pLog.log('🔓 Clerk sync finished, unblocking API redirects');
   }
 }
 

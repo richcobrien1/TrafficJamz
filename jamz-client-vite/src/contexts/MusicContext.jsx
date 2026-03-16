@@ -21,16 +21,29 @@ export const MusicProvider = ({ children }) => {
   // Get user from session cache (set by Dashboard/Profile Clerk sync)
   const [user, setUser] = useState(() => sessionService.getCachedUserData());
   
-  // Update user when cache changes (check less frequently to reduce overhead)
+  // Update user when cache changes (check more frequently and listen to storage events)
   useEffect(() => {
-    const checkUserCache = setInterval(() => {
+    const checkUserCache = () => {
       const cachedUser = sessionService.getCachedUserData();
-      if (cachedUser && cachedUser.id !== user?.id) {
+      if (cachedUser && (!user || cachedUser.id !== user.id)) {
+        console.log('🎵 [MusicContext] User data updated:', cachedUser);
         setUser(cachedUser);
       }
-    }, 10000); // Check every 10 seconds
+    };
     
-    return () => clearInterval(checkUserCache);
+    // Check every 2 seconds (faster response to login)
+    const intervalId = setInterval(checkUserCache, 2000);
+    
+    // Also listen for storage events (when ClerkBackendSync completes)
+    window.addEventListener('storage', checkUserCache);
+    
+    // Check immediately on mount in case data is already there
+    checkUserCache();
+    
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('storage', checkUserCache);
+    };
   }, [user]);
   
   // Centralized music state - persists across components
