@@ -1,7 +1,7 @@
 {
   "name": "jamz-client-vite",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.0.12",
   "type": "module",
   "main": "electron/main.cjs",
   "author": "TrafficJamz",
@@ -15,7 +15,7 @@
     "preview": "vite preview",
     "electron:dev": "concurrently \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:5174 && cross-env ELECTRON_START_URL=http://localhost:5174 electron .\"",
     "electron:build": "npm run build:electron && electron-builder",
-    "electron:build:win": "npm run build:electron && node scripts/build-electron-win.cjs",
+    "electron:build:win": "npm run build:electron && electron-builder --win",
     "electron:build:mac": "npm run build:electron && electron-builder --mac",
     "electron:build:linux": "npm run build:electron && electron-builder --linux",
     "cap:sync": "npm run build && npx cap sync",
@@ -54,9 +54,10 @@
     "test:report": "playwright show-report test-reports/html",
     "test:ui": "playwright test --ui"
   },
-  "dependencies": {},
   "devDependencies": {
-    "electron": "39.2.3"
+    "electron": "39.2.3",
+    "electron-builder": "^26.8.1",
+    "rcedit": "^5.0.2"
   },
   "overrides": {
     "@babel/parser": "^7.25.0",
@@ -66,6 +67,7 @@
     "appId": "com.trafficjamz.app",
     "productName": "TrafficJamz",
     "copyright": "Copyright © 2025 TrafficJamz",
+    "afterPack": "scripts/afterPack.cjs",
     "protocols": {
       "name": "trafficjamz",
       "schemes": [

@@ -2,6 +2,8 @@ appId: com.trafficjamz.app
 productName: TrafficJamz
 copyright: Copyright © 2025 TrafficJamz
 
+afterPack: scripts/afterPack.cjs
+
 protocols:
   name: trafficjamz
   schemes:
@@ -36,6 +38,12 @@ win:
         - x64
   icon: build/icon.ico
   signAndEditExecutable: false
+  artifactName: ${name}-Setup-${version}.${ext}
+  # Additional Windows-specific settings for icon
+  requestedExecutionLevel: asInvoker
+  verifyUpdateCodeSignature: false
+  # Force icon embedding
+  executableName: TrafficJamz
 
 mac:
   target:
@@ -52,8 +60,17 @@ linux:
 nsis:
   oneClick: false
   perMachine: false
-  allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  createDesktopShortcut: always
   createStartMenuShortcut: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: TrafficJamz
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  deleteAppDataOnUninstall: false
 
 forceCodeSigning: false
