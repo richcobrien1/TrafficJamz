@@ -297,6 +297,9 @@ if (frontendPath) {
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Serve static files from downloads directory (for APK files, installers, etc.)
+app.use('/downloads', express.static(path.join(__dirname, '../downloads')));
+
 // Catch-all handler: send back index.html for any non-API routes
 // This enables client-side routing for the React SPA
 app.get('*', (req, res, next) => {
