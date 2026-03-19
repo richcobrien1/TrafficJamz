@@ -1,9 +1,18 @@
 // Clerk-based Register component
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SignUp } from '@clerk/clerk-react';
 import { Box } from '@mui/material';
 
 const Register = () => {
+  // ANDROID FIX: Ensure loading fallback is hidden when register page loads
+  useEffect(() => {
+    const fallback = document.getElementById('loading-fallback');
+    if (fallback) {
+      fallback.style.display = 'none';
+      console.log('✅ Register page: Hidden loading fallback');
+    }
+  }, []);
+
   return (
     <Box
       sx={{

@@ -1,9 +1,19 @@
 // Clerk-based Login component
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SignIn } from '@clerk/clerk-react';
 import { Box } from '@mui/material';
 
 const Login = () => {
+  // ANDROID FIX: Ensure loading fallback is hidden when login page loads
+  // This fixes the issue where logout redirects to login but loading screen stays visible
+  useEffect(() => {
+    const fallback = document.getElementById('loading-fallback');
+    if (fallback) {
+      fallback.style.display = 'none';
+      console.log('✅ Login page: Hidden loading fallback');
+    }
+  }, []);
+
   return (
     <Box
       sx={{

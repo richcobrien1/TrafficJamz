@@ -16,10 +16,30 @@ import { BrowserRouter, HashRouter } from 'react-router-dom';
 import './index.css';
 
 // Hide loading fallback once React is ready
-setTimeout(() => {
+// ANDROID FIX: More aggressive hiding to prevent stuck loading screen after logout
+const hideLoadingFallback = () => {
   const fallback = document.getElementById('loading-fallback');
-  if (fallback) fallback.style.display = 'none';
-}, 100);
+  if (fallback && fallback.style.display !== 'none') {
+    fallback.style.display = 'none';
+    console.log('✅ Loading fallback hidden (React mounted)');
+  }
+};
+
+// Hide immediately after a short delay
+setTimeout(hideLoadingFallback, 100);
+
+// Also watch for root content changes (handles logout redirect case)
+const rootObserver = new MutationObserver(() => {
+  const root = document.getElementById('root');
+  if (root && root.children.length > 0) {
+    hideLoadingFallback();
+  }
+});
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  rootObserver.observe(rootElement, { childList: true, subtree: true });
+}
+
 import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import pLog from './utils/persistentLogger';

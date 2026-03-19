@@ -20,6 +20,14 @@ export default function ClerkBackendSync() {
       pLog.log('🔄 ClerkBackendSync: Waiting for Clerk to load...');
       return; // Wait for Clerk to load
     }
+    
+    // ANDROID FIX: Hide loading fallback once Clerk is loaded
+    // This ensures the login page is visible after logout redirect
+    const fallback = document.getElementById('loading-fallback');
+    if (fallback && fallback.style.display !== 'none') {
+      pLog.log('🔄 ClerkBackendSync: Hiding loading fallback (Clerk loaded)');
+      fallback.style.display = 'none';
+    }
 
     // User signed in - sync with backend
     if (isSignedIn && user) {
