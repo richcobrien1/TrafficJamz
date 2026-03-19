@@ -45,7 +45,41 @@ function createWindow() {
     callback({ responseHeaders });
   });
   
-  console.log('🔧 Configured session for Clerk authentication');
+  // ⚡ GEOLOCATION PERMISSION HANDLER - Allow location access for Windows app
+  ses.setPermissionRequestHandler((webContents, permission, callback) => {
+    console.log('🔐 Permission requested:', permission);
+    
+    // Always allow geolocation for TrafficJamz
+    if (permission === 'geolocation') {
+      console.log('✅ Geolocation permission granted');
+      callback(true);
+    } else if (permission === 'notifications') {
+      console.log('✅ Notifications permission granted');
+      callback(true);
+    } else if (permission === 'media') {
+      console.log('✅ Media (camera/mic) permission granted');
+      callback(true);
+    } else {
+      console.log('⚠️ Unknown permission requested:', permission);
+      callback(false);
+    }
+  });
+  
+  // ⚡ PERMISSION CHECK HANDLER - Pre-approve permissions without prompting
+  ses.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+    console.log('🔐 Permission check:', permission, 'from', requestingOrigin);
+    
+    // Always allow geolocation, notifications, and media
+    if (permission === 'geolocation' || permission === 'notifications' || permission === 'media') {
+      console.log('✅ Permission check passed:', permission);
+      return true;
+    }
+    
+    console.log('⚠️ Permission check denied:', permission);
+    return false;
+  });
+  
+  console.log('🔧 Configured session for Clerk authentication and permissions');
   
   // ⚡ ICON LOADING - Get correct icon path for Windows
   let icon;
@@ -159,9 +193,11 @@ function createWindow() {
       console.log('✅ Windows taskbar icon set explicitly');
     }
     
-    // ALWAYS open DevTools for debugging Clerk loading issues
-    mainWindow.webContents.openDevTools();
-    console.log('🔧 DevTools opened for debugging');
+    // Open DevTools only in development mode
+    if (isDev) {
+      mainWindow.webContents.openDevTools();
+      console.log('🔧 DevTools opened (development mode)');
+    }
   });
   
   // ⚡ KEYBOARD SHORTCUTS FOR FORCE RELOAD

@@ -37,6 +37,22 @@ vendor/            # Composer dependencies
 /jamz-client-vite/dist-electron-final  # Electron final build outputs
 *.log             # Build process logs
 
+# Android APK files (too large for git)
+*.apk             # Android APK packages
+*.aab             # Android App Bundle
+
+# Gradle build cache and files
+.gradle/          # Gradle cache directory
+*.gradle.bin      # Gradle binary cache
+*.gradle.lock     # Gradle lock files
+build/            # Build output directories
+mobile/Android/.gradle/           # Android Gradle cache
+mobile/Android/app/build/         # Android app build output
+mobile/Android/local.properties   # Android local SDK properties
+jamz-client-vite/android/.gradle/ # Capacitor Android Gradle cache
+jamz-client-vite/android/build/   # Capacitor Android build output
+**/capacitor-cordova-android-plugins/build/ # Capacitor plugin builds
+
 # --- Collaboration Tools ---
 .slack-term        # Slack CLI config
 zoom/             # Zoom recording cache

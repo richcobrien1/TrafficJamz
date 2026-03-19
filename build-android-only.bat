@@ -32,8 +32,8 @@ echo ✓ Capacitor synced
 
 echo.
 echo [3/4] Building debug APK...
-cd ..\mobile\Android
-call gradlew assembleDebug
+cd android
+call gradlew.bat assembleDebug
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: APK build failed
     pause
@@ -43,16 +43,16 @@ echo ✓ Debug APK built
 
 echo.
 echo [4/4] Getting APK info...
-call gradlew :app:tasks --group=build >nul 2>&1
+call gradlew.bat :app:tasks --group=build >nul 2>&1
 
 echo.
 echo ========================================
 echo BUILD COMPLETE!
 echo ========================================
 echo.
-echo APK Location: mobile\Android\app\build\outputs\apk\debug\app-debug.apk
+echo APK Location: jamz-client-vite\android\app\build\outputs\apk\debug\app-debug.apk
 echo APK Size: 
-for %%A in ("..\..\..\mobile\Android\app\build\outputs\apk\debug\app-debug.apk") do echo   %%~zA bytes (%%~zA / 1024 / 1024 MB)
+for %%A in ("app\build\outputs\apk\debug\app-debug.apk") do echo   %%~zA bytes
 echo.
 echo Installation Commands:
 echo   USB (ADB): adb install -r app\build\outputs\apk\debug\app-debug.apk
@@ -60,6 +60,6 @@ echo   Check device: adb devices
 echo   Launch app: adb shell am start -n com.trafficjamz.app/.MainActivity
 echo.
 echo Opening output folder...
-start ..\..\..\mobile\Android\app\build\outputs\apk\debug
+start app\build\outputs\apk\debug
 echo.
 pause
