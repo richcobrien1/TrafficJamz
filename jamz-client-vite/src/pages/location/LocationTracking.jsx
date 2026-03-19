@@ -15,6 +15,7 @@ import { dbManager } from '../../services/indexedDBManager';
 import offlineQueue from '../../services/offline-queue.service';
 import mapboxgl from 'mapbox-gl';
 import io from 'socket.io-client';
+import { Capacitor } from '@capacitor/core';
 import { getAvatarContent, getAvatarFallback } from '../../utils/avatar.utils';
 import { useAudioSession } from '../../hooks/useAudioSession';
 import { useMusic } from '../../contexts/MusicContext';
@@ -695,7 +696,9 @@ const LocationTracking = () => {
         console.log('🎯 Initial map centering on user location:', userLocation);
         hasInitiallyCenteredRef.current = true;
         centerMapOnLocation(userLocation);
-      } else {
+      } else if (viewMode === 'my-location') {
+        // ⚡ ONLY auto-re-center when in 'my-location' mode
+        // Don't interfere with 'all-members' view
         // On subsequent updates, only re-center if location changed significantly (>50 meters)
         const currentCenter = mapRef.current.getCenter();
         const distance = calculateDistance(
@@ -709,9 +712,11 @@ const LocationTracking = () => {
           console.log('🎯 Re-centering map - location changed by', distance.toFixed(1), 'meters');
           centerMapOnLocation(userLocation);
         }
+      } else {
+        console.log('🗺️ Skipping auto-center - in all-members view mode');
       }
     }
-  }, [mapLoaded, userLocation]);
+  }, [mapLoaded, userLocation, viewMode]);
   
   // Persist screenThreshold so tuning remains between sessions
   useEffect(() => {
@@ -1428,11 +1433,10 @@ const LocationTracking = () => {
 
   // Continuous location tracking with watchPosition
   useEffect(() => {
-    // Check if running in Electron (desktop) - skip GPS
+    // ⚡ ELECTRON GEOLOCATION ENABLED - Windows supports WiFi positioning
     const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
     if (isElectron) {
-      console.log('🖥️ Desktop app detected - GPS tracking disabled');
-      return;
+      console.log('🖥️ Desktop app detected - Geolocation enabled for Windows WiFi positioning');
     }
 
     if (!sharingLocation || !groupId) {
@@ -2661,7 +2665,36 @@ const LocationTracking = () => {
     }
   };
   
-  // Handle marker click to open location dialog
+  // Handle music toggle (play/pause)
+  const handleMusicToggle = async (event) => {
+    // Prevent default and stop propagation for Android touch events
+    event?.preventDefault();
+    event?.stopPropagation();
+    
+    try {
+      if (isPlaying) {
+        await musicPause();
+      } else {
+        // Take control if not already
+        if (!isController) {
+          await takeControl();
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Play current track or first in playlist
+        if (currentTrack) {
+          await musicPlay();
+        } else if (playlist?.length > 0) {
+          await loadAndPlay(playlist[0]);
+        } else {
+          setShowMusicPlayer(true);
+        }
+      }
+    } catch (error) {
+      console.error('Music error:', error);
+    }
+  };
+  
   // Handle marker click to open location dialog or aggregated member list
   const handleMarkerClick = (location) => {
     console.log('🖱️ PIN CLICKED - Location data:', location);
@@ -3853,8 +3886,9 @@ const LocationTracking = () => {
           bgcolor: sharingLocation ? 'secondary.main' : 'rgba(0,0,0,0.7)', // Pink/magenta when active
           color: sharingLocation ? '#fff' : 'text.primary',
           transition: 'all 0.3s ease',
+          // ⚡ ANDROID HEADER FIX - Add margin for system status bar
           // When the members list is open, hide the top AppBar so it doesn't overlap the drawer
-          top: showMembersList ? -64 : (showControls ? 0 : -64),
+          top: showMembersList ? -64 : (showControls ? (Capacitor.isNativePlatform() ? 56 : 0) : -64),
           zIndex: 10,
           paddingTop: 'env(safe-area-inset-top)',
           paddingLeft: 'env(safe-area-inset-left)',
@@ -3904,6 +3938,9 @@ const LocationTracking = () => {
                 sx={{
                   color: sharingLocation ? '#fff' : 'inherit',
                   bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  WebkitTapHighlightColor: 'transparent',
                   '&:hover': {
                     bgcolor: 'rgba(255, 255, 255, 0.3)',
                   },
@@ -3919,29 +3956,12 @@ const LocationTracking = () => {
                     }
                   }
                 }}
-                onClick={async () => {
-                  try {
-                    if (isPlaying) {
-                      await musicPause();
-                    } else {
-                      // Take control if not already
-                      if (!isController) {
-                        await takeControl();
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                      }
-                      
-                      // Play current track or first in playlist
-                      if (currentTrack) {
-                        await musicPlay();
-                      } else if (playlist?.length > 0) {
-                        await loadAndPlay(playlist[0]);
-                      } else {
-                        setShowMusicPlayer(true);
-                      }
-                    }
-                  } catch (error) {
-                    console.error('Music error:', error);
-                  }
+                onClick={handleMusicToggle}
+                onTouchEnd={(e) => {
+                  // Android WebView fallback
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleMusicToggle(e);
                 }}
               >
                 {isPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}
@@ -4089,7 +4109,10 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            top: showControls ? 72 : 16,
+            // ⚡ ANDROID HEADER FIX - Position below AppBar + system header
+            // When controls shown: AppBar (64px) + Android header (56px) + 8px gap = 128px
+            // When controls hidden: Just Android header (56px) + 16px gap = 72px
+            top: showControls ? (Capacitor.isNativePlatform() ? 128 : 72) : (Capacitor.isNativePlatform() ? 72 : 16),
             right: 16,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,
@@ -4112,7 +4135,10 @@ const LocationTracking = () => {
         <IconButton
           sx={{
             position: 'absolute',
-            top: showControls ? 72 : 16,
+            // ⚡ ANDROID HEADER FIX - Position below AppBar + system header
+            // When controls shown: AppBar (64px) + Android header (56px) + 8px gap = 128px
+            // When controls hidden: Just Android header (56px) + 16px gap = 72px
+            top: showControls ? (Capacitor.isNativePlatform() ? 128 : 72) : (Capacitor.isNativePlatform() ? 72 : 16),
             right: 76,
             zIndex: 10,
             display: showMembersList ? 'none' : undefined,

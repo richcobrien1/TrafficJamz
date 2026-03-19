@@ -378,12 +378,10 @@ const GroupDetail = () => {
 
     console.log('🎯 Auto-starting location tracking for group:', groupId, 'userId:', userId);
 
-    // Check if running in Electron (desktop) - skip GPS
+    // ⚡ ELECTRON GEOLOCATION ENABLED - Windows supports WiFi positioning
     const isElectron = window.electron || window.electronAPI || window.location.protocol === 'file:';
     if (isElectron) {
-      console.log('🖥️ Desktop app detected - GPS tracking disabled');
-      setIsLocationWatchActive(false);
-      return;
+      console.log('🖥️ Desktop app detected - Geolocation enabled for Windows WiFi positioning');
     }
 
     // Request permission first

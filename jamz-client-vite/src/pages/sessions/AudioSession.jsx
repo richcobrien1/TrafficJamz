@@ -682,6 +682,36 @@ const AudioSession = () => {
     }
   };
   
+  // Handle music toggle (play/pause)
+  const handleMusicToggle = async (event) => {
+    // Prevent default and stop propagation for Android touch events
+    event?.preventDefault();
+    event?.stopPropagation();
+    
+    try {
+      if (musicIsPlaying) {
+        await musicPause();
+      } else {
+        // Take control if not already
+        if (!isMusicController) {
+          await takeMusicControl();
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Play current track or first in playlist
+        if (currentTrack) {
+          await musicPlay();
+        } else if (playlist?.length > 0) {
+          await musicLoadAndPlay(playlist[0]);
+        } else {
+          setOpenMusicDialog(true);
+        }
+      }
+    } catch (error) {
+      console.error('Music error:', error);
+    }
+  };
+  
   // Toggle mute for specific member
   const toggleMemberMute = (socketId) => {
     setMemberMuted(prev => {
@@ -2130,6 +2160,9 @@ const AudioSession = () => {
                 sx={{ 
                   color: '#000',
                   bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  WebkitTapHighlightColor: 'transparent',
                   '&:hover': {
                     bgcolor: 'rgba(255, 255, 255, 0.3)',
                   },
@@ -2139,29 +2172,12 @@ const AudioSession = () => {
                     '50%': { opacity: 0.5, transform: 'scale(1.15)' }
                   }
                 }}
-                onClick={async () => {
-                  try {
-                    if (musicIsPlaying) {
-                      await musicPause();
-                    } else {
-                      // Take control if not already
-                      if (!isMusicController) {
-                        await takeMusicControl();
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                      }
-                      
-                      // Play current track or first in playlist
-                      if (currentTrack) {
-                        await musicPlay();
-                      } else if (playlist?.length > 0) {
-                        await musicLoadAndPlay(playlist[0]);
-                      } else {
-                        setOpenMusicDialog(true);
-                      }
-                    }
-                  } catch (error) {
-                    console.error('Music error:', error);
-                  }
+                onClick={handleMusicToggle}
+                onTouchEnd={(e) => {
+                  // Android WebView fallback
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleMusicToggle(e);
                 }}
               >
                 {musicIsPlaying ? <MusicNoteIcon /> : <MusicNoteOutlinedIcon />}

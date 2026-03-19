@@ -127,7 +127,11 @@ const MusicPlayer = ({
   /**
    * Toggle play/pause
    */
-  const handlePlayPause = () => {
+  const handlePlayPause = (event) => {
+    // Prevent default to avoid double-firing on Android
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     if (!isController) {
       console.warn('🎵 [MusicPlayer] Not controller - cannot play/pause');
       return;
@@ -345,10 +349,19 @@ const MusicPlayer = ({
             <span>
               <IconButton
                 onClick={handlePlayPause}
+                onTouchEnd={(e) => {
+                  // Android WebView fallback for touch events
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handlePlayPause(e);
+                }}
                 disabled={!isController || disabled || controlsDisabled}
                 sx={{ 
                   bgcolor: isController ? 'primary.main' : 'grey.300',
                   color: isController ? 'white' : 'grey.600',
+                  touchAction: 'manipulation', // Optimize for touch on mobile
+                  userSelect: 'none', // Prevent text selection
+                  WebkitTapHighlightColor: 'transparent', // Remove tap highlight on Android
                   '&:hover': {
                     bgcolor: isController ? 'primary.dark' : 'grey.400'
                   },

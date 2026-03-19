@@ -257,6 +257,7 @@ export async function syncClerkWithBackend(clerkUser) {
     pLog.log('⚠️ Backend sync failed - storing Clerk user data as fallback');
     const fallbackUser = {
       id: clerkUser.id,
+      user_id: clerkUser.id, // Add user_id for compatibility
       clerk_id: clerkUser.id,
       email: clerkUser.primaryEmailAddress?.emailAddress,
       username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
@@ -269,7 +270,15 @@ export async function syncClerkWithBackend(clerkUser) {
     };
     
     sessionService.cacheUserData(fallbackUser);
-    pLog.log('✅ Clerk user data cached as fallback');
+    pLog.log('✅ Clerk user data cached as fallback:', fallbackUser);
+    
+    // On Capacitor/mobile, also trigger storage event manually
+    if (typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform()) {
+      pLog.log('📱 Capacitor detected - triggering manual storage event');
+      setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
+      }, 500);
+    }
     
     return false;
   } finally {

@@ -233,11 +233,22 @@ class PlatformPlayerService {
       throw new Error('YouTube player not ready');
     }
 
-    this.youtubePlayer.loadVideoById(videoId);
-    this.youtubePlayer.playVideo();
+    // Validate player has required methods
+    if (typeof this.youtubePlayer.loadVideoById !== 'function' || typeof this.youtubePlayer.playVideo !== 'function') {
+      console.error('❌ YouTube player not fully initialized');
+      throw new Error('YouTube player not ready. Please wait a moment and try again.');
+    }
+
+    try {
+      this.youtubePlayer.loadVideoById(videoId);
+      this.youtubePlayer.playVideo();
+      console.log('✅ Playing YouTube video:', videoId);
+    } catch (error) {
+      console.error('❌ Failed to play YouTube video:', error);
+      throw new Error(`Failed to play video: ${error.message}`);
+    }
     
     this.currentPlatform = 'youtube';
-    console.log('✅ Playing YouTube video:', videoId);
   }
 
   /**
@@ -267,7 +278,21 @@ class PlatformPlayerService {
     if (this.currentPlatform === 'spotify' && this.spotifyPlayer) {
       await this.spotifyPlayer.pause();
     } else if (this.currentPlatform === 'youtube' && this.youtubePlayer) {
-      this.youtubePlayer.pauseVideo();
+      if (typeof this.youtubePlayer.pauseVideo === 'function') {
+        try {
+          const playerState = this.youtubePlayer.getPlayerState?.();
+          // Only pause if player is in a valid state (1 = playing, 3 = buffering)
+          if (playerState === 1 || playerState === 3) {
+            this.youtubePlayer.pauseVideo();
+          } else {
+            console.log('⚠️ YouTube player not in playable state, skipping pause');
+          }
+        } catch (error) {
+          console.error('❌ Failed to pause YouTube video:', error);
+        }
+      } else {
+        console.warn('⚠️ YouTube player not ready for pause operation');
+      }
     } else if (this.currentPlatform === 'apple-music' && this.appleMusicPlayer) {
       await this.appleMusicPlayer.pause();
     }
@@ -281,7 +306,17 @@ class PlatformPlayerService {
     if (this.currentPlatform === 'spotify' && this.spotifyPlayer) {
       await this.spotifyPlayer.resume();
     } else if (this.currentPlatform === 'youtube' && this.youtubePlayer) {
-      this.youtubePlayer.playVideo();
+      if (typeof this.youtubePlayer.playVideo === 'function') {
+        try {
+          this.youtubePlayer.playVideo();
+        } catch (error) {
+          console.error('❌ Failed to resume YouTube video:', error);
+          throw error;
+        }
+      } else {
+        console.error('❌ YouTube player not ready for play operation');
+        throw new Error('YouTube player not available');
+      }
     } else if (this.currentPlatform === 'apple-music' && this.appleMusicPlayer) {
       await this.appleMusicPlayer.play();
     }
@@ -295,7 +330,15 @@ class PlatformPlayerService {
     if (this.currentPlatform === 'spotify' && this.spotifyPlayer) {
       await this.spotifyPlayer.pause();
     } else if (this.currentPlatform === 'youtube' && this.youtubePlayer) {
-      this.youtubePlayer.stopVideo();
+      if (typeof this.youtubePlayer.stopVideo === 'function') {
+        try {
+          this.youtubePlayer.stopVideo();
+        } catch (error) {
+          console.error('❌ Failed to stop YouTube video:', error);
+        }
+      } else {
+        console.warn('⚠️ YouTube player not ready for stop operation');
+      }
     } else if (this.currentPlatform === 'apple-music' && this.appleMusicPlayer) {
       await this.appleMusicPlayer.stop();
     }

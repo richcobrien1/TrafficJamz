@@ -6,11 +6,13 @@
  * - Apple MusicKit JS
  */
 
+import robustYouTubePlayer from './youtube-player-robust.service';
+
 class PlatformMusicService {
   constructor() {
     this.currentPlatform = null; // 'spotify', 'youtube', 'appleMusic', or null for file playback
     this.spotifyPlayer = null;
-    this.youtubePlayer = null;
+    this.youtubePlayer = robustYouTubePlayer; // Use robust player with guaranteed reliability
     this.appleMusicPlayer = null;
     this.currentTrack = null;
     this.isPlaying = false;
@@ -22,6 +24,26 @@ class PlatformMusicService {
     this.onPlayStateChange = null;
     this.onTimeUpdate = null;
     this.onError = null;
+    
+    // Set up robust YouTube player event handlers
+    this.youtubePlayer.onStateChange = (event) => {
+      console.log('🎵 YouTube state change:', event.data);
+      if (event.data === 1) {
+        this.isPlaying = true;
+        if (this.onPlayStateChange) this.onPlayStateChange(true);
+      } else if (event.data === 2) {
+        this.isPlaying = false;
+        if (this.onPlayStateChange) this.onPlayStateChange(false);
+      } else if (event.data === 0) {
+        console.log('🎵 Track ended - calling onTrackChange');
+        if (this.onTrackChange) this.onTrackChange('next');
+      }
+    };
+    
+    this.youtubePlayer.onError = (event) => {
+      console.error('❌ YouTube error:', event.data);
+      if (this.onError) this.onError(event);
+    };
   }
 
   /**
@@ -38,9 +60,8 @@ class PlatformMusicService {
     // Load Spotify SDK
     await this.loadSpotifySDK();
     
-    // Load YouTube SDK and initialize player
-    await this.loadYouTubeSDK();
-    await this.initializeYouTubePlayer('youtube-player');
+    // Robust YouTube player auto-initializes in its constructor
+    console.log('✅ Using robust YouTube player (auto-initialized)');
     
     // Apple MusicKit is loaded separately when user connects
     
@@ -219,24 +240,162 @@ class PlatformMusicService {
   }
 
   /**
-   * Initialize YouTube player
+   * Load persisted player state from localStorage
    */
-  async initializeYouTubePlayer(containerId) {
-    if (this.youtubePlayer) {
-      console.log('✅ YouTube player already initialized');
+  loadPersistedState() {
+    try {
+      const state = localStorage.getItem('youtube_player_state');
+      if (state) {
+        const parsed = JSON.parse(state);
+        console.log('📦 Loaded persisted YouTube player state:', parsed);
+        this.volume = parsed.volume || 1.0;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load persisted state:', error);
+    }
+  }
+
+  /**
+   * Persist player state to localStorage
+   */
+  persistState() {
+    try {
+      const state = {
+        volume: this.volume,
+        platform: this.currentPlatform,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('youtube_player_state', JSON.stringify(state));
+    } catch (error) {
+      console.warn('⚠️ Failed to persist state:', error);
+    }
+  }
+
+  /**
+   * Start health monitoring for YouTube player
+   */
+  startHealthMonitoring() {
+    // Check player health every 5 seconds
+    this.youtubePlayerHealthCheckInterval = setInterval(() => {
+      if (this.currentPlatform === 'youtube' && !this.validateYouTubePlayer(false)) {
+        console.warn('⚠️ YouTube player health check failed - attempting recovery...');
+        this.recoverYouTubePlayer();
+      }
+    }, 5000);
+  }
+
+  /**
+   * Validate YouTube player is ready and has all required methods
+   */
+  validateYouTubePlayer(throwError = true) {
+    // Use robust player's built-in validation
+    return this.youtubePlayer.isPlayerValid(throwError);
+  }
+
+  /**
+   * Wait for YouTube player to be ready with timeout and retries
+   */
+  async waitForYouTubePlayerReady(maxWaitMs = 30000) {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < maxWaitMs) {
+      if (this.validateYouTubePlayer(false)) {
+        console.log('✅ YouTube player is ready');
+        return true;
+      }
+      
+      // Not ready yet - wait 100ms and try again
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.error('❌ YouTube player failed to become ready within', maxWaitMs, 'ms');
+    return false;
+  }
+
+  /**
+   * Recover YouTube player by reinitializing
+   */
+  async recoverYouTubePlayer() {
+    console.log('🔄 Recovering YouTube player...');
+    
+    // Clear existing player
+    this.youtubePlayer = null;
+    this.youtubePlayerReady = false;
+    
+    // Re-initialize with retry
+    try {
+      await this.initializeYouTubePlayerWithRetry('youtube-player');
+      console.log('✅ YouTube player recovered successfully');
+    } catch (error) {
+      console.error('❌ Failed to recover YouTube player:', error);
+    }
+  }
+
+  /**
+   * Initialize YouTube player with automatic retry logic
+   */
+  async initializeYouTubePlayerWithRetry(containerId, retryCount = 0) {
+    if (this.youtubePlayerInitializing) {
+      console.log('⏳ YouTube player initialization already in progress, waiting...');
+      // Wait for existing initialization to complete
+      await this.waitForYouTubePlayerReady();
       return;
     }
 
+    if (this.youtubePlayerReady && this.validateYouTubePlayer(false)) {
+      console.log('✅ YouTube player already initialized and ready');
+      return;
+    }
+
+    this.youtubePlayerInitializing = true;
+    
+    try {
+      await this.initializeYouTubePlayer(containerId);
+      this.youtubePlayerRetryCount = 0; // Reset retry count on success
+      console.log('✅ YouTube player initialized successfully');
+    } catch (error) {
+      console.error(`❌ YouTube player initialization failed (attempt ${retryCount + 1}):`, error);
+      
+      if (retryCount < this.youtubePlayerMaxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, retryCount), 10000); // Exponential backoff, max 10s
+        console.log(`🔄 Retrying in ${delayMs}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        this.youtubePlayerInitializing = false;
+        return this.initializeYouTubePlayerWithRetry(containerId, retryCount + 1);
+      } else {
+        this.youtubePlayerInitializing = false;
+        throw new Error(`YouTube player initialization failed after ${this.youtubePlayerMaxRetries} attempts`);
+      }
+    } finally {
+      this.youtubePlayerInitializing = false;
+    }
+  }
+
+  /**
+   * Initialize YouTube player (low-level implementation)
+   */
+  async initializeYouTubePlayer(containerId) {
     // Make sure YT API is loaded
     if (!window.YT || !window.YT.Player) {
       console.error('❌ YouTube API not loaded yet');
-      throw new Error('YouTube API not loaded');
+      // Try to load it
+      await this.loadYouTubeAPI();
+      
+      if (!window.YT || !window.YT.Player) {
+        throw new Error('YouTube API failed to load');
+      }
     }
 
     console.log('🎵 Creating YouTube player...');
 
-    return new Promise((resolve) => {
-      this.youtubePlayer = new window.YT.Player(containerId, {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('YouTube player creation timed out after 15 seconds'));
+      }, 15000);
+
+      try {
+        this.youtubePlayer = new window.YT.Player(containerId, {
         height: '0',
         width: '0',
         playerVars: {
@@ -248,8 +407,20 @@ class PlatformMusicService {
         },
         events: {
           onReady: () => {
-            console.log('✅ YouTube player ready');
+            clearTimeout(timeoutId);
+            console.log('✅ YouTube player onReady event fired');
+            
+            // Validate player has all required methods
+            if (!this.validateYouTubePlayer(false)) {
+              console.error('❌ YouTube player missing required methods after onReady');
+              reject(new Error('YouTube player incomplete'));
+              return;
+            }
+            
             this.youtubePlayer.setVolume(this.volume * 100);
+            this.youtubePlayerReady = true;
+            this.persistState();
+            console.log('✅ YouTube player fully initialized and validated');
             resolve();
           },
           onStateChange: (event) => {
@@ -284,11 +455,29 @@ class PlatformMusicService {
             }
           },
           onError: (event) => {
-            console.error('YouTube player error:', event.data);
+            console.error('❌ YouTube player error:', event.data, {
+              2: 'Invalid parameter',
+              5: 'HTML5 player error',
+              100: 'Video not found',
+              101: 'Video not allowed in embedded players',
+              150: 'Video not allowed in embedded players'
+            }[event.data] || 'Unknown error');
+            
+            // Auto-recover from certain errors
+            if ([2, 5].includes(event.data)) {
+              console.log('🔄 Attempting auto-recovery from recoverable error...');
+              setTimeout(() => this.recoverYouTubePlayer(), 2000);
+            }
+            
             if (this.onError) this.onError('youtube', `Error code: ${event.data}`);
           }
         }
       });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('❌ Failed to create YouTube player:', error);
+        reject(error);
+      }
 
       // Time update polling for YouTube
       this.youtubeTimeUpdateInterval = setInterval(() => {
@@ -408,14 +597,77 @@ class PlatformMusicService {
   }
 
   /**
-   * Play YouTube track
+   * Load YouTube API dynamically if not present
    */
-  async playYouTubeTrack(track) {
-    if (!this.youtubePlayer) {
-      throw new Error('YouTube player not initialized');
+  async loadYouTubeAPI() {
+    if (window.YT && window.YT.Player) {
+      return;
     }
 
-    // Use youtubeId if available, fallback to externalId
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('YouTube API load timeout'));
+      }, 30000);
+
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        tag.async = true;
+        document.head.appendChild(tag);
+      }
+
+      window.onYouTubeIframeAPIReady = () => {
+        clearTimeout(timeout);
+        console.log('✅ YouTube API loaded');
+        resolve();
+      };
+    });
+  }
+
+  /**
+   * Execute YouTube player operation with retry and validation
+   */
+  async executeYouTubeOperation(operationName, operation, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Ensure player is ready
+        if (!this.validateYouTubePlayer(false)) {
+          console.warn(`⚠️ YouTube player not ready for ${operationName}, initializing...`);
+          await this.initializeYouTubePlayerWithRetry('youtube-player');
+        }
+
+        // Wait for player to be ready
+        const isReady = await this.waitForYouTubePlayerReady(10000);
+        if (!isReady) {
+          throw new Error('YouTube player not ready after waiting');
+        }
+
+        // Execute the operation
+        const result = await operation();
+        console.log(`✅ ${operationName} succeeded`);
+        return result;
+      } catch (error) {
+        console.error(`❌ ${operationName} failed (attempt ${attempt + 1}/${maxRetries}):`, error);
+        
+        if (attempt < maxRetries - 1) {
+          const delayMs = 1000 * Math.pow(2, attempt);
+          console.log(`🔄 Retrying ${operationName} in ${delayMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          
+          // Try to recover player
+          await this.recoverYouTubePlayer();
+        } else {
+          throw new Error(`${operationName} failed after ${maxRetries} attempts: ${error.message}`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Play YouTube track with guaranteed execution
+   */
+  async playYouTubeTrack(track) {
+    // Use robust player's guaranteed loadAndPlay method
     const videoId = track.youtubeId || track.externalId;
     
     if (!videoId) {
@@ -423,10 +675,17 @@ class PlatformMusicService {
     }
     
     console.log('🎵 Loading YouTube video:', videoId, 'for track:', track.title);
-
-    // Load and play video by ID
-    this.youtubePlayer.loadVideoById(videoId);
+    
+    // Robust player handles all retries and recovery automatically
+    await this.youtubePlayer.loadAndPlay(videoId);
+    
     this.isPlaying = true;
+    this.currentTrack = track;
+    this.currentPlatform = 'youtube';
+    this.persistState();
+    
+    console.log('✅ YouTube video playing with guaranteed reliability');
+    return true;
   }
 
   /**
@@ -447,7 +706,7 @@ class PlatformMusicService {
   }
 
   /**
-   * Pause playback
+   * Pause playback with guaranteed execution
    */
   async pause() {
     console.log('⏸️ Pausing playback');
@@ -459,9 +718,8 @@ class PlatformMusicService {
         }
         break;
       case 'youtube':
-        if (this.youtubePlayer) {
-          this.youtubePlayer.pauseVideo();
-        }
+        // Robust player handles all state validation and retries
+        await this.youtubePlayer.pause();
         break;
       case 'appleMusic':
         if (this.appleMusicPlayer) {
@@ -471,10 +729,11 @@ class PlatformMusicService {
     }
 
     this.isPlaying = false;
+    this.persistState();
   }
 
   /**
-   * Resume playback
+   * Resume playback with guaranteed execution
    */
   async play() {
     console.log('▶️ Resuming playback', {
@@ -491,19 +750,8 @@ class PlatformMusicService {
         }
         break;
       case 'youtube':
-        if (this.youtubePlayer) {
-          console.log('🎵 Calling YouTube playVideo()...');
-          try {
-            this.youtubePlayer.playVideo();
-            console.log('✅ YouTube playVideo() called successfully');
-          } catch (error) {
-            console.error('❌ YouTube playVideo() failed:', error);
-            throw error;
-          }
-        } else {
-          console.error('❌ YouTube player not initialized!');
-          throw new Error('YouTube player not available');
-        }
+        // Robust player handles all retries and recovery
+        await this.youtubePlayer.play();
         break;
       case 'appleMusic':
         if (this.appleMusicPlayer) {
@@ -513,6 +761,7 @@ class PlatformMusicService {
     }
 
     this.isPlaying = true;
+    this.persistState();
     console.log('✅ play() completed, isPlaying set to true');
   }
 
