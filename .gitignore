@@ -39,6 +39,7 @@ vendor/            # Composer dependencies
 
 # Android APK files (too large for git)
 *.apk             # Android APK packages
+!jamz-server/downloads/*.apk  # EXCEPT: Production APK (needs deployment)
 *.aab             # Android App Bundle
 
 # Gradle build cache and files
