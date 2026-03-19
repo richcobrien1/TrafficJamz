@@ -303,8 +303,11 @@ app.use('/downloads', express.static(path.join(__dirname, '../downloads')));
 // Catch-all handler: send back index.html for any non-API routes
 // This enables client-side routing for the React SPA
 app.get('*', (req, res, next) => {
-  // Skip API routes - let them be handled by the API routers
-  if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
+  // Skip API routes and static file paths - let them be handled by their respective handlers
+  if (req.path.startsWith('/api/') || 
+      req.path.startsWith('/socket.io/') ||
+      req.path.startsWith('/downloads/') ||
+      req.path.startsWith('/uploads/')) {
     return next();
   }
 
